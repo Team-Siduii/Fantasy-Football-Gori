@@ -1,0 +1,573 @@
+speler id,speler naam,positie,club,transferwaarde
+1011,Mathijs Menu,Verdediger,AZ,1000000
+273,Joey Veerman,Middenvelder,PSV,2750000
+579,Yarek Gasiorowski,Verdediger,PSV,2750000
+4,Ivan Perišic,Middenvelder,PSV,4000000
+140,Koki Ogawa,Aanvaller,NEC,2250000
+122,Wout Weghorst,Aanvaller,AJA,3250000
+34,Denso Kasius,Verdediger,AZ,2000000
+123,Troy Parrott,Aanvaller,AZ,3250000
+300,Victor Jensen,Middenvelder,UTR,1750000
+152,Bryan Linssen,Aanvaller,NEC,2000000
+307,Dirk Proper,Middenvelder,NEC,1750000
+263,Sem Steijn,Middenvelder,FEY,4500000
+373,Dani de Wit,Middenvelder,UTR,2000000
+519,Gjivai Zechiël,Middenvelder,UTR,1750000
+265,Guus Til,Middenvelder,PSV,3750000
+599,Thijs Oosting,Middenvelder,PEC,1500000
+46,Marco Rente,Verdediger,GRO,1750000
+9,Sergiño Dest,Verdediger,PSV,3250000
+512,Tjaronn Chery,Middenvelder,NEC,2000000
+269,Steven Berghuis,Middenvelder,AJA,2750000
+383,Gonzalo Crettaz,Keeper,NEC,1750000
+582,Ruben van Bommel,Aanvaller,PSV,3500000
+125,Ayase Ueda,Aanvaller,FEY,3000000
+525,Philip Brittijn,Middenvelder,FOR,1500000
+285,Luuk Brouwers,Middenvelder,HEE,2000000
+349,Luka Tunjic,Middenvelder,FOR,1250000
+520,Vitezslav Jaros,Keeper,AJA,2000000
+42,Gerrit Nauber,Verdediger,GAE,2000000
+228,Timon Wellenreuther,Keeper,FEY,2500000
+626,Tom de Graaff,Keeper,PEC,1750000
+227,Vasilis Barkas,Keeper,UTR,2500000
+371,Mateo Chávez,Verdediger,AZ,2000000
+396,Ozan Kökcü,Aanvaller,VOL,1500000
+146,Yoann Cathline,Aanvaller,UTR,2000000
+167,David Min,Aanvaller,UTR,1750000
+17,Givairo Read,Verdediger,FEY,2750000
+16,Souffian El Karouani,Verdediger,UTR,2750000
+406,Aaron Bouwman,Verdediger,AJA,1750000
+35,Siebe Horemans,Verdediger,UTR,2000000
+10,Anton Gaaei,Verdediger,AJA,3000000
+83,Anselmo Mac Nulty,Verdediger,PEC,1500000
+59,Brayann Pereira,Verdediger,NEC,1750000
+82,Simon Graves,Verdediger,PEC,1500000
+37,Nick Viergever,Verdediger,UTR,2000000
+44,Owen Wijndal,Verdediger,AJA,1750000
+14,Youri Baas,Verdediger,AJA,2750000
+39,Jordan Lotomba,Verdediger,FEY,2000000
+608,Tsuyoshi Watanabe,Verdediger,FEY,3000000
+633,Anel Ahmedhodzic,Verdediger,FEY,3250000
+612,Jordan Bos,Verdediger,FEY,2500000
+36,Mike van der Hoorn,Verdediger,UTR,2000000
+56,Philippe Sandler,Verdediger,NEC,1750000
+597,Alassane Pléa,Aanvaller,PSV,2750000
+54,Dean James,Verdediger,GAE,1750000
+230,Jeroen Zoet,Keeper,AZ,2000000
+311,Levi Smans,Middenvelder,HEE,1750000
+539,Gibson Yah,Middenvelder,VOL,1250000
+194,Basar Önal,Aanvaller,NEC,1500000
+611,Casper Tengstedt,Aanvaller,FEY,3000000
+359,Nick Fichtinger,Middenvelder,PEC,1250000
+79,Olivier Aertssen,Verdediger,PEC,1500000
+81,Sherel Floranus,Verdediger,PEC,1500000
+376,Youssef El Kachati,Aanvaller,NEC,2000000
+197,Kaj de Rooij,Aanvaller,PEC,1500000
+202,Ro-Zangelo Daal,Aanvaller,AZ,1250000
+398,Paul Gladon,Aanvaller,FOR,1500000
+1,Jorthy Mokio,Middenvelder,AJA,2000000
+38,Bart Nieuwkoop,Verdediger,FEY,2000000
+21,Mauro Júnior,Verdediger,PSV,2500000
+22,Ryan Flamingo,Verdediger,PSV,2500000
+23,Wouter Goes,Verdediger,AZ,2250000
+61,Damian van der Haar,Verdediger,PEC,1750000
+131,Mika Godts,Aanvaller,AJA,2500000
+132,Mexx Meerdink,Aanvaller,AZ,2500000
+133,Anis Hadj Moussa,Aanvaller,FEY,2500000
+266,Ismael Saibari,Middenvelder,PSV,3750000
+268,Davy Klaassen,Middenvelder,AJA,3000000
+270,Sven Mijnans,Middenvelder,AZ,2750000
+496,Gabriël Reiziger,Middenvelder,PEC,1250000
+138,Ibrahim Sadiq,Aanvaller,AZ,2250000
+281,Jordy Clasie,Middenvelder,AZ,2000000
+284,Jerdy Schouten,Middenvelder,PSV,2000000
+513,Virgil Misidjan,Aanvaller,NEC,1750000
+287,Youri Regeer,Middenvelder,AJA,1750000
+289,Peer Koopmeiners,Middenvelder,AZ,1750000
+141,Couhaib Driouech,Aanvaller,PSV,2250000
+145,Miguel Rodríguez,Aanvaller,UTR,2000000
+301,Oussama Targhalline,Middenvelder,FEY,1750000
+647,Sam de Laat,Middenvelder,NEC,1250000
+308,Kodai Sano,Middenvelder,NEC,1750000
+556,Luciano Valente,Middenvelder,FEY,2500000
+309,Sami Ouaissa,Middenvelder,NEC,1750000
+314,Shunsuke Mito,Middenvelder,SPA,1750000
+568,Gaoussou Diarra,Aanvaller,FEY,2250000
+166,Adrian Blake,Aanvaller,UTR,1750000
+572,Younes Taha,Middenvelder,GRO,1750000
+322,Can Bozdogan,Middenvelder,UTR,1500000
+171,Leo Sauer,Aanvaller,FEY,1750000
+177,Esmir Bajraktarevic,Aanvaller,PSV,1750000
+18,Alexandre Penetra,Verdediger,AZ,2500000
+335,Ryan Thomas,Middenvelder,PEC,1500000
+337,Jamiro Monteiro,Middenvelder,PEC,1500000
+586,Matej Kovár,Keeper,PSV,3000000
+589,Isak Jensen,Aanvaller,AZ,2000000
+592,Kiliann Sildillia,Verdediger,PSV,2750000
+598,Koen Kostons,Aanvaller,PEC,1500000
+625,Oscar Gloukh,Middenvelder,AJA,3250000
+348,Alonzo Engwanda,Middenvelder,UTR,1250000
+418,Kayne van Oevelen,Keeper,VOL,1250000
+229,Jari De Busser,Keeper,GAE,2250000
+617,Justin Hubner,Verdediger,FOR,1500000
+72,Shawn Adewoye,Verdediger,FOR,1500000
+591,Joël Drommel,Keeper,SPA,2000000
+570,Richonell Margaret,Aanvaller,GAE,1750000
+374,Henk Veerman,Aanvaller,VOL,2000000
+594,Dimitrios Limnios,Aanvaller,FOR,1500000
+420,Mawouna Amevor,Verdediger,VOL,1250000
+395,Alex Plat,Middenvelder,VOL,1500000
+632,Melle Meulensteen,Middenvelder,GAE,1750000
+172,Kristoffer Peterson,Aanvaller,FOR,1750000
+419,Deron Payne,Verdediger,VOL,1250000
+651,Robin van Cruijsen,Middenvelder,VOL,1250000
+84,Hristiyan Petrov,Verdediger,HEE,1500000
+528,Maxence Rivera,Aanvaller,HEE,1750000
+526,Tristan Schenkhuizen,Middenvelder,FOR,1250000
+41,Joris Kramer,Verdediger,GAE,2000000
+156,Jacob Trenskow,Aanvaller,HEE,2000000
+511,Vasilios Zagaritis,Verdediger,HEE,1250000
+629,Iván Márquez,Verdediger,FOR,1750000
+6,Yannick Leliendal,Verdediger,VOL,1750000
+545,Joris van Overeem,Middenvelder,HEE,1500000
+63,Nikolai Hopland,Verdediger,HEE,1750000
+190,Mathis Suray,Middenvelder,GAE,1500000
+548,Dylan Vente,Aanvaller,HEE,2000000
+189,Finn Stokkers,Aanvaller,GAE,1500000
+305,Evert Linthorst,Middenvelder,GAE,1750000
+248,Ronald Koeman,Keeper,TEL,1500000
+623,Aaron Meijers,Verdediger,VOL,1250000
+52,Ivo Pinto,Verdediger,FOR,1750000
+555,Mattijs Branderhorst,Keeper,FOR,2000000
+340,Marcus Linday,Middenvelder,HEE,1500000
+557,Brandley Kuwas,Middenvelder,VOL,1500000
+375,Robert Mühren,Aanvaller,VOL,2000000
+235,Andries Noppert,Keeper,HEE,2000000
+98,Julius Dirksen,Verdediger,GAE,1250000
+200,Eser Gürbüz,Aanvaller,HEE,1500000
+397,Aurelio Oehlers,Aanvaller,VOL,1500000
+451,Tijmen Holla,Keeper,EXC,1000000
+455,Guilliano Cairo,Middenvelder,EXC,1000000
+459,Nesto Groen,Aanvaller,EXC,1000000
+463,Ruud Nijstad,Verdediger,TWE,1000000
+464,Owen Panneflek,Aanvaller,TWE,1250000
+466,Rafik El Arguioui,Middenvelder,UTR,1250000
+469,Myron Mau-Asam,Middenvelder,VOL,1000000
+470,Mika van der Horst,Middenvelder,VOL,1000000
+472,Yaell Samson,Keeper,VOL,1000000
+474,Luca Blondeau,Verdediger,VOL,1000000
+475,Anass Bouziane,Middenvelder,VOL,1000000
+476,Key-Shawn Wong-A-Soij,Aanvaller,VOL,1000000
+480,Thijs Kraaijeveld,Verdediger,FEY,1750000
+482,Niels Martens,Keeper,FOR,1000000
+485,Hasip Korkmazyürek,Middenvelder,FOR,1000000
+490,Ofosu Boakye,Aanvaller,GAE,1000000
+491,Jop Tijink,Verdediger,HER,1000000
+493,Leco Zeevalkink,Keeper,HER,1000000
+498,Tijn Smolenaars,Keeper,PSV,1000000
+499,Bernt Klaverboer,Keeper,HEE,1000000
+503,Robin Bouw,Verdediger,HEE,1000000
+504,Kai Jansen,Middenvelder,HEE,1000000
+510,Pim Saathof,Verdediger,GAE,1000000
+514,Emirhan Demircan,Aanvaller,UTR,1500000
+515,Abdelraffie Benzzine,Verdediger,TEL,1000000
+523,Daniël Deen,Keeper,AZ,1250000
+529,Robin Mantel,Keeper,HER,1000000
+532,Rio Hillen,Verdediger,NAC,1500000
+535,Filip Bednarek,Keeper,SPA,1500000
+541,Gyan de Regt,Aanvaller,EXC,1500000
+544,Dion Vlak,Keeper,VOL,1250000
+546,Jetro Willems,Verdediger,NEC,1750000
+547,Precious Ugwu,Verdediger,VOL,1250000
+549,Duke Verduin,Keeper,PEC,1000000
+550,Stav Lemkin,Verdediger,TWE,2000000
+551,Stijn van Gassel,Keeper,EXC,1500000
+553,Lewis Schouten,Verdediger,EXC,1250000
+559,Nando Verdoni,Keeper,GAE,1000000
+561,Samir Lagsir,Middenvelder,PEC,1250000
+562,Jonathan de Guzman,Middenvelder,SPA,1500000
+563,Ayoni Santos,Middenvelder,SPA,1250000
+564,Adil Lechkar,Verdediger,TEL,1000000
+565,Pascal Kuiper,Keeper,SPA,1250000
+566,Neville Ogidi Nwankwo,Verdediger,TEL,1250000
+567,Guilherme Peixoto,Verdediger,TWE,1500000
+571,Moussa Soumano,Aanvaller,NAC,1500000
+573,Kristian Hlynsson,Middenvelder,TWE,2250000
+574,Sven Jansen,Keeper,GAE,1000000
+575,Brahim Ghalidi,Aanvaller,NAC,1250000
+576,Nolhan Courtens,Middenvelder,HEE,1250000
+577,Roy Steur,Keeper,VOL,1000000
+578,Stan Henderikx,Verdediger,EXC,1500000
+581,Kostas Lamprou,Keeper,NAC,1250000
+583,Oskar Zawada,Aanvaller,GRO,1750000
+584,Jeff Reine-Adélaïde,Middenvelder,HER,1750000
+585,Daan Reiziger,Keeper,TEL,1250000
+588,Bruno Martins Indi,Verdediger,SPA,1750000
+590,Amourricho van Axel Dongen,Aanvaller,HEE,1500000
+600,Tyrique Mercera,Verdediger,GRO,1500000
+602,Gonçalo Borges,Aanvaller,FEY,2750000
+603,Djevencio van der Kust,Verdediger,HER,1500000
+605,Elvis van der Laan,Verdediger,GRO,1250000
+606,Charles-Andreas Brym,Aanvaller,NAC,1500000
+609,Jaygo van Ommeren,Aanvaller,UTR,1250000
+610,Mike te Wierik,Verdediger,HER,1250000
+908,Jordy Bawuah,Middenvelder,PSV,1250000
+7,Oliver Braude,Verdediger,HEE,1750000
+13,Josip Sutalo,Verdediger,AJA,2750000
+20,Thomas Beelen,Verdediger,FEY,2500000
+24,Seiya Maikuma,Verdediger,AZ,2250000
+25,Mees Hilgers,Verdediger,TWE,2250000
+27,Gernot Trauner,Verdediger,FEY,2250000
+28,Gijs Smal,Verdediger,FEY,2250000
+30,Armando Obispo,Verdediger,PSV,2250000
+31,Lucas Rosa,Verdediger,AJA,2000000
+33,Mees de Wit,Verdediger,AZ,2000000
+45,Thijmen Blokzijl,Verdediger,GRO,1750000
+48,Mike Eerdhuijzen,Verdediger,UTR,1750000
+53,Syb van Ottele,Verdediger,FOR,1750000
+57,Bram Nuytinck,Verdediger,NEC,1750000
+60,Thomas Ouwejan,Verdediger,NEC,1750000
+64,Saïd Bakari,Verdediger,SPA,1750000
+66,Maxim Dekker,Verdediger,AZ,1500000
+68,Wouter Prins,Verdediger,GRO,1500000
+69,Mats Rots,Verdediger,TWE,1500000
+70,Niklas Vesterlund,Verdediger,UTR,1500000
+73,Aske Adelgaard,Verdediger,GAE,1500000
+74,Mimeirhel Benita,Verdediger,HER,1500000
+75,Ivan Mesik,Verdediger,HER,1500000
+76,Damon Mirani,Verdediger,HER,1500000
+77,Leo Greiml,Verdediger,NAC,1500000
+78,Boy Kemper,Verdediger,NAC,1500000
+89,Patrick van Aanholt,Verdediger,SPA,1500000
+90,Marvin Young,Verdediger,SPA,1500000
+92,Elijah Dijkstra,Verdediger,AZ,1250000
+95,Matisse Didden,Verdediger,UTR,1250000
+100,Jannes Wieckhoff,Verdediger,HER,1250000
+101,Cherrion Valerius,Verdediger,NAC,1250000
+103,Boyd Lucassen,Verdediger,NAC,1250000
+104,Wessel Kuhn,Verdediger,PSV,1250000
+107,Teo Quintero,Verdediger,SPA,1250000
+108,Tyrese Noslin,Verdediger,TEL,1250000
+109,Sven Bouland,Verdediger,GRO,1000000
+116,Sava-Arangel Cestic,Verdediger,HER,1000000
+118,Max de Ligt,Verdediger,SPA,1000000
+126,Ricardo Pepi,Aanvaller,PSV,3000000
+128,Ricky van Wolfswinkel,Aanvaller,TWE,2750000
+129,Sam Lammers,Aanvaller,TWE,2750000
+134,Jakob Breum,Aanvaller,GAE,2500000
+135,Oliver Edvardsen,Aanvaller,AJA,2250000
+139,Daan Rots,Aanvaller,TWE,2250000
+149,Kaj Sierhuis,Aanvaller,FOR,2000000
+151,Luka Kulenovic,Aanvaller,HER,2000000
+157,Tobias Lauritsen,Aanvaller,SPA,2000000
+162,Thom van Bergen,Aanvaller,GRO,1750000
+174,Mario Engels,Aanvaller,HER,1750000
+179,Don-Angelo Konadu,Aanvaller,AJA,1500000
+180,Mats Seuntjens,Aanvaller,GRO,1500000
+183,Aymen Sliti,Aanvaller,FEY,1500000
+187,Thibo Baeten,Aanvaller,GAE,1500000
+188,Søren Tengstedt,Aanvaller,GAE,1500000
+192,Juho Talvitie,Aanvaller,NAC,1500000
+196,Thomas Buitink,Aanvaller,PEC,1500000
+203,Rui Mendes,Aanvaller,GRO,1250000
+204,Brynjólfur Willumsson,Aanvaller,GRO,1250000
+205,Lucas Vennegoor of Hesselink,Aanvaller,TWE,1250000
+207,Oskar Sivertsen,Aanvaller,GAE,1250000
+217,Owen Johnson,Aanvaller,FOR,1000000
+218,Giandro Sambo,Aanvaller,HER,1000000
+224,Nick Olij,Keeper,PSV,3000000
+225,Rome-Jayden Owusu-Oduro,Keeper,AZ,2500000
+226,Lars Unnerstall,Keeper,TWE,2500000
+231,Etienne Vaessen,Keeper,GRO,2000000
+233,Jasper Schendelaar,Keeper,PEC,2000000
+237,Hobie Verhulst,Keeper,AZ,1750000
+238,Przemyslaw Tyton,Keeper,TWE,1750000
+240,Fabian de Keijzer,Keeper,HER,1750000
+241,Calvin Raatsie,Keeper,EXC,1500000
+242,Issam El Maach,Keeper,TWE,1500000
+243,Michael Brouwer,Keeper,UTR,1500000
+244,Luuk Koopmans,Keeper,FOR,1500000
+245,Luca Plogmann,Keeper,GAE,1500000
+246,Daniel Bielica,Keeper,NAC,1500000
+250,Hidde Jurjus,Keeper,GRO,1250000
+254,Dirk Baron,Keeper,GRO,1000000
+255,Sam Karssies,Keeper,TWE,1000000
+256,Kevin Gadellaa,Keeper,UTR,1000000
+258,Ramazan Bayram,Keeper,FOR,1000000
+259,Timo Jansink,Keeper,HER,1000000
+260,Rijk Janse,Keeper,NEC,1000000
+261,Niek Schiks,Keeper,PSV,1000000
+272,Jakub Moder,Middenvelder,FEY,2750000
+275,Kian Fitz-Jim,Middenvelder,AJA,2250000
+277,Hwang In-beom,Middenvelder,FEY,2250000
+291,Jorg Schreuders,Middenvelder,GRO,1750000
+292,Thomas van den Belt,Middenvelder,TWE,1750000
+294,Arno Verschueren,Middenvelder,TWE,1750000
+295,Taylor Booth,Middenvelder,TWE,1750000
+296,Max Bruns,Middenvelder,TWE,1750000
+297,Mathias Kjølø,Middenvelder,TWE,1750000
+304,Alen Halilovic,Middenvelder,FOR,1750000
+310,Odysseus Velanas,Middenvelder,PEC,1750000
+312,Joshua Kitolano,Middenvelder,SPA,1750000
+313,Pelle Clement,Middenvelder,SPA,1750000
+315,Rayane Bounida,Middenvelder,AJA,1500000
+317,Kees Smit,Middenvelder,AZ,1500000
+319,Lennard Hartjes,Middenvelder,EXC,1500000
+320,Stije Resink,Middenvelder,GRO,1500000
+323,Zidane Iqbal,Middenvelder,UTR,1500000
+325,Shiloh 't Zand,Middenvelder,FEY,1500000
+328,Samuel Bastien,Middenvelder,FOR,1500000
+332,Max Balard,Middenvelder,NAC,1500000
+333,Clint Leemans,Middenvelder,NAC,1500000
+342,Julian Baas,Middenvelder,SPA,1500000
+344,Sean Steur,Middenvelder,AJA,1250000
+351,Robbin Weijenberg,Middenvelder,GAE,1250000
+352,Sem Scheperman,Middenvelder,HER,1250000
+353,Jan Zamburek,Middenvelder,HER,1250000
+355,Thomas Bruns,Middenvelder,HER,1250000
+357,Fredrik Jensen,Middenvelder,NAC,1250000
+358,Raul Paula,Middenvelder,NAC,1250000
+360,Isaiah Ahmed,Middenvelder,HEE,1250000
+362,Mike Kleijn,Middenvelder,SPA,1250000
+364,David van der Werff,Middenvelder,GRO,1000000
+386,Paul Reverson,Keeper,AJA,1500000
+388,Casper Widell,Verdediger,EXC,1500000
+389,Arthur Zagré,Verdediger,EXC,1500000
+390,Noah Naujoks,Middenvelder,EXC,1500000
+391,Derensili Sanches Fernandes,Aanvaller,EXC,1500000
+392,Ilias Bronkhorst,Verdediger,EXC,1500000
+399,Tristan van Gilst,Aanvaller,HER,1500000
+401,Jeff Hardeveld,Verdediger,TEL,1500000
+402,Danny Bakker,Verdediger,TEL,1500000
+403,Nils Rossen,Middenvelder,TEL,1500000
+405,Lucas Jetten,Verdediger,AJA,1250000
+415,Mathijs Tielemans,Middenvelder,EXC,1250000
+416,Jerolldino Bergraaf,Aanvaller,EXC,1250000
+422,Silvinho Esajas,Verdediger,VOL,1250000
+426,Liam Bossin,Keeper,FEY,1250000
+427,Tobias van den Elshout,Middenvelder,FEY,1250000
+428,Daley Sinkgraven,Verdediger,FOR,1250000
+430,Roy Kortsmit,Keeper,NAC,1250000
+431,Enes Mahmutovic,Verdediger,NAC,1250000
+435,Maas Willemsen,Verdediger,HEE,1250000
+437,Devon Koswal,Verdediger,TEL,1250000
+438,Guus Offerhaus,Middenvelder,TEL,1250000
+439,Tyrone Owusu,Middenvelder,TEL,1250000
+440,Patrick Brouwer,Aanvaller,TEL,1250000
+442,Soufiane Hetli,Aanvaller,TEL,1250000
+444,Nigel Ogidi Nwankwo,Verdediger,TEL,1250000
+445,Kasper Boogaard,Middenvelder,AZ,1250000
+447,Wassim Bouziane,Aanvaller,AZ,1250000
+967,Hamdi Akujobi,Verdediger,EXC,1250000
+1000,Tarik Hamamioglu,Aanvaller,HER,1000000
+1001,Mohamed Abdalla,Middenvelder,AJA,1000000
+1002,Mees Rensen,Verdediger,NEC,1000000
+1003,Bendegúz Kovács,Aanvaller,AZ,1250000
+1004,Per Kloosterboer,Verdediger,UTR,1000000
+1005,Mark Verkuijl,Middenvelder,AJA,1000000
+1006,Gilles van der Wal,Middenvelder,PEC,1000000
+1007,Jesper Kerkdijk,Verdediger,HER,1000000
+1008,Ilai Grootfaam,Middenvelder,FEY,1000000
+1009,Jivayno Zinhagel,Aanvaller,FEY,1000000
+1010,Aymean El Hani,Keeper,AJA,1000000
+614,Robin Pröpper,Verdediger,TWE,2500000
+615,Joeri Heerkens,Keeper,AJA,1750000
+616,Ajdin Hrustic,Middenvelder,HER,1750000
+618,Ramiz Zerrouki,Middenvelder,TWE,1750000
+619,Mohamed Nassoh,Middenvelder,NAC,1500000
+621,Tyrick Bodak,Keeper,TEL,1000000
+624,Jasper Cillessen,Keeper,NEC,2000000
+628,Joel van den Berg,Middenvelder,PSV,1250000
+630,Billy van Duijl,Verdediger,AZ,1250000
+631,Rick Meissen,Verdediger,EXC,1500000
+635,Nordin Bakker,Keeper,HEE,1750000
+637,Pepijn Reulen,Aanvaller,NAC,1250000
+638,Justin Lonwijk,Middenvelder,FOR,1500000
+639,Yvandro Borges Sanches,Aanvaller,HER,1250000
+640,Dion Malone,Verdediger,TEL,1250000
+641,Dylan Mertens,Middenvelder,TEL,1250000
+643,Ko Itakura,Verdediger,AJA,2750000
+644,Moussa Gbemou,Middenvelder,FOR,1000000
+645,Mike van Duinen,Aanvaller,EXC,1500000
+646,Freek Entius,Keeper,NEC,1000000
+648,Christian Chiza,Verdediger,NAC,1000000
+649,Jemuel Erat,Verdediger,NAC,1000000
+650,Jermaine Rijssel,Aanvaller,HEE,1250000
+652,Jesper Tielemans,Aanvaller,VOL,1250000
+654,Giannino Vianello,Verdediger,SPA,1250000
+655,Jadiel Pereira da Gama,Middenvelder,PEC,1250000
+656,Givaro Rahajaän,Middenvelder,PEC,1000000
+657,Stijn Petiet,Keeper,GRO,1000000
+658,Robin Kelder,Verdediger,GRO,1000000
+659,Jismerai Dillema,Middenvelder,GRO,1000000
+660,Yenio Holder,Aanvaller,GRO,1000000
+661,Mark Hoekstra,Aanvaller,GRO,1000000
+662,Rojendro Oudsten,Middenvelder,TEL,1000000
+664,Nick Verschuren,Verdediger,VOL,1250000
+665,Arouna Kabba,Keeper,VOL,1000000
+666,Lewis Holtby,Middenvelder,NAC,1500000
+667,Dennis Man,Aanvaller,PSV,3500000
+700,Sondre Ørjasæter,Aanvaller,TWE,2750000
+701,Mohamed Ihattaren,Middenvelder,FOR,1750000
+702,Lovro Stubljar,Keeper,GRO,1250000
+703,Joel Ideho,Aanvaller,VOL,1500000
+704,Shurandy Sambo,Verdediger,SPA,1750000
+705,Mees Eppink,Keeper,UTR,1000000
+706,Jasper Hartog,Aanvaller,AZ,1250000
+707,Sébastien Haller,Aanvaller,UTR,2250000
+708,Mitchell van Bergen,Aanvaller,SPA,1750000
+709,Ringo Meerveld,Middenvelder,HEE,1750000
+710,Jochem Ritmeester van de Kamp,Middenvelder,TEL,1500000
+711,Jayden Candelaria,Verdediger,NAC,1250000
+712,Dies Janse,Verdediger,GRO,1500000
+713,Irakli Yegoian,Middenvelder,EXC,1500000
+714,Anthony Descotte,Aanvaller,VOL,1500000
+747,Mats Egbring,Verdediger,HEE,1250000
+748,Paul Wanner,Middenvelder,PSV,3750000
+749,Szymon Wlodarczyk,Aanvaller,EXC,1500000
+750,Yassin Moslih,Verdediger,NEC,1250000
+752,Tygo Land,Middenvelder,GRO,1500000
+753,Weslley Patati,Aanvaller,AZ,2500000
+754,Kay Tejan,Aanvaller,TEL,1500000
+756,Ahmetcan Kaplan,Verdediger,NEC,1750000
+757,Matej Sin,Middenvelder,AZ,2250000
+758,Tristan Gooijer,Verdediger,PEC,1500000
+759,Jan Faberski,Aanvaller,PEC,1500000
+760,Noah Fernandez,Middenvelder,PSV,1250000
+761,Martijn Overmars,Keeper,NEC,1250000
+762,Anass Salah-Eddine,Verdediger,PSV,2750000
+763,Myron Boadu,Aanvaller,PSV,2750000
+764,Noé Lebreton,Middenvelder,NEC,1750000
+765,Walid Ould-Chikh,Middenvelder,HER,1500000
+766,Zico Buurmeester,Middenvelder,PEC,1750000
+767,Simon Janssen,Verdediger,EXC,1250000
+768,Malcolm Jeng,Verdediger,FEY,2000000
+769,Giovanni van Zwam,Verdediger,GAE,1500000
+770,Darko Nejašmic,Middenvelder,NEC,1750000
+771,Daouda Weidmann,Middenvelder,TWE,1750000
+773,Kenzo Goudmijn,Middenvelder,GAE,1750000
+774,Deveron Fonville,Verdediger,NEC,1500000
+776,Kasper Dolberg,Aanvaller,AJA,3250000
+777,Marko Pjaca,Aanvaller,TWE,2250000
+778,Alec Van Hoorenbeeck,Verdediger,HER,1750000
+779,Shola Shoretire,Aanvaller,PEC,1500000
+780,Travis Hernes,Middenvelder,GRO,1250000
+783,Dylan Ruward,Verdediger,PEC,1000000
+784,David Voute,Verdediger,PEC,1000000
+785,Len Bakker,Keeper,PEC,1000000
+790,Hoessein Azirar,Middenvelder,FOR,1000000
+791,Benjamin Nagel,Middenvelder,TWE,1000000
+825,Eli Dasa,Verdediger,NEC,1750000
+828,Amin Laoukili,Middenvelder,FOR,1000000
+830,Lucas Gardenier,Verdediger,FEY,1250000
+832,Jeppe Wijnreder,Verdediger,HER,1000000
+833,Melle Roede,Middenvelder,HER,1000000
+834,Sil Blokhuis,Aanvaller,HER,1250000
+835,Andrea Natali,Verdediger,AZ,1250000
+836,Noa El Hamdaoui,Middenvelder,EXC,1250000
+869,Emre Ünüvar,Aanvaller,AJA,1250000
+870,Mannou Berger,Keeper,FEY,1250000
+871,Jayden Holtman,Verdediger,PEC,1000000
+872,Corean Drost,Middenvelder,PEC,1000000
+874,Nick Twisk,Middenvelder,AZ,1250000
+876,Björn Titulaer,Verdediger,TWE,1000000
+877,Lushendry Martes,Verdediger,SPA,1000000
+878,Jesper Zwart,Verdediger,AZ,1250000
+879,Ayoub Ouarghi,Middenvelder,FEY,1250000
+880,Shaqueel van Persie,Aanvaller,FEY,1250000
+881,Denis Odoi,Verdediger,NAC,1250000
+882,Kirayno Schaken,Aanvaller,HEE,1000000
+883,Dani Tijman,Aanvaller,GAE,1000000
+884,Mylo van der Lans,Verdediger,AJA,1000000
+885,Younes Jaber el Meftahi,Middenvelder,SPA,1000000
+886,Justin Eversen,Keeper,UTR,1000000
+887,Jinairo Johnson,Verdediger,AJA,1000000
+888,Takehiro Tomiyasu,Verdediger,AJA,2500000
+889,Ayoub Oufkir,Aanvaller,AZ,1750000
+890,Fabian Merién,Verdediger,PSV,1000000
+891,Nicolas Verkooijen,Middenvelder,PSV,1000000
+892,Hakeem Agboluaje,Middenvelder,FEY,1000000
+893,Jerayno Schaken,Aanvaller,FEY,1000000
+894,Wassim Elasri,Middenvelder,FOR,1000000
+895,Jaden Slory,Aanvaller,GAE,1750000
+896,André Ayew,Aanvaller,NAC,1500000
+898,Jizz Hornkamp,Aanvaller,AZ,2250000
+899,Emil Hansson,Aanvaller,EXC,1500000
+900,Luca Oyen,Aanvaller,HEE,1500000
+901,Cedric Hatenboer,Middenvelder,TEL,1500000
+902,Younes Namli,Aanvaller,PEC,1750000
+903,Neraysho Kasanwirjo,Verdediger,FOR,1500000
+904,Lasse Nordas,Aanvaller,HEE,1500000
+905,Lequincio Zeefuik,Aanvaller,HER,1750000
+906,Erik Ahlstrand,Middenvelder,HER,1500000
+907,Vito van Crooij,Middenvelder,SPA,2000000
+909,Timo Schreuder,Keeper,HEE,1000000
+910,Arman Nahany,Middenvelder,FEY,1250000
+911,Dave Kwakman,Middenvelder,VOL,1500000
+912,Oualid Agougil,Middenvelder,UTR,1250000
+913,Miliano Jonathans,Aanvaller,EXC,1500000
+914,Lance Duijvestijn,Middenvelder,FOR,1750000
+915,Abdellah Ouazane,Middenvelder,AJA,1250000
+916,Ryan Metu,Aanvaller,GRO,1000000
+917,Alwande Roaldsøy,Middenvelder,SPA,1500000
+918,Kevin Kers,Aanvaller,NEC,1000000
+919,Douwe Vernooij,Verdediger,NEC,1000000
+920,Rio Robbemond,Middenvelder,AZ,1250000
+921,Björn Menzo,Aanvaller,UTR,1000000
+922,Jeremiah St. Juste,Verdediger,FEY,2750000
+923,Jesper Karlsson,Aanvaller,UTR,1750000
+924,Tiago Codinha,Middenvelder,VOL,1000000
+925,Mats Deijl,Verdediger,FEY,2500000
+926,Alfons Sampsted,Verdediger,GAE,1750000
+927,Sem van Duijn,Aanvaller,TEL,1250000
+928,Ángel Alarcón,Aanvaller,UTR,1500000
+929,Naci Ünüvar,Aanvaller,HER,1750000
+930,Remko Pasveer,Keeper,HER,1750000
+931,Bilal Ould-Chikh,Aanvaller,VOL,1750000
+932,Tijn Peters,Middenvelder,AJA,1250000
+933,Lars Van Parys,Keeper,FOR,1000000
+934,Viggo Plantinga,Verdediger,UTR,1000000
+935,Artem Stepanov,Aanvaller,UTR,1500000
+936,Ingmar Mulder,Verdediger,HEE,1250000
+937,Isak Hansen-Aarøen,Middenvelder,NEC,1750000
+938,Oleksandr Zinchenko,Verdediger,AJA,2750000
+939,Willum Thór Willumsson,Middenvelder,NEC,2000000
+940,Rion Ichihara,Verdediger,AZ,2000000
+941,Yassin Oukili,Middenvelder,FOR,1500000
+942,Maarten Paes,Keeper,AJA,1750000
+943,Casper Terho,Aanvaller,SPA,1500000
+944,Benjamin Pauwels,Aanvaller,VOL,1500000
+945,Eus Waayers,Verdediger,GAE,1500000
+946,Stefán Ingi Sigurdarson,Aanvaller,GAE,2000000
+947,Emeka Adiele,Verdediger,UTR,1500000
+948,Juninho Bacuna,Middenvelder,VOL,1500000
+949,Maher Carrizo,Aanvaller,AJA,2500000
+950,Amine Salama,Aanvaller,NAC,1500000
+951,Rhys Bozinovski,Middenvelder,HER,1250000
+952,Nigel Groenewald,Aanvaller,TWE,1250000
+953,Gerald Alders,Verdediger,TEL,1250000
+954,Danilo,Aanvaller,NEC,2000000
+955,Jelani Seedorf,Aanvaller,TEL,1250000
+956,Nökkvi Thórisson,Aanvaller,TEL,1250000
+957,Milan Zonneveld,Aanvaller,SPA,1750000
+958,Tijs Velthuis,Verdediger,PEC,1500000
+959,Steven Benda,Keeper,FEY,1750000
+960,Finn Mulder,Keeper,TEL,1000000
+961,Gijs van den Berg,Middenvelder,EXC,1000000
+962,Neal Viereck,Verdediger,UTR,1250000
+963,Nick Marsman,Keeper,FOR,1500000
+964,Raheem Sterling,Aanvaller,FEY,3000000
+965,Jur Schipper,Keeper,AZ,1250000
+966,Amin Bouchouari,Verdediger,TEL,1000000
+185,Jasper Dahlhaus,Verdediger,FOR,1500000
+150,Victor Edvardsen,Aanvaller,GAE,2000000
+86,Sam Kersten,Verdediger,HEE,1500000
+423,Nordin Bukala,Middenvelder,VOL,1250000
+326,Édouard Michut,Middenvelder,FOR,1500000
+382,Kamal Sowah,Middenvelder,NAC,1750000
+346,Tika de Jonge,Middenvelder,GRO,1250000
+191,Bryan Limbombe,Aanvaller,HER,1500000
+26,Bart van Rooij,Verdediger,TWE,2250000
+286,Jens Toornstra,Middenvelder,SPA,2000000
+94,Marvin Peersman,Verdediger,GRO,1250000
+554,Adam Carlén,Middenvelder,EXC,1250000
