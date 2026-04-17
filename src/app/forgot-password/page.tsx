@@ -5,7 +5,7 @@ import { FormEvent, useState } from "react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("manager@gori.local");
-  const [token, setToken] = useState("");
+  const [resetLink, setResetLink] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,7 +15,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError("");
     setMessage("");
-    setToken("");
+    setResetLink("");
 
     try {
       const response = await fetch("/api/auth/request-reset", {
@@ -24,7 +24,7 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email }),
       });
 
-      const data = (await response.json()) as { error?: string; message?: string; token?: string | null };
+      const data = (await response.json()) as { error?: string; message?: string; resetLink?: string | null };
 
       if (!response.ok) {
         setError(data.error ?? "Reset aanvragen mislukt");
@@ -32,8 +32,8 @@ export default function ForgotPasswordPage() {
       }
 
       setMessage(data.message ?? "Reset aangevraagd.");
-      if (data.token) {
-        setToken(data.token);
+      if (data.resetLink) {
+        setResetLink(data.resetLink);
       }
     } finally {
       setLoading(false);
@@ -60,11 +60,11 @@ export default function ForgotPasswordPage() {
           </button>
         </form>
 
-        {token ? (
+        {resetLink ? (
           <p className="token-box">
-            Reset token (MVP): <code>{token}</code>
+            Reset link (test-mail): <code>{resetLink}</code>
             <br />
-            Gebruik deze op de <Link href={`/reset-password?token=${token}`}>reset-pagina</Link>.
+            Open direct: <Link href={resetLink}>reset-pagina</Link>.
           </p>
         ) : null}
 

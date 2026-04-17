@@ -1,41 +1,26 @@
 "use client";
 
-import { useMemo, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { AppShell } from "@/components/app-shell";
+import { PlayerCard } from "@/components/player-card";
+import { StatTile } from "@/components/stat-tile";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
 import { reorderAcrossZones, type ZoneName, type ZoneState } from "@/domain/lineup-state";
+import type { PlayerRecord } from "@/domain/player";
+import { enrichPlayers, type EnhancedPlayer } from "@/lib/player-derived";
 
 type Position = "GK" | "DEF" | "MID" | "FWD";
 
-type PlayerCard = {
-  id: string;
-  naam: string;
-  positie: Position;
-  club: string;
-  waarde: string;
-  punten: number;
-};
+function fallbackPlayers(): EnhancedPlayer[] {
+  return enrichPlayers([
+    { id: "1", naam: "Fallback Keeper", positie: "GK", club: "PSV", prijs: 5 },
+    { id: "2", naam: "Fallback Def", positie: "DEF", club: "AJA", prijs: 5 },
+    { id: "3", naam: "Fallback Mid", positie: "MID", club: "FEY", prijs: 5 },
+    { id: "4", naam: "Fallback Fwd", positie: "FWD", club: "AZ", prijs: 5 },
+  ]);
+}
 
-const allPlayers: PlayerCard[] = [
-  { id: "p1", positie: "GK", naam: "Nick Olij", club: "Sparta", waarde: "€ 6.0M", punten: 23 },
-  { id: "p2", positie: "GK", naam: "Justin Bijlow", club: "Feyenoord", waarde: "€ 6.5M", punten: 18 },
-  { id: "p3", positie: "DEF", naam: "Jorrel Hato", club: "Ajax", waarde: "€ 7.5M", punten: 25 },
-  { id: "p4", positie: "DEF", naam: "Quilindschy Hartman", club: "Feyenoord", waarde: "€ 7.0M", punten: 20 },
-  { id: "p5", positie: "DEF", naam: "Jordan Teze", club: "PSV", waarde: "€ 6.5M", punten: 19 },
-  { id: "p6", positie: "DEF", naam: "Robin Pröpper", club: "Twente", waarde: "€ 5.0M", punten: 23 },
-  { id: "p7", positie: "DEF", naam: "Lutsharel Geertruida", club: "Feyenoord", waarde: "€ 7.0M", punten: 22 },
-  { id: "p8", positie: "MID", naam: "Joey Veerman", club: "PSV", waarde: "€ 8.5M", punten: 24 },
-  { id: "p9", positie: "MID", naam: "Quinten Timber", club: "Feyenoord", waarde: "€ 9.0M", punten: 21 },
-  { id: "p10", positie: "MID", naam: "Kian Fitz-Jim", club: "Ajax", waarde: "€ 6.0M", punten: 17 },
-  { id: "p11", positie: "MID", naam: "Sven Mijnans", club: "AZ", waarde: "€ 6.5M", punten: 20 },
-  { id: "p12", positie: "MID", naam: "Mats Wieffer", club: "Feyenoord", waarde: "€ 8.0M", punten: 16 },
-  { id: "p13", positie: "FWD", naam: "Brian Brobbey", club: "Ajax", waarde: "€ 9.0M", punten: 25 },
-  { id: "p14", positie: "FWD", naam: "Luuk de Jong", club: "PSV", waarde: "€ 10.0M", punten: 22 },
-  { id: "p15", positie: "FWD", naam: "Igor Paixão", club: "Feyenoord", waarde: "€ 8.0M", punten: 20 },
-  { id: "p16", positie: "FWD", naam: "Sem Steijn", club: "Twente", waarde: "€ 8.0M", punten: 15 },
-];
-
-function buildStateForFormation(players: PlayerCard[], formation: string): ZoneState<PlayerCard> {
+function buildStateForFormation(players: EnhancedPlayer[], formation: string): ZoneState<EnhancedPlayer> {
   const requiredSlots = buildFormationSlots(formation).flat();
   const usedIds = new Set<string>();
 
@@ -49,12 +34,12 @@ function buildStateForFormation(players: PlayerCard[], formation: string): ZoneS
 
     return {
       id: `open-${position}-${Math.random().toString(36).slice(2, 8)}`,
-      positie: position,
+      positie: position as Position,
       naam: "Open slot",
       club: "Voeg speler toe",
-      waarde: "-",
+      prijs: 0,
       punten: 0,
-    } as PlayerCard;
+    } as EnhancedPlayer;
   });
 
   const bench = players.filter((player) => !usedIds.has(player.id));
@@ -65,7 +50,42 @@ function buildStateForFormation(players: PlayerCard[], formation: string): ZoneS
 export default function ManagerMyTeamPage() {
   const formationOptions = getFormationOptions();
   const [formation, setFormation] = useState(formationOptions[0]);
-  const [state, setState] = useState<ZoneState<PlayerCard>>(() => buildStateForFormation(allPlayers, formationOptions[0]));
+  const [allPlayers, setAllPlayers] = useState<EnhancedPlayer[]>(fallbackPlayers());
+  const [state, setState] = useState<ZoneState<EnhancedPlayer>>(() => buildStateForFormation(fallbackPlayers(), formationOptions[0]));
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await fetch("/api/players", { cache: "no-store" });
+        if (!response.ok) {
+          setError("Spelers konden niet geladen worden.");
+          setLoading(false);
+          return;
+        }
+
+        const data = (await response.json()) as { players: PlayerRecord[] };
+        const enriched = enrichPlayers(data.players || []);
+        const nextPlayers = enriched.length > 0 ? enriched : fallbackPlayers();
+
+        setAllPlayers(nextPlayers);
+      } catch {
+        setError("Netwerkfout bij het laden van spelers.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void load();
+  }, []);
+
+  useEffect(() => {
+    setState(buildStateForFormation(allPlayers, formation));
+  }, [allPlayers, formation]);
 
   const pitchRows = useMemo(() => {
     const rows = buildFormationSlots(formation);
@@ -79,9 +99,7 @@ export default function ManagerMyTeamPage() {
   }, [formation, state.lineup]);
 
   function handleFormationChange(nextFormation: string) {
-    const mergedPlayers = [...state.lineup, ...state.bench].filter((player) => !player.id.startsWith("open-"));
     setFormation(nextFormation);
-    setState(buildStateForFormation(mergedPlayers, nextFormation));
   }
 
   function onDragStart(zone: ZoneName, index: number) {
@@ -110,7 +128,7 @@ export default function ManagerMyTeamPage() {
   }
 
   return (
-    <AppShell title="Team" subtitle="4-3-3 stijl opstelling met kaarten, bank en live wisselen.">
+    <AppShell title="Team" subtitle="Opstelling met echte spelersdata uit CSV, plus drag & drop wissels.">
       <div className="grid">
         <section className="card col-8">
           <div className="formation-header">
@@ -127,6 +145,9 @@ export default function ManagerMyTeamPage() {
             </label>
           </div>
 
+          {loading ? <p className="muted-note">Spelers laden...</p> : null}
+          {error ? <p className="error-text">{error}</p> : null}
+
           <div className="pitch">
             {pitchRows.map((row, rowIndex) => {
               const rowStart = pitchRows.slice(0, rowIndex).reduce((sum, current) => sum + current.length, 0);
@@ -137,21 +158,17 @@ export default function ManagerMyTeamPage() {
                     const lineupIndex = rowStart + colIndex;
 
                     return (
-                      <article
+                      <PlayerCard
                         key={player.id}
-                        className="player-card draggable"
                         draggable
+                        position={player.positie}
+                        club={player.club}
+                        name={player.naam}
+                        pointsLabel={`${player.punten} PN`}
                         onDragStart={onDragStart("lineup", lineupIndex)}
                         onDragOver={(event) => event.preventDefault()}
                         onDrop={onDrop("lineup", lineupIndex)}
-                      >
-                        <div className="player-top">
-                          <span className="player-position">{player.positie}</span>
-                          <span className="player-club">{player.club}</span>
-                        </div>
-                        <p className="player-name">{player.naam}</p>
-                        <p className="player-points">{player.punten} PN</p>
-                      </article>
+                      />
                     );
                   })}
                 </div>
@@ -160,22 +177,10 @@ export default function ManagerMyTeamPage() {
           </div>
 
           <div className="stat-grid">
-            <article className="stat-tile">
-              <span>Totaal Punten</span>
-              <strong>190</strong>
-            </article>
-            <article className="stat-tile">
-              <span>Resterend Budget</span>
-              <strong>€ 98.5M</strong>
-            </article>
-            <article className="stat-tile">
-              <span>Beschikbare Transfers</span>
-              <strong>2</strong>
-            </article>
-            <article className="stat-tile">
-              <span>Deadline Volgende Ronde</span>
-              <strong>2 dagen, 4 uur</strong>
-            </article>
+            <StatTile label="Totaal Punten" value={state.lineup.reduce((sum, player) => sum + player.punten, 0)} />
+            <StatTile label="Resterend Budget" value="€ 98.5M" />
+            <StatTile label="Beschikbare Transfers" value="2" />
+            <StatTile label="Deadline Volgende Ronde" value="2 dagen, 4 uur" />
           </div>
         </section>
 
@@ -183,22 +188,18 @@ export default function ManagerMyTeamPage() {
           <h2>Wisselspelers</h2>
           <p className="muted-note">Sleep kaarten tussen basiselftal en bank om direct te wisselen.</p>
           <div className="bench-grid">
-            {state.bench.map((player, benchIndex) => (
-              <article
+            {state.bench.slice(0, 8).map((player, benchIndex) => (
+              <PlayerCard
                 key={player.id}
-                className="player-card draggable"
                 draggable
+                position={player.positie}
+                club={player.club}
+                name={player.naam}
+                pointsLabel={`${player.punten} PN`}
                 onDragStart={onDragStart("bench", benchIndex)}
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={onDrop("bench", benchIndex)}
-              >
-                <div className="player-top">
-                  <span className="player-position">{player.positie}</span>
-                  <span className="player-club">{player.club}</span>
-                </div>
-                <p className="player-name">{player.naam}</p>
-                <p className="player-points">{player.punten} PN</p>
-              </article>
+              />
             ))}
           </div>
         </section>
