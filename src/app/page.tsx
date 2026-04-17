@@ -1,72 +1,51 @@
-import { buildMvpSnapshot } from "@/domain/mvp-snapshot";
-import { buildDraftPickSequence } from "@/domain/rules";
-import { mockLeagueConfig } from "@/lib/mock-league";
-
-function fmt(iso: string): string {
-  return new Intl.DateTimeFormat("nl-NL", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Europe/Amsterdam",
-  }).format(new Date(iso));
-}
+import Link from "next/link";
+import { AppShell } from "@/components/app-shell";
 
 export default function HomePage() {
-  const snapshot = buildMvpSnapshot(mockLeagueConfig, new Date());
-  const sampleTeams = ["Team A", "Team B", "Team C", "Team D"];
-  const first16Picks = buildDraftPickSequence(sampleTeams, 16);
-
   return (
-    <main style={{ maxWidth: 960, margin: "0 auto", padding: "2.5rem 1rem", fontFamily: "Inter, system-ui, sans-serif" }}>
-      <h1 style={{ marginBottom: "0.25rem" }}>Fantasy Football Gori — MVP v0.1</h1>
-      <p style={{ opacity: 0.8, marginBottom: "1.5rem" }}>
-        Eerste werkende versie met kernregels uit het functioneel design.
-      </p>
+    <AppShell title="Dashboard" subtitle="Klikbare eerste UI versie voor jouw fantasy app.">
+      <div className="grid">
+        <section className="card col-4">
+          <h3>Draft</h3>
+          <p>Bekijk pickvolgorde en test draftflow per ronde.</p>
+          <Link href="/draft" className="cta">
+            Open Draft
+          </Link>
+        </section>
 
-      <section style={{ background: "#fff", border: "1px solid #e6e8ee", borderRadius: 12, padding: "1rem", marginBottom: "1rem" }}>
-        <h2 style={{ marginTop: 0 }}>Transfer en vensters</h2>
-        <ul>
-          <li>Huidige ronde: {mockLeagueConfig.currentRound}</li>
-          <li>Transferlimiet deze ronde: {snapshot.currentRoundTransferLimit}</li>
-          <li>Manager-trade venster open: {snapshot.managerTradeWindow.isOpen ? "Ja" : "Nee"}</li>
-          <li>Trade venster start: {fmt(snapshot.managerTradeWindow.opensAt)}</li>
-          <li>Trade venster sluit: {fmt(snapshot.managerTradeWindow.closesAt)}</li>
-        </ul>
-      </section>
+        <section className="card col-4">
+          <h3>Teams</h3>
+          <p>Overzicht van rosters, budget en formatiecontrole.</p>
+          <Link href="/teams" className="cta">
+            Open Teams
+          </Link>
+        </section>
 
-      <section style={{ background: "#fff", border: "1px solid #e6e8ee", borderRadius: 12, padding: "1rem", marginBottom: "1rem" }}>
-        <h2 style={{ marginTop: 0 }}>Free pool retry policy</h2>
-        <ul>
-          <li>Retries: {snapshot.freePoolRetryPolicy.maxRetries}</li>
-          <li>Interval: {snapshot.freePoolRetryPolicy.intervalSeconds} seconden</li>
-          <li>Na retries: alleen admin alert</li>
-        </ul>
-      </section>
+        <section className="card col-4">
+          <h3>Transfers</h3>
+          <p>Pre-season manager trades en ronde-limieten in één scherm.</p>
+          <Link href="/transfers" className="cta">
+            Open Transfers
+          </Link>
+        </section>
 
-      <section style={{ background: "#fff", border: "1px solid #e6e8ee", borderRadius: 12, padding: "1rem", marginBottom: "1rem" }}>
-        <h2 style={{ marginTop: 0 }}>MVP notificaties</h2>
-        <ul>
-          {snapshot.notifications.map((eventKey) => (
-            <li key={eventKey}>{eventKey}</li>
-          ))}
-        </ul>
-      </section>
+        <section className="card col-8">
+          <h2>MVP status</h2>
+          <ul>
+            <li>CSV upload + parsing voor Coach van het Jaar formaat</li>
+            <li>Basis API endpoints staan live</li>
+            <li>Klikbare pagina&apos;s voor kernflows staan klaar</li>
+          </ul>
+        </section>
 
-      <section style={{ background: "#fff", border: "1px solid #e6e8ee", borderRadius: 12, padding: "1rem", marginBottom: "1rem" }}>
-        <h2 style={{ marginTop: 0 }}>Draft patroon (A, A, reverse(A)) voorbeeld</h2>
-        <p style={{ marginTop: 0, opacity: 0.8 }}>Eerste 16 picks voor 4 teams:</p>
-        <ol>
-          {first16Picks.map((team, index) => (
-            <li key={`${team}-${index}`}>
-              Pick {index + 1}: {team}
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section style={{ background: "#fff", border: "1px solid #e6e8ee", borderRadius: 12, padding: "1rem" }}>
-        <h2 style={{ marginTop: 0 }}>Handmatige test</h2>
-        <p style={{ marginTop: 0 }}>Ga naar <a href="/admin/players">/admin/players</a> om je spelers-CSV te uploaden en direct te bekijken.</p>
-      </section>
-    </main>
+        <section className="card col-4">
+          <h2>Admin</h2>
+          <p>Upload spelerslijst en bekijk direct de ingeladen data.</p>
+          <Link href="/admin/players" className="cta">
+            Open Spelers CSV
+          </Link>
+        </section>
+      </div>
+    </AppShell>
   );
 }

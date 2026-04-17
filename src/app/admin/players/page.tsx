@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { AppShell } from "@/components/app-shell";
 
 type Player = {
   id: string;
@@ -35,6 +36,7 @@ export default function AdminPlayersPage() {
     setMessage("");
 
     const formData = new FormData();
+
     if (selectedFile) {
       formData.set("file", selectedFile);
     }
@@ -60,68 +62,74 @@ export default function AdminPlayersPage() {
   }
 
   return (
-    <main style={{ maxWidth: 980, margin: "0 auto", padding: "2rem 1rem", fontFamily: "Inter, system-ui, sans-serif" }}>
-      <h1 style={{ marginBottom: 8 }}>Admin — Spelers uploaden (CSV)</h1>
-      <p style={{ marginTop: 0, opacity: 0.8 }}>
-        Verwachte kolommen: <code>id, naam, club, positie, prijs</code>
-      </p>
+    <AppShell title="Admin — Spelers" subtitle="Upload je CSV en zie direct de ingeladen selectie.">
+      <div className="grid">
+        <form className="card col-6" onSubmit={onSubmit}>
+          <h2>CSV upload</h2>
+          <p>Ondersteund: standaard kolommen of Coach van het Jaar kolommen.</p>
 
-      <form
-        onSubmit={onSubmit}
-        style={{ background: "#fff", border: "1px solid #e6e8ee", borderRadius: 12, padding: "1rem", marginBottom: "1rem" }}
-      >
-        <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>CSV bestand</label>
-        <input
-          type="file"
-          accept=".csv,text/csv"
-          onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-        />
+          <label htmlFor="csv-file">CSV bestand</label>
+          <input
+            id="csv-file"
+            type="file"
+            accept=".csv,text/csv"
+            onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+            style={{ margin: "0.4rem 0 0.8rem" }}
+          />
 
-        <p style={{ margin: "0.75rem 0 0.5rem", opacity: 0.7 }}>of plak CSV hier:</p>
-        <textarea
-          value={csvText}
-          onChange={(event) => setCsvText(event.target.value)}
-          rows={8}
-          placeholder="id;naam;club;positie;prijs"
-          style={{ width: "100%", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", marginBottom: 12 }}
-        />
+          <label htmlFor="csv-text">Of plak CSV:</label>
+          <textarea
+            id="csv-text"
+            value={csvText}
+            onChange={(event) => setCsvText(event.target.value)}
+            rows={10}
+            placeholder="speler id,speler naam,positie,club,transferwaarde"
+            style={{ margin: "0.4rem 0 0.8rem" }}
+          />
 
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? "Uploaden..." : "Upload CSV"}
-        </button>
-      </form>
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? "Uploaden..." : "Upload CSV"}
+          </button>
+        </form>
 
-      {message && (
-        <p style={{ background: "#fff", border: "1px solid #e6e8ee", borderRadius: 12, padding: "0.75rem 1rem" }}>{message}</p>
-      )}
+        <section className="card col-6">
+          <h2>Ingeladen ({count})</h2>
+          <ul>
+            <li>Doelvelden: id, naam, club, positie, prijs</li>
+            <li>Posities worden genormaliseerd naar GK / DEF / MID / FWD</li>
+            <li>Transferwaarde in miljoenen wordt automatisch omgerekend</li>
+          </ul>
+          {message ? <p>{message}</p> : null}
+        </section>
 
-      <section style={{ background: "#fff", border: "1px solid #e6e8ee", borderRadius: 12, padding: "1rem" }}>
-        <h2 style={{ marginTop: 0 }}>Ingeladen spelers ({count})</h2>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: "0.5rem" }}>ID</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: "0.5rem" }}>Naam</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: "0.5rem" }}>Club</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: "0.5rem" }}>Positie</th>
-                <th style={{ textAlign: "right", borderBottom: "1px solid #ddd", padding: "0.5rem" }}>Prijs</th>
-              </tr>
-            </thead>
-            <tbody>
-              {players.map((player) => (
-                <tr key={player.id}>
-                  <td style={{ borderBottom: "1px solid #f0f0f0", padding: "0.5rem" }}>{player.id}</td>
-                  <td style={{ borderBottom: "1px solid #f0f0f0", padding: "0.5rem" }}>{player.naam}</td>
-                  <td style={{ borderBottom: "1px solid #f0f0f0", padding: "0.5rem" }}>{player.club}</td>
-                  <td style={{ borderBottom: "1px solid #f0f0f0", padding: "0.5rem" }}>{player.positie}</td>
-                  <td style={{ borderBottom: "1px solid #f0f0f0", padding: "0.5rem", textAlign: "right" }}>{player.prijs.toFixed(1)}</td>
+        <section className="card col-12">
+          <h2>Spelerslijst</h2>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Naam</th>
+                  <th>Club</th>
+                  <th>Positie</th>
+                  <th>Prijs (M)</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </main>
+              </thead>
+              <tbody>
+                {players.map((player) => (
+                  <tr key={player.id}>
+                    <td>{player.id}</td>
+                    <td>{player.naam}</td>
+                    <td>{player.club}</td>
+                    <td>{player.positie}</td>
+                    <td>{player.prijs.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </AppShell>
   );
 }
