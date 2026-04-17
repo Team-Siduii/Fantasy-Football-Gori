@@ -1,51 +1,89 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 type NavItem = {
   href: string;
   label: string;
-  badge?: string;
 };
 
 const navItems: NavItem[] = [
-  { href: "/", label: "Dashboard" },
-  { href: "/draft", label: "Draft" },
-  { href: "/teams", label: "Teams" },
-  { href: "/transfers", label: "Transfers" },
-  { href: "/admin/players", label: "Spelers CSV", badge: "MVP" },
-  { href: "/instellingen", label: "Instellingen" },
+  { href: "/manager/my-team", label: "Team" },
+  { href: "/manager/transfer-pool", label: "Transfers" },
+  { href: "/manager/league", label: "Competities" },
+  { href: "/profile", label: "Profiel" },
 ];
+
+function isActive(pathname: string, href: string) {
+  if (pathname === href) return true;
+  return href !== "/" && pathname.startsWith(`${href}/`);
+}
 
 export function AppShell({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand">Fantasy Football Gori</div>
-        <nav className="nav">
-          {navItems.map((item) => {
-            const active = pathname === item.href;
-            return (
-              <Link key={item.href} href={item.href} className={`nav-link ${active ? "active" : ""}`}>
-                <span>{item.label}</span>
-                {item.badge ? <span className="badge">{item.badge}</span> : null}
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
+      <div className="app-frame">
+        <header className="top-header">
+          <div className="brand-wrap">
+            <p className="brand-eyebrow">eredivisie</p>
+            <h1>FANTASY EREDIVISIE</h1>
+          </div>
+          <button onClick={handleLogout} className="logout-button" type="button">
+            Log out
+          </button>
+        </header>
 
-      <main className="content">
+        <section className="summary-strip" aria-label="Teamoverzicht">
+          <article>
+            <span>Team</span>
+            <strong>Mijn Super Team</strong>
+          </article>
+          <article>
+            <span>Rank</span>
+            <strong>1st (29)</strong>
+          </article>
+          <article>
+            <span>Totaal Punten</span>
+            <strong>190</strong>
+          </article>
+        </section>
+
         <header className="page-head">
-          <h1>{title}</h1>
+          <h2>{title}</h2>
           <p>{subtitle}</p>
         </header>
-        {children}
-      </main>
+
+        <main className="content">{children}</main>
+
+        <nav className="bottom-nav" aria-label="Hoofdnavigatie">
+          {navItems.slice(0, 2).map((item) => (
+            <Link key={item.href} href={item.href} className={`bottom-link ${isActive(pathname, item.href) ? "active" : ""}`}>
+              {item.label}
+            </Link>
+          ))}
+
+          <Link href="/admin/players" className={`fab-link ${isActive(pathname, "/admin/players") ? "active" : ""}`}>
+            CSV
+          </Link>
+
+          {navItems.slice(2).map((item) => (
+            <Link key={item.href} href={item.href} className={`bottom-link ${isActive(pathname, item.href) ? "active" : ""}`}>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
     </div>
   );
 }
