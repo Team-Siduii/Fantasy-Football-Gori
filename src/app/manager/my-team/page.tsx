@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { AppShell } from "@/components/app-shell";
 import { PlayerCard } from "@/components/player-card";
 import { StatTile } from "@/components/stat-tile";
@@ -11,6 +11,14 @@ import { enrichPlayers, type EnhancedPlayer } from "@/lib/player-derived";
 
 type Position = "GK" | "DEF" | "MID" | "FWD";
 
+type ManagerStateResponse = {
+  state?: {
+    formation?: string;
+    lineupIds?: string[];
+    benchIds?: string[];
+  };
+};
+
 function fallbackPlayers(): EnhancedPlayer[] {
   return enrichPlayers([
     { id: "1", naam: "Fallback Keeper", positie: "GK", club: "PSV", prijs: 5 },
@@ -20,40 +28,85 @@ function fallbackPlayers(): EnhancedPlayer[] {
   ]);
 }
 
+function createOpenSlot(position: string): EnhancedPlayer {
+  return {
+    id: `open-${position}-${Math.random().toString(36).slice(2, 8)}`,
+    positie: position as Position,
+    naam: "Open slot",
+    club: "Voeg speler toe",
+    prijs: 0,
+    punten: 0,
+  };
+}
+
 function buildStateForFormation(players: EnhancedPlayer[], formation: string): ZoneState<EnhancedPlayer> {
   const requiredSlots = buildFormationSlots(formation).flat();
   const usedIds = new Set<string>();
 
   const lineup = requiredSlots.map((position) => {
     const found = players.find((player) => player.positie === position && !usedIds.has(player.id));
-
     if (found) {
       usedIds.add(found.id);
       return found;
     }
 
-    return {
-      id: `open-${position}-${Math.random().toString(36).slice(2, 8)}`,
-      positie: position as Position,
-      naam: "Open slot",
-      club: "Voeg speler toe",
-      prijs: 0,
-      punten: 0,
-    } as EnhancedPlayer;
+    return createOpenSlot(position);
   });
 
   const bench = players.filter((player) => !usedIds.has(player.id));
+  return { lineup, bench };
+}
+
+function buildStateFromSaved(players: EnhancedPlayer[], formation: string, lineupIds: string[], benchIds: string[]) {
+  const playersById = new Map(players.map((player) => [player.id, player]));
+  const requiredSlots = buildFormationSlots(formation).flat();
+  const usedIds = new Set<string>();
+
+  const lineup = requiredSlots.map((position, index) => {
+    const savedId = lineupIds[index];
+    const saved = savedId ? playersById.get(savedId) : undefined;
+
+    if (saved && saved.positie === position && !usedIds.has(saved.id)) {
+      usedIds.add(saved.id);
+      return saved;
+    }
+
+    const fallback = players.find((player) => player.positie === position && !usedIds.has(player.id));
+    if (fallback) {
+      usedIds.add(fallback.id);
+      return fallback;
+    }
+
+    return createOpenSlot(position);
+  });
+
+  const bench: EnhancedPlayer[] = [];
+  for (const id of benchIds) {
+    const player = playersById.get(id);
+    if (player && !usedIds.has(player.id)) {
+      usedIds.add(player.id);
+      bench.push(player);
+    }
+  }
+
+  for (const player of players) {
+    if (!usedIds.has(player.id)) {
+      usedIds.add(player.id);
+      bench.push(player);
+    }
+  }
 
   return { lineup, bench };
 }
 
 export default function ManagerMyTeamPage() {
-  const formationOptions = getFormationOptions();
+  const formationOptions = useMemo(() => getFormationOptions(), []);
   const [formation, setFormation] = useState(formationOptions[0]);
   const [allPlayers, setAllPlayers] = useState<EnhancedPlayer[]>(fallbackPlayers());
   const [state, setState] = useState<ZoneState<EnhancedPlayer>>(() => buildStateForFormation(fallbackPlayers(), formationOptions[0]));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const hydrated = useRef(false);
 
   useEffect(() => {
     const load = async () => {
@@ -61,18 +114,43 @@ export default function ManagerMyTeamPage() {
       setError("");
 
       try {
-        const response = await fetch("/api/players", { cache: "no-store" });
-        if (!response.ok) {
+        const [playersResponse, managerStateResponse] = await Promise.all([
+          fetch("/api/players", { cache: "no-store" }),
+          fetch("/api/manager/state", { cache: "no-store" }),
+        ]);
+
+        if (!playersResponse.ok) {
           setError("Spelers konden niet geladen worden.");
           setLoading(false);
           return;
         }
 
-        const data = (await response.json()) as { players: PlayerRecord[] };
-        const enriched = enrichPlayers(data.players || []);
+        const playersData = (await playersResponse.json()) as { players: PlayerRecord[] };
+        const managerData = managerStateResponse.ok
+          ? ((await managerStateResponse.json()) as ManagerStateResponse)
+          : { state: undefined };
+
+        const enriched = enrichPlayers(playersData.players || []);
         const nextPlayers = enriched.length > 0 ? enriched : fallbackPlayers();
+        const savedFormation = managerData.state?.formation;
+        const initialFormation =
+          savedFormation && formationOptions.includes(savedFormation) ? savedFormation : formationOptions[0];
 
         setAllPlayers(nextPlayers);
+        setFormation(initialFormation);
+
+        const nextState =
+          managerData.state?.lineupIds || managerData.state?.benchIds
+            ? buildStateFromSaved(
+                nextPlayers,
+                initialFormation,
+                managerData.state?.lineupIds ?? [],
+                managerData.state?.benchIds ?? [],
+              )
+            : buildStateForFormation(nextPlayers, initialFormation);
+
+        setState(nextState);
+        hydrated.current = true;
       } catch {
         setError("Netwerkfout bij het laden van spelers.");
       } finally {
@@ -81,11 +159,28 @@ export default function ManagerMyTeamPage() {
     };
 
     void load();
-  }, []);
+  }, [formationOptions]);
 
   useEffect(() => {
-    setState(buildStateForFormation(allPlayers, formation));
-  }, [allPlayers, formation]);
+    if (!hydrated.current) {
+      return;
+    }
+
+    const lineupIds = state.lineup.filter((player) => !player.id.startsWith("open-")).map((player) => player.id);
+    const benchIds = state.bench.filter((player) => !player.id.startsWith("open-")).map((player) => player.id);
+
+    const controller = new AbortController();
+    void fetch("/api/manager/state", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ formation, lineupIds, benchIds }),
+      signal: controller.signal,
+    }).catch(() => {
+      // no-op: UX blijft werken als persistence tijdelijk faalt
+    });
+
+    return () => controller.abort();
+  }, [formation, state]);
 
   const pitchRows = useMemo(() => {
     const rows = buildFormationSlots(formation);
@@ -100,6 +195,10 @@ export default function ManagerMyTeamPage() {
 
   function handleFormationChange(nextFormation: string) {
     setFormation(nextFormation);
+    setState((previous) => {
+      const nonOpen = [...previous.lineup, ...previous.bench].filter((player) => !player.id.startsWith("open-"));
+      return buildStateForFormation(nonOpen.length > 0 ? nonOpen : allPlayers, nextFormation);
+    });
   }
 
   function onDragStart(zone: ZoneName, index: number) {
@@ -135,7 +234,7 @@ export default function ManagerMyTeamPage() {
             <h2>Basiselftal</h2>
             <label className="formation-select">
               Formatie
-              <select value={formation} onChange={(event) => handleFormationChange(event.target.value)}>
+              <select value={formation} onChange={(event) => handleFormationChange(event.target.value)} data-testid="formation-select">
                 {formationOptions.map((option) => (
                   <option value={option} key={option}>
                     {option}
@@ -159,7 +258,8 @@ export default function ManagerMyTeamPage() {
 
                     return (
                       <PlayerCard
-                        key={player.id}
+                        key={`lineup-${lineupIndex}-${player.id}`}
+                        data-testid={`lineup-card-${lineupIndex}`}
                         draggable
                         position={player.positie}
                         club={player.club}
@@ -190,7 +290,8 @@ export default function ManagerMyTeamPage() {
           <div className="bench-grid">
             {state.bench.slice(0, 8).map((player, benchIndex) => (
               <PlayerCard
-                key={player.id}
+                key={`bench-${benchIndex}-${player.id}`}
+                data-testid={`bench-card-${benchIndex}`}
                 draggable
                 position={player.positie}
                 club={player.club}

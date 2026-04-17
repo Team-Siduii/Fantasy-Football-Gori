@@ -17,12 +17,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+playwright-report/
+test-results/
 
 # env
 .env*
 
 # local runtime state
 data/auth-state.json
+data/manager-state.json
 
 # typescript
 *.tsbuildinfo

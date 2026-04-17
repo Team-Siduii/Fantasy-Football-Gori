@@ -24,7 +24,13 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email }),
       });
 
-      const data = (await response.json()) as { error?: string; message?: string; resetLink?: string | null };
+      const data = (await response.json()) as {
+        error?: string;
+        message?: string;
+        resetLink?: string | null;
+        mailDelivered?: boolean;
+        mailReason?: string;
+      };
 
       if (!response.ok) {
         setError(data.error ?? "Reset aanvragen mislukt");
@@ -32,6 +38,9 @@ export default function ForgotPasswordPage() {
       }
 
       setMessage(data.message ?? "Reset aangevraagd.");
+      if (data.mailDelivered === false && data.mailReason) {
+        setMessage(`${data.message ?? "Reset aangevraagd."} (${data.mailReason}; toon testlink hieronder)`);
+      }
       if (data.resetLink) {
         setResetLink(data.resetLink);
       }

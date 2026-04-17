@@ -5,6 +5,12 @@ import { AppShell } from "@/components/app-shell";
 import type { PlayerRecord } from "@/domain/player";
 import { byPriceDesc } from "@/lib/player-derived";
 
+type ManagerStateResponse = {
+  state?: {
+    pickedTransferId?: string | null;
+  };
+};
+
 export default function ManagerTransferPoolPage() {
   const [players, setPlayers] = useState<PlayerRecord[]>([]);
   const [selectedPosition, setSelectedPosition] = useState("ALL");
@@ -14,14 +20,25 @@ export default function ManagerTransferPoolPage() {
 
   useEffect(() => {
     const load = async () => {
-      const response = await fetch("/api/players", { cache: "no-store" });
-      if (!response.ok) {
+      const [playersResponse, managerResponse] = await Promise.all([
+        fetch("/api/players", { cache: "no-store" }),
+        fetch("/api/manager/state", { cache: "no-store" }),
+      ]);
+
+      if (!playersResponse.ok) {
         setMessage("Kon transfer pool niet laden.");
         return;
       }
 
-      const data = (await response.json()) as { players: PlayerRecord[] };
+      const data = (await playersResponse.json()) as { players: PlayerRecord[] };
       setPlayers((data.players || []).sort(byPriceDesc));
+
+      if (managerResponse.ok) {
+        const managerData = (await managerResponse.json()) as ManagerStateResponse;
+        if (managerData.state?.pickedTransferId) {
+          setPickedPlayerId(managerData.state.pickedTransferId);
+        }
+      }
     };
 
     void load();
@@ -41,9 +58,15 @@ export default function ManagerTransferPoolPage() {
     });
   }, [players, search, selectedPosition]);
 
-  function handlePick(player: PlayerRecord) {
+  async function handlePick(player: PlayerRecord) {
     setPickedPlayerId(player.id);
     setMessage(`${player.naam} klaar om binnen te halen voor € ${player.prijs.toFixed(2)}M.`);
+
+    await fetch("/api/manager/state", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pickedTransferId: player.id }),
+    });
   }
 
   return (
@@ -54,12 +77,17 @@ export default function ManagerTransferPoolPage() {
         <div className="grid">
           <label className="col-4">
             Zoek speler/club
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Bijv. Veerman" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Bijv. Veerman"
+              data-testid="transfer-search"
+            />
           </label>
 
           <label className="col-4">
             Positie
-            <select value={selectedPosition} onChange={(event) => setSelectedPosition(event.target.value)}>
+            <select value={selectedPosition} onChange={(event) => setSelectedPosition(event.target.value)} data-testid="transfer-position">
               <option value="ALL">Alle posities</option>
               <option value="GK">GK</option>
               <option value="DEF">DEF</option>
@@ -86,14 +114,14 @@ export default function ManagerTransferPoolPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.slice(0, 120).map((item) => (
-                <tr key={item.id}>
+              {filtered.slice(0, 120).map((item, index) => (
+                <tr key={item.id} data-testid={`transfer-row-${index}`}>
                   <td>{item.naam}</td>
                   <td>{item.positie}</td>
                   <td>{item.club}</td>
                   <td>€ {item.prijs.toFixed(2)}M</td>
                   <td>
-                    <button type="button" onClick={() => handlePick(item)}>
+                    <button type="button" onClick={() => handlePick(item)} data-testid={`transfer-pick-${index}`}>
                       {pickedPlayerId === item.id ? "Geselecteerd" : "Kies"}
                     </button>
                   </td>
