@@ -16,6 +16,7 @@ import {
 import type { PlayerRecord } from "@/domain/player";
 import { buildMarketPlayers } from "@/domain/transfer-workflow";
 import { byPriceDesc, enrichPlayers, type EnhancedPlayer } from "@/lib/player-derived";
+import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026 } from "@/lib/season-schedule";
 
 type Position = "GK" | "DEF" | "MID" | "FWD";
 
@@ -373,6 +374,27 @@ export default function ManagerMyTeamPage() {
     });
   }, [marketPlayers, maxPrice, search, selectedClub, selectedPosition]);
 
+  const scheduleSubtitle = useMemo(() => {
+    const round = getCurrentOrNextRound(REMAINING_FIXTURES_2025_2026, new Date());
+    if (!round) {
+      return "Opstelling, wissels en transfermarkt in één overzicht.";
+    }
+
+    const fixtures = REMAINING_FIXTURES_2025_2026
+      .filter((fixture) => fixture.round === round)
+      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
+
+    if (fixtures.length === 0) {
+      return `Opstelling, wissels en transfermarkt in één overzicht. Speelronde ${round}: schema volgt.`;
+    }
+
+    const fixturesLabel = fixtures
+      .map((fixture) => `${fixture.dateLabel} ${fixture.kickoff} ${fixture.home}-${fixture.away}`)
+      .join(" | ");
+
+    return `Opstelling, wissels en transfermarkt in één overzicht. Speelronde ${round}: ${fixturesLabel}`;
+  }, []);
+
   function handleFormationChange(nextFormation: string) {
     const nonOpen = [...state.lineup, ...state.bench].filter((player) => !player.id.startsWith("open-"));
     const openCount = countOpenSlots(state);
@@ -516,7 +538,7 @@ export default function ManagerMyTeamPage() {
   }
 
   return (
-    <AppShell title="Team" subtitle="Opstelling, wissels en transfermarkt in één overzicht.">
+    <AppShell title="Team" subtitle={scheduleSubtitle}>
       <div className="grid">
         <section className="card col-8">
           <div className="formation-header">
