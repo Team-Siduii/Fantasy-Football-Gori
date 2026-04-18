@@ -16,7 +16,7 @@ import {
 import type { PlayerRecord } from "@/domain/player";
 import { buildMarketPlayers } from "@/domain/transfer-workflow";
 import { byPriceDesc, enrichPlayers, type EnhancedPlayer } from "@/lib/player-derived";
-import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026 } from "@/lib/season-schedule";
+import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
 
 type Position = "GK" | "DEF" | "MID" | "FWD";
 
@@ -189,6 +189,36 @@ function toPersistedIds(state: ZoneState<EnhancedPlayer>) {
     lineupIds: state.lineup.filter((player) => !player.id.startsWith("open-")).map((player) => player.id),
     benchIds: state.bench.filter((player) => !player.id.startsWith("open-")).map((player) => player.id),
   };
+}
+
+function toDutchDayAbbreviation(kickoffAt: string) {
+  const day = new Date(kickoffAt).getDay();
+  const labels = ["zon", "maa", "din", "woe", "don", "vri", "zat"];
+  return labels[day] ?? "-";
+}
+
+function toShortDate(kickoffAt: string) {
+  const date = new Date(kickoffAt);
+  const day = `${date.getDate()}`.padStart(2, "0");
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  return `${day}-${month}`;
+}
+
+function chunkFixtures(fixtures: SeasonFixture[], perColumn: number) {
+  const columns: SeasonFixture[][] = [];
+  for (let index = 0; index < fixtures.length; index += perColumn) {
+    columns.push(fixtures.slice(index, index + perColumn));
+  }
+  return columns;
+}
+
+function getCountdownParts(targetIso: string) {
+  const diffMs = new Date(targetIso).getTime() - Date.now();
+  const safeDiff = Math.max(0, diffMs);
+  const days = Math.floor(safeDiff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((safeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((safeDiff % (1000 * 60 * 60)) / (1000 * 60));
+  return { days, hours, minutes };
 }
 
 export default function ManagerMyTeamPage() {
@@ -374,26 +404,70 @@ export default function ManagerMyTeamPage() {
     });
   }, [marketPlayers, maxPrice, search, selectedClub, selectedPosition]);
 
-  const scheduleSubtitle = useMemo(() => {
-    const round = getCurrentOrNextRound(REMAINING_FIXTURES_2025_2026, new Date());
-    if (!round) {
-      return "Opstelling, wissels en transfermarkt in één overzicht.";
+  const currentRound = useMemo(() => getCurrentOrNextRound(REMAINING_FIXTURES_2025_2026, new Date()), []);
+
+  const currentRoundFixtures = useMemo(() => {
+    if (!currentRound) {
+      return [] as SeasonFixture[];
     }
 
-    const fixtures = REMAINING_FIXTURES_2025_2026
-      .filter((fixture) => fixture.round === round)
+    return REMAINING_FIXTURES_2025_2026
+      .filter((fixture) => fixture.round === currentRound)
       .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
+  }, [currentRound]);
 
-    if (fixtures.length === 0) {
-      return `Opstelling, wissels en transfermarkt in één overzicht. Speelronde ${round}: schema volgt.`;
+  const fixtureColumns = useMemo(() => chunkFixtures(currentRoundFixtures, 3), [currentRoundFixtures]);
+
+  const roundCountdown = useMemo(() => {
+    const firstFixture = currentRoundFixtures[0];
+    if (!firstFixture) {
+      return null;
     }
 
-    const fixturesLabel = fixtures
-      .map((fixture) => `${fixture.dateLabel} ${fixture.kickoff} ${fixture.home}-${fixture.away}`)
-      .join(" | ");
+    return getCountdownParts(firstFixture.kickoffAt);
+  }, [currentRoundFixtures]);
 
-    return `Opstelling, wissels en transfermarkt in één overzicht. Speelronde ${round}: ${fixturesLabel}`;
-  }, []);
+  const scheduleSubtitle = useMemo(() => {
+    if (!currentRound || currentRoundFixtures.length === 0) {
+      return <p>Opstelling, wissels en transfermarkt in één overzicht.</p>;
+    }
+
+    return (
+      <div className="round-schedule" data-testid="team-round-schedule">
+        <div className="round-schedule-head">
+          <div className="round-title-wrap">
+            <span className="round-title-label">Ronde</span>
+            <strong className="round-title-value">{currentRound}</strong>
+          </div>
+
+          {roundCountdown ? (
+            <div className="round-countdown" aria-label="Start volgende speelronde">
+              <span className="round-countdown-start">START</span>
+              <span>{roundCountdown.days}d</span>
+              <span>{roundCountdown.hours}u</span>
+              <span>{roundCountdown.minutes}m</span>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="round-fixtures-grid">
+          {fixtureColumns.map((column, columnIndex) => (
+            <ul key={`fixture-column-${columnIndex}`} className="round-fixture-column">
+              {column.map((fixture) => (
+                <li key={`${fixture.kickoffAt}-${fixture.home}-${fixture.away}`} className="round-fixture-row">
+                  <span className="fixture-home">{fixture.home}</span>
+                  <span className="fixture-time">
+                    {toDutchDayAbbreviation(fixture.kickoffAt)} {toShortDate(fixture.kickoffAt)} · {fixture.kickoff}
+                  </span>
+                  <span className="fixture-away">{fixture.away}</span>
+                </li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      </div>
+    );
+  }, [currentRound, currentRoundFixtures, fixtureColumns, roundCountdown]);
 
   function handleFormationChange(nextFormation: string) {
     const nonOpen = [...state.lineup, ...state.bench].filter((player) => !player.id.startsWith("open-"));

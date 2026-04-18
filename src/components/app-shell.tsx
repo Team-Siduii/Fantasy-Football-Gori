@@ -21,7 +21,7 @@ function isActive(pathname: string, href: string) {
   return href !== "/" && pathname.startsWith(`${href}/`);
 }
 
-export function AppShell({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
+export function AppShell({ title, subtitle, children }: { title: string; subtitle: ReactNode; children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -61,7 +61,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
 
         <header className="page-head">
           <h2>{title}</h2>
-          <p>{subtitle}</p>
+          {typeof subtitle === "string" ? <p>{subtitle}</p> : subtitle}
         </header>
 
         <main className="content">{children}</main>

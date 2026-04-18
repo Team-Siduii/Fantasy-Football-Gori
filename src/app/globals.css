@@ -133,6 +133,112 @@ a {
   color: var(--muted);
 }
 
+.round-schedule {
+  margin-top: 0.45rem;
+  border: 1px solid #d6dbe4;
+  border-radius: 12px;
+  background: #f4f6fa;
+  overflow: hidden;
+}
+
+.round-schedule-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.7rem;
+  background: #ffffff;
+  border-bottom: 1px solid #d6dbe4;
+}
+
+.round-title-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  color: #2b3442;
+}
+
+.round-title-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #596274;
+}
+
+.round-title-value {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.round-countdown {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  overflow: hidden;
+  font-size: 0.73rem;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(15, 22, 38, 0.08);
+}
+
+.round-countdown span {
+  padding: 0.28rem 0.45rem;
+  background: #2f3642;
+  color: #f5f7ff;
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.round-countdown .round-countdown-start {
+  background: #d53b33;
+  border-left: 0;
+}
+
+.round-fixtures-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.round-fixture-column {
+  margin: 0;
+  padding: 0.42rem 0.55rem;
+  list-style: none;
+  border-right: 1px solid #d9dee8;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.round-fixture-column:last-child {
+  border-right: 0;
+}
+
+.round-fixture-row {
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) minmax(98px, auto) minmax(72px, 1fr);
+  gap: 0.35rem;
+  align-items: baseline;
+  color: #2b3442;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.fixture-home,
+.fixture-away {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fixture-away {
+  text-align: right;
+}
+
+.fixture-time {
+  font-size: 0.68rem;
+  color: #6a7382;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .content {
   padding: 1rem 1rem 4.8rem;
 }
@@ -320,12 +426,15 @@ select {
 .pitch {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(180deg, var(--green) 0%, var(--green-deep) 100%);
-  border: 4px solid #ecf7ed;
+  background:
+    radial-gradient(140% 120% at 50% -18%, rgba(12, 56, 21, 0.34) 0%, rgba(12, 56, 21, 0) 56%),
+    linear-gradient(180deg, #2f9f4a 0%, #38b254 43%, #2a9a45 100%);
+  border: 4px solid #eaf3e8;
   border-radius: 14px;
   padding: 0.75rem;
   display: grid;
   gap: 0.7rem;
+  box-shadow: inset 0 16px 26px rgba(18, 66, 27, 0.26), inset 0 -12px 24px rgba(10, 43, 18, 0.2);
 }
 
 .pitch::before {
@@ -334,31 +443,21 @@ select {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(to bottom, transparent 71%, rgba(236, 247, 237, 0.72) 71%, rgba(236, 247, 237, 0.72) 72%, transparent 72%),
-    radial-gradient(120px 70px at 50% 72%, transparent 65%, rgba(236, 247, 237, 0.72) 66%, rgba(236, 247, 237, 0.72) 69%, transparent 70%),
-    radial-gradient(90px 36px at 50% 30.8%, transparent 62%, rgba(236, 247, 237, 0.72) 63%, rgba(236, 247, 237, 0.72) 67%, transparent 68%);
+    linear-gradient(to bottom, transparent 49.5%, rgba(233, 245, 231, 0.74) 49.5%, rgba(233, 245, 231, 0.74) 50.5%, transparent 50.5%),
+    radial-gradient(130px 82px at 50% 50%, transparent 69%, rgba(233, 245, 231, 0.76) 70%, rgba(233, 245, 231, 0.76) 72.2%, transparent 73%),
+    linear-gradient(to right, transparent 24%, rgba(233, 245, 231, 0.72) 24%, rgba(233, 245, 231, 0.72) 24.8%, transparent 24.8%, transparent 75.2%, rgba(233, 245, 231, 0.72) 75.2%, rgba(233, 245, 231, 0.72) 76%, transparent 76%),
+    linear-gradient(to bottom, rgba(233, 245, 231, 0.72) 8%, rgba(233, 245, 231, 0.72) 8.8%, transparent 8.8%, transparent 27.5%, rgba(233, 245, 231, 0.72) 27.5%, rgba(233, 245, 231, 0.72) 28.3%, transparent 28.3%, transparent 71.7%, rgba(233, 245, 231, 0.72) 71.7%, rgba(233, 245, 231, 0.72) 72.5%, transparent 72.5%, transparent 91.2%, rgba(233, 245, 231, 0.72) 91.2%, rgba(233, 245, 231, 0.72) 92%, transparent 92%);
+  opacity: 0.9;
 }
 
 .pitch::after {
   content: "";
   position: absolute;
-  top: 0.3rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(62%, 360px);
-  height: 28%;
-  border: 2px solid rgba(236, 247, 237, 0.72);
-  border-top: none;
-  border-radius: 0 0 14px 14px;
+  inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(to bottom, transparent 56%, rgba(236, 247, 237, 0.62) 56%, rgba(236, 247, 237, 0.62) 58%, transparent 58%),
-    linear-gradient(to right, transparent 37%, rgba(236, 247, 237, 0.72) 37%, rgba(236, 247, 237, 0.72) 38.2%, transparent 38.2%),
-    linear-gradient(to right, transparent 61.8%, rgba(236, 247, 237, 0.72) 61.8%, rgba(236, 247, 237, 0.72) 63%, transparent 63%),
-    linear-gradient(to right, transparent 37%, rgba(236, 247, 237, 0.72) 37%, rgba(236, 247, 237, 0.72) 63%, transparent 63%);
-  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 58%;
-  background-position: 0 0, 0 0, 0 0, 0 0;
-  background-repeat: no-repeat;
+    radial-gradient(120% 100% at 50% 100%, rgba(8, 28, 14, 0.2) 0%, rgba(8, 28, 14, 0) 62%),
+    radial-gradient(130% 90% at 50% -14%, rgba(12, 42, 20, 0.28) 0%, rgba(12, 42, 20, 0) 54%);
 }
 
 .pitch-row {
@@ -571,6 +670,19 @@ select {
   .col-12 {
     grid-column: span 12;
   }
+
+  .round-fixtures-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .round-fixture-column {
+    border-right: 0;
+    border-bottom: 1px solid #d9dee8;
+  }
+
+  .round-fixture-column:last-child {
+    border-bottom: 0;
+  }
 }
 
 @media (max-width: 620px) {
@@ -598,5 +710,19 @@ select {
 
   .bench-grid {
     grid-template-columns: 1fr;
+  }
+
+  .round-schedule-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .round-countdown {
+    font-size: 0.68rem;
+  }
+
+  .round-fixture-row {
+    grid-template-columns: minmax(64px, 1fr) minmax(92px, auto) minmax(64px, 1fr);
+    font-size: 0.71rem;
   }
 }
