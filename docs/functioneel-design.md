@@ -125,6 +125,7 @@ Per rol belangrijkste rechten:
   - Bij admin-aanpassing van rondetijden worden nieuwe grenzen direct actief
 - Fase 2: conflictresolutie (waiver/priority/queue) toevoegen
 - Managerpagina toont transfermarkt onder teamoverzicht zodat basiselftal/bank en transferkeuzes tegelijk zichtbaar zijn
+- Samenvattingsbalk bovenaan vervangt statisch teamlabel door "Schema ronde" met de eerstvolgende wedstrijd in de huidige/volgende speelronde (compacte notatie: `Ronde: Home - Away (tijd)`).
 - Transfermarkt-filters in MVP: positie, club en maximale transferwaarde (slider)
 - Bankverdeling is vast: altijd 4 bankslots met 1x GK, 1x DEF, 1x MID en 1x FWD
 - Basiselftal-weergave op het veld toont per slot de echte speler op die index (geen naamherhaling binnen een linie); elke speler-id mag maar 1x tegelijk in teamstate voorkomen
@@ -186,7 +187,7 @@ FR-028: Tijdens draft kan een manager een gekozen speler terugzetten naar vrije 
 FR-029: Bonusrondes voor 3 transfers worden als ronde-nummers geconfigureerd; iedere ronde heeft startdatum+tijd en einddatum+tijd.
 FR-030: Wissels tussen basis en bank behouden slotpositie; een MID mag geen DEF-slot innemen en vice versa.
 FR-031: Transferkandidaat uit vrije pool kan alleen gekozen worden nadat een verkoopspeler is geselecteerd.
-FR-032: Transfer wordt pas definitief na expliciete bevestiging door manager in de transferflow.
+FR-032: Transfer wordt direct verwerkt bij aankoop op een open placeholder; er is geen extra confirm-stap.
 FR-033: Transfermarkt in managerweergave ondersteunt filtering op positie, club en maximale transferwaarde.
 FR-034: Basiselftal-rendering gebruikt unieke lineup-index mapping zodat spelersnamen niet onterecht per linie gedupliceerd worden.
 FR-035: Teamweergave op het veld bevat een halve-veld visualisatie als achtergrond zonder drag/drop-interactie te blokkeren.
@@ -196,6 +197,7 @@ FR-038: Na verkoop verschijnt direct een open placeholder op het veld of op de b
 FR-039: Als gekozen formatie met huidige spelers + beschikbare placeholders niet haalbaar is, toont UI exact: "je kunt niet in deze formatie spelen met deze spelers".
 FR-040: Bij aankoop wordt pas op dat moment gevalideerd of positie in de gekozen formatie op een open slot past; zo niet toont UI exact: "deze speler past niet in de gekozen formatie".
 FR-041: Bank bevat altijd exact 1 keeper, 1 verdediger, 1 middenvelder en 1 aanvaller (bezette speler of placeholder).
+FR-042: Samenvattingsbalk bovenaan toont in het eerste blok de huidige/volgende speelronde met de eerstvolgende wedstrijd in compacte notatie `R<ronde>: <home> - <away> (<tijd>)`.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -287,7 +289,7 @@ Waarom zo:
 - [ ] Bij mislukte vrije-pool refresh draait exact 3x retry met 1 minuut interval en volgt daarna alleen admin-alert
 - [ ] Tijdens draft kan manager gekozen speler teruggeven aan vrije pool en ontvangen andere managers hierover een notificatie
 - [ ] Wissels tussen basis en bank blokkeren positieconflicten (bijv. MID↔DEF) en laten alleen geldige slotwissels toe
-- [ ] Transferflow vereist: eerst verkoop selecteren, daarna vervanger kiezen en expliciet bevestigen
+- [ ] Transferflow vereist: eerst verkoop selecteren, daarna vervanger kiezen op open placeholder; transfer wordt direct verwerkt zonder aparte confirm
 - [ ] Transfermarkt staat onder teamoverzicht en ondersteunt filters op positie, club en maximale transferwaarde
 - [ ] Basiselftal toont de daadwerkelijk geselecteerde spelers per slot (geen visuele naamduplicatie door renderfout)
 - [ ] Basiselftal heeft een halve-veld achtergrondvisual (zoals voetbalveld-helft) terwijl kaarten volledig bruikbaar blijven
@@ -299,6 +301,7 @@ Waarom zo:
 - [ ] Placeholder-slots zijn lichtgrijs/transparant en visueel duidelijk anders dan bezette spelerskaarten
 - [ ] Bank toont altijd precies 1 GK, 1 DEF, 1 MID en 1 FWD
 - [ ] Bij koop op ongeldige positie verschijnt exact: "deze speler past niet in de gekozen formatie"
+- [ ] Samenvattingsbalk toont in eerste blok het schema van de huidige/volgende ronde als `R<ronde>: <home> - <away> (<tijd>)`
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -320,7 +323,7 @@ Waarom zo:
 - [x] Directe manager-naar-manager transfers: alleen pre-season, pakketdeals toegestaan, expliciete goedkeuring door beide kanten
 - [x] Manager-transfervoorstel eindigt alleen bij competitie-start, afwijzing ontvanger of intrekken verzender
 - [x] Pre-season manager-transfers tellen niet mee in per-ronde transferlimieten; alleen budgetlimiet geldt
-- [x] MVP transfer-UX bevestigd: eerst verkopen, dan kopen, daarna expliciet bevestigen
+- [x] MVP transfer-UX bevestigd: eerst verkopen, dan kopen op open placeholder, zonder aparte confirm-stap
 - [x] Wissels op het veld respecteren positie-slots (geen MID op DEF-slot)
 - [x] Transfermarkt blijft op managerpagina zichtbaar onder teamoverzicht met filters op positie, club en transferwaarde
 - [x] MVP transferbudget-cap vastgesteld op €32.0M en demo-team start binnen deze cap
@@ -344,3 +347,4 @@ Waarom zo:
 - 2026-04-18: Budgetbeleid aangescherpt naar harde cap €32.0M (incl. transferblokkade boven cap), demo-teamseed aangepast naar <= €32.0M en resterend Eredivisie-schema toegevoegd in speelrondes 31-34 met sponsorlabel Staatsloterij.
 - 2026-04-18: Transferflow herwerkt naar directe verkoop met placeholder + formatiewissel op basis van placeholders; onhaalbare formatie toont vaste fouttekst. Pitch-visual uitgebreid met diepte in strafschopgebied, 5-metergebied en halve cirkel.
 - 2026-04-18: Placeholder-visuals lichtgrijs/transparant gemaakt; banklogica vastgezet op 1x GK/DEF/MID/FWD; koopvalidatie gewijzigd naar check-op-koop met foutmelding "deze speler past niet in de gekozen formatie".
+- 2026-04-18: Summary-strip bovenaan aangepast: eerste blok toont nu het schema van de huidige/volgende ronde in compacte notatie (`R<ronde>: home - away (tijd)`) in plaats van statisch teamlabel.

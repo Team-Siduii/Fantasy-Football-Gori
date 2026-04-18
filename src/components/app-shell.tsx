@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
+import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026 } from "@/lib/season-schedule";
 
 type NavItem = {
   href: string;
@@ -25,6 +26,23 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
   const pathname = usePathname();
   const router = useRouter();
 
+  const currentRoundLabel = useMemo(() => {
+    const round = getCurrentOrNextRound(REMAINING_FIXTURES_2025_2026, new Date());
+    if (!round) {
+      return "Schema volgt";
+    }
+
+    const firstFixture = REMAINING_FIXTURES_2025_2026.filter((fixture) => fixture.round === round).sort((a, b) =>
+      a.kickoffAt.localeCompare(b.kickoffAt),
+    )[0];
+
+    if (!firstFixture) {
+      return `Speelronde ${round}`;
+    }
+
+    return `R${round}: ${firstFixture.home} - ${firstFixture.away} (${firstFixture.kickoff})`;
+  }, []);
+
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
@@ -46,8 +64,8 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
 
         <section className="summary-strip" aria-label="Teamoverzicht">
           <article>
-            <span>Team</span>
-            <strong>Mijn Super Team</strong>
+            <span>Schema ronde</span>
+            <strong>{currentRoundLabel}</strong>
           </article>
           <article>
             <span>Rank</span>
