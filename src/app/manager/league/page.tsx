@@ -4,6 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import type { PlayerRecord } from "@/domain/player";
 import { derivePlayerPoints } from "@/lib/player-derived";
+import {
+  getCurrentOrNextRound,
+  groupFixturesByRound,
+  REMAINING_FIXTURES_2025_2026,
+  SCHEDULE_SPONSOR,
+} from "@/lib/season-schedule";
 
 type MvpStateResponse = {
   snapshot: {
@@ -19,7 +25,7 @@ type ClubStanding = {
 
 export default function ManagerLeaguePage() {
   const [players, setPlayers] = useState<PlayerRecord[]>([]);
-  const [round, setRound] = useState<number | null>(null);
+  const [round, setRound] = useState<number | null>(() => getCurrentOrNextRound(REMAINING_FIXTURES_2025_2026, new Date()));
   const [transferLimit, setTransferLimit] = useState<number | null>(null);
   const [windowOpen, setWindowOpen] = useState<boolean>(false);
 
@@ -41,7 +47,7 @@ export default function ManagerLeaguePage() {
         setWindowOpen(stateData.snapshot.managerTradeWindow.isOpen);
       }
 
-      setRound(9);
+      setRound(getCurrentOrNextRound(REMAINING_FIXTURES_2025_2026, new Date()));
     };
 
     void load();
@@ -61,19 +67,10 @@ export default function ManagerLeaguePage() {
       .slice(0, 10);
   }, [players]);
 
-  const fixtures = useMemo(() => {
-    const clubs = standings.slice(0, 8).map((item) => item.club);
-    const result: Array<{ home: string; away: string }> = [];
-
-    for (let i = 0; i + 1 < clubs.length; i += 2) {
-      result.push({ home: clubs[i], away: clubs[i + 1] });
-    }
-
-    return result;
-  }, [standings]);
+  const groupedFixtures = useMemo(() => groupFixturesByRound(REMAINING_FIXTURES_2025_2026), []);
 
   return (
-    <AppShell title="Competities" subtitle="Stand en ronde-info gebaseerd op ingeladen CSV-spelers.">
+    <AppShell title="Competities" subtitle="Stand en resterende Eredivisie-speelrondes voor seizoen 2025/2026.">
       <div className="grid">
         <section className="card col-8">
           <h2>Stand (club-power ranking)</h2>
@@ -89,7 +86,7 @@ export default function ManagerLeaguePage() {
         <section className="card col-4">
           <h2>Ronde-info</h2>
           <ul>
-            <li>Ronde: {round ?? "-"}</li>
+            <li>Volgende speelronde: {round ?? "-"}</li>
             <li>Transfer window: {windowOpen ? "open" : "gesloten"}</li>
             <li>Transferlimiet: {transferLimit ?? "-"}</li>
             <li>Bonusrondes: 5, 10, 20</li>
@@ -97,25 +94,34 @@ export default function ManagerLeaguePage() {
         </section>
 
         <section className="card col-12">
-          <h2>Volgende fixtures</h2>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Home</th>
-                  <th>Away</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fixtures.map((fixture) => (
-                  <tr key={`${fixture.home}-${fixture.away}`}>
-                    <td>{fixture.home}</td>
-                    <td>{fixture.away}</td>
+          <h2>Resterend schema seizoen 2025/2026</h2>
+          <p className="muted-note">Gesponsord door {SCHEDULE_SPONSOR}. Ingedeeld in speelrondes 31 t/m 34.</p>
+
+          {groupedFixtures.map((group) => (
+            <div key={`round-${group.round}`} className="table-wrap" style={{ marginBottom: "0.85rem" }}>
+              <h3>Speelronde {group.round}</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Datum</th>
+                    <th>Tijd</th>
+                    <th>Home</th>
+                    <th>Away</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {group.fixtures.map((fixture) => (
+                    <tr key={`${group.round}-${fixture.kickoffAt}-${fixture.home}-${fixture.away}`}>
+                      <td>{fixture.dateLabel}</td>
+                      <td>{fixture.kickoff}</td>
+                      <td>{fixture.home}</td>
+                      <td>{fixture.away}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
         </section>
       </div>
     </AppShell>

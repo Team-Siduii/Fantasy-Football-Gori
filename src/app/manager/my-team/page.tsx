@@ -7,6 +7,12 @@ import { StatTile } from "@/components/stat-tile";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
 import { reorderAcrossZones, type ZoneName, type ZoneState } from "@/domain/lineup-state";
 import { buildPitchRows } from "@/domain/pitch-layout";
+import {
+  MAX_TRANSFER_BUDGET_MILLIONS,
+  calculateRemainingBudget,
+  calculateSquadCost,
+  isWithinBudget,
+} from "@/domain/team-budget";
 import type { PlayerRecord } from "@/domain/player";
 import {
   applyConfirmedTransfer,
@@ -32,21 +38,21 @@ type ManagerStateResponse = {
 
 function fallbackPlayers(): EnhancedPlayer[] {
   return enrichPlayers([
-    { id: "1", naam: "Fallback Keeper", positie: "GK", club: "PSV", prijs: 5 },
-    { id: "2", naam: "Fallback Def", positie: "DEF", club: "AJA", prijs: 5 },
-    { id: "3", naam: "Fallback Mid", positie: "MID", club: "FEY", prijs: 5 },
-    { id: "4", naam: "Fallback Mid 2", positie: "MID", club: "AZ", prijs: 6 },
-    { id: "5", naam: "Fallback Fwd", positie: "FWD", club: "UTR", prijs: 6 },
-    { id: "6", naam: "Fallback Def 2", positie: "DEF", club: "TWE", prijs: 5 },
-    { id: "7", naam: "Fallback Def 3", positie: "DEF", club: "SPA", prijs: 5 },
-    { id: "8", naam: "Fallback Def 4", positie: "DEF", club: "WIL", prijs: 5 },
-    { id: "9", naam: "Fallback Mid 3", positie: "MID", club: "HEE", prijs: 6 },
-    { id: "10", naam: "Fallback Fwd 2", positie: "FWD", club: "NEC", prijs: 6 },
-    { id: "11", naam: "Fallback Mid 4", positie: "MID", club: "GAE", prijs: 6 },
-    { id: "12", naam: "Fallback Def 5", positie: "DEF", club: "NAC", prijs: 5 },
-    { id: "13", naam: "Fallback Mid 5", positie: "MID", club: "PEC", prijs: 6 },
-    { id: "14", naam: "Fallback Fwd 3", positie: "FWD", club: "RKC", prijs: 7 },
-    { id: "15", naam: "Fallback Keeper 2", positie: "GK", club: "FOR", prijs: 5 },
+    { id: "1", naam: "Demo Keeper", positie: "GK", club: "PSV", prijs: 2 },
+    { id: "2", naam: "Demo Def 1", positie: "DEF", club: "AJA", prijs: 2 },
+    { id: "3", naam: "Demo Mid 1", positie: "MID", club: "FEY", prijs: 2.5 },
+    { id: "4", naam: "Demo Mid 2", positie: "MID", club: "AZ", prijs: 2.5 },
+    { id: "5", naam: "Demo Fwd 1", positie: "FWD", club: "UTR", prijs: 3 },
+    { id: "6", naam: "Demo Def 2", positie: "DEF", club: "TWE", prijs: 2 },
+    { id: "7", naam: "Demo Def 3", positie: "DEF", club: "SPA", prijs: 2 },
+    { id: "8", naam: "Demo Def 4", positie: "DEF", club: "WIL", prijs: 1.5 },
+    { id: "9", naam: "Demo Mid 3", positie: "MID", club: "HEE", prijs: 2 },
+    { id: "10", naam: "Demo Fwd 2", positie: "FWD", club: "NEC", prijs: 3 },
+    { id: "11", naam: "Demo Mid 4", positie: "MID", club: "GAE", prijs: 2 },
+    { id: "12", naam: "Demo Def 5", positie: "DEF", club: "NAC", prijs: 1.5 },
+    { id: "13", naam: "Demo Mid 5", positie: "MID", club: "PEC", prijs: 1.5 },
+    { id: "14", naam: "Demo Fwd 3", positie: "FWD", club: "RKC", prijs: 2.5 },
+    { id: "15", naam: "Demo Keeper 2", positie: "GK", club: "FOR", prijs: 1.5 },
   ]);
 }
 
@@ -77,6 +83,31 @@ function buildStateForFormation(players: EnhancedPlayer[], formation: string): Z
 
   const bench = players.filter((player) => !usedIds.has(player.id)).slice(0, BENCH_LIMIT);
   return { lineup, bench };
+}
+
+function buildBudgetDemoState(players: EnhancedPlayer[], formation: string): ZoneState<EnhancedPlayer> {
+  const requiredSlots = buildFormationSlots(formation).flat();
+  const ordered = [...players].sort((a, b) => a.prijs - b.prijs || a.naam.localeCompare(b.naam));
+  const usedIds = new Set<string>();
+
+  const lineup = requiredSlots.map((position) => {
+    const found = ordered.find((player) => player.positie === position && !usedIds.has(player.id));
+    if (!found) {
+      return createOpenSlot(position);
+    }
+
+    usedIds.add(found.id);
+    return found;
+  });
+
+  const bench = ordered.filter((player) => !usedIds.has(player.id)).slice(0, BENCH_LIMIT);
+  const candidate = { lineup, bench };
+
+  if (isWithinBudget([...candidate.lineup, ...candidate.bench], MAX_TRANSFER_BUDGET_MILLIONS)) {
+    return candidate;
+  }
+
+  return buildStateForFormation(ordered, formation);
 }
 
 function buildStateFromSaved(players: EnhancedPlayer[], formation: string, lineupIds: string[], benchIds: string[]) {
@@ -140,7 +171,7 @@ export default function ManagerMyTeamPage() {
   const formationOptions = useMemo(() => getFormationOptions(), []);
   const [formation, setFormation] = useState(formationOptions[0]);
   const [allPlayers, setAllPlayers] = useState<EnhancedPlayer[]>(fallbackPlayers());
-  const [state, setState] = useState<ZoneState<EnhancedPlayer>>(() => buildStateForFormation(fallbackPlayers(), formationOptions[0]));
+  const [state, setState] = useState<ZoneState<EnhancedPlayer>>(() => buildBudgetDemoState(fallbackPlayers(), formationOptions[0]));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -186,7 +217,7 @@ export default function ManagerMyTeamPage() {
         setAllPlayers(nextPlayers);
         setFormation(initialFormation);
 
-        const nextState =
+        const hydratedState =
           managerData.state?.lineupIds || managerData.state?.benchIds
             ? buildStateFromSaved(
                 nextPlayers,
@@ -194,7 +225,14 @@ export default function ManagerMyTeamPage() {
                 managerData.state?.lineupIds ?? [],
                 managerData.state?.benchIds ?? [],
               )
-            : buildStateForFormation(nextPlayers, initialFormation);
+            : buildBudgetDemoState(nextPlayers, initialFormation);
+
+        const nextState = isWithinBudget(
+          [...hydratedState.lineup, ...hydratedState.bench],
+          MAX_TRANSFER_BUDGET_MILLIONS,
+        )
+          ? hydratedState
+          : buildBudgetDemoState(nextPlayers, initialFormation);
 
         setState(nextState);
 
@@ -249,6 +287,12 @@ export default function ManagerMyTeamPage() {
   const squadPlayers = useMemo(() => {
     return [...state.lineup, ...state.bench].filter((player) => !player.id.startsWith("open-"));
   }, [state.bench, state.lineup]);
+
+  const squadCost = useMemo(() => calculateSquadCost(squadPlayers), [squadPlayers]);
+  const remainingBudget = useMemo(
+    () => calculateRemainingBudget(squadPlayers, MAX_TRANSFER_BUDGET_MILLIONS),
+    [squadPlayers],
+  );
 
   const pendingSellPlayer = useMemo(
     () => squadPlayers.find((player) => player.id === pendingSellId) ?? null,
@@ -396,6 +440,12 @@ export default function ManagerMyTeamPage() {
     }
 
     const nextState = buildStateFromSaved(allPlayers, formation, next.lineupIds, next.benchIds);
+
+    if (!isWithinBudget([...nextState.lineup, ...nextState.bench], MAX_TRANSFER_BUDGET_MILLIONS)) {
+      setTransferMessage(`Transfer geblokkeerd: team mag maximaal € ${MAX_TRANSFER_BUDGET_MILLIONS.toFixed(1)}M kosten.`);
+      return;
+    }
+
     setState(nextState);
     setPendingSellId(null);
     setPendingBuyId(null);
@@ -455,10 +505,11 @@ export default function ManagerMyTeamPage() {
 
           <div className="stat-grid">
             <StatTile label="Totaal Punten" value={state.lineup.reduce((sum, player) => sum + player.punten, 0)} />
-            <StatTile label="Resterend Budget" value="€ 98.5M" />
+            <StatTile label="Resterend Budget" value={`€ ${remainingBudget.toFixed(1)}M`} />
             <StatTile label="Transfers deze ronde" value="1" />
             <StatTile label="Deadline Volgende Ronde" value="2 dagen, 4 uur" />
           </div>
+          <p className="muted-note">Budget cap: € {MAX_TRANSFER_BUDGET_MILLIONS.toFixed(1)}M · Huidige teamwaarde: € {squadCost.toFixed(1)}M.</p>
         </section>
 
         <section className="card col-4">
