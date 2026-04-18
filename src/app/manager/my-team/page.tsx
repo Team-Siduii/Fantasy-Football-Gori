@@ -14,11 +14,7 @@ import {
   isWithinBudget,
 } from "@/domain/team-budget";
 import type { PlayerRecord } from "@/domain/player";
-import {
-  applyConfirmedTransfer,
-  buildMarketPlayers,
-  type TransferState,
-} from "@/domain/transfer-workflow";
+import { buildMarketPlayers } from "@/domain/transfer-workflow";
 import { byPriceDesc, enrichPlayers, type EnhancedPlayer } from "@/lib/player-derived";
 
 type Position = "GK" | "DEF" | "MID" | "FWD";
@@ -108,6 +104,56 @@ function buildBudgetDemoState(players: EnhancedPlayer[], formation: string): Zon
   }
 
   return buildStateForFormation(ordered, formation);
+}
+
+function countOpenSlots(state: ZoneState<EnhancedPlayer>) {
+  return [...state.lineup, ...state.bench].filter((player) => player.id.startsWith("open-")).length;
+}
+
+function buildStateForFormationWithVacancies(
+  players: EnhancedPlayer[],
+  formation: string,
+  vacancyCount: number,
+): ZoneState<EnhancedPlayer> | null {
+  const requiredSlots = buildFormationSlots(formation).flat();
+  const usedIds = new Set<string>();
+  let remainingVacancies = vacancyCount;
+
+  const lineup: EnhancedPlayer[] = [];
+  for (const position of requiredSlots) {
+    const found = players.find((player) => player.positie === position && !usedIds.has(player.id));
+    if (found) {
+      usedIds.add(found.id);
+      lineup.push(found);
+      continue;
+    }
+
+    if (remainingVacancies <= 0) {
+      return null;
+    }
+
+    remainingVacancies -= 1;
+    lineup.push(createOpenSlot(position));
+  }
+
+  const bench: EnhancedPlayer[] = [];
+  for (const player of players) {
+    if (bench.length >= BENCH_LIMIT) {
+      break;
+    }
+
+    if (!usedIds.has(player.id)) {
+      usedIds.add(player.id);
+      bench.push(player);
+    }
+  }
+
+  while (bench.length < BENCH_LIMIT && remainingVacancies > 0) {
+    bench.push(createOpenSlot("MID"));
+    remainingVacancies -= 1;
+  }
+
+  return { lineup, bench };
 }
 
 function buildStateFromSaved(players: EnhancedPlayer[], formation: string, lineupIds: string[], benchIds: string[]) {
@@ -227,16 +273,27 @@ export default function ManagerMyTeamPage() {
               )
             : buildBudgetDemoState(nextPlayers, initialFormation);
 
-        const nextState = isWithinBudget(
+        let nextState = isWithinBudget(
           [...hydratedState.lineup, ...hydratedState.bench],
           MAX_TRANSFER_BUDGET_MILLIONS,
         )
           ? hydratedState
           : buildBudgetDemoState(nextPlayers, initialFormation);
 
+        const savedPendingSellId = managerData.state?.pendingSellId ?? null;
+        if (savedPendingSellId) {
+          const playersWithoutSold = [...nextState.lineup, ...nextState.bench].filter(
+            (player) => !player.id.startsWith("open-") && player.id !== savedPendingSellId,
+          );
+          const rebuilt = buildStateForFormationWithVacancies(playersWithoutSold, initialFormation, 1);
+          if (rebuilt) {
+            nextState = rebuilt;
+          }
+        }
+
         setState(nextState);
 
-        setPendingSellId(managerData.state?.pendingSellId ?? null);
+        setPendingSellId(savedPendingSellId);
         setPendingBuyId(managerData.state?.pendingBuyId ?? managerData.state?.pickedTransferId ?? null);
 
         const maxAvailable = Math.max(0, ...nextPlayers.map((player) => player.prijs));
@@ -294,10 +351,15 @@ export default function ManagerMyTeamPage() {
     [squadPlayers],
   );
 
-  const pendingSellPlayer = useMemo(
-    () => squadPlayers.find((player) => player.id === pendingSellId) ?? null,
-    [pendingSellId, squadPlayers],
+  const openSlots = useMemo(
+    () => [...state.lineup, ...state.bench].filter((player) => player.id.startsWith("open-")),
+    [state.bench, state.lineup],
   );
+
+  const requiredPositions = useMemo(() => Array.from(new Set(openSlots.map((slot) => slot.positie))), [openSlots]);
+
+  const requiredPosition = requiredPositions.length === 1 ? requiredPositions[0] : null;
+
 
   const marketPlayers = useMemo(() => {
     const { lineupIds, benchIds } = toPersistedIds(state);
@@ -328,9 +390,8 @@ export default function ManagerMyTeamPage() {
     const query = search.trim().toLowerCase();
 
     return marketPlayers.filter((player) => {
-      const requiredPosition = pendingSellPlayer?.positie;
-      const positionMatch = requiredPosition
-        ? player.positie === requiredPosition
+      const positionMatch = requiredPositions.length > 0
+        ? requiredPositions.includes(player.positie)
         : selectedPosition === "ALL" || player.positie === selectedPosition;
 
       const clubMatch = selectedClub === "ALL" || player.club === selectedClub;
@@ -340,14 +401,26 @@ export default function ManagerMyTeamPage() {
 
       return positionMatch && clubMatch && searchMatch && priceMatch;
     });
-  }, [marketPlayers, maxPrice, pendingSellPlayer, search, selectedClub, selectedPosition]);
+  }, [marketPlayers, maxPrice, requiredPositions, search, selectedClub, selectedPosition]);
 
   function handleFormationChange(nextFormation: string) {
+    const nonOpen = [...state.lineup, ...state.bench].filter((player) => !player.id.startsWith("open-"));
+    const openCount = countOpenSlots(state);
+
+    if (openCount > 0) {
+      const rebuilt = buildStateForFormationWithVacancies(nonOpen, nextFormation, openCount);
+      if (!rebuilt) {
+        setTransferMessage("je kunt niet in deze formatie spelen met deze spelers");
+        return;
+      }
+
+      setFormation(nextFormation);
+      setState(rebuilt);
+      return;
+    }
+
     setFormation(nextFormation);
-    setState((previous) => {
-      const nonOpen = [...previous.lineup, ...previous.bench].filter((player) => !player.id.startsWith("open-"));
-      return buildStateForFormation(nonOpen.length > 0 ? nonOpen : allPlayers, nextFormation);
-    });
+    setState(buildStateForFormation(nonOpen.length > 0 ? nonOpen : allPlayers, nextFormation));
   }
 
   function onDragStart(zone: ZoneName, index: number) {
@@ -384,72 +457,98 @@ export default function ManagerMyTeamPage() {
 
   function handleSellSelection(playerId: string) {
     if (!playerId) {
-      setPendingSellId(null);
-      setPendingBuyId(null);
-      setTransferMessage("Selecteer eerst een speler die je wilt verkopen.");
       return;
     }
 
-    const selected = squadPlayers.find((player) => player.id === playerId);
-    setPendingSellId(playerId);
-
-    if (!selected) {
-      setTransferMessage("Verkoopspeler niet gevonden.");
+    if (openSlots.length > 0) {
+      setTransferMessage("Rond eerst je open transfer af door een vervanger te kopen.");
       return;
     }
 
-    if (pendingBuyId) {
-      const pendingBuyPlayer = allPlayers.find((player) => player.id === pendingBuyId);
-      if (!pendingBuyPlayer || pendingBuyPlayer.positie !== selected.positie) {
+    setState((previous) => {
+      const nextLineup = [...previous.lineup];
+      const nextBench = [...previous.bench];
+
+      const lineupIndex = nextLineup.findIndex((player) => player.id === playerId);
+      if (lineupIndex >= 0) {
+        const sold = nextLineup[lineupIndex];
+        nextLineup[lineupIndex] = createOpenSlot(sold.positie);
+        setPendingSellId(playerId);
         setPendingBuyId(null);
+        setTransferMessage(`${sold.naam} is verkocht. Kies nu een nieuwe ${sold.positie}.`);
+        return { lineup: nextLineup, bench: nextBench };
       }
-    }
 
-    setTransferMessage(`Je verkoopt ${selected.naam}. Kies nu een nieuwe ${selected.positie}.`);
+      const benchIndex = nextBench.findIndex((player) => player.id === playerId);
+      if (benchIndex >= 0) {
+        const sold = nextBench[benchIndex];
+        nextBench[benchIndex] = createOpenSlot(sold.positie);
+        setPendingSellId(playerId);
+        setPendingBuyId(null);
+        setTransferMessage(`${sold.naam} is verkocht. Kies nu een nieuwe ${sold.positie}.`);
+        return { lineup: nextLineup, bench: nextBench };
+      }
+
+      setTransferMessage("Verkoopspeler niet gevonden.");
+      return previous;
+    });
   }
 
   function handlePickIncoming(player: EnhancedPlayer) {
-    if (!pendingSellPlayer) {
+    if (openSlots.length === 0) {
       setTransferMessage("Verkoop eerst een speler voordat je een vervanger kiest.");
       return;
     }
 
-    if (player.positie !== pendingSellPlayer.positie) {
-      setTransferMessage(`Alleen ${pendingSellPlayer.positie} is toegestaan als vervanging.`);
+    if (!requiredPositions.includes(player.positie)) {
+      const expected = requiredPosition ?? requiredPositions.join(", ");
+      setTransferMessage(`Alleen ${expected} is toegestaan als vervanging.`);
       return;
     }
 
-    setPendingBuyId(player.id);
-    setTransferMessage(`${player.naam} staat klaar. Klik op 'Bevestig transfer' om af te ronden.`);
-  }
-
-  function handleConfirmTransfer() {
-    const persisted = toPersistedIds(state);
-    const nextTransferState: TransferState = {
-      lineupIds: persisted.lineupIds,
-      benchIds: persisted.benchIds,
-      pendingSellId,
-      pendingBuyId,
-    };
-
-    const next = applyConfirmedTransfer(nextTransferState, allPlayers);
-
-    if (next === nextTransferState) {
-      setTransferMessage("Transfer kon niet bevestigd worden. Controleer positie of selectie.");
+    const alreadyInSquad = squadPlayers.some((squadPlayer) => squadPlayer.id === player.id);
+    if (alreadyInSquad) {
+      setTransferMessage("Deze speler zit al in je team.");
       return;
     }
 
-    const nextState = buildStateFromSaved(allPlayers, formation, next.lineupIds, next.benchIds);
+    setState((previous) => {
+      const nextLineup = [...previous.lineup];
+      const nextBench = [...previous.bench];
 
-    if (!isWithinBudget([...nextState.lineup, ...nextState.bench], MAX_TRANSFER_BUDGET_MILLIONS)) {
-      setTransferMessage(`Transfer geblokkeerd: team mag maximaal € ${MAX_TRANSFER_BUDGET_MILLIONS.toFixed(1)}M kosten.`);
-      return;
-    }
+      const lineupIndex = nextLineup.findIndex(
+        (slot) => slot.id.startsWith("open-") && slot.positie === player.positie,
+      );
+      if (lineupIndex >= 0) {
+        nextLineup[lineupIndex] = player;
+      } else {
+        const benchIndex = nextBench.findIndex(
+          (slot) => slot.id.startsWith("open-") && slot.positie === player.positie,
+        );
 
-    setState(nextState);
-    setPendingSellId(null);
-    setPendingBuyId(null);
-    setTransferMessage("Transfer bevestigd en direct verwerkt in je team.");
+        if (benchIndex >= 0) {
+          nextBench[benchIndex] = player;
+        } else {
+          setTransferMessage("Geen passende open plek gevonden voor deze positie.");
+          return previous;
+        }
+      }
+
+      const candidate = { lineup: nextLineup, bench: nextBench };
+      if (!isWithinBudget([...candidate.lineup, ...candidate.bench], MAX_TRANSFER_BUDGET_MILLIONS)) {
+        setTransferMessage(`Transfer geblokkeerd: team mag maximaal € ${MAX_TRANSFER_BUDGET_MILLIONS.toFixed(1)}M kosten.`);
+        return previous;
+      }
+
+      const stillOpen = countOpenSlots(candidate);
+      if (stillOpen === 0) {
+        setPendingSellId(null);
+        setPendingBuyId(null);
+      }
+
+      setTransferMessage("Transfer verwerkt: vervanger direct geplaatst.");
+      return candidate;
+    });
   }
 
   return (
@@ -536,7 +635,7 @@ export default function ManagerMyTeamPage() {
 
         <section className="card col-12" id="transfermarkt">
           <h2>Transfermarkt (onder teamoverzicht)</h2>
-          <p className="muted-note">Flow: 1) verkoop kiezen, 2) vervanger kiezen, 3) transfer bevestigen.</p>
+          <p className="muted-note">Flow: 1) verkoop speler, 2) placeholder verschijnt, 3) optioneel formatie wisselen, 4) koop vervanger op open positie.</p>
 
           <div className="grid transfer-controls">
             <label className="col-4">
@@ -558,9 +657,9 @@ export default function ManagerMyTeamPage() {
             <label className="col-2">
               Positie
               <select
-                value={pendingSellPlayer?.positie ?? selectedPosition}
+                value={requiredPosition ?? selectedPosition}
                 onChange={(event) => setSelectedPosition(event.target.value)}
-                disabled={Boolean(pendingSellPlayer)}
+                disabled={requiredPositions.length > 0}
                 data-testid="transfer-position"
               >
                 <option value="ALL">Alle posities</option>
@@ -609,14 +708,6 @@ export default function ManagerMyTeamPage() {
             <div className="col-6 transfer-status-wrap">
               <p className="muted-note">Resultaten: {filteredMarket.length}</p>
               {transferMessage ? <p className="success-text">{transferMessage}</p> : null}
-              <button
-                type="button"
-                onClick={handleConfirmTransfer}
-                disabled={!pendingSellId || !pendingBuyId}
-                data-testid="confirm-transfer"
-              >
-                Bevestig transfer
-              </button>
             </div>
           </div>
 
@@ -642,10 +733,10 @@ export default function ManagerMyTeamPage() {
                       <button
                         type="button"
                         onClick={() => handlePickIncoming(item)}
-                        disabled={!pendingSellId}
+                        disabled={openSlots.length === 0}
                         data-testid={`transfer-pick-${index}`}
                       >
-                        {pendingBuyId === item.id ? "Klaar voor bevestiging" : "Koop"}
+                        Koop
                       </button>
                     </td>
                   </tr>

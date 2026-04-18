@@ -91,8 +91,8 @@ Per rol belangrijkste rechten:
 ### 4.5 Transfers (kern van MVP)
 - Er is een vrije pool met beschikbare spelers
 - Transfers zijn direct (drop + add), zonder geavanceerde conflictresolutie in fase 1
-- Transferflow in manager-UI is expliciet 3-staps: (1) verkoopspeler kiezen, (2) vervanger kiezen, (3) transfer bevestigen
-- Een gekozen vervanger wordt pas doorgevoerd na expliciete bevestiging (geen impliciete auto-commit)
+- Transferflow in manager-UI is nu: (1) speler verkopen (direct placeholder op veld/bank), (2) optioneel formatie wisselen met placeholder(s), (3) vervanger kopen op open positie
+- Aankoop op open placeholder verwerkt transfer direct (geen extra confirm-stap)
 - Simultane transfer op dezelfde vrije speler: first-write-wins met database lock
 - Vrije pool wordt elk uur ververst op basis van alle uitgevoerde transfers
 - Basisregel blijft: binnen een league kan een speler maar in 1 team zitten
@@ -127,6 +127,7 @@ Per rol belangrijkste rechten:
 - Transfermarkt-filters in MVP: positie, club en maximale transferwaarde (slider)
 - Basiselftal-weergave op het veld toont per slot de echte speler op die index (geen naamherhaling binnen een linie); elke speler-id mag maar 1x tegelijk in teamstate voorkomen
 - Pitch in basiselftal krijgt een visuele halve-veld overlay (midlijn/halve cirkel + zestienmeter) voor herkenbare voetbalcontext
+- Strafschopgebied-visual bevat extra diepte, 5-metergebied en halve cirkel onderaan het strafschopgebied (realistische veldweergave)
 - MVP transferbudget-cap voor managerteam: maximaal €32.0M totale teamwaarde; transferbevestiging blokkeert automatisch boven cap
 - Demo-team (testseed) wordt standaard binnen budget opgebouwd (<= €32.0M) zodat testen direct valide start
 
@@ -189,6 +190,8 @@ FR-034: Basiselftal-rendering gebruikt unieke lineup-index mapping zodat spelers
 FR-035: Teamweergave op het veld bevat een halve-veld visualisatie als achtergrond zonder drag/drop-interactie te blokkeren.
 FR-036: Teamwaarde voor manager-opstelling is hard begrensd op €32.0M in MVP; transfers die de cap overschrijden worden geweigerd.
 FR-037: Competitiepagina bevat het resterende Eredivisie-schema opgesplitst in speelrondes 31 t/m 34, inclusief datum/tijd en sponsorvermelding (Staatsloterij).
+FR-038: Na verkoop verschijnt direct een open placeholder op het veld of op de bank; formatie wisselen gebruikt deze placeholder(s) voor opbouw.
+FR-039: Als gekozen formatie met huidige spelers + beschikbare placeholders niet haalbaar is, toont UI exact: "je kunt niet in deze formatie spelen met deze spelers".
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -286,6 +289,9 @@ Waarom zo:
 - [ ] Basiselftal heeft een halve-veld achtergrondvisual (zoals voetbalveld-helft) terwijl kaarten volledig bruikbaar blijven
 - [ ] Teamwaarde blijft op of onder €32.0M; transfer boven cap wordt geblokkeerd met duidelijke melding
 - [ ] Competitiepagina toont alle resterende wedstrijden ingedeeld in speelrondes 31, 32, 33 en 34 met correcte datum/tijd
+- [ ] Verkoopactie maakt direct een zichtbare placeholder op juiste plek (veld of bank)
+- [ ] Formatie-wissel met actieve placeholder blokkeert onhaalbare formaties met melding: "je kunt niet in deze formatie spelen met deze spelers"
+- [ ] Pitch-visual toont strafschopgebied met diepte, 5-metergebied en halve cirkel
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -312,6 +318,7 @@ Waarom zo:
 - [x] Transfermarkt blijft op managerpagina zichtbaar onder teamoverzicht met filters op positie, club en transferwaarde
 - [x] MVP transferbudget-cap vastgesteld op €32.0M en demo-team start binnen deze cap
 - [x] Resterend schema vastgesteld: speelronde 31 (22-26 apr), 32 (2-3 mei), 33 (10 mei), 34 (17 mei), met sponsorvermelding Staatsloterij
+- [x] Transferflow aangepast naar verkoop->placeholder->(formatie wissel)->aankoop zonder aparte confirm
 
 ## 13. Besluitenlog
 - 2026-04-16: Repo + Vercel + baseline workflow opgezet.
@@ -327,3 +334,4 @@ Waarom zo:
 - 2026-04-17: Manager My Team + transfermarkt geïntegreerd met positie-veilige drag/drop, expliciete sell→buy→confirm transferflow, banklimiet in UI en filters op positie/club/transferwaarde; leesbaarheid van naamkaartjes verhoogd.
 - 2026-04-18: Bugfix op pitch-row mapping zodat elke lineup-slot de juiste speler toont (geen DEF/MID/FWD-naamherhaling per rij) + halve-veld achtergrond toegevoegd aan basiselftal.
 - 2026-04-18: Budgetbeleid aangescherpt naar harde cap €32.0M (incl. transferblokkade boven cap), demo-teamseed aangepast naar <= €32.0M en resterend Eredivisie-schema toegevoegd in speelrondes 31-34 met sponsorlabel Staatsloterij.
+- 2026-04-18: Transferflow herwerkt naar directe verkoop met placeholder + formatiewissel op basis van placeholders; onhaalbare formatie toont vaste fouttekst. Pitch-visual uitgebreid met diepte in strafschopgebied, 5-metergebied en halve cirkel.
