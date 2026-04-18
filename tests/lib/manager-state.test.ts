@@ -24,11 +24,15 @@ describe("manager-state persistence", () => {
       lineupIds: ["1", "2"],
       benchIds: ["3"],
       pickedTransferId: "99",
+      pendingSellId: "2",
+      pendingBuyId: "99",
     });
 
     expect(saved.formation).toBe("4-4-2");
     const read = mod.readManagerState();
     expect(read.pickedTransferId).toBe("99");
+    expect(read.pendingSellId).toBe("2");
+    expect(read.pendingBuyId).toBe("99");
     expect(read.lineupIds).toEqual(["1", "2"]);
   });
 });

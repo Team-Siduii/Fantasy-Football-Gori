@@ -383,10 +383,10 @@ select {
 
 .player-name {
   margin: 0;
-  background: var(--brand);
-  color: #fff;
+  background: #e7eefc;
+  color: #0a2f73;
   font-size: 0.76rem;
-  font-weight: 600;
+  font-weight: 700;
   padding: 0.35rem 0.5rem;
 }
 
@@ -488,6 +488,30 @@ select {
 
 .fab-link.active {
   background: var(--brand-2);
+}
+
+.player-card--sell {
+  outline: 2px solid #d94040;
+  box-shadow: 0 0 0 2px rgba(217, 64, 64, 0.2);
+}
+
+.transfer-controls {
+  margin-bottom: 0.75rem;
+}
+
+.transfer-price-filter {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.transfer-status-wrap {
+  display: grid;
+  align-content: end;
+  gap: 0.35rem;
+}
+
+.transfer-status-wrap .success-text {
+  min-height: 1.1rem;
 }
 
 @media (max-width: 900px) {

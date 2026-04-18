@@ -20,6 +20,8 @@ export async function PUT(request: Request) {
     lineupIds?: string[];
     benchIds?: string[];
     pickedTransferId?: string | null;
+    pendingSellId?: string | null;
+    pendingBuyId?: string | null;
   } = {};
 
   try {
@@ -28,6 +30,8 @@ export async function PUT(request: Request) {
       lineupIds?: string[];
       benchIds?: string[];
       pickedTransferId?: string | null;
+      pendingSellId?: string | null;
+      pendingBuyId?: string | null;
     };
   } catch {
     body = {};
@@ -38,6 +42,8 @@ export async function PUT(request: Request) {
     lineupIds: body.lineupIds,
     benchIds: body.benchIds,
     pickedTransferId: body.pickedTransferId === null ? null : body.pickedTransferId,
+    pendingSellId: body.pendingSellId === null ? null : body.pendingSellId,
+    pendingBuyId: body.pendingBuyId === null ? null : body.pendingBuyId,
   });
 
   return NextResponse.json({ ok: true, state });

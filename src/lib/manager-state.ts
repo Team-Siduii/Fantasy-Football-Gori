@@ -6,6 +6,8 @@ export type ManagerState = {
   lineupIds: string[];
   benchIds: string[];
   pickedTransferId: string | null;
+  pendingSellId: string | null;
+  pendingBuyId: string | null;
 };
 
 const DEFAULT_STATE: ManagerState = {
@@ -13,6 +15,8 @@ const DEFAULT_STATE: ManagerState = {
   lineupIds: [],
   benchIds: [],
   pickedTransferId: null,
+  pendingSellId: null,
+  pendingBuyId: null,
 };
 
 function getStatePath() {
@@ -37,6 +41,13 @@ export function readManagerState(): ManagerState {
       lineupIds: Array.isArray(parsed.lineupIds) ? parsed.lineupIds.filter((id): id is string => typeof id === "string") : [],
       benchIds: Array.isArray(parsed.benchIds) ? parsed.benchIds.filter((id): id is string => typeof id === "string") : [],
       pickedTransferId: typeof parsed.pickedTransferId === "string" ? parsed.pickedTransferId : null,
+      pendingSellId: typeof parsed.pendingSellId === "string" ? parsed.pendingSellId : null,
+      pendingBuyId:
+        typeof parsed.pendingBuyId === "string"
+          ? parsed.pendingBuyId
+          : typeof parsed.pickedTransferId === "string"
+            ? parsed.pickedTransferId
+            : null,
     };
   } catch {
     return { ...DEFAULT_STATE };

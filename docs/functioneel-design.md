@@ -91,9 +91,12 @@ Per rol belangrijkste rechten:
 ### 4.5 Transfers (kern van MVP)
 - Er is een vrije pool met beschikbare spelers
 - Transfers zijn direct (drop + add), zonder geavanceerde conflictresolutie in fase 1
+- Transferflow in manager-UI is expliciet 3-staps: (1) verkoopspeler kiezen, (2) vervanger kiezen, (3) transfer bevestigen
+- Een gekozen vervanger wordt pas doorgevoerd na expliciete bevestiging (geen impliciete auto-commit)
 - Simultane transfer op dezelfde vrije speler: first-write-wins met database lock
 - Vrije pool wordt elk uur ververst op basis van alle uitgevoerde transfers
 - Basisregel blijft: binnen een league kan een speler maar in 1 team zitten
+- Positiebehoud op wissels: spelerwissel tussen basis en bank is alleen toegestaan als de doel-slotpositie gelijk blijft (bijv. MID↔MID, DEF↔DEF)
 - Na draft kan manager vrij transfers doen uit de vrije pool binnen het transferwindow
 - Transferlimiet:
   - Standaard maximaal 1 transfer per team per speelronde
@@ -120,6 +123,8 @@ Per rol belangrijkste rechten:
   - Dicht: exact bij starttijd van eerste wedstrijd van volgende speelronde
   - Bij admin-aanpassing van rondetijden worden nieuwe grenzen direct actief
 - Fase 2: conflictresolutie (waiver/priority/queue) toevoegen
+- Managerpagina toont transfermarkt onder teamoverzicht zodat basiselftal/bank en transferkeuzes tegelijk zichtbaar zijn
+- Transfermarkt-filters in MVP: positie, club en maximale transferwaarde (slider)
 
 ### 4.6 Notificaties
 - Draft turn
@@ -172,6 +177,10 @@ FR-026: Pre-season manager-transfers tellen niet mee in transferlimieten per spe
 FR-027: Bij mislukte vrije-pool refresh volgt precies 3x retry met 1 minuut interval; daarna alleen admin-alert.
 FR-028: Tijdens draft kan een manager een gekozen speler terugzetten naar vrije pool; andere managers ontvangen hiervan een notificatie.
 FR-029: Bonusrondes voor 3 transfers worden als ronde-nummers geconfigureerd; iedere ronde heeft startdatum+tijd en einddatum+tijd.
+FR-030: Wissels tussen basis en bank behouden slotpositie; een MID mag geen DEF-slot innemen en vice versa.
+FR-031: Transferkandidaat uit vrije pool kan alleen gekozen worden nadat een verkoopspeler is geselecteerd.
+FR-032: Transfer wordt pas definitief na expliciete bevestiging door manager in de transferflow.
+FR-033: Transfermarkt in managerweergave ondersteunt filtering op positie, club en maximale transferwaarde.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -262,6 +271,9 @@ Waarom zo:
 - [ ] Pre-season manager-transfers tellen niet mee in transferlimieten per speelronde; budget van beide teams mag niet negatief worden
 - [ ] Bij mislukte vrije-pool refresh draait exact 3x retry met 1 minuut interval en volgt daarna alleen admin-alert
 - [ ] Tijdens draft kan manager gekozen speler teruggeven aan vrije pool en ontvangen andere managers hierover een notificatie
+- [ ] Wissels tussen basis en bank blokkeren positieconflicten (bijv. MID↔DEF) en laten alleen geldige slotwissels toe
+- [ ] Transferflow vereist: eerst verkoop selecteren, daarna vervanger kiezen en expliciet bevestigen
+- [ ] Transfermarkt staat onder teamoverzicht en ondersteunt filters op positie, club en maximale transferwaarde
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -283,6 +295,9 @@ Waarom zo:
 - [x] Directe manager-naar-manager transfers: alleen pre-season, pakketdeals toegestaan, expliciete goedkeuring door beide kanten
 - [x] Manager-transfervoorstel eindigt alleen bij competitie-start, afwijzing ontvanger of intrekken verzender
 - [x] Pre-season manager-transfers tellen niet mee in per-ronde transferlimieten; alleen budgetlimiet geldt
+- [x] MVP transfer-UX bevestigd: eerst verkopen, dan kopen, daarna expliciet bevestigen
+- [x] Wissels op het veld respecteren positie-slots (geen MID op DEF-slot)
+- [x] Transfermarkt blijft op managerpagina zichtbaar onder teamoverzicht met filters op positie, club en transferwaarde
 
 ## 13. Besluitenlog
 - 2026-04-16: Repo + Vercel + baseline workflow opgezet.
@@ -295,3 +310,4 @@ Waarom zo:
 - 2026-04-16: Draft bevestigd op patroon A, A, reverse(A) zonder timer; notificaties MVP beperkt tot draft turn.
 - 2026-04-16: Draft afgerond op 15 spelers; na draft vrije-pool transfers + directe manager-transfers toegevoegd; refresh-falen via auto-retry + admin-alert; fase 2 alleen na unaniem manager-akkoord.
 - 2026-04-16: Directe manager-transfers aangescherpt naar pre-season pakketdeals met dubbele expliciete goedkeuring, voorstel-lifecycle vastgelegd; bonusrondes als ronde-nummers met start/eindtijd; refresh-policy vastgezet op 3 retries/1 min; draft-terugzetten naar vrije pool + notificatie toegevoegd.
+- 2026-04-17: Manager My Team + transfermarkt geïntegreerd met positie-veilige drag/drop, expliciete sell→buy→confirm transferflow, banklimiet in UI en filters op positie/club/transferwaarde; leesbaarheid van naamkaartjes verhoogd.
