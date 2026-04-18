@@ -318,6 +318,8 @@ select {
 }
 
 .pitch {
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(180deg, var(--green) 0%, var(--green-deep) 100%);
   border: 4px solid #ecf7ed;
   border-radius: 14px;
@@ -326,7 +328,33 @@ select {
   gap: 0.7rem;
 }
 
+.pitch::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, transparent 71%, rgba(236, 247, 237, 0.72) 71%, rgba(236, 247, 237, 0.72) 72%, transparent 72%),
+    radial-gradient(120px 70px at 50% 72%, transparent 65%, rgba(236, 247, 237, 0.72) 66%, rgba(236, 247, 237, 0.72) 69%, transparent 70%);
+}
+
+.pitch::after {
+  content: "";
+  position: absolute;
+  top: 0.3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(62%, 360px);
+  height: 28%;
+  border: 2px solid rgba(236, 247, 237, 0.72);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  pointer-events: none;
+}
+
 .pitch-row {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 0.5rem;
 }

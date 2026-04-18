@@ -6,6 +6,7 @@ import { PlayerCard } from "@/components/player-card";
 import { StatTile } from "@/components/stat-tile";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
 import { reorderAcrossZones, type ZoneName, type ZoneState } from "@/domain/lineup-state";
+import { buildPitchRows } from "@/domain/pitch-layout";
 import type { PlayerRecord } from "@/domain/player";
 import {
   applyConfirmedTransfer,
@@ -242,14 +243,7 @@ export default function ManagerMyTeamPage() {
   }, [formation, pendingBuyId, pendingSellId, state]);
 
   const pitchRows = useMemo(() => {
-    const rows = buildFormationSlots(formation);
-    let cursor = 0;
-
-    return rows.map((row) => {
-      const cards = row.map(() => state.lineup[cursor]).filter(Boolean);
-      cursor += row.length;
-      return cards;
-    });
+    return buildPitchRows(formation, state.lineup);
   }, [formation, state.lineup]);
 
   const squadPlayers = useMemo(() => {
