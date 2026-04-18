@@ -134,11 +134,24 @@ a {
 }
 
 .round-schedule {
+  position: relative;
   margin-top: 0.45rem;
-  border: 1px solid #d6dbe4;
-  border-radius: 12px;
-  background: #f4f6fa;
+  border: 1px solid #d4dae4;
+  border-radius: 11px;
+  background: #f1f4f8;
   overflow: hidden;
+}
+
+.round-schedule::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 0.45rem;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #d84037;
+  box-shadow: 0 2px 6px rgba(130, 19, 17, 0.35);
 }
 
 .round-schedule-head {
@@ -146,27 +159,28 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.5rem 0.7rem;
+  padding: 0.52rem 0.75rem 0.5rem 1.05rem;
   background: #ffffff;
-  border-bottom: 1px solid #d6dbe4;
+  border-bottom: 1px solid #d5dbe6;
 }
 
 .round-title-wrap {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.35rem;
-  color: #2b3442;
+  gap: 0.28rem;
+  color: #273244;
 }
 
 .round-title-label {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #596274;
+  letter-spacing: 0.09em;
+  color: #586375;
+  font-weight: 700;
 }
 
 .round-title-value {
-  font-size: 1rem;
+  font-size: 1.02rem;
   font-weight: 800;
 }
 
@@ -175,35 +189,40 @@ a {
   align-items: center;
   border-radius: 999px;
   overflow: hidden;
-  font-size: 0.73rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  box-shadow: inset 0 0 0 1px rgba(15, 22, 38, 0.08);
+  line-height: 1;
+  box-shadow: inset 0 0 0 1px rgba(13, 18, 30, 0.14);
 }
 
 .round-countdown span {
-  padding: 0.28rem 0.45rem;
-  background: #2f3642;
-  color: #f5f7ff;
-  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  min-width: 2.05rem;
+  text-align: center;
+  padding: 0.32rem 0.4rem;
+  background: #2c343f;
+  color: #f5f7fd;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .round-countdown .round-countdown-start {
-  background: #d53b33;
+  min-width: 2.55rem;
+  background: #d93a33;
   border-left: 0;
 }
 
 .round-fixtures-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: #edf1f6;
 }
 
 .round-fixture-column {
   margin: 0;
-  padding: 0.42rem 0.55rem;
+  padding: 0.36rem 0.56rem 0.4rem;
   list-style: none;
-  border-right: 1px solid #d9dee8;
+  border-right: 1px solid #d5dce8;
   display: grid;
-  gap: 0.2rem;
+  gap: 0.22rem;
 }
 
 .round-fixture-column:last-child {
@@ -212,32 +231,76 @@ a {
 
 .round-fixture-row {
   display: grid;
-  grid-template-columns: minmax(72px, 1fr) minmax(98px, auto) minmax(72px, 1fr);
-  gap: 0.35rem;
-  align-items: baseline;
+  grid-template-columns: 1fr auto 1fr;
+  column-gap: 0.5rem;
+  align-items: center;
   color: #2b3442;
-  font-size: 0.74rem;
-  line-height: 1.35;
+  font-size: 0.72rem;
+  line-height: 1.15;
+  min-height: 1.34rem;
 }
 
-.fixture-home,
-.fixture-away {
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.fixture-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.24rem;
+  min-width: 0;
 }
 
-.fixture-away {
-  text-align: right;
+.fixture-team--away {
+  justify-self: end;
+}
+
+.fixture-team-code {
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  font-size: 0.71rem;
 }
 
 .fixture-time {
-  font-size: 0.68rem;
-  color: #6a7382;
-  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 0.02rem;
+  font-size: 0.64rem;
+  color: #636f82;
+  text-transform: lowercase;
   white-space: nowrap;
 }
+
+.fixture-time small {
+  font-size: 0.61rem;
+  color: #8a94a5;
+}
+
+.team-shirt {
+  width: 11px;
+  height: 10px;
+  display: inline-block;
+  clip-path: polygon(16% 0, 31% 0, 40% 21%, 60% 21%, 69% 0, 84% 0, 100% 28%, 83% 42%, 83% 100%, 17% 100%, 17% 42%, 0 28%);
+  border: 1px solid rgba(26, 31, 45, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  flex: 0 0 auto;
+}
+
+.team-shirt--default { background: linear-gradient(90deg, #7a879d 0 50%, #c4ccd8 50% 100%); }
+.team-shirt--tel { background: linear-gradient(90deg, #f4f5f7 0 48%, #1a2f5c 48% 52%, #f4f5f7 52% 100%); }
+.team-shirt--spa { background: repeating-linear-gradient(90deg, #ffffff 0 25%, #cd3832 25% 50%); }
+.team-shirt--gae { background: repeating-linear-gradient(90deg, #ffffff 0 25%, #c72f2f 25% 50%); }
+.team-shirt--az { background: linear-gradient(90deg, #0e1117 0 50%, #d8dde7 50% 100%); }
+.team-shirt--psv { background: repeating-linear-gradient(90deg, #ffffff 0 22%, #d23531 22% 44%); }
+.team-shirt--pec { background: repeating-linear-gradient(90deg, #1e5cc2 0 25%, #ffffff 25% 50%); }
+.team-shirt--fey { background: linear-gradient(90deg, #d7443f 0 50%, #ffffff 50% 100%); }
+.team-shirt--gro { background: repeating-linear-gradient(90deg, #1f9a56 0 26%, #ffffff 26% 52%); }
+.team-shirt--hee { background: repeating-linear-gradient(90deg, #ffffff 0 18%, #2e66bf 18% 36%); }
+.team-shirt--for { background: linear-gradient(90deg, #ffdf3e 0 50%, #36a467 50% 100%); }
+.team-shirt--nac { background: repeating-linear-gradient(90deg, #ffe03c 0 24%, #131722 24% 48%); }
+.team-shirt--aja { background: linear-gradient(90deg, #f4f6fb 0 25%, #d23733 25% 75%, #f4f6fb 75% 100%); }
+.team-shirt--twe { background: linear-gradient(90deg, #d33c37 0 50%, #f5f6fa 50% 100%); }
+.team-shirt--nec { background: linear-gradient(90deg, #2f3f66 0 50%, #2a9b53 50% 100%); }
+.team-shirt--exc { background: linear-gradient(90deg, #101722 0 50%, #de3f39 50% 100%); }
+.team-shirt--utr { background: linear-gradient(90deg, #ffffff 0 50%, #d3413a 50% 100%); }
+.team-shirt--her { background: repeating-linear-gradient(90deg, #2d2d33 0 25%, #ffffff 25% 50%); }
+.team-shirt--vol { background: linear-gradient(90deg, #f5802f 0 50%, #ffffff 50% 100%); }
 
 .content {
   padding: 1rem 1rem 4.8rem;
@@ -427,14 +490,14 @@ select {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(140% 120% at 50% -18%, rgba(12, 56, 21, 0.34) 0%, rgba(12, 56, 21, 0) 56%),
-    linear-gradient(180deg, #2f9f4a 0%, #38b254 43%, #2a9a45 100%);
-  border: 4px solid #eaf3e8;
+    radial-gradient(140% 100% at 50% -20%, rgba(18, 63, 27, 0.42) 0%, rgba(18, 63, 27, 0) 56%),
+    linear-gradient(180deg, #319f4d 0%, #3ab559 48%, #2e9f4b 100%);
+  border: 4px solid #e9f4e8;
   border-radius: 14px;
   padding: 0.75rem;
   display: grid;
   gap: 0.7rem;
-  box-shadow: inset 0 16px 26px rgba(18, 66, 27, 0.26), inset 0 -12px 24px rgba(10, 43, 18, 0.2);
+  box-shadow: inset 0 12px 26px rgba(20, 76, 32, 0.3), inset 0 -12px 22px rgba(10, 42, 19, 0.24);
 }
 
 .pitch::before {
@@ -442,12 +505,11 @@ select {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(to bottom, transparent 49.5%, rgba(233, 245, 231, 0.74) 49.5%, rgba(233, 245, 231, 0.74) 50.5%, transparent 50.5%),
-    radial-gradient(130px 82px at 50% 50%, transparent 69%, rgba(233, 245, 231, 0.76) 70%, rgba(233, 245, 231, 0.76) 72.2%, transparent 73%),
-    linear-gradient(to right, transparent 24%, rgba(233, 245, 231, 0.72) 24%, rgba(233, 245, 231, 0.72) 24.8%, transparent 24.8%, transparent 75.2%, rgba(233, 245, 231, 0.72) 75.2%, rgba(233, 245, 231, 0.72) 76%, transparent 76%),
-    linear-gradient(to bottom, rgba(233, 245, 231, 0.72) 8%, rgba(233, 245, 231, 0.72) 8.8%, transparent 8.8%, transparent 27.5%, rgba(233, 245, 231, 0.72) 27.5%, rgba(233, 245, 231, 0.72) 28.3%, transparent 28.3%, transparent 71.7%, rgba(233, 245, 231, 0.72) 71.7%, rgba(233, 245, 231, 0.72) 72.5%, transparent 72.5%, transparent 91.2%, rgba(233, 245, 231, 0.72) 91.2%, rgba(233, 245, 231, 0.72) 92%, transparent 92%);
-  opacity: 0.9;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 650'%3E%3Cg fill='none' stroke='%23eaf4e8' stroke-width='4.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='95,52 905,52 968,598 32,598'/%3E%3Cline x1='82' y1='325' x2='918' y2='325'/%3E%3Cellipse cx='500' cy='325' rx='92' ry='53'/%3E%3Cpolygon points='298,52 702,52 748,188 252,188'/%3E%3Cpolygon points='388,52 612,52 632,126 368,126'/%3E%3Cpath d='M 434 188 A 66 34 0 0 0 566 188'/%3E%3Cpolygon points='252,462 748,462 702,598 298,598'/%3E%3Cpolygon points='368,524 632,524 612,598 388,598'/%3E%3Cpath d='M 434 462 A 66 34 0 0 1 566 462'/%3E%3C/g%3E%3Cg fill='%23eaf4e8' opacity='0.95'%3E%3Ccircle cx='500' cy='152' r='4'/%3E%3Ccircle cx='500' cy='498' r='4'/%3E%3C/g%3E%3C/svg%3E");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0.92;
 }
 
 .pitch::after {
@@ -456,8 +518,8 @@ select {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(120% 100% at 50% 100%, rgba(8, 28, 14, 0.2) 0%, rgba(8, 28, 14, 0) 62%),
-    radial-gradient(130% 90% at 50% -14%, rgba(12, 42, 20, 0.28) 0%, rgba(12, 42, 20, 0) 54%);
+    linear-gradient(90deg, rgba(12, 46, 21, 0.1) 0%, rgba(12, 46, 21, 0.01) 12%, rgba(12, 46, 21, 0.01) 88%, rgba(12, 46, 21, 0.1) 100%),
+    radial-gradient(140% 85% at 50% 100%, rgba(8, 28, 14, 0.2) 0%, rgba(8, 28, 14, 0) 66%);
 }
 
 .pitch-row {

@@ -191,10 +191,60 @@ function toPersistedIds(state: ZoneState<EnhancedPlayer>) {
   };
 }
 
+const CLUB_CODE: Record<string, string> = {
+  Telstar: "TEL",
+  Sparta: "SPA",
+  'Go Ahead': "GAE",
+  AZ: "AZ",
+  PSV: "PSV",
+  PEC: "PEC",
+  Feyenoord: "FEY",
+  Groningen: "GRO",
+  Heerenveen: "HEE",
+  Fortuna: "FOR",
+  NAC: "NAC",
+  Ajax: "AJA",
+  Twente: "TWE",
+  NEC: "NEC",
+  Excelsior: "EXC",
+  Utrecht: "UTR",
+  Heracles: "HER",
+  Volendam: "VOL",
+};
+
+const CLUB_SHIRT: Record<string, string> = {
+  Telstar: "tel",
+  Sparta: "spa",
+  'Go Ahead': "gae",
+  AZ: "az",
+  PSV: "psv",
+  PEC: "pec",
+  Feyenoord: "fey",
+  Groningen: "gro",
+  Heerenveen: "hee",
+  Fortuna: "for",
+  NAC: "nac",
+  Ajax: "aja",
+  Twente: "twe",
+  NEC: "nec",
+  Excelsior: "exc",
+  Utrecht: "utr",
+  Heracles: "her",
+  Volendam: "vol",
+};
+
 function toDutchDayAbbreviation(kickoffAt: string) {
   const day = new Date(kickoffAt).getDay();
   const labels = ["zon", "maa", "din", "woe", "don", "vri", "zat"];
   return labels[day] ?? "-";
+}
+
+function toClubCode(club: string) {
+  return CLUB_CODE[club] ?? club.slice(0, 3).toUpperCase();
+}
+
+function toShirtClass(club: string) {
+  return CLUB_SHIRT[club] ?? "default";
 }
 
 function toShortDate(kickoffAt: string) {
@@ -455,11 +505,18 @@ export default function ManagerMyTeamPage() {
             <ul key={`fixture-column-${columnIndex}`} className="round-fixture-column">
               {column.map((fixture) => (
                 <li key={`${fixture.kickoffAt}-${fixture.home}-${fixture.away}`} className="round-fixture-row">
-                  <span className="fixture-home">{fixture.home}</span>
-                  <span className="fixture-time">
-                    {toDutchDayAbbreviation(fixture.kickoffAt)} {toShortDate(fixture.kickoffAt)} · {fixture.kickoff}
+                  <span className="fixture-team fixture-team--home">
+                    <span className="fixture-team-code">{toClubCode(fixture.home)}</span>
+                    <span className={`team-shirt team-shirt--${toShirtClass(fixture.home)}`} aria-hidden="true" />
                   </span>
-                  <span className="fixture-away">{fixture.away}</span>
+                  <span className="fixture-time">
+                    {toDutchDayAbbreviation(fixture.kickoffAt)} {fixture.kickoff}
+                    <small>{toShortDate(fixture.kickoffAt)}</small>
+                  </span>
+                  <span className="fixture-team fixture-team--away">
+                    <span className="fixture-team-code">{toClubCode(fixture.away)}</span>
+                    <span className={`team-shirt team-shirt--${toShirtClass(fixture.away)}`} aria-hidden="true" />
+                  </span>
                 </li>
               ))}
             </ul>

@@ -125,7 +125,7 @@ Per rol belangrijkste rechten:
   - Bij admin-aanpassing van rondetijden worden nieuwe grenzen direct actief
 - Fase 2: conflictresolutie (waiver/priority/queue) toevoegen
 - Managerpagina toont transfermarkt onder teamoverzicht zodat basiselftal/bank en transferkeuzes tegelijk zichtbaar zijn
-- In de Team-paginaheader (regel direct onder titel "Team") wordt de standaardtekst vervangen door een compacte speelrondekaart met ronde-nummer, start-countdown en het volledige schema van de huidige/volgende speelronde (met datum + tijd + thuis/uit).
+- In de Team-paginaheader (regel direct onder titel "Team") wordt de standaardtekst vervangen door een compacte speelrondekaart met ronde-nummer, start-countdown en een wedstrijdraster met 1-op-1 shirt-icoontjes per club, plus datum+tijd per duel.
 - Transfermarkt-filters in MVP: positie, club en maximale transferwaarde (slider)
 - Bankverdeling is vast: altijd 4 bankslots met 1x GK, 1x DEF, 1x MID en 1x FWD
 - Basiselftal-weergave op het veld toont per slot de echte speler op die index (geen naamherhaling binnen een linie); elke speler-id mag maar 1x tegelijk in teamstate voorkomen
@@ -197,8 +197,8 @@ FR-038: Na verkoop verschijnt direct een open placeholder op het veld of op de b
 FR-039: Als gekozen formatie met huidige spelers + beschikbare placeholders niet haalbaar is, toont UI exact: "je kunt niet in deze formatie spelen met deze spelers".
 FR-040: Bij aankoop wordt pas op dat moment gevalideerd of positie in de gekozen formatie op een open slot past; zo niet toont UI exact: "deze speler past niet in de gekozen formatie".
 FR-041: Bank bevat altijd exact 1 keeper, 1 verdediger, 1 middenvelder en 1 aanvaller (bezette speler of placeholder).
-FR-042: Team-paginaheader (onder titel "Team", boven basiselftal) toont een speelrondekaart met ronde-nummer, countdown naar eerste aftrap en alle wedstrijden van de huidige/volgende speelronde met datum+tijd per wedstrijd.
-FR-043: Basiselftal-veld behoudt bestaande kaart/interactie maar gebruikt een vernieuwde groene pitch-achtergrond met subtiel kleurverloop, middenlijn/cirkel en strafschopvakken in dezelfde visuele stijl als referentiebeeld.
+FR-042: Team-paginaheader (onder titel "Team", boven basiselftal) toont een speelrondekaart met ronde-nummer, countdown naar eerste aftrap en wedstrijden in referentie-layout met datum+tijd en club-shirticoon per thuis/uit-team.
+FR-043: Basiselftal-veld behoudt bestaande kaart/interactie maar gebruikt een perspectivische pitch-achtergrond met schuine dieptelijnen en realistische strafschopgebieden in referentiestijl.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -302,8 +302,8 @@ Waarom zo:
 - [ ] Placeholder-slots zijn lichtgrijs/transparant en visueel duidelijk anders dan bezette spelerskaarten
 - [ ] Bank toont altijd precies 1 GK, 1 DEF, 1 MID en 1 FWD
 - [ ] Bij koop op ongeldige positie verschijnt exact: "deze speler past niet in de gekozen formatie"
-- [ ] Team-paginaheader (onder "Team", boven basiselftal) toont een speelrondekaart met ronde-nummer, start-countdown en volledig schema (datum+tijd) van de actieve ronde
-- [ ] Basiselftal gebruikt de nieuwe pitch-achtergrondstijl (alleen groene veldlaag gewijzigd; spelerskaarten en interactie ongewijzigd)
+- [ ] Team-paginaheader (onder "Team", boven basiselftal) toont een speelrondekaart met ronde-nummer, start-countdown, wedstrijdrijen met shirt-icoontjes en strak referentie-grid (datum+tijd per duel)
+- [ ] Basiselftal gebruikt een perspectivische pitch-achtergrond met schuine dieptelijnen en realistische strafschopgebieden (alleen veldlaag aangepast; kaarten/interactie gelijk)
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -351,3 +351,4 @@ Waarom zo:
 - 2026-04-18: Placeholder-visuals lichtgrijs/transparant gemaakt; banklogica vastgezet op 1x GK/DEF/MID/FWD; koopvalidatie gewijzigd naar check-op-koop met foutmelding "deze speler past niet in de gekozen formatie".
 - 2026-04-18: Summary-strip wijziging teruggedraaid; wedstrijdschema verplaatst naar Team-paginaheader (regel onder titel "Team", boven basiselftal) en uitgebreid naar alle wedstrijden van de actieve speelronde met datum+tijd.
 - 2026-04-18: Team-paginaheader visueel herwerkt naar speelrondekaart (ronde + START-countdown + wedstrijdkolommen) op basis van aangeleverde referentie; pitch-achtergrond van basiselftal vervangen door nieuwe groene veldstijl terwijl kaarten/interacties gelijk bleven.
+- 2026-04-18: Tweede visual-pass op referenties: speelrondekaart verfijnd naar strakker grid met shirt-icoontjes per club en compactere spacing; pitch opnieuw gemodelleerd met perspectivische schuine lijnen en realistischer strafschopvakken.
