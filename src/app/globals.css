@@ -532,6 +532,19 @@ select {
   box-shadow: 0 0 0 2px rgba(217, 64, 64, 0.2);
 }
 
+.player-card--open {
+  background: rgba(229, 233, 242, 0.58);
+  border-style: dashed;
+  border-color: rgba(122, 134, 160, 0.65);
+}
+
+.player-card--open .player-top,
+.player-card--open .player-name,
+.player-card--open .player-points {
+  background: rgba(229, 233, 242, 0.5);
+  color: #5f6f8d;
+}
+
 .transfer-controls {
   margin-bottom: 0.75rem;
 }

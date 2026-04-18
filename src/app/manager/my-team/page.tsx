@@ -20,6 +20,7 @@ import { byPriceDesc, enrichPlayers, type EnhancedPlayer } from "@/lib/player-de
 type Position = "GK" | "DEF" | "MID" | "FWD";
 
 const BENCH_LIMIT = 4;
+const BENCH_POSITIONS: Position[] = ["GK", "DEF", "MID", "FWD"];
 
 type ManagerStateResponse = {
   state?: {
@@ -63,51 +64,92 @@ function createOpenSlot(position: string): EnhancedPlayer {
   };
 }
 
-function buildStateForFormation(players: EnhancedPlayer[], formation: string): ZoneState<EnhancedPlayer> {
-  const requiredSlots = buildFormationSlots(formation).flat();
-  const usedIds = new Set<string>();
-
-  const lineup = requiredSlots.map((position) => {
-    const found = players.find((player) => player.positie === position && !usedIds.has(player.id));
-    if (found) {
-      usedIds.add(found.id);
-      return found;
-    }
-
-    return createOpenSlot(position);
-  });
-
-  const bench = players.filter((player) => !usedIds.has(player.id)).slice(0, BENCH_LIMIT);
-  return { lineup, bench };
+function countOpenSlots(state: ZoneState<EnhancedPlayer>) {
+  return [...state.lineup, ...state.bench].filter((player) => player.id.startsWith("open-")).length;
 }
 
-function buildBudgetDemoState(players: EnhancedPlayer[], formation: string): ZoneState<EnhancedPlayer> {
-  const requiredSlots = buildFormationSlots(formation).flat();
-  const ordered = [...players].sort((a, b) => a.prijs - b.prijs || a.naam.localeCompare(b.naam));
-  const usedIds = new Set<string>();
+function buildStateWithVacancies(
+  players: EnhancedPlayer[],
+  formation: string,
+  vacancyCount: number,
+): ZoneState<EnhancedPlayer> | null {
+  const requiredLineup = buildFormationSlots(formation).flat();
+  const byPosition = new Map<Position, EnhancedPlayer[]>([
+    ["GK", []],
+    ["DEF", []],
+    ["MID", []],
+    ["FWD", []],
+  ]);
 
-  const lineup = requiredSlots.map((position) => {
-    const found = ordered.find((player) => player.positie === position && !usedIds.has(player.id));
-    if (!found) {
+  for (const player of players) {
+    const position = player.positie as Position;
+    if (!byPosition.has(position)) {
+      continue;
+    }
+
+    byPosition.get(position)?.push(player);
+  }
+
+  let remainingVacancies = vacancyCount;
+
+  const takePlayerForPosition = (position: Position) => {
+    const list = byPosition.get(position);
+    if (!list || list.length === 0) {
+      if (remainingVacancies <= 0) {
+        return null;
+      }
+
+      remainingVacancies -= 1;
       return createOpenSlot(position);
     }
 
-    usedIds.add(found.id);
-    return found;
-  });
+    return list.shift() ?? null;
+  };
 
-  const bench = ordered.filter((player) => !usedIds.has(player.id)).slice(0, BENCH_LIMIT);
-  const candidate = { lineup, bench };
+  const lineup: EnhancedPlayer[] = [];
+  for (const position of requiredLineup) {
+    const next = takePlayerForPosition(position as Position);
+    if (!next) {
+      return null;
+    }
 
-  if (isWithinBudget([...candidate.lineup, ...candidate.bench], MAX_TRANSFER_BUDGET_MILLIONS)) {
+    lineup.push(next);
+  }
+
+  const bench: EnhancedPlayer[] = [];
+  for (const position of BENCH_POSITIONS) {
+    const next = takePlayerForPosition(position);
+    if (!next) {
+      return null;
+    }
+
+    bench.push(next);
+  }
+
+  const hasUnplacedPlayers = [...byPosition.values()].some((list) => list.length > 0);
+  if (hasUnplacedPlayers || remainingVacancies !== 0) {
+    return null;
+  }
+
+  return { lineup, bench };
+}
+
+function buildStateForFormation(players: EnhancedPlayer[], formation: string): ZoneState<EnhancedPlayer> {
+  return buildStateWithVacancies(players, formation, 0) ?? {
+    lineup: buildFormationSlots(formation).flat().map((position) => createOpenSlot(position)),
+    bench: BENCH_POSITIONS.map((position) => createOpenSlot(position)),
+  };
+}
+
+function buildBudgetDemoState(players: EnhancedPlayer[], formation: string): ZoneState<EnhancedPlayer> {
+  const ordered = [...players].sort((a, b) => a.prijs - b.prijs || a.naam.localeCompare(b.naam));
+  const candidate = buildStateWithVacancies(ordered, formation, 0);
+
+  if (candidate && isWithinBudget([...candidate.lineup, ...candidate.bench], MAX_TRANSFER_BUDGET_MILLIONS)) {
     return candidate;
   }
 
   return buildStateForFormation(ordered, formation);
-}
-
-function countOpenSlots(state: ZoneState<EnhancedPlayer>) {
-  return [...state.lineup, ...state.bench].filter((player) => player.id.startsWith("open-")).length;
 }
 
 function buildStateForFormationWithVacancies(
@@ -115,95 +157,30 @@ function buildStateForFormationWithVacancies(
   formation: string,
   vacancyCount: number,
 ): ZoneState<EnhancedPlayer> | null {
-  const requiredSlots = buildFormationSlots(formation).flat();
-  const usedIds = new Set<string>();
-  let remainingVacancies = vacancyCount;
-
-  const lineup: EnhancedPlayer[] = [];
-  for (const position of requiredSlots) {
-    const found = players.find((player) => player.positie === position && !usedIds.has(player.id));
-    if (found) {
-      usedIds.add(found.id);
-      lineup.push(found);
-      continue;
-    }
-
-    if (remainingVacancies <= 0) {
-      return null;
-    }
-
-    remainingVacancies -= 1;
-    lineup.push(createOpenSlot(position));
-  }
-
-  const bench: EnhancedPlayer[] = [];
-  for (const player of players) {
-    if (bench.length >= BENCH_LIMIT) {
-      break;
-    }
-
-    if (!usedIds.has(player.id)) {
-      usedIds.add(player.id);
-      bench.push(player);
-    }
-  }
-
-  while (bench.length < BENCH_LIMIT && remainingVacancies > 0) {
-    bench.push(createOpenSlot("MID"));
-    remainingVacancies -= 1;
-  }
-
-  return { lineup, bench };
+  return buildStateWithVacancies(players, formation, vacancyCount);
 }
 
 function buildStateFromSaved(players: EnhancedPlayer[], formation: string, lineupIds: string[], benchIds: string[]) {
-  const playersById = new Map(players.map((player) => [player.id, player]));
-  const requiredSlots = buildFormationSlots(formation).flat();
-  const usedIds = new Set<string>();
+  const byId = new Map(players.map((player) => [player.id, player]));
+  const seen = new Set<string>();
 
-  const lineup = requiredSlots.map((position, index) => {
-    const savedId = lineupIds[index];
-    const saved = savedId ? playersById.get(savedId) : undefined;
-
-    if (saved && saved.positie === position && !usedIds.has(saved.id)) {
-      usedIds.add(saved.id);
-      return saved;
-    }
-
-    const fallback = players.find((player) => player.positie === position && !usedIds.has(player.id));
-    if (fallback) {
-      usedIds.add(fallback.id);
-      return fallback;
-    }
-
-    return createOpenSlot(position);
-  });
-
-  const bench: EnhancedPlayer[] = [];
-  for (const id of benchIds) {
-    if (bench.length >= BENCH_LIMIT) {
-      break;
-    }
-
-    const player = playersById.get(id);
-    if (player && !usedIds.has(player.id)) {
-      usedIds.add(player.id);
-      bench.push(player);
+  const preferred: EnhancedPlayer[] = [];
+  for (const id of [...lineupIds, ...benchIds]) {
+    const player = byId.get(id);
+    if (player && !seen.has(player.id)) {
+      seen.add(player.id);
+      preferred.push(player);
     }
   }
 
   for (const player of players) {
-    if (bench.length >= BENCH_LIMIT) {
-      break;
-    }
-
-    if (!usedIds.has(player.id)) {
-      usedIds.add(player.id);
-      bench.push(player);
+    if (!seen.has(player.id)) {
+      seen.add(player.id);
+      preferred.push(player);
     }
   }
 
-  return { lineup, bench };
+  return buildStateForFormation(preferred, formation);
 }
 
 function toPersistedIds(state: ZoneState<EnhancedPlayer>) {
@@ -356,11 +333,6 @@ export default function ManagerMyTeamPage() {
     [state.bench, state.lineup],
   );
 
-  const requiredPositions = useMemo(() => Array.from(new Set(openSlots.map((slot) => slot.positie))), [openSlots]);
-
-  const requiredPosition = requiredPositions.length === 1 ? requiredPositions[0] : null;
-
-
   const marketPlayers = useMemo(() => {
     const { lineupIds, benchIds } = toPersistedIds(state);
     return buildMarketPlayers(allPlayers, lineupIds, benchIds);
@@ -390,9 +362,7 @@ export default function ManagerMyTeamPage() {
     const query = search.trim().toLowerCase();
 
     return marketPlayers.filter((player) => {
-      const positionMatch = requiredPositions.length > 0
-        ? requiredPositions.includes(player.positie)
-        : selectedPosition === "ALL" || player.positie === selectedPosition;
+      const positionMatch = selectedPosition === "ALL" || player.positie === selectedPosition;
 
       const clubMatch = selectedClub === "ALL" || player.club === selectedClub;
       const searchMatch =
@@ -401,7 +371,7 @@ export default function ManagerMyTeamPage() {
 
       return positionMatch && clubMatch && searchMatch && priceMatch;
     });
-  }, [marketPlayers, maxPrice, requiredPositions, search, selectedClub, selectedPosition]);
+  }, [marketPlayers, maxPrice, search, selectedClub, selectedPosition]);
 
   function handleFormationChange(nextFormation: string) {
     const nonOpen = [...state.lineup, ...state.bench].filter((player) => !player.id.startsWith("open-"));
@@ -500,12 +470,6 @@ export default function ManagerMyTeamPage() {
       return;
     }
 
-    if (!requiredPositions.includes(player.positie)) {
-      const expected = requiredPosition ?? requiredPositions.join(", ");
-      setTransferMessage(`Alleen ${expected} is toegestaan als vervanging.`);
-      return;
-    }
-
     const alreadyInSquad = squadPlayers.some((squadPlayer) => squadPlayer.id === player.id);
     if (alreadyInSquad) {
       setTransferMessage("Deze speler zit al in je team.");
@@ -529,7 +493,7 @@ export default function ManagerMyTeamPage() {
         if (benchIndex >= 0) {
           nextBench[benchIndex] = player;
         } else {
-          setTransferMessage("Geen passende open plek gevonden voor deze positie.");
+          setTransferMessage("deze speler past niet in de gekozen formatie");
           return previous;
         }
       }
@@ -590,7 +554,12 @@ export default function ManagerMyTeamPage() {
                         club={player.club}
                         name={player.naam}
                         pointsLabel={`${player.punten} PN`}
-                        className={pendingSellId === player.id ? "player-card--sell" : undefined}
+                        className={[
+                          pendingSellId === player.id ? "player-card--sell" : "",
+                          player.id.startsWith("open-") ? "player-card--open" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ") || undefined}
                         onDragStart={onDragStart("lineup", lineupIndex)}
                         onDragOver={(event) => event.preventDefault()}
                         onDrop={onDrop("lineup", lineupIndex)}
@@ -619,12 +588,17 @@ export default function ManagerMyTeamPage() {
               <PlayerCard
                 key={`bench-${benchIndex}-${player.id}`}
                 data-testid={`bench-card-${benchIndex}`}
-                draggable
+                draggable={!player.id.startsWith("open-")}
                 position={player.positie}
                 club={player.club}
                 name={player.naam}
                 pointsLabel={`${player.punten} PN`}
-                className={pendingSellId === player.id ? "player-card--sell" : undefined}
+                className={[
+                  pendingSellId === player.id ? "player-card--sell" : "",
+                  player.id.startsWith("open-") ? "player-card--open" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ") || undefined}
                 onDragStart={onDragStart("bench", benchIndex)}
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={onDrop("bench", benchIndex)}
@@ -657,9 +631,8 @@ export default function ManagerMyTeamPage() {
             <label className="col-2">
               Positie
               <select
-                value={requiredPosition ?? selectedPosition}
+                value={selectedPosition}
                 onChange={(event) => setSelectedPosition(event.target.value)}
-                disabled={requiredPositions.length > 0}
                 data-testid="transfer-position"
               >
                 <option value="ALL">Alle posities</option>

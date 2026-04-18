@@ -93,6 +93,7 @@ Per rol belangrijkste rechten:
 - Transfers zijn direct (drop + add), zonder geavanceerde conflictresolutie in fase 1
 - Transferflow in manager-UI is nu: (1) speler verkopen (direct placeholder op veld/bank), (2) optioneel formatie wisselen met placeholder(s), (3) vervanger kopen op open positie
 - Aankoop op open placeholder verwerkt transfer direct (geen extra confirm-stap)
+- Placeholder-slots zijn visueel lichtgrijs/transparant zodat open plekken direct herkenbaar zijn t.o.v. bezette slots
 - Simultane transfer op dezelfde vrije speler: first-write-wins met database lock
 - Vrije pool wordt elk uur ververst op basis van alle uitgevoerde transfers
 - Basisregel blijft: binnen een league kan een speler maar in 1 team zitten
@@ -125,6 +126,7 @@ Per rol belangrijkste rechten:
 - Fase 2: conflictresolutie (waiver/priority/queue) toevoegen
 - Managerpagina toont transfermarkt onder teamoverzicht zodat basiselftal/bank en transferkeuzes tegelijk zichtbaar zijn
 - Transfermarkt-filters in MVP: positie, club en maximale transferwaarde (slider)
+- Bankverdeling is vast: altijd 4 bankslots met 1x GK, 1x DEF, 1x MID en 1x FWD
 - Basiselftal-weergave op het veld toont per slot de echte speler op die index (geen naamherhaling binnen een linie); elke speler-id mag maar 1x tegelijk in teamstate voorkomen
 - Pitch in basiselftal krijgt een visuele halve-veld overlay (midlijn/halve cirkel + zestienmeter) voor herkenbare voetbalcontext
 - Strafschopgebied-visual bevat extra diepte, 5-metergebied en halve cirkel onderaan het strafschopgebied (realistische veldweergave)
@@ -192,6 +194,8 @@ FR-036: Teamwaarde voor manager-opstelling is hard begrensd op €32.0M in MVP; 
 FR-037: Competitiepagina bevat het resterende Eredivisie-schema opgesplitst in speelrondes 31 t/m 34, inclusief datum/tijd en sponsorvermelding (Staatsloterij).
 FR-038: Na verkoop verschijnt direct een open placeholder op het veld of op de bank; formatie wisselen gebruikt deze placeholder(s) voor opbouw.
 FR-039: Als gekozen formatie met huidige spelers + beschikbare placeholders niet haalbaar is, toont UI exact: "je kunt niet in deze formatie spelen met deze spelers".
+FR-040: Bij aankoop wordt pas op dat moment gevalideerd of positie in de gekozen formatie op een open slot past; zo niet toont UI exact: "deze speler past niet in de gekozen formatie".
+FR-041: Bank bevat altijd exact 1 keeper, 1 verdediger, 1 middenvelder en 1 aanvaller (bezette speler of placeholder).
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -292,6 +296,9 @@ Waarom zo:
 - [ ] Verkoopactie maakt direct een zichtbare placeholder op juiste plek (veld of bank)
 - [ ] Formatie-wissel met actieve placeholder blokkeert onhaalbare formaties met melding: "je kunt niet in deze formatie spelen met deze spelers"
 - [ ] Pitch-visual toont strafschopgebied met diepte, 5-metergebied en halve cirkel
+- [ ] Placeholder-slots zijn lichtgrijs/transparant en visueel duidelijk anders dan bezette spelerskaarten
+- [ ] Bank toont altijd precies 1 GK, 1 DEF, 1 MID en 1 FWD
+- [ ] Bij koop op ongeldige positie verschijnt exact: "deze speler past niet in de gekozen formatie"
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -319,6 +326,7 @@ Waarom zo:
 - [x] MVP transferbudget-cap vastgesteld op €32.0M en demo-team start binnen deze cap
 - [x] Resterend schema vastgesteld: speelronde 31 (22-26 apr), 32 (2-3 mei), 33 (10 mei), 34 (17 mei), met sponsorvermelding Staatsloterij
 - [x] Transferflow aangepast naar verkoop->placeholder->(formatie wissel)->aankoop zonder aparte confirm
+- [x] Positiekeuze in transfermarkt blijft vrij; positionele fit-check gebeurt bij koopactie op open slot
 
 ## 13. Besluitenlog
 - 2026-04-16: Repo + Vercel + baseline workflow opgezet.
@@ -335,3 +343,4 @@ Waarom zo:
 - 2026-04-18: Bugfix op pitch-row mapping zodat elke lineup-slot de juiste speler toont (geen DEF/MID/FWD-naamherhaling per rij) + halve-veld achtergrond toegevoegd aan basiselftal.
 - 2026-04-18: Budgetbeleid aangescherpt naar harde cap €32.0M (incl. transferblokkade boven cap), demo-teamseed aangepast naar <= €32.0M en resterend Eredivisie-schema toegevoegd in speelrondes 31-34 met sponsorlabel Staatsloterij.
 - 2026-04-18: Transferflow herwerkt naar directe verkoop met placeholder + formatiewissel op basis van placeholders; onhaalbare formatie toont vaste fouttekst. Pitch-visual uitgebreid met diepte in strafschopgebied, 5-metergebied en halve cirkel.
+- 2026-04-18: Placeholder-visuals lichtgrijs/transparant gemaakt; banklogica vastgezet op 1x GK/DEF/MID/FWD; koopvalidatie gewijzigd naar check-op-koop met foutmelding "deze speler past niet in de gekozen formatie".
