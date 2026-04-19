@@ -29,6 +29,11 @@ body {
   background: radial-gradient(circle at 20% 10%, #1f5cc6 0%, var(--bg) 40%, var(--bg-dark) 100%);
   color: var(--text);
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 a {
@@ -745,6 +750,18 @@ select {
   .round-fixture-column:last-child {
     border-bottom: 0;
   }
+
+  .top-header {
+    align-items: flex-start;
+  }
+
+  .formation-header {
+    flex-wrap: wrap;
+  }
+
+  .formation-select {
+    width: min(100%, 240px);
+  }
 }
 
 @media (max-width: 620px) {
@@ -757,6 +774,21 @@ select {
     min-height: 100vh;
   }
 
+  .top-header {
+    flex-wrap: wrap;
+    padding: 0.9rem;
+    gap: 0.6rem;
+  }
+
+  .brand-wrap h1 {
+    font-size: 1.05rem;
+  }
+
+  .logout-button {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.78rem;
+  }
+
   .summary-strip {
     grid-template-columns: 1fr;
   }
@@ -764,10 +796,74 @@ select {
   .summary-strip article {
     border-right: 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+    padding: 0.62rem 0.8rem;
   }
 
   .summary-strip article:last-child {
     border-bottom: 0;
+  }
+
+  .page-head {
+    padding: 0.9rem 0.9rem 0;
+  }
+
+  .page-head h2 {
+    font-size: 1.16rem;
+  }
+
+  .content {
+    padding: 0.85rem 0.85rem 5.4rem;
+  }
+
+  .card {
+    padding: 0.75rem;
+  }
+
+  .formation-header {
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .formation-select {
+    width: 100%;
+  }
+
+  .pitch {
+    padding: 0.55rem;
+    border-width: 3px;
+  }
+
+  .pitch-row[data-size="2"],
+  .pitch-row[data-size="3"],
+  .pitch-row[data-size="4"],
+  .pitch-row[data-size="5"] {
+    grid-template-columns: repeat(var(--pitch-cols), minmax(0, 1fr));
+  }
+
+  .pitch-row[data-size="2"] {
+    --pitch-cols: 2;
+  }
+
+  .pitch-row[data-size="3"] {
+    --pitch-cols: 3;
+  }
+
+  .pitch-row[data-size="4"] {
+    --pitch-cols: 4;
+  }
+
+  .pitch-row[data-size="5"] {
+    --pitch-cols: 5;
+  }
+
+  .player-name,
+  .player-points {
+    font-size: 0.66rem;
+    padding-inline: 0.38rem;
+  }
+
+  .player-top {
+    padding: 0.28rem 0.38rem;
   }
 
   .bench-grid {
@@ -786,5 +882,58 @@ select {
   .round-fixture-row {
     grid-template-columns: minmax(64px, 1fr) minmax(92px, auto) minmax(64px, 1fr);
     font-size: 0.71rem;
+  }
+
+  .bottom-nav {
+    padding: 0.35rem 0.35rem calc(0.45rem + env(safe-area-inset-bottom));
+  }
+
+  .bottom-link {
+    font-size: 0.68rem;
+    min-height: 2rem;
+  }
+
+  .fab-link {
+    width: 2.45rem;
+    height: 2.45rem;
+    margin-top: -1.05rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .content {
+    padding: 0.75rem 0.7rem 5.6rem;
+  }
+
+  .grid {
+    gap: 0.7rem;
+  }
+
+  .card {
+    padding: 0.68rem;
+  }
+
+  .pitch {
+    padding: 0.45rem;
+    gap: 0.45rem;
+  }
+
+  .pitch-row {
+    gap: 0.3rem;
+  }
+
+  .player-position,
+  .player-club {
+    font-size: 0.62rem;
+  }
+
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  th,
+  td {
+    padding: 0.42rem;
+    font-size: 0.8rem;
   }
 }

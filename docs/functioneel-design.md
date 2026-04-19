@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-04-16
+Laatste update: 2026-04-19
 
 ## 1. Productvisie
 Doel van de app:
@@ -23,6 +23,7 @@ In scope (MVP):
 - [x] Transferrondes tussen speelrondes
 - [x] Free pool mechaniek met directe transfers (drop + add)
 - [x] Adminschermen voor import/updaten van spelerslijst
+- [x] Mobielvriendelijke responsive UI (telefoon + tablet) voor managerflows
 
 Out of scope (voor later):
 - [ ] Live match events en realtime scoring
@@ -199,6 +200,7 @@ FR-040: Bij aankoop wordt pas op dat moment gevalideerd of positie in de gekozen
 FR-041: Bank bevat altijd exact 1 keeper, 1 verdediger, 1 middenvelder en 1 aanvaller (bezette speler of placeholder).
 FR-042: Team-paginaheader (onder titel "Team", boven basiselftal) toont een speelrondekaart met ronde-nummer, countdown naar eerste aftrap en wedstrijden in referentie-layout met datum+tijd en club-shirticoon per thuis/uit-team.
 FR-043: Basiselftal-veld behoudt bestaande kaart/interactie maar gebruikt een perspectivische pitch-achtergrond met schuine dieptelijnen en realistische strafschopgebieden in referentiestijl.
+FR-044: Manager-UI is responsive op mobiel/tablet: header, kaarten, opstellingsveld en bottom navigation blijven bruikbaar zonder horizontaal scrollen in de standaard flows.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -304,6 +306,7 @@ Waarom zo:
 - [ ] Bij koop op ongeldige positie verschijnt exact: "deze speler past niet in de gekozen formatie"
 - [ ] Team-paginaheader (onder "Team", boven basiselftal) toont een speelrondekaart met ronde-nummer, start-countdown, wedstrijdrijen met shirt-icoontjes en strak referentie-grid (datum+tijd per duel)
 - [ ] Basiselftal gebruikt een perspectivische pitch-achtergrond met schuine dieptelijnen en realistische strafschopgebieden (alleen veldlaag aangepast; kaarten/interactie gelijk)
+- [ ] Manager-UI blijft mobiel bruikbaar (telefoon/tablet) met responsive header, opstellingskaarten, statistiektegels en bottom navigation
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -352,3 +355,4 @@ Waarom zo:
 - 2026-04-18: Summary-strip wijziging teruggedraaid; wedstrijdschema verplaatst naar Team-paginaheader (regel onder titel "Team", boven basiselftal) en uitgebreid naar alle wedstrijden van de actieve speelronde met datum+tijd.
 - 2026-04-18: Team-paginaheader visueel herwerkt naar speelrondekaart (ronde + START-countdown + wedstrijdkolommen) op basis van aangeleverde referentie; pitch-achtergrond van basiselftal vervangen door nieuwe groene veldstijl terwijl kaarten/interacties gelijk bleven.
 - 2026-04-18: Tweede visual-pass op referenties: speelrondekaart verfijnd naar strakker grid met shirt-icoontjes per club en compactere spacing; pitch opnieuw gemodelleerd met perspectivische schuine lijnen en realistischer strafschopvakken.
+- 2026-04-19: Responsive mobiele UI aangescherpt voor managerflows (compactere header/cards, pitch + stat-tiles op kleine schermen, bottom nav met safe-area ondersteuning).
