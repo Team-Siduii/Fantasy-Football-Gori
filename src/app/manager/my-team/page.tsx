@@ -456,41 +456,71 @@ export default function ManagerMyTeamPage() {
 
   const currentRound = useMemo(() => getCurrentOrNextRound(REMAINING_FIXTURES_2025_2026, new Date()), []);
 
-  const currentRoundFixtures = useMemo(() => {
-    if (!currentRound) {
+  const roundNumbers = useMemo(
+    () => Array.from(new Set(REMAINING_FIXTURES_2025_2026.map((fixture) => fixture.round))).sort((a, b) => a - b),
+    [],
+  );
+
+  const [selectedRoundIndex, setSelectedRoundIndex] = useState(() => {
+    if (roundNumbers.length === 0) {
+      return 0;
+    }
+
+    const currentIndex = currentRound ? roundNumbers.indexOf(currentRound) : -1;
+    return currentIndex >= 0 ? currentIndex : 0;
+  });
+
+  const selectedRound = roundNumbers[selectedRoundIndex] ?? null;
+
+  const selectedRoundFixtures = useMemo(() => {
+    if (!selectedRound) {
       return [] as SeasonFixture[];
     }
 
     return REMAINING_FIXTURES_2025_2026
-      .filter((fixture) => fixture.round === currentRound)
+      .filter((fixture) => fixture.round === selectedRound)
       .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
-  }, [currentRound]);
+  }, [selectedRound]);
 
-  const fixtureColumns = useMemo(() => chunkFixtures(currentRoundFixtures, 3), [currentRoundFixtures]);
+  const fixtureColumns = useMemo(() => chunkFixtures(selectedRoundFixtures, 3), [selectedRoundFixtures]);
 
   const roundCountdown = useMemo(() => {
-    const firstFixture = currentRoundFixtures[0];
+    const firstFixture = selectedRoundFixtures[0];
     if (!firstFixture) {
       return null;
     }
 
     return getCountdownParts(firstFixture.kickoffAt);
-  }, [currentRoundFixtures]);
+  }, [selectedRoundFixtures]);
+
+  const isPastRound = selectedRound !== null && currentRound !== null && selectedRound < currentRound;
 
   const scheduleSubtitle = useMemo(() => {
-    if (!currentRound || currentRoundFixtures.length === 0) {
+    if (!selectedRound || selectedRoundFixtures.length === 0) {
       return <p>Opstelling, wissels en transfermarkt in één overzicht.</p>;
     }
 
     return (
       <div className="round-schedule" data-testid="team-round-schedule">
         <div className="round-schedule-head">
+          <button
+            type="button"
+            className="round-nav-button"
+            onClick={() => setSelectedRoundIndex((index) => Math.max(0, index - 1))}
+            disabled={selectedRoundIndex === 0}
+            aria-label="Vorige speelronde"
+          >
+            ‹
+          </button>
+
           <div className="round-title-wrap">
             <span className="round-title-label">Ronde</span>
-            <strong className="round-title-value">{currentRound}</strong>
+            <strong className="round-title-value">{selectedRound}</strong>
           </div>
 
-          {roundCountdown ? (
+          {isPastRound ? (
+            <div className="round-result-pill">Uitslagen</div>
+          ) : roundCountdown ? (
             <div className="round-countdown" aria-label="Start volgende speelronde">
               <span className="round-countdown-start">START</span>
               <span>{roundCountdown.days}d</span>
@@ -498,6 +528,16 @@ export default function ManagerMyTeamPage() {
               <span>{roundCountdown.minutes}m</span>
             </div>
           ) : null}
+
+          <button
+            type="button"
+            className="round-nav-button"
+            onClick={() => setSelectedRoundIndex((index) => Math.min(roundNumbers.length - 1, index + 1))}
+            disabled={selectedRoundIndex >= roundNumbers.length - 1}
+            aria-label="Volgende speelronde"
+          >
+            ›
+          </button>
         </div>
 
         <div className="round-fixtures-grid">
@@ -510,8 +550,17 @@ export default function ManagerMyTeamPage() {
                     <span className={`team-shirt team-shirt--${toShirtClass(fixture.home)}`} aria-hidden="true" />
                   </span>
                   <span className="fixture-time">
-                    {toDutchDayAbbreviation(fixture.kickoffAt)} {fixture.kickoff}
-                    <small>{toShortDate(fixture.kickoffAt)}</small>
+                    {isPastRound ? (
+                      <>
+                        {fixture.homeScore ?? "-"} - {fixture.awayScore ?? "-"}
+                        <small>uitslag</small>
+                      </>
+                    ) : (
+                      <>
+                        {toDutchDayAbbreviation(fixture.kickoffAt)} {fixture.kickoff}
+                        <small>{toShortDate(fixture.kickoffAt)}</small>
+                      </>
+                    )}
                   </span>
                   <span className="fixture-team fixture-team--away">
                     <span className="fixture-team-code">{toClubCode(fixture.away)}</span>
@@ -524,7 +573,15 @@ export default function ManagerMyTeamPage() {
         </div>
       </div>
     );
-  }, [currentRound, currentRoundFixtures, fixtureColumns, roundCountdown]);
+  }, [
+    fixtureColumns,
+    isPastRound,
+    roundCountdown,
+    roundNumbers.length,
+    selectedRound,
+    selectedRoundFixtures,
+    selectedRoundIndex,
+  ]);
 
   function handleFormationChange(nextFormation: string) {
     const nonOpen = [...state.lineup, ...state.bench].filter((player) => !player.id.startsWith("open-"));

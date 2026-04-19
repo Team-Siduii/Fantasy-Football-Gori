@@ -127,6 +127,7 @@ Per rol belangrijkste rechten:
 - Fase 2: conflictresolutie (waiver/priority/queue) toevoegen
 - Managerpagina toont transfermarkt onder teamoverzicht zodat basiselftal/bank en transferkeuzes tegelijk zichtbaar zijn
 - In de Team-paginaheader (regel direct onder titel "Team") wordt de standaardtekst vervangen door een compacte speelrondekaart met ronde-nummer, start-countdown en een wedstrijdraster met 1-op-1 shirt-icoontjes per club, plus datum+tijd per duel.
+- Speelrondekaart heeft browsen met links/rechts-knoppen: rechts toont de volgende ronde (programma), links toont de vorige ronde met uitslagen.
 - Transfermarkt-filters in MVP: positie, club en maximale transferwaarde (slider)
 - Bankverdeling is vast: altijd 4 bankslots met 1x GK, 1x DEF, 1x MID en 1x FWD
 - Basiselftal-weergave op het veld toont per slot de echte speler op die index (geen naamherhaling binnen een linie); elke speler-id mag maar 1x tegelijk in teamstate voorkomen
@@ -199,8 +200,9 @@ FR-039: Als gekozen formatie met huidige spelers + beschikbare placeholders niet
 FR-040: Bij aankoop wordt pas op dat moment gevalideerd of positie in de gekozen formatie op een open slot past; zo niet toont UI exact: "deze speler past niet in de gekozen formatie".
 FR-041: Bank bevat altijd exact 1 keeper, 1 verdediger, 1 middenvelder en 1 aanvaller (bezette speler of placeholder).
 FR-042: Team-paginaheader (onder titel "Team", boven basiselftal) toont een speelrondekaart met ronde-nummer, countdown naar eerste aftrap en wedstrijden in referentie-layout met datum+tijd en club-shirticoon per thuis/uit-team.
-FR-043: Basiselftal-veld behoudt bestaande kaart/interactie maar gebruikt een perspectivische pitch-achtergrond met schuine dieptelijnen en realistische strafschopgebieden in referentiestijl.
-FR-044: Manager-UI is responsive op mobiel/tablet: header, kaarten, opstellingsveld en bottom navigation blijven bruikbaar zonder horizontaal scrollen in de standaard flows.
+FR-043: Basiselftal-veld behoudt bestaande kaart/interactie maar gebruikt een perspectivische pitch-achtergrond met schuine dieptelijnen en realistische strafschopgebieden in referentiestijl, inclusief taps toelopend onderste strafschopgebied voor consistente diepte.
+FR-044: Speelrondekaart ondersteunt browsen via links/rechts-knoppen: rechts navigeert naar volgende ronde (programma), links naar vorige ronde met uitslagenweergave.
+FR-045: Manager-UI is responsive op mobiel/tablet: header, kaarten, opstellingsveld en bottom navigation blijven bruikbaar zonder horizontaal scrollen in de standaard flows.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -305,7 +307,8 @@ Waarom zo:
 - [ ] Bank toont altijd precies 1 GK, 1 DEF, 1 MID en 1 FWD
 - [ ] Bij koop op ongeldige positie verschijnt exact: "deze speler past niet in de gekozen formatie"
 - [ ] Team-paginaheader (onder "Team", boven basiselftal) toont een speelrondekaart met ronde-nummer, start-countdown, wedstrijdrijen met shirt-icoontjes en strak referentie-grid (datum+tijd per duel)
-- [ ] Basiselftal gebruikt een perspectivische pitch-achtergrond met schuine dieptelijnen en realistische strafschopgebieden (alleen veldlaag aangepast; kaarten/interactie gelijk)
+- [ ] Basiselftal gebruikt een perspectivische pitch-achtergrond met schuine dieptelijnen en realistische strafschopgebieden, inclusief taps toelopend onderste strafschopgebied (alleen veldlaag aangepast; kaarten/interactie gelijk)
+- [ ] Links/rechts-knoppen browsen speelrondes: rechts toont volgende ronde-programma, links toont vorige ronde met uitslagen
 - [ ] Manager-UI blijft mobiel bruikbaar (telefoon/tablet) met responsive header, opstellingskaarten, statistiektegels en bottom navigation
 
 ## 12. Open vragen
@@ -355,4 +358,5 @@ Waarom zo:
 - 2026-04-18: Summary-strip wijziging teruggedraaid; wedstrijdschema verplaatst naar Team-paginaheader (regel onder titel "Team", boven basiselftal) en uitgebreid naar alle wedstrijden van de actieve speelronde met datum+tijd.
 - 2026-04-18: Team-paginaheader visueel herwerkt naar speelrondekaart (ronde + START-countdown + wedstrijdkolommen) op basis van aangeleverde referentie; pitch-achtergrond van basiselftal vervangen door nieuwe groene veldstijl terwijl kaarten/interacties gelijk bleven.
 - 2026-04-18: Tweede visual-pass op referenties: speelrondekaart verfijnd naar strakker grid met shirt-icoontjes per club en compactere spacing; pitch opnieuw gemodelleerd met perspectivische schuine lijnen en realistischer strafschopvakken.
+- 2026-04-18: Interactie-uitbreiding speelrondekaart: links/rechts browseknoppen toegevoegd (volgende ronde programma, vorige ronde uitslagen) en onderste strafschopgebied extra taps gemaakt voor consistente diepte.
 - 2026-04-19: Responsive mobiele UI aangescherpt voor managerflows (compactere header/cards, pitch + stat-tiles op kleine schermen, bottom nav met safe-area ondersteuning).

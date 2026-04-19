@@ -5,11 +5,24 @@ export type SeasonFixture = {
   kickoffAt: string;
   home: string;
   away: string;
+  homeScore?: number;
+  awayScore?: number;
 };
 
 export const SCHEDULE_SPONSOR = "Staatsloterij";
 
 export const REMAINING_FIXTURES_2025_2026: SeasonFixture[] = [
+  // Ronde 30 (afgerond, met uitslagen)
+  { round: 30, dateLabel: "Vrijdag 17 april 2026", kickoff: "20:00", kickoffAt: "2026-04-17T20:00:00+02:00", home: "PSV", away: "NAC", homeScore: 3, awayScore: 1 },
+  { round: 30, dateLabel: "Zaterdag 18 april 2026", kickoff: "16:30", kickoffAt: "2026-04-18T16:30:00+02:00", home: "Ajax", away: "Heerenveen", homeScore: 2, awayScore: 2 },
+  { round: 30, dateLabel: "Zaterdag 18 april 2026", kickoff: "18:45", kickoffAt: "2026-04-18T18:45:00+02:00", home: "Sparta", away: "Twente", homeScore: 1, awayScore: 2 },
+  { round: 30, dateLabel: "Zaterdag 18 april 2026", kickoff: "20:00", kickoffAt: "2026-04-18T20:00:00+02:00", home: "Feyenoord", away: "Fortuna", homeScore: 4, awayScore: 0 },
+  { round: 30, dateLabel: "Zaterdag 18 april 2026", kickoff: "21:00", kickoffAt: "2026-04-18T21:00:00+02:00", home: "AZ", away: "Go Ahead", homeScore: 1, awayScore: 1 },
+  { round: 30, dateLabel: "Zondag 19 april 2026", kickoff: "12:15", kickoffAt: "2026-04-19T12:15:00+02:00", home: "Utrecht", away: "Excelsior", homeScore: 2, awayScore: 0 },
+  { round: 30, dateLabel: "Zondag 19 april 2026", kickoff: "14:30", kickoffAt: "2026-04-19T14:30:00+02:00", home: "NEC", away: "Groningen", homeScore: 2, awayScore: 1 },
+  { round: 30, dateLabel: "Zondag 19 april 2026", kickoff: "14:30", kickoffAt: "2026-04-19T14:30:00+02:00", home: "PEC", away: "Heracles", homeScore: 0, awayScore: 0 },
+  { round: 30, dateLabel: "Zondag 19 april 2026", kickoff: "16:45", kickoffAt: "2026-04-19T16:45:00+02:00", home: "Volendam", away: "Telstar", homeScore: 1, awayScore: 3 },
+
   // Ronde 31 (22 t/m 26 april 2026)
   { round: 31, dateLabel: "Woensdag 22 april 2026", kickoff: "20:00", kickoffAt: "2026-04-22T20:00:00+02:00", home: "Telstar", away: "Sparta" },
   { round: 31, dateLabel: "Donderdag 23 april 2026", kickoff: "18:45", kickoffAt: "2026-04-23T18:45:00+02:00", home: "Go Ahead", away: "AZ" },

@@ -7,11 +7,11 @@ import {
 } from "../../src/lib/season-schedule";
 
 describe("season-schedule", () => {
-  it("contains sponsor and 4 grouped rounds (31-34) with 9 matches each", () => {
+  it("contains sponsor and 5 grouped rounds (30-34) with 9 matches each", () => {
     expect(SCHEDULE_SPONSOR).toBe("Staatsloterij");
 
     const grouped = groupFixturesByRound(REMAINING_FIXTURES_2025_2026);
-    expect(grouped.map((group) => group.round)).toEqual([31, 32, 33, 34]);
+    expect(grouped.map((group) => group.round)).toEqual([30, 31, 32, 33, 34]);
     expect(grouped.every((group) => group.fixtures.length === 9)).toBe(true);
   });
 
