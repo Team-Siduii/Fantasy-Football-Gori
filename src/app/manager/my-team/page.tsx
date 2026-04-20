@@ -7,12 +7,7 @@ import { StatTile } from "@/components/stat-tile";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
 import { reorderAcrossZones, type ZoneName, type ZoneState } from "@/domain/lineup-state";
 import { buildPitchRows } from "@/domain/pitch-layout";
-import {
-  MAX_TRANSFER_BUDGET_MILLIONS,
-  calculateRemainingBudget,
-  calculateSquadCost,
-  isWithinBudget,
-} from "@/domain/team-budget";
+import { MAX_TRANSFER_BUDGET_MILLIONS, calculateRemainingBudget, isWithinBudget } from "@/domain/team-budget";
 import type { PlayerRecord } from "@/domain/player";
 import { buildMarketPlayers } from "@/domain/transfer-workflow";
 import { byPriceDesc, enrichPlayers, type EnhancedPlayer } from "@/lib/player-derived";
@@ -22,6 +17,15 @@ type Position = "GK" | "DEF" | "MID" | "FWD";
 
 const BENCH_LIMIT = 4;
 const BENCH_POSITIONS: Position[] = ["GK", "DEF", "MID", "FWD"];
+const POSITION_SORT_ORDER: Record<Position, number> = {
+  GK: 0,
+  DEF: 1,
+  MID: 2,
+  FWD: 3,
+};
+
+type MarketSortField = "naam" | "positie" | "club" | "prijs";
+type MarketSortDirection = "asc" | "desc";
 
 type ManagerStateResponse = {
   state?: {
@@ -287,6 +291,8 @@ export default function ManagerMyTeamPage() {
   const [selectedPosition, setSelectedPosition] = useState("ALL");
   const [selectedClub, setSelectedClub] = useState("ALL");
   const [maxPrice, setMaxPrice] = useState(0);
+  const [marketSortField, setMarketSortField] = useState<MarketSortField>("prijs");
+  const [marketSortDirection, setMarketSortDirection] = useState<MarketSortDirection>("desc");
 
   const hydrated = useRef(false);
 
@@ -403,7 +409,6 @@ export default function ManagerMyTeamPage() {
     return [...state.lineup, ...state.bench].filter((player) => !player.id.startsWith("open-"));
   }, [state.bench, state.lineup]);
 
-  const squadCost = useMemo(() => calculateSquadCost(squadPlayers), [squadPlayers]);
   const remainingBudget = useMemo(
     () => calculateRemainingBudget(squadPlayers, MAX_TRANSFER_BUDGET_MILLIONS),
     [squadPlayers],
@@ -442,9 +447,8 @@ export default function ManagerMyTeamPage() {
   const filteredMarket = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return marketPlayers.filter((player) => {
+    const matchingPlayers = marketPlayers.filter((player) => {
       const positionMatch = selectedPosition === "ALL" || player.positie === selectedPosition;
-
       const clubMatch = selectedClub === "ALL" || player.club === selectedClub;
       const searchMatch =
         query.length === 0 || player.naam.toLowerCase().includes(query) || player.club.toLowerCase().includes(query);
@@ -452,7 +456,48 @@ export default function ManagerMyTeamPage() {
 
       return positionMatch && clubMatch && searchMatch && priceMatch;
     });
-  }, [marketPlayers, maxPrice, search, selectedClub, selectedPosition]);
+
+    return [...matchingPlayers].sort((left, right) => {
+      let result = 0;
+
+      if (marketSortField === "naam") {
+        result = left.naam.localeCompare(right.naam, "nl", { sensitivity: "base" });
+      } else if (marketSortField === "club") {
+        result = left.club.localeCompare(right.club, "nl", { sensitivity: "base" });
+      } else if (marketSortField === "positie") {
+        const leftOrder = POSITION_SORT_ORDER[left.positie as Position] ?? 99;
+        const rightOrder = POSITION_SORT_ORDER[right.positie as Position] ?? 99;
+        result = leftOrder - rightOrder;
+      } else {
+        result = left.prijs - right.prijs;
+      }
+
+      if (result === 0) {
+        result = left.naam.localeCompare(right.naam, "nl", { sensitivity: "base" });
+      }
+
+      return marketSortDirection === "asc" ? result : -result;
+    });
+  }, [marketPlayers, marketSortDirection, marketSortField, maxPrice, search, selectedClub, selectedPosition]);
+
+  function toggleMarketSort(field: MarketSortField) {
+    if (marketSortField === field) {
+      setMarketSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+
+    setMarketSortField(field);
+    setMarketSortDirection(field === "prijs" ? "desc" : "asc");
+  }
+
+  function sortIndicator(field: MarketSortField) {
+    if (marketSortField !== field) {
+      return "↕";
+    }
+
+    return marketSortDirection === "asc" ? "↑" : "↓";
+  }
+
 
   const currentRound = useMemo(() => getCurrentOrNextRound(REMAINING_FIXTURES_2025_2026, new Date()), []);
 
@@ -781,18 +826,15 @@ export default function ManagerMyTeamPage() {
             })}
           </div>
 
-          <div className="stat-grid">
+          <div className="stat-grid stats-desktop">
             <StatTile label="Totaal Punten" value={state.lineup.reduce((sum, player) => sum + player.punten, 0)} />
             <StatTile label="Resterend Budget" value={`€ ${remainingBudget.toFixed(1)}M`} />
             <StatTile label="Transfers deze ronde" value="1" />
-            <StatTile label="Deadline Volgende Ronde" value="2 dagen, 4 uur" />
           </div>
-          <p className="muted-note">Budget cap: € {MAX_TRANSFER_BUDGET_MILLIONS.toFixed(1)}M · Huidige teamwaarde: € {squadCost.toFixed(1)}M.</p>
         </section>
 
         <section className="card col-4">
           <h2>Wisselspelers</h2>
-          <p className="muted-note">Maximaal {BENCH_LIMIT} wissels zichtbaar. Drag & drop respecteert positie-slots.</p>
           <div className="bench-grid">
             {state.bench.slice(0, BENCH_LIMIT).map((player, benchIndex) => (
               <PlayerCard
@@ -817,9 +859,16 @@ export default function ManagerMyTeamPage() {
           </div>
         </section>
 
+        <section className="card col-8 stats-mobile" aria-label="Teamstatistieken mobiel">
+          <div className="stat-grid">
+            <StatTile label="Totaal Punten" value={state.lineup.reduce((sum, player) => sum + player.punten, 0)} />
+            <StatTile label="Resterend Budget" value={`€ ${remainingBudget.toFixed(1)}M`} />
+            <StatTile label="Transfers deze ronde" value="1" />
+          </div>
+        </section>
+
         <section className="card col-12" id="transfermarkt">
-          <h2>Transfermarkt (onder teamoverzicht)</h2>
-          <p className="muted-note">Flow: 1) verkoop speler, 2) placeholder verschijnt, 3) optioneel formatie wisselen, 4) koop vervanger op open positie.</p>
+          <h2>Transfermarkt</h2>
 
           <div className="grid transfer-controls">
             <label className="col-4">
@@ -898,10 +947,46 @@ export default function ManagerMyTeamPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Speler</th>
-                  <th>Positie</th>
-                  <th>Club</th>
-                  <th>Prijs</th>
+                  <th>
+                    <button
+                      type="button"
+                      className="sortable-header-button"
+                      onClick={() => toggleMarketSort("naam")}
+                      data-testid="sort-name"
+                    >
+                      Speler {sortIndicator("naam")}
+                    </button>
+                  </th>
+                  <th>
+                    <button
+                      type="button"
+                      className="sortable-header-button"
+                      onClick={() => toggleMarketSort("positie")}
+                      data-testid="sort-position"
+                    >
+                      Positie {sortIndicator("positie")}
+                    </button>
+                  </th>
+                  <th>
+                    <button
+                      type="button"
+                      className="sortable-header-button"
+                      onClick={() => toggleMarketSort("club")}
+                      data-testid="sort-club"
+                    >
+                      Club {sortIndicator("club")}
+                    </button>
+                  </th>
+                  <th>
+                    <button
+                      type="button"
+                      className="sortable-header-button"
+                      onClick={() => toggleMarketSort("prijs")}
+                      data-testid="sort-price"
+                    >
+                      Transferwaarde {sortIndicator("prijs")}
+                    </button>
+                  </th>
                   <th>Actie</th>
                 </tr>
               </thead>

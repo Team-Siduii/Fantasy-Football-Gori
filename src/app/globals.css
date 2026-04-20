@@ -416,6 +416,26 @@ td {
   font-size: 0.88rem;
 }
 
+.sortable-header-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sortable-header-button:hover {
+  color: var(--brand);
+}
+
+.stats-mobile {
+  display: none;
+}
+
 input,
 textarea,
 select {
@@ -758,6 +778,14 @@ select {
   .col-8,
   .col-12 {
     grid-column: span 12;
+  }
+
+  .stats-desktop {
+    display: none;
+  }
+
+  .stats-mobile {
+    display: block;
   }
 
   .round-fixtures-grid {

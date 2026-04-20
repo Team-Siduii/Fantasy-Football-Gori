@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-04-19
+Laatste update: 2026-04-20
 
 ## 1. Productvisie
 Doel van de app:
@@ -135,6 +135,8 @@ Per rol belangrijkste rechten:
 - Strafschopgebied-visual bevat extra diepte, 5-metergebied en halve cirkel onderaan het strafschopgebied (realistische veldweergave)
 - MVP transferbudget-cap voor managerteam: maximaal €32.0M totale teamwaarde; transferbevestiging blokkeert automatisch boven cap
 - Demo-team (testseed) wordt standaard binnen budget opgebouwd (<= €32.0M) zodat testen direct valide start
+- Mobiele volgorde op Team-pagina: basiselftal eerst, daarna wisselspelers, daarna statistiektegels
+- Transfermarkt-kolommen zijn sorteerbaar op spelernaam, positie (GK→DEF→MID→FWD), club en transferwaarde
 
 ### 4.6 Notificaties
 - Draft turn
@@ -203,6 +205,8 @@ FR-042: Team-paginaheader (onder titel "Team", boven basiselftal) toont een spee
 FR-043: Basiselftal-veld behoudt bestaande kaart/interactie maar gebruikt een perspectivische pitch-achtergrond met schuine dieptelijnen en realistische strafschopgebieden in referentiestijl, inclusief taps toelopend onderste strafschopgebied voor consistente diepte.
 FR-044: Speelrondekaart ondersteunt browsen via links/rechts-knoppen: rechts navigeert naar volgende ronde (programma), links naar vorige ronde met uitslagenweergave.
 FR-045: Manager-UI is responsive op mobiel/tablet: header, kaarten, opstellingsveld en bottom navigation blijven bruikbaar zonder horizontaal scrollen in de standaard flows.
+FR-046: In mobiele Team-weergave staan de secties in deze volgorde: basiselftal, wisselspelers, daarna statistiektegels.
+FR-047: Transfermarkt ondersteunt kolomsortering op spelernaam, positie (GK, DEF, MID, FWD), club en transferwaarde, met omschakelbare oplopend/aflopend sorteerrichting.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -310,6 +314,8 @@ Waarom zo:
 - [ ] Basiselftal gebruikt een perspectivische pitch-achtergrond met schuine dieptelijnen en realistische strafschopgebieden, inclusief taps toelopend onderste strafschopgebied (alleen veldlaag aangepast; kaarten/interactie gelijk)
 - [ ] Links/rechts-knoppen browsen speelrondes: rechts toont volgende ronde-programma, links toont vorige ronde met uitslagen
 - [ ] Manager-UI blijft mobiel bruikbaar (telefoon/tablet) met responsive header, opstellingskaarten, statistiektegels en bottom navigation
+- [ ] In mobiele Team-weergave staat de volgorde als: basiselftal → wisselspelers → statistiektegels
+- [ ] Transfermarkt-kolommen zijn klikbaar sorteerbaar op speler, positie (GK/DEF/MID/FWD), club en transferwaarde
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -361,3 +367,4 @@ Waarom zo:
 - 2026-04-18: Interactie-uitbreiding speelrondekaart: links/rechts browseknoppen toegevoegd (volgende ronde programma, vorige ronde uitslagen) en onderste strafschopgebied extra taps gemaakt voor consistente diepte.
 - 2026-04-19: Onderste strafschopgebied opnieuw gealigneerd met veldperspectief (gespiegeld op bovenste dieptelogica) zodat de diepte consistent is over het hele veld.
 - 2026-04-19: Responsive mobiele UI aangescherpt voor managerflows (compactere header/cards, pitch + stat-tiles op kleine schermen, bottom nav met safe-area ondersteuning).
+- 2026-04-20: Team mobile-layout verfijnd: wisselspelers onder basiselftal en statistiektegels daarna; overbodige hulptrij-teksten verwijderd; transfermarktkolommen klikbaar sorteerbaar gemaakt (naam/positie/club/transferwaarde).
