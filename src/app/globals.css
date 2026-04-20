@@ -339,6 +339,14 @@ a {
   gap: 0.9rem;
 }
 
+.col-2 {
+  grid-column: span 2;
+}
+
+.col-3 {
+  grid-column: span 3;
+}
+
 .col-4 {
   grid-column: span 4;
 }
@@ -757,6 +765,16 @@ select {
   margin-bottom: 0.75rem;
 }
 
+.transfer-controls label {
+  min-width: 0;
+}
+
+.transfer-controls input,
+.transfer-controls select {
+  width: 100%;
+  min-height: 44px;
+}
+
 .transfer-price-filter {
   display: grid;
   gap: 0.35rem;
@@ -773,6 +791,8 @@ select {
 }
 
 @media (max-width: 900px) {
+  .col-2,
+  .col-3,
   .col-4,
   .col-6,
   .col-8,
@@ -918,6 +938,14 @@ select {
 
   .bench-grid {
     grid-template-columns: 1fr;
+  }
+
+  .transfer-controls {
+    gap: 0.7rem;
+  }
+
+  .transfer-controls label {
+    gap: 0.35rem;
   }
 
   .round-schedule-head {
