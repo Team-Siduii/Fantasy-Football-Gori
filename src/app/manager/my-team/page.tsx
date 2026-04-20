@@ -291,6 +291,7 @@ export default function ManagerMyTeamPage() {
   const [selectedPosition, setSelectedPosition] = useState("ALL");
   const [selectedClub, setSelectedClub] = useState("ALL");
   const [maxPrice, setMaxPrice] = useState(0);
+  const [sellSelection, setSellSelection] = useState("");
   const [marketSortField, setMarketSortField] = useState<MarketSortField>("prijs");
   const [marketSortDirection, setMarketSortDirection] = useState<MarketSortDirection>("desc");
 
@@ -874,9 +875,15 @@ export default function ManagerMyTeamPage() {
             <label className="col-4">
               1) Verkoop speler
               <select
-                value={pendingSellId ?? ""}
-                onChange={(event) => handleSellSelection(event.target.value)}
+                value={sellSelection}
+                onChange={(event) => {
+                  const playerId = event.target.value;
+                  setSellSelection(playerId);
+                  handleSellSelection(playerId);
+                  setSellSelection("");
+                }}
                 data-testid="sell-player-select"
+                disabled={openSlots.length > 0}
               >
                 <option value="">Kies speler om te verkopen</option>
                 {squadPlayers.map((player) => (
@@ -885,6 +892,9 @@ export default function ManagerMyTeamPage() {
                   </option>
                 ))}
               </select>
+              {openSlots.length > 0 ? (
+                <small className="transfer-hint">Open transfer actief: koop eerst een vervanger om opnieuw te verkopen.</small>
+              ) : null}
             </label>
 
             <label className="col-2">

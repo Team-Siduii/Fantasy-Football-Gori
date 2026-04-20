@@ -131,6 +131,7 @@ Per rol belangrijkste rechten:
 - Transfermarkt-filters in MVP: positie, club en maximale transferwaarde (slider)
 - In mobiele weergave stacken transfermarkt-filters onder elkaar met full-width velden (geen samengedrukte Positie/Club/Zoek-layout)
 - Mobile transfermarkt-filters gebruiken extra label-contrast en spacing voor leesbaarheid en touch-bruikbaarheid
+- Verkoop-selector wordt geblokkeerd tijdens een open transfer (placeholder actief) en toont expliciete hint om eerst een vervanger te kopen
 - Bankverdeling is vast: altijd 4 bankslots met 1x GK, 1x DEF, 1x MID en 1x FWD
 - Basiselftal-weergave op het veld toont per slot de echte speler op die index (geen naamherhaling binnen een linie); elke speler-id mag maar 1x tegelijk in teamstate voorkomen
 - Pitch in basiselftal krijgt een visuele halve-veld overlay (midlijn/halve cirkel + zestienmeter) voor herkenbare voetbalcontext
@@ -210,6 +211,7 @@ FR-045: Manager-UI is responsive op mobiel/tablet: header, kaarten, opstellingsv
 FR-046: In mobiele Team-weergave staan de secties in deze volgorde: basiselftal, wisselspelers, daarna statistiektegels.
 FR-047: Transfermarkt ondersteunt kolomsortering op spelernaam, positie (GK, DEF, MID, FWD), club en transferwaarde, met omschakelbare oplopend/aflopend sorteerrichting.
 FR-048: Transfermarkt-filters blijven op mobiel volledig bruikbaar: Positie/Club/Zoek stacken verticaal en elk veld gebruikt full-width.
+FR-049: Tijdens een open transfer (placeholder aanwezig) is de verkoop-selector tijdelijk disabled en krijgt de manager een expliciete hint om eerst een vervanger te kopen.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -320,6 +322,7 @@ Waarom zo:
 - [ ] In mobiele Team-weergave staat de volgorde als: basiselftal → wisselspelers → statistiektegels
 - [ ] Transfermarkt-kolommen zijn klikbaar sorteerbaar op speler, positie (GK/DEF/MID/FWD), club en transferwaarde
 - [ ] Transfermarkt-filters op mobiel zijn full-width en verticaal gestapeld (Positie/Club/Zoek zonder overlap of ingedrukte velden)
+- [ ] Tijdens een open transfer is de verkoop-selector disabled en toont de UI een duidelijke hint om eerst een vervanger te kopen
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -374,3 +377,4 @@ Waarom zo:
 - 2026-04-20: Team mobile-layout verfijnd: wisselspelers onder basiselftal en statistiektegels daarna; overbodige hulptrij-teksten verwijderd; transfermarktkolommen klikbaar sorteerbaar gemaakt (naam/positie/club/transferwaarde).
 - 2026-04-20: Transfermarkt-mobile formulierfix: Positie/Club/Zoek-velden nu full-width en verticaal gestapeld; kolombreedtes (col-2/col-3) expliciet gedefinieerd en op mobiel naar 12 kolommen gezet om overlap/compressie te voorkomen.
 - 2026-04-20: Mobile transfermarkt UI gepolijst met betere label-contrast, extra vertical spacing en grotere input-typografie voor leesbaarheid.
+- 2026-04-20: Verkoop-flow UX verduidelijkt: sell-dropdown reset na keuze, wordt disabled tijdens open transfer en toont expliciete hint (voorkomt indruk dat selectie “niets doet” op mobiel).

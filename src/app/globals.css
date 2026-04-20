@@ -779,6 +779,12 @@ select {
   min-height: 44px;
 }
 
+.transfer-hint {
+  color: #4d5e7c;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .transfer-price-filter {
   display: grid;
   gap: 0.35rem;
