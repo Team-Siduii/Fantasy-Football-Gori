@@ -10,6 +10,7 @@ import { buildPitchRows } from "@/domain/pitch-layout";
 import { MAX_TRANSFER_BUDGET_MILLIONS, calculateRemainingBudget, isWithinBudget } from "@/domain/team-budget";
 import type { PlayerRecord } from "@/domain/player";
 import { buildMarketPlayers } from "@/domain/transfer-workflow";
+import { getTransferLimitForRound } from "@/domain/rules";
 import { byPriceDesc, enrichPlayers, type EnhancedPlayer } from "@/lib/player-derived";
 import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
 
@@ -23,6 +24,7 @@ const POSITION_SORT_ORDER: Record<Position, number> = {
   MID: 2,
   FWD: 3,
 };
+const BONUS_ROUNDS = [5, 10, 20] as const;
 
 type MarketSortField = "naam" | "positie" | "club" | "prijs";
 type MarketSortDirection = "asc" | "desc";
@@ -540,6 +542,8 @@ export default function ManagerMyTeamPage() {
   }, [selectedRoundFixtures]);
 
   const isPastRound = selectedRound !== null && currentRound !== null && selectedRound < currentRound;
+  const currentTransferLimit = currentRound ? getTransferLimitForRound(currentRound, [...BONUS_ROUNDS]) : 1;
+  const canSellMore = openSlots.length < currentTransferLimit;
 
   const scheduleSubtitle = useMemo(() => {
     if (!selectedRound || selectedRoundFixtures.length === 0) {
@@ -686,8 +690,8 @@ export default function ManagerMyTeamPage() {
       return;
     }
 
-    if (openSlots.length > 0) {
-      setTransferMessage("Rond eerst je open transfer af door een vervanger te kopen.");
+    if (openSlots.length >= currentTransferLimit) {
+      setTransferMessage(`Je hebt het maximum van ${currentTransferLimit} open verkopen voor deze ronde bereikt. Koop eerst een vervanger.`);
       return;
     }
 
@@ -701,7 +705,12 @@ export default function ManagerMyTeamPage() {
         nextLineup[lineupIndex] = createOpenSlot(sold.positie);
         setPendingSellId(playerId);
         setPendingBuyId(null);
-        setTransferMessage(`${sold.naam} is verkocht. Kies nu een nieuwe ${sold.positie}.`);
+        const remainingSells = Math.max(0, currentTransferLimit - (openSlots.length + 1));
+        setTransferMessage(
+          remainingSells > 0
+            ? `${sold.naam} is verkocht. Je kunt nog ${remainingSells} speler(s) verkopen of direct een vervanger kopen.`
+            : `${sold.naam} is verkocht. Koop nu een vervanger om verder te gaan.`,
+        );
         return { lineup: nextLineup, bench: nextBench };
       }
 
@@ -711,7 +720,12 @@ export default function ManagerMyTeamPage() {
         nextBench[benchIndex] = createOpenSlot(sold.positie);
         setPendingSellId(playerId);
         setPendingBuyId(null);
-        setTransferMessage(`${sold.naam} is verkocht. Kies nu een nieuwe ${sold.positie}.`);
+        const remainingSells = Math.max(0, currentTransferLimit - (openSlots.length + 1));
+        setTransferMessage(
+          remainingSells > 0
+            ? `${sold.naam} is verkocht. Je kunt nog ${remainingSells} speler(s) verkopen of direct een vervanger kopen.`
+            : `${sold.naam} is verkocht. Koop nu een vervanger om verder te gaan.`,
+        );
         return { lineup: nextLineup, bench: nextBench };
       }
 
@@ -830,7 +844,7 @@ export default function ManagerMyTeamPage() {
           <div className="stat-grid stats-desktop">
             <StatTile label="Totaal Punten" value={state.lineup.reduce((sum, player) => sum + player.punten, 0)} />
             <StatTile label="Resterend Budget" value={`€ ${remainingBudget.toFixed(1)}M`} />
-            <StatTile label="Transfers deze ronde" value="1" />
+            <StatTile label="Transfers deze ronde" value={currentTransferLimit} />
           </div>
         </section>
 
@@ -864,7 +878,7 @@ export default function ManagerMyTeamPage() {
           <div className="stat-grid">
             <StatTile label="Totaal Punten" value={state.lineup.reduce((sum, player) => sum + player.punten, 0)} />
             <StatTile label="Resterend Budget" value={`€ ${remainingBudget.toFixed(1)}M`} />
-            <StatTile label="Transfers deze ronde" value="1" />
+            <StatTile label="Transfers deze ronde" value={currentTransferLimit} />
           </div>
         </section>
 
@@ -883,7 +897,7 @@ export default function ManagerMyTeamPage() {
                   setSellSelection("");
                 }}
                 data-testid="sell-player-select"
-                disabled={openSlots.length > 0}
+                disabled={!canSellMore}
               >
                 <option value="">Kies speler om te verkopen</option>
                 {squadPlayers.map((player) => (
@@ -892,8 +906,14 @@ export default function ManagerMyTeamPage() {
                   </option>
                 ))}
               </select>
-              {openSlots.length > 0 ? (
-                <small className="transfer-hint">Open transfer actief: koop eerst een vervanger om opnieuw te verkopen.</small>
+              {!canSellMore ? (
+                <small className="transfer-hint">
+                  Maximum open verkopen bereikt ({openSlots.length}/{currentTransferLimit}). Koop eerst een vervanger om verder te gaan.
+                </small>
+              ) : openSlots.length > 0 && currentTransferLimit > 1 ? (
+                <small className="transfer-hint">
+                  Open verkopen: {openSlots.length}/{currentTransferLimit}. Je kunt eerst extra verkopen of direct kopen.
+                </small>
               ) : null}
             </label>
 
