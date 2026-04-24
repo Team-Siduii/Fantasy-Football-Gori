@@ -9,6 +9,40 @@ type LeagueAdminConfig = {
   roles: { ownerId: string; commissionerIds: string[]; managerIds: string[] };
 };
 
+type RuleHelpKey =
+  | "scoringProfile"
+  | "waiverTieBreaker"
+  | "cupTiePolicy"
+  | "commissioners"
+  | "managers";
+
+const RULE_HELP_TEXT: Record<RuleHelpKey, string> = {
+  scoringProfile:
+    "Classic gebruikt de standaard puntentelling. Custom is bedoeld voor een eigen puntenmodel (fase 2) en laat je alternatieve bonus/malus-regels beheren.",
+  waiverTieBreaker:
+    "Bepaalt wie wint als meerdere managers dezelfde speler claimen in waiver. Priority = vaste prioriteitsvolgorde. Earliest bid = vroegste geldige bod wint.",
+  cupTiePolicy:
+    "Bepaalt hoe een gelijke stand in de cup wordt beslist. Penalties = strafschoppen. Higher seed = hoger geplaatste team gaat door.",
+  commissioners:
+    "Manager-ID's met extra beheerdersrechten voor league-regels en instellingen. Komma-gescheiden lijst, bijvoorbeeld: owner-1,comm-1.",
+  managers:
+    "Alle manager-ID's die in deze league actief zijn. Deze lijst wordt gebruikt voor permissies en rolvalidatie.",
+};
+
+function RuleLabel({ text, helpKey }: { text: string; helpKey: RuleHelpKey }) {
+  return (
+    <span className="field-label">
+      {text}
+      <span className="help-dot" tabIndex={0} role="note" aria-label={`${text}: ${RULE_HELP_TEXT[helpKey]}`}>
+        ?
+      </span>
+      <span className="help-tooltip" role="tooltip">
+        {RULE_HELP_TEXT[helpKey]}
+      </span>
+    </span>
+  );
+}
+
 export function LeagueConfigEditor() {
   const [config, setConfig] = useState<LeagueAdminConfig | null>(null);
   const [message, setMessage] = useState<string>("");
@@ -81,7 +115,7 @@ export function LeagueConfigEditor() {
 
       <div className="grid" style={{ marginTop: 12 }}>
         <label className="field col-4">
-          <span>Scoring profiel</span>
+          <RuleLabel text="Scoring profiel" helpKey="scoringProfile" />
           <select
             value={config.scoringProfile.type}
             onChange={(event) =>
@@ -102,7 +136,7 @@ export function LeagueConfigEditor() {
         </label>
 
         <label className="field col-4">
-          <span>Waiver tie-breaker</span>
+          <RuleLabel text="Waiver tie-breaker" helpKey="waiverTieBreaker" />
           <select
             value={config.waiver.round.tieBreaker}
             onChange={(event) =>
@@ -124,7 +158,7 @@ export function LeagueConfigEditor() {
         </label>
 
         <label className="field col-4">
-          <span>Cup tie policy</span>
+          <RuleLabel text="Cup tie policy" helpKey="cupTiePolicy" />
           <select
             value={config.competition.cupTiePolicy}
             onChange={(event) =>
@@ -143,7 +177,7 @@ export function LeagueConfigEditor() {
         </label>
 
         <label className="field col-6">
-          <span>Commissioners (comma-separated manager ids)</span>
+          <RuleLabel text="Commissioners (comma-separated manager ids)" helpKey="commissioners" />
           <input
             value={config.roles.commissionerIds.join(",")}
             onChange={(event) =>
@@ -162,7 +196,7 @@ export function LeagueConfigEditor() {
         </label>
 
         <label className="field col-6">
-          <span>Managers (comma-separated manager ids)</span>
+          <RuleLabel text="Managers (comma-separated manager ids)" helpKey="managers" />
           <input
             value={config.roles.managerIds.join(",")}
             onChange={(event) =>

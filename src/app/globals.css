@@ -476,6 +476,68 @@ select {
   font: inherit;
 }
 
+.field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.field-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  max-width: 100%;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.help-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  border: 1px solid #9ab0d9;
+  color: var(--brand);
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: #f1f6ff;
+  cursor: help;
+}
+
+.help-dot:focus {
+  outline: 2px solid rgba(25, 91, 193, 0.45);
+  outline-offset: 1px;
+}
+
+.help-tooltip {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 0.35rem);
+  z-index: 30;
+  width: min(300px, 78vw);
+  background: #132749;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  box-shadow: 0 10px 24px rgba(2, 12, 30, 0.35);
+  opacity: 0;
+  transform: translateY(-3px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.field-label:hover .help-tooltip,
+.help-dot:focus + .help-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .auth-wrap {
   min-height: 100vh;
   display: grid;

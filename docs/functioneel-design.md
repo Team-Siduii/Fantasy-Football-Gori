@@ -237,6 +237,7 @@ FR-059 (fase 2): Rollenmodel owner/commissioner/manager forceert permission matr
 FR-060 (fase 2): Admin-UI toont en beheert league-configuratie voor scoring profile, waiver tie-breaker, competition tie policy en role assignments.
 FR-061: Auth-MVP ondersteunt twee testaccounts (manager + admin) en de login-UI prefillt standaard de gekozen account-credentials voor snelle testtoegang.
 FR-062: Manager-UI bevat een globale `Instellingen` navigatieknop; route `/instellingen` toont league-config module en redirectt naar login zonder actieve sessie.
+FR-063: Elk instelveld in de league-config module toont een hover/focus-help (`?`) met korte uitleg van de regel en de impact op competitiegedrag.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -368,6 +369,7 @@ Waarom zo:
 - [ ] Instellingenpagina toont en beheert league-config voor waiver/scoring/competition/roles
 - [ ] Login toont Test Manager + Test Admin quick-select en prefillt bij keuze direct e-mail + wachtwoord voor beide accounts
 - [ ] Header bevat zichtbare `Instellingen` knop en `/instellingen` is alleen bereikbaar met actieve login (anders redirect naar `/login`)
+- [ ] Instellingenvelden tonen `?` hover/focus-help met korte uitleg van scoring, waiver tie-breaker, cup tie policy en rol-lijsten
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -432,3 +434,4 @@ Waarom zo:
 - 2026-04-24: Auth-MVP uitgebreid met test admin account (`admin@gori.local`) naast manager-account en login quick-select met prefilled credentials voor beide testaccounts.
 - 2026-04-24: Discoverability verbeterd: globale headerknop `Instellingen` toegevoegd en route `/instellingen` onder auth-middleware geplaatst.
 - 2026-04-24: League-config opslag gefixt voor Vercel runtime: standaardpad valt nu terug op `/tmp/league-admin-config.json` zodat instellingen op staging/prod niet meer falen op read-only filesystem.
+- 2026-04-24: League-config UX verduidelijkt: per instelregel een `?` hover/focus-help toegevoegd met korte functionele uitleg.
