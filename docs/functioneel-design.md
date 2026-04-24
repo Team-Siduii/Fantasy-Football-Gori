@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-04-21
+Laatste update: 2026-04-24
 
 ## 1. Productvisie
 Doel van de app:
@@ -58,6 +58,8 @@ Per rol belangrijkste rechten:
 - Admin stelt startbudget per team in voor het seizoen
 - Speelrondes worden op basis van competitieschema ingeladen bij seizoenstart
 - Admin kan gedurende seizoen speelrondes corrigeren (wedstrijd-naar-ronde mapping + start/eindtijd ronde)
+- Regels draaien op een versieerbaar RuleSet v1-profiel per league (rules-as-data), inclusief validatie van bonusrondes, budget-cap en bankopbouw
+- League Admin kan per ronde een lock/unlock uitvoeren met verplichte reden en actorregistratie
 
 ### 4.3 Teams & spelers
 - Speler kan maar in 1 team tegelijk zitten binnen dezelfde league
@@ -133,6 +135,7 @@ Per rol belangrijkste rechten:
 - Mobile transfermarkt-filters gebruiken extra label-contrast en spacing voor leesbaarheid en touch-bruikbaarheid
 - Verkoop-selector respecteert transferlimiet van de actieve ronde: in normale rondes max 1 open verkoop, in bonusrondes (3 transfers) tot 3 open verkopen vóórdat kopen verplicht wordt
 - UI toont bij open verkopen een duidelijke teller/hint (bijv. 1/3, 2/3) en blokkeert nieuwe verkoop pas bij bereikt limiet
+- Transfer policy-engine berekent per ronde deterministisch: transferlimiet, open-sell ruimte en koop-toestemming op basis van bonusrondeconfig + voltooide transfers
 - Bankverdeling is vast: altijd 4 bankslots met 1x GK, 1x DEF, 1x MID en 1x FWD
 - Basiselftal-weergave op het veld toont per slot de echte speler op die index (geen naamherhaling binnen een linie); elke speler-id mag maar 1x tegelijk in teamstate voorkomen
 - Pitch in basiselftal krijgt een visuele halve-veld overlay (midlijn/halve cirkel + zestienmeter) voor herkenbare voetbalcontext
@@ -213,6 +216,9 @@ FR-046: In mobiele Team-weergave staan de secties in deze volgorde: basiselftal,
 FR-047: Transfermarkt ondersteunt kolomsortering op spelernaam, positie (GK, DEF, MID, FWD), club en transferwaarde, met omschakelbare oplopend/aflopend sorteerrichting.
 FR-048: Transfermarkt-filters blijven op mobiel volledig bruikbaar: Positie/Club/Zoek stacken verticaal en elk veld gebruikt full-width.
 FR-049: Verkoop-selector staat open totdat de transferlimiet van de actieve ronde is bereikt; in rondes met limiet 1 is na 1 open placeholder een koopactie vereist, in bonusrondes met limiet 3 mogen eerst tot 3 verkopen worden gedaan.
+FR-050: League RuleSet v1 is versieerbaar en valideert strikt op: defaultLimit=1, bonusRoundLimit=3, exact 3 unieke bonusronde-nummers, budget-cap en bankcompositie (GK/DEF/MID/FWD elk 1).
+FR-051: Transfer policy-engine bepaalt per ronde deterministisch of SELL en BUY zijn toegestaan op basis van RuleSet, aantal voltooide transfers en aantal open verkopen.
+FR-052: Admin kan speelrondes locken/unlocken via API; elke lock-statuswijziging schrijft een audit-entry met actie-type, actor, target, reden en timestamp.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -241,6 +247,9 @@ Belangrijkste entiteiten:
 - DraftPick
 - RosterSlot
 - TransferPolicy
+- LeagueRuleSet
+- RoundLock
+- AdminActionLog
 - FreePoolSnapshot
 - TransferSyncRun
 - TransactionLog
@@ -253,6 +262,9 @@ Relaties en business rules:
 - Player minimale velden voor MVP: id, naam, club, positie, prijs.
 - TeamBudget houdt resterend budget en alle budgetmutaties per transfer bij.
 - TransferPolicy bevat ronde-limieten + 3 bonusrondes (3 transfers) op specifieke ronde-nummers met start/eindtijd.
+- LeagueRuleSet v1 bewaart versie + gevalideerde configuratie voor transfer, budget en bankopbouw.
+- RoundLock bewaart per ronde of mutaties tijdelijk geblokkeerd zijn.
+- AdminActionLog bewaart alle lock/unlock-acties met actor+reden voor audittrail.
 - ManagerTradeProposal bevat pre-season pakketdealregels, proposal-status en beide approvals.
 
 ## 9. Databronstrategie (Coach van het Jaar)
@@ -380,3 +392,4 @@ Waarom zo:
 - 2026-04-20: Mobile transfermarkt UI gepolijst met betere label-contrast, extra vertical spacing en grotere input-typografie voor leesbaarheid.
 - 2026-04-20: Verkoop-flow UX verduidelijkt: sell-dropdown reset na keuze, wordt disabled tijdens open transfer en toont expliciete hint (voorkomt indruk dat selectie “niets doet” op mobiel).
 - 2026-04-21: Transferlimiet-gedrag in Team-flow aangepast: in bonusrondes (3 transfers) mogen managers eerst meerdere spelers verkopen (tot 3 open placeholders) voordat kopen verplicht is; in 1-transferrondes blijft direct vervangen na 1 verkoop vereist.
+- 2026-04-24: Sprint 1 fundament toegevoegd: RuleSet v1-validatie (versieerbare regels), transfer policy-engine (deterministische SELL/BUY-beslissing per ronde) en admin ronde lock/unlock met audittrail + API-endpoint.
