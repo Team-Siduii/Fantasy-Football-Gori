@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
     <main className="auth-wrap">
       <section className="auth-card">
         <h1>Wachtwoord resetten</h1>
-        <p>Vul je manager-email in om een reset-token te genereren.</p>
+        <p>Vul je testaccount-email in om een reset-token te genereren.</p>
 
         <form onSubmit={onSubmit} className="auth-form">
           <label>

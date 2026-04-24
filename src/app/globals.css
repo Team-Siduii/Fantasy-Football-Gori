@@ -491,6 +491,34 @@ select {
   color: var(--muted);
 }
 
+.auth-preset-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin: 0.7rem 0 0.45rem;
+}
+
+.secondary-button {
+  border: 1px solid #b9c9e8;
+  border-radius: 999px;
+  padding: 0.35rem 0.72rem;
+  background: #f1f5ff;
+  color: var(--brand);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.secondary-button[aria-pressed="true"] {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.auth-helper-text {
+  margin: 0 0 0.7rem;
+  font-size: 0.86rem;
+}
+
 .auth-form {
   display: grid;
   gap: 0.72rem;

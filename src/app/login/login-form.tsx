@@ -2,14 +2,35 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
+import { AUTH_TEST_ACCOUNT_PRESETS } from "@/lib/auth-test-accounts";
+
+const DEFAULT_PRESET = AUTH_TEST_ACCOUNT_PRESETS[0];
 
 export default function LoginForm({ nextPath }: { nextPath: string }) {
   const router = useRouter();
-  const [email, setEmail] = useState("manager@gori.local");
-  const [password, setPassword] = useState("gori1234");
+  const [activePresetId, setActivePresetId] = useState(DEFAULT_PRESET.id);
+  const [email, setEmail] = useState(DEFAULT_PRESET.email);
+  const [password, setPassword] = useState(DEFAULT_PRESET.password);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const activePreset = useMemo(
+    () => AUTH_TEST_ACCOUNT_PRESETS.find((preset) => preset.id === activePresetId) ?? DEFAULT_PRESET,
+    [activePresetId],
+  );
+
+  function applyPreset(presetId: string) {
+    const preset = AUTH_TEST_ACCOUNT_PRESETS.find((item) => item.id === presetId);
+    if (!preset) {
+      return;
+    }
+
+    setActivePresetId(preset.id);
+    setEmail(preset.email);
+    setPassword(preset.password);
+    setError("");
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,6 +62,23 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
       <section className="auth-card">
         <h1>Manager login</h1>
         <p>Log in om je team, transfer pool en league-pagina te beheren.</p>
+
+        <div className="auth-preset-list" aria-label="Testaccounts">
+          {AUTH_TEST_ACCOUNT_PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              className="secondary-button"
+              onClick={() => applyPreset(preset.id)}
+              aria-pressed={activePresetId === preset.id}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+        <p className="auth-helper-text">
+          Actieve testlogin: <strong>{activePreset.email}</strong> · wachtwoord staat alvast ingevuld.
+        </p>
 
         <form onSubmit={onSubmit} className="auth-form">
           <label>
