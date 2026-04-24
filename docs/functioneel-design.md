@@ -431,3 +431,4 @@ Waarom zo:
 - 2026-04-24: League-config API + instellingen-UI uitgebreid voor fase 2 configuratie; admin round-lock API nu role-gated via permission matrix.
 - 2026-04-24: Auth-MVP uitgebreid met test admin account (`admin@gori.local`) naast manager-account en login quick-select met prefilled credentials voor beide testaccounts.
 - 2026-04-24: Discoverability verbeterd: globale headerknop `Instellingen` toegevoegd en route `/instellingen` onder auth-middleware geplaatst.
+- 2026-04-24: League-config opslag gefixt voor Vercel runtime: standaardpad valt nu terug op `/tmp/league-admin-config.json` zodat instellingen op staging/prod niet meer falen op read-only filesystem.

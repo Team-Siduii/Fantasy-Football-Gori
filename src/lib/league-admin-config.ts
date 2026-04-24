@@ -26,7 +26,15 @@ export type LeagueAdminConfig = {
 };
 
 function getConfigPath() {
-  return process.env.LEAGUE_ADMIN_CONFIG_PATH || path.join(process.cwd(), "data", "league-admin-config.json");
+  if (process.env.LEAGUE_ADMIN_CONFIG_PATH) {
+    return process.env.LEAGUE_ADMIN_CONFIG_PATH;
+  }
+
+  if (process.env.VERCEL === "1" || process.env.VERCEL_ENV) {
+    return "/tmp/league-admin-config.json";
+  }
+
+  return path.join(process.cwd(), "data", "league-admin-config.json");
 }
 
 function defaultConfig(): LeagueAdminConfig {

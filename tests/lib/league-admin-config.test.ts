@@ -1,3 +1,4 @@
+import { existsSync } from "fs";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   getLeagueAdminConfig,
@@ -37,5 +38,20 @@ describe("league admin config", () => {
 
     expect(updated.waiver.round.tieBreaker).toBe("EARLIEST_BID");
     expect(updated.roles.commissionerIds).toContain("comm-1");
+  });
+
+  it("gebruikt /tmp default op Vercel als geen expliciet config pad is gezet", () => {
+    delete process.env.LEAGUE_ADMIN_CONFIG_PATH;
+    process.env.VERCEL = "1";
+
+    resetLeagueAdminConfigForTests();
+    const config = getLeagueAdminConfig();
+
+    expect(config.scoringProfile.id).toBe("classic");
+    expect(existsSync("/tmp/league-admin-config.json")).toBe(true);
+
+    delete process.env.VERCEL;
+    process.env.LEAGUE_ADMIN_CONFIG_PATH = "/tmp/ffg-league-admin-config.test.json";
+    resetLeagueAdminConfigForTests();
   });
 });
