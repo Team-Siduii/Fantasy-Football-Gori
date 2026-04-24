@@ -225,6 +225,12 @@ FR-051: Transfer policy-engine bepaalt per ronde deterministisch of SELL en BUY 
 FR-052: Admin kan speelrondes locken/unlocken via API; elke lock-statuswijziging schrijft een audit-entry met actie-type, actor, target, reden en timestamp.
 FR-053: Notificatie-eventbus v1 slaat transferwindow- en trade-approval-events persistent op met type, league, manager, payload en timestamp.
 FR-054: Eventbus-API ondersteunt uitlezen met filters op managerId, leagueId en event type.
+FR-055 (fase 2): Waiver/Blind bid mode ondersteunt gesloten biedingen tot reveal en kiest per speler deterministisch een winnaar via configureerbare tie-breaker policy (PRIORITY of EARLIEST_BID).
+FR-056 (fase 2): Admin kan een waiver-ronde cancelen en heropenen met verplichte audit-entry (actor, reden, timestamp).
+FR-057 (fase 2): League ondersteunt scoring profiles met backward-compatible default `Classic` en valideerbare `Custom` bonus/malus-parameters.
+FR-058 (fase 2): Competition abstraction v1 ondersteunt parallel zowel `League table` als `Cup knockout`, met expliciete configureerbare tie-breakers.
+FR-059 (fase 2): Rollenmodel owner/commissioner/manager forceert permission matrix in API; admin overrides zijn uitsluitend toegestaan met juiste rolrechten.
+FR-060 (fase 2): Admin-UI toont en beheert league-configuratie voor scoring profile, waiver tie-breaker, competition tie policy en role assignments.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -273,6 +279,10 @@ Relaties en business rules:
 - RoundLock bewaart per ronde of mutaties tijdelijk geblokkeerd zijn.
 - AdminActionLog bewaart alle lock/unlock-acties met actor+reden voor audittrail.
 - NotificationEvent bewaart notificatie-events per manager/league voor transferwindow-open, transferwindow-close-soon en trade-approval.
+- WaiverRound bewaart gesloten blind bids, reveal status, tie-breaker policy en reveal-resultaten per speler.
+- ScoringProfile ondersteunt Classic (default) en Custom puntenprofielen met validatie op bonus/malus-ranges.
+- CompetitionConfig ondersteunt parallelle formats (League table + Cup knockout) met configureerbare tie-breakers.
+- LeagueRoleAssignment bewaart owner/commissioner/manager en drijft server-side permission checks.
 - ManagerTradeProposal bevat pre-season pakketdealregels, proposal-status en beide approvals.
 
 ## 9. Databronstrategie (Coach van het Jaar)
@@ -344,6 +354,12 @@ Waarom zo:
 - [ ] Transfermarkt-kolommen zijn klikbaar sorteerbaar op speler, positie (GK/DEF/MID/FWD), club en transferwaarde
 - [ ] Transfermarkt-filters op mobiel zijn full-width en verticaal gestapeld (Positie/Club/Zoek zonder overlap of ingedrukte velden)
 - [ ] Verkoop-selector volgt ronde-limiet voor open placeholders: limiet 1-rondes blokkeren na 1 open verkoop, bonusrondes blokkeren pas na 3 open verkopen; UI toont duidelijke teller/hint
+- [ ] Waiver/Blind bid mode werkt met gesloten biedingen tot reveal; winner-resolutie per speler volgt configureerbare tie-breaker (priority of earliest bid)
+- [ ] Admin kan waiver-ronde cancelen en heropenen met audittrail (actor, reason, timestamp)
+- [ ] League ondersteunt scoring profile selectie (Classic/Custom) en valideert custom bonus/malus parameters
+- [ ] Competition abstraction ondersteunt gelijktijdig League table en Cup knockout met configureerbare tie-breakers
+- [ ] Rollenmodel owner/commissioner/manager wordt server-side afgedwongen; admin overrides geven 403 zonder juiste permissie
+- [ ] Instellingenpagina toont en beheert league-config voor waiver/scoring/competition/roles
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -402,3 +418,5 @@ Waarom zo:
 - 2026-04-21: Transferlimiet-gedrag in Team-flow aangepast: in bonusrondes (3 transfers) mogen managers eerst meerdere spelers verkopen (tot 3 open placeholders) voordat kopen verplicht is; in 1-transferrondes blijft direct vervangen na 1 verkoop vereist.
 - 2026-04-24: Sprint 1 fundament toegevoegd: RuleSet v1-validatie (versieerbare regels), transfer policy-engine (deterministische SELL/BUY-beslissing per ronde) en admin ronde lock/unlock met audittrail + API-endpoint.
 - 2026-04-24: Notificatie-eventbus v1 toegevoegd met persistente events + API-filters voor transferwindow-open, transferwindow-close-soon en trade-approval notifications.
+- 2026-04-24: Sprint 2 basislaag toegevoegd: waiver/blind-bid domeinmodule met reveal+tiebreak + cancel/reopen audit, scoring profile module (Classic/Custom validatie), competition abstraction (league table + cup knockout) en rollenmodel owner/commissioner/manager.
+- 2026-04-24: League-config API + instellingen-UI uitgebreid voor fase 2 configuratie; admin round-lock API nu role-gated via permission matrix.

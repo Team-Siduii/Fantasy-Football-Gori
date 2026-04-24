@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { isAuthenticatedSession } from "@/lib/auth-session";
 import { readManagerState, setRoundLock } from "@/lib/manager-state";
+import { hasLeaguePermission, resolveActorIdFromRequest } from "@/lib/rbac";
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!(await isAuthenticatedSession())) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
+  }
+
+  const actorId = resolveActorIdFromRequest(request);
+  if (!hasLeaguePermission(actorId, "MANAGE_ROUNDS")) {
+    return NextResponse.json({ error: "Geen rechten" }, { status: 403 });
   }
 
   const state = readManagerState();
@@ -19,11 +25,15 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
 
+  const actorId = resolveActorIdFromRequest(request);
+  if (!hasLeaguePermission(actorId, "ADMIN_OVERRIDE")) {
+    return NextResponse.json({ error: "Geen rechten" }, { status: 403 });
+  }
+
   let body: {
     roundNumber?: number;
     locked?: boolean;
     reason?: string;
-    actorId?: string;
   } = {};
 
   try {
@@ -44,14 +54,9 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "reason is verplicht" }, { status: 400 });
   }
 
-  if (typeof body.actorId !== "string" || body.actorId.trim().length === 0) {
-    return NextResponse.json({ error: "actorId is verplicht" }, { status: 400 });
-  }
-
   const roundNumber = body.roundNumber as number;
   const locked = body.locked as boolean;
   const reason = body.reason.trim();
-  const actorId = body.actorId.trim();
 
   const state = setRoundLock({
     roundNumber,
