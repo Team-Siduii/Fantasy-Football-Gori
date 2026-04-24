@@ -148,7 +148,11 @@ Per rol belangrijkste rechten:
 ### 4.6 Notificaties
 - Draft turn
 - Notificatie wanneer een manager tijdens draft een speler terugzet naar vrije pool
-- Geen andere notificaties in MVP
+- Notificatie-eventbus v1 met persistente events voor:
+  - TRANSFER_WINDOW_OPENED
+  - TRANSFER_WINDOW_CLOSING_SOON
+  - TRADE_APPROVAL_REQUESTED
+- Eventbus is uitleesbaar met filters op manager, league en event type
 
 ## 5. Belangrijkste user journeys
 1) Nieuwe gebruiker maakt account en joint league
@@ -219,6 +223,8 @@ FR-049: Verkoop-selector staat open totdat de transferlimiet van de actieve rond
 FR-050: League RuleSet v1 is versieerbaar en valideert strikt op: defaultLimit=1, bonusRoundLimit=3, exact 3 unieke bonusronde-nummers, budget-cap en bankcompositie (GK/DEF/MID/FWD elk 1).
 FR-051: Transfer policy-engine bepaalt per ronde deterministisch of SELL en BUY zijn toegestaan op basis van RuleSet, aantal voltooide transfers en aantal open verkopen.
 FR-052: Admin kan speelrondes locken/unlocken via API; elke lock-statuswijziging schrijft een audit-entry met actie-type, actor, target, reden en timestamp.
+FR-053: Notificatie-eventbus v1 slaat transferwindow- en trade-approval-events persistent op met type, league, manager, payload en timestamp.
+FR-054: Eventbus-API ondersteunt uitlezen met filters op managerId, leagueId en event type.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -250,6 +256,7 @@ Belangrijkste entiteiten:
 - LeagueRuleSet
 - RoundLock
 - AdminActionLog
+- NotificationEvent
 - FreePoolSnapshot
 - TransferSyncRun
 - TransactionLog
@@ -265,6 +272,7 @@ Relaties en business rules:
 - LeagueRuleSet v1 bewaart versie + gevalideerde configuratie voor transfer, budget en bankopbouw.
 - RoundLock bewaart per ronde of mutaties tijdelijk geblokkeerd zijn.
 - AdminActionLog bewaart alle lock/unlock-acties met actor+reden voor audittrail.
+- NotificationEvent bewaart notificatie-events per manager/league voor transferwindow-open, transferwindow-close-soon en trade-approval.
 - ManagerTradeProposal bevat pre-season pakketdealregels, proposal-status en beide approvals.
 
 ## 9. Databronstrategie (Coach van het Jaar)
@@ -393,3 +401,4 @@ Waarom zo:
 - 2026-04-20: Verkoop-flow UX verduidelijkt: sell-dropdown reset na keuze, wordt disabled tijdens open transfer en toont expliciete hint (voorkomt indruk dat selectie “niets doet” op mobiel).
 - 2026-04-21: Transferlimiet-gedrag in Team-flow aangepast: in bonusrondes (3 transfers) mogen managers eerst meerdere spelers verkopen (tot 3 open placeholders) voordat kopen verplicht is; in 1-transferrondes blijft direct vervangen na 1 verkoop vereist.
 - 2026-04-24: Sprint 1 fundament toegevoegd: RuleSet v1-validatie (versieerbare regels), transfer policy-engine (deterministische SELL/BUY-beslissing per ronde) en admin ronde lock/unlock met audittrail + API-endpoint.
+- 2026-04-24: Notificatie-eventbus v1 toegevoegd met persistente events + API-filters voor transferwindow-open, transferwindow-close-soon en trade-approval notifications.
