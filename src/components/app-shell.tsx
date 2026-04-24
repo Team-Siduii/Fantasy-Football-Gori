@@ -39,9 +39,15 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
             <p className="brand-eyebrow">eredivisie</p>
             <h1>FANTASY EREDIVISIE</h1>
           </div>
-          <button onClick={handleLogout} className="logout-button" type="button">
-            Log out
-          </button>
+
+          <div className="header-actions">
+            <Link href="/instellingen" className={`header-link ${isActive(pathname, "/instellingen") ? "active" : ""}`}>
+              Instellingen
+            </Link>
+            <button onClick={handleLogout} className="logout-button" type="button">
+              Log out
+            </button>
+          </div>
         </header>
 
         <section className="summary-strip" aria-label="Teamoverzicht">

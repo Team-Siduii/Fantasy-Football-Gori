@@ -53,6 +53,8 @@ Per rol belangrijkste rechten:
 ### 4.2 League management
 - League aanmaken en spelers uitnodigen
 - Configuratie: teamgrootte, draftvolgorde, transferregels, deadline per ronde
+- League-config module is direct bereikbaar via globale headerknop `Instellingen` in de manager-UI
+- `Instellingen` route is auth-protected en alleen bereikbaar na login
 - Admin stelt aan het begin van seizoen transferregime in:
   - Standaard: 1 transfer per team per speelronde
   - Uitzondering: exact 3 vooraf ingestelde bonusrondes waarop 3 transfers toegestaan zijn
@@ -234,6 +236,7 @@ FR-058 (fase 2): Competition abstraction v1 ondersteunt parallel zowel `League t
 FR-059 (fase 2): Rollenmodel owner/commissioner/manager forceert permission matrix in API; admin overrides zijn uitsluitend toegestaan met juiste rolrechten.
 FR-060 (fase 2): Admin-UI toont en beheert league-configuratie voor scoring profile, waiver tie-breaker, competition tie policy en role assignments.
 FR-061: Auth-MVP ondersteunt twee testaccounts (manager + admin) en de login-UI prefillt standaard de gekozen account-credentials voor snelle testtoegang.
+FR-062: Manager-UI bevat een globale `Instellingen` navigatieknop; route `/instellingen` toont league-config module en redirectt naar login zonder actieve sessie.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -364,6 +367,7 @@ Waarom zo:
 - [ ] Rollenmodel owner/commissioner/manager wordt server-side afgedwongen; admin overrides geven 403 zonder juiste permissie
 - [ ] Instellingenpagina toont en beheert league-config voor waiver/scoring/competition/roles
 - [ ] Login toont Test Manager + Test Admin quick-select en prefillt bij keuze direct e-mail + wachtwoord voor beide accounts
+- [ ] Header bevat zichtbare `Instellingen` knop en `/instellingen` is alleen bereikbaar met actieve login (anders redirect naar `/login`)
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -426,3 +430,4 @@ Waarom zo:
 - 2026-04-24: Sprint 2 basislaag toegevoegd: waiver/blind-bid domeinmodule met reveal+tiebreak + cancel/reopen audit, scoring profile module (Classic/Custom validatie), competition abstraction (league table + cup knockout) en rollenmodel owner/commissioner/manager.
 - 2026-04-24: League-config API + instellingen-UI uitgebreid voor fase 2 configuratie; admin round-lock API nu role-gated via permission matrix.
 - 2026-04-24: Auth-MVP uitgebreid met test admin account (`admin@gori.local`) naast manager-account en login quick-select met prefilled credentials voor beide testaccounts.
+- 2026-04-24: Discoverability verbeterd: globale headerknop `Instellingen` toegevoegd en route `/instellingen` onder auth-middleware geplaatst.

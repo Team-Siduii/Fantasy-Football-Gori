@@ -93,6 +93,26 @@ a {
   font-size: 0.85rem;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-link {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.header-link.active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 .summary-strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -892,6 +912,12 @@ select {
     font-size: 1.05rem;
   }
 
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .header-link,
   .logout-button {
     padding: 0.4rem 0.7rem;
     font-size: 0.78rem;
