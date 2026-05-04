@@ -475,6 +475,18 @@ button:disabled {
   overflow-x: auto;
 }
 
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin-bottom: 0.6rem;
+}
+
+.table-pagination .muted-note {
+  margin: 0;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

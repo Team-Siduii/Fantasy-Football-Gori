@@ -31,6 +31,8 @@ const BONUS_ROUNDS = [5, 10, 20] as const;
 type MarketSortField = "naam" | "positie" | "club" | "prijs";
 type MarketSortDirection = "asc" | "desc";
 
+const MARKET_PAGE_SIZE = 40;
+
 type ManagerStateResponse = {
   state?: {
     formation?: string;
@@ -304,6 +306,7 @@ export default function ManagerMyTeamPage() {
   const [sellSelection, setSellSelection] = useState("");
   const [marketSortField, setMarketSortField] = useState<MarketSortField>("prijs");
   const [marketSortDirection, setMarketSortDirection] = useState<MarketSortDirection>("desc");
+  const [marketPage, setMarketPage] = useState(1);
 
   const hydrated = useRef(false);
 
@@ -490,6 +493,23 @@ export default function ManagerMyTeamPage() {
       return marketSortDirection === "asc" ? result : -result;
     });
   }, [marketPlayers, marketSortDirection, marketSortField, maxPrice, search, selectedClub, selectedPosition]);
+
+  const marketTotalPages = Math.max(1, Math.ceil(filteredMarket.length / MARKET_PAGE_SIZE));
+  const currentMarketPage = Math.min(marketPage, marketTotalPages);
+  const pagedMarket = useMemo(() => {
+    const startIndex = (currentMarketPage - 1) * MARKET_PAGE_SIZE;
+    return filteredMarket.slice(startIndex, startIndex + MARKET_PAGE_SIZE);
+  }, [currentMarketPage, filteredMarket]);
+
+  useEffect(() => {
+    setMarketPage(1);
+  }, [selectedPosition, selectedClub, search, maxPrice, marketSortField, marketSortDirection]);
+
+  useEffect(() => {
+    if (marketPage > marketTotalPages) {
+      setMarketPage(marketTotalPages);
+    }
+  }, [marketPage, marketTotalPages]);
 
   function toggleMarketSort(field: MarketSortField) {
     if (marketSortField === field) {
@@ -976,12 +996,35 @@ export default function ManagerMyTeamPage() {
             </label>
 
             <div className="col-6 transfer-status-wrap">
-              <p className="muted-note">Resultaten: {filteredMarket.length}</p>
+              <p className="muted-note">
+                Resultaten: {filteredMarket.length} • Pagina {currentMarketPage}/{marketTotalPages}
+              </p>
               {transferMessage ? <p className="success-text">{transferMessage}</p> : null}
             </div>
           </div>
 
           <div className="table-wrap">
+            <div className="table-pagination" aria-label="Paginering transfermarkt">
+              <button
+                type="button"
+                onClick={() => setMarketPage((page) => Math.max(1, page - 1))}
+                disabled={currentMarketPage <= 1}
+                data-testid="market-page-prev"
+              >
+                ← Vorige
+              </button>
+              <span className="muted-note" data-testid="market-page-indicator">
+                Pagina {currentMarketPage} van {marketTotalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setMarketPage((page) => Math.min(marketTotalPages, page + 1))}
+                disabled={currentMarketPage >= marketTotalPages}
+                data-testid="market-page-next"
+              >
+                Volgende →
+              </button>
+            </div>
             <table>
               <thead>
                 <tr>
@@ -1029,7 +1072,7 @@ export default function ManagerMyTeamPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredMarket.slice(0, 120).map((item, index) => (
+                {pagedMarket.map((item, index) => (
                   <tr key={item.id} data-testid={`transfer-row-${index}`}>
                     <td>{item.naam}</td>
                     <td>{item.positie}</td>
