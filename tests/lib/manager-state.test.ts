@@ -100,4 +100,14 @@ describe("manager-state persistence", () => {
     expect(wkState.formation).toBe("3-5-2");
     expect(wkState.lineupIds).toEqual(["wk-1"]);
   });
+
+  it("resolves dedicated env paths per mode", async () => {
+    process.env.MANAGER_STATE_PATH = "/tmp/eredivisie-state.json";
+    process.env.MANAGER_STATE_WK_PATH = "/tmp/wk-state.json";
+
+    const mod = await import("../../src/lib/manager-state");
+
+    expect(mod.resolveManagerStatePath("eredivisie")).toBe("/tmp/eredivisie-state.json");
+    expect(mod.resolveManagerStatePath("wk")).toBe("/tmp/wk-state.json");
+  });
 });

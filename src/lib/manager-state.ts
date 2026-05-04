@@ -42,7 +42,7 @@ const DEFAULT_STATE: ManagerState = {
   adminActionLog: [],
 };
 
-function getStatePath(scope: ManagerStateScope = "eredivisie") {
+export function resolveManagerStatePath(scope: ManagerStateScope = "eredivisie") {
   if (scope === "wk" && process.env.MANAGER_STATE_WK_PATH) {
     return process.env.MANAGER_STATE_WK_PATH;
   }
@@ -97,7 +97,7 @@ function normalizeAdminActionLog(input: unknown): AdminActionLogEntry[] {
 }
 
 export function readManagerState(scope: ManagerStateScope = "eredivisie"): ManagerState {
-  const target = getStatePath(scope);
+  const target = resolveManagerStatePath(scope);
 
   if (!existsSync(target)) {
     return { ...DEFAULT_STATE };
@@ -126,7 +126,7 @@ export function readManagerState(scope: ManagerStateScope = "eredivisie"): Manag
 }
 
 export function saveManagerState(nextState: Partial<ManagerState>, scope: ManagerStateScope = "eredivisie"): ManagerState {
-  const target = getStatePath(scope);
+  const target = resolveManagerStatePath(scope);
   mkdirSync(path.dirname(target), { recursive: true });
 
   const current = readManagerState(scope);
@@ -201,7 +201,7 @@ export function setRoundLock(
 }
 
 export function resetManagerStateForTests(scope: ManagerStateScope = "eredivisie") {
-  const target = getStatePath(scope);
+  const target = resolveManagerStatePath(scope);
   if (existsSync(target)) {
     writeFileSync(target, JSON.stringify(DEFAULT_STATE, null, 2), "utf-8");
   }

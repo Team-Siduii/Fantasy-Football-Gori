@@ -1,7 +1,11 @@
 import { AppShell } from "@/components/app-shell";
 import { LeagueConfigEditor } from "@/components/league-config-editor";
+import { resolveManagerStatePath } from "@/lib/manager-state";
 
 export default function InstellingenPage() {
+  const eredivisieStatePath = resolveManagerStatePath("eredivisie");
+  const wkStatePath = resolveManagerStatePath("wk");
+
   return (
     <AppShell title="Instellingen" subtitle="League instellingen voor transferregels, scoring en competitiemodes.">
       <div className="grid">
@@ -22,6 +26,19 @@ export default function InstellingenPage() {
             <li>Speler teruggezet naar pool tijdens draft</li>
             <li>Transferwindow open/closing soon</li>
             <li>Trade approval requested</li>
+          </ul>
+        </section>
+
+        <section className="card col-12">
+          <h2>State-opslag per mode (debug)</h2>
+          <p className="muted-note">Actieve opslagpaden voor manager-state. Gebruik dit om staging/prod runtime-isolatie te controleren.</p>
+          <ul>
+            <li>
+              <strong>Eredivisie mode:</strong> <code>{eredivisieStatePath}</code>
+            </li>
+            <li>
+              <strong>WK mode:</strong> <code>{wkStatePath}</code>
+            </li>
           </ul>
         </section>
 
