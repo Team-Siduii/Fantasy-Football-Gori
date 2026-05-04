@@ -142,6 +142,50 @@ a {
   font-size: 0.95rem;
 }
 
+.mode-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid #d7dfec;
+  background: #f7f9fc;
+}
+
+.mode-switch-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5c687a;
+}
+
+.mode-switch-buttons {
+  display: inline-flex;
+  border: 1px solid #c8d2e3;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.mode-switch-button {
+  padding: 0.36rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #2e3a4d;
+  background: transparent;
+  border-right: 1px solid #d4ddea;
+}
+
+.mode-switch-button:last-child {
+  border-right: 0;
+}
+
+.mode-switch-button.active {
+  color: #ffffff;
+  background: var(--brand);
+}
+
 .page-head {
   padding: 1rem 1rem 0;
 }
@@ -997,6 +1041,20 @@ select {
 
   .summary-strip article:last-child {
     border-bottom: 0;
+  }
+
+  .mode-switch {
+    padding: 0.62rem 0.8rem;
+    gap: 0.55rem;
+  }
+
+  .mode-switch-label {
+    font-size: 0.67rem;
+  }
+
+  .mode-switch-button {
+    padding: 0.34rem 0.62rem;
+    font-size: 0.74rem;
   }
 
   .page-head {

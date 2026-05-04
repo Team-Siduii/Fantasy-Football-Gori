@@ -242,6 +242,7 @@ FR-063: Elk instelveld in de league-config module toont een hover/focus-help (`?
 FR-064: Manager-UI bevat een aparte WK 2026 module naast de Eredivisie-competitie met eigen route en navigatie-entry.
 FR-065: WK module toont een vaste lijst van 48 deelnemende landen inclusief hoststatus en confederatie.
 FR-066: WK module toont het toernooischema op fase-niveau (groepsfase t/m finale) met start/einddatum en aantal wedstrijden per fase.
+FR-067: In het manager-menu kan de gebruiker expliciet schakelen tussen `Eredivisie mode` en `WK mode`; navigatie-items passen zich aan op de gekozen mode.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -377,6 +378,7 @@ Waarom zo:
 - [ ] Manager-navigatie bevat een aparte `WK 2026` entry naast `Competities`
 - [ ] WK-module toont 48 deelnemende landen met hoststatus en confederatie
 - [ ] WK-module toont faseschema (groepsfase t/m finale) met datumbereik en matchaantallen
+- [ ] Manager-menu bevat mode-switch waarmee je direct wisselt tussen Eredivisie mode en WK mode
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -407,6 +409,7 @@ Waarom zo:
 - [x] Positiekeuze in transfermarkt blijft vrij; positionele fit-check gebeurt bij koopactie op open slot
 - [x] Testauth uitgebreid met manager+admin account en login prefill voor snelle QA
 - [x] WK 2026 module naast reguliere competitie: aparte route + nav-entry, met deelnemende landenlijst en faseschema op toernooidatums
+- [x] Menu-switch toegevoegd voor managers om direct te wisselen tussen Eredivisie mode en WK mode
 
 ## 13. Besluitenlog
 - 2026-04-16: Repo + Vercel + baseline workflow opgezet.
@@ -444,3 +447,4 @@ Waarom zo:
 - 2026-04-24: League-config opslag gefixt voor Vercel runtime: standaardpad valt nu terug op `/tmp/league-admin-config.json` zodat instellingen op staging/prod niet meer falen op read-only filesystem.
 - 2026-04-24: League-config UX verduidelijkt: per instelregel een `?` hover/focus-help toegevoegd met korte functionele uitleg.
 - 2026-05-04: Aparte WK 2026 module toegevoegd naast reguliere competitie (route `/manager/world-cup` + nav-entry), inclusief 48 deelnemende landen met confederatie/hoststatus en faseschema (groepsfase t/m finale).
+- 2026-05-04: Manager-menu uitgebreid met expliciete mode-switch (`Eredivisie` / `WK 2026`); actieve mode bepaalt zichtbare navigatie-items.
