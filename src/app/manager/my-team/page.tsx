@@ -1004,23 +1004,23 @@ export default function ManagerMyTeamPage() {
           </div>
 
           <div className="table-wrap">
-            <div className="table-pagination" aria-label="Paginering transfermarkt">
+            <div className="table-pagination" aria-label="Paginering transfermarkt boven">
               <button
                 type="button"
                 onClick={() => setMarketPage((page) => Math.max(1, page - 1))}
                 disabled={currentMarketPage <= 1}
-                data-testid="market-page-prev"
+                data-testid="market-page-prev-top"
               >
                 ← Vorige
               </button>
-              <span className="muted-note" data-testid="market-page-indicator">
+              <span className="muted-note" data-testid="market-page-indicator-top">
                 Pagina {currentMarketPage} van {marketTotalPages}
               </span>
               <button
                 type="button"
                 onClick={() => setMarketPage((page) => Math.min(marketTotalPages, page + 1))}
                 disabled={currentMarketPage >= marketTotalPages}
-                data-testid="market-page-next"
+                data-testid="market-page-next-top"
               >
                 Volgende →
               </button>
@@ -1092,6 +1092,27 @@ export default function ManagerMyTeamPage() {
                 ))}
               </tbody>
             </table>
+            <div className="table-pagination table-pagination--bottom" aria-label="Paginering transfermarkt onder">
+              <button
+                type="button"
+                onClick={() => setMarketPage((page) => Math.max(1, page - 1))}
+                disabled={currentMarketPage <= 1}
+                data-testid="market-page-prev-bottom"
+              >
+                ← Vorige
+              </button>
+              <span className="muted-note" data-testid="market-page-indicator-bottom">
+                Pagina {currentMarketPage} van {marketTotalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setMarketPage((page) => Math.min(marketTotalPages, page + 1))}
+                disabled={currentMarketPage >= marketTotalPages}
+                data-testid="market-page-next-bottom"
+              >
+                Volgende →
+              </button>
+            </div>
           </div>
         </section>
       </div>

@@ -487,6 +487,11 @@ button:disabled {
   margin: 0;
 }
 
+.table-pagination--bottom {
+  margin-top: 0.6rem;
+  margin-bottom: 0;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
