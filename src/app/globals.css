@@ -727,8 +727,14 @@ select {
   inset: 0;
   pointer-events: none;
   background:
+    /* zijkant-vignette */
     linear-gradient(90deg, rgba(12, 46, 21, 0.1) 0%, rgba(12, 46, 21, 0.01) 12%, rgba(12, 46, 21, 0.01) 88%, rgba(12, 46, 21, 0.1) 100%),
-    radial-gradient(140% 85% at 50% 100%, rgba(8, 28, 14, 0.2) 0%, rgba(8, 28, 14, 0) 66%);
+    /* schaduw onderin */
+    radial-gradient(140% 85% at 50% 100%, rgba(8, 28, 14, 0.2) 0%, rgba(8, 28, 14, 0) 66%),
+    /* dieptelijnen onder strafschopgebied (referentie zwart) */
+    linear-gradient(162deg, transparent 0 68.6%, rgba(16, 16, 16, 0.62) 68.8% 69.3%, transparent 69.5% 100%),
+    linear-gradient(198deg, transparent 0 68.6%, rgba(16, 16, 16, 0.62) 68.8% 69.3%, transparent 69.5% 100%),
+    linear-gradient(180deg, transparent 0 83.2%, rgba(16, 16, 16, 0.58) 83.35% 83.75%, transparent 83.9% 100%);
 }
 
 .pitch-row {
