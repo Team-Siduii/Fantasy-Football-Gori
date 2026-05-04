@@ -283,6 +283,9 @@ export default function ManagerMyTeamPage() {
   const pathname = usePathname();
   const isWkMode = pathname.startsWith("/manager/world-cup");
   const activeFixtures = isWkMode ? WORLD_CUP_2026_FIXTURES : REMAINING_FIXTURES_2025_2026;
+  const clubLabel = isWkMode ? "Land" : "Club";
+  const clubsLabel = isWkMode ? "landen" : "clubs";
+  const searchLabel = isWkMode ? "Zoek speler/land" : "Zoek speler/club";
   const formationOptions = useMemo(() => getFormationOptions(), []);
   const [formation, setFormation] = useState(formationOptions[0]);
   const [allPlayers, setAllPlayers] = useState<EnhancedPlayer[]>(fallbackPlayers());
@@ -938,9 +941,9 @@ export default function ManagerMyTeamPage() {
             </label>
 
             <label className="col-3">
-              Club
+              {clubLabel}
               <select value={selectedClub} onChange={(event) => setSelectedClub(event.target.value)} data-testid="transfer-club">
-                <option value="ALL">Alle clubs</option>
+                <option value="ALL">Alle {clubsLabel}</option>
                 {availableClubs.map((club) => (
                   <option key={club} value={club}>
                     {club}
@@ -950,7 +953,7 @@ export default function ManagerMyTeamPage() {
             </label>
 
             <label className="col-3">
-              Zoek speler/club
+              {searchLabel}
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -1009,7 +1012,7 @@ export default function ManagerMyTeamPage() {
                       onClick={() => toggleMarketSort("club")}
                       data-testid="sort-club"
                     >
-                      Club {sortIndicator("club")}
+                      {clubLabel} {sortIndicator("club")}
                     </button>
                   </th>
                   <th>
