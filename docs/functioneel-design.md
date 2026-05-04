@@ -143,7 +143,7 @@ Per rol belangrijkste rechten:
 - Transfer policy-engine berekent per ronde deterministisch: transferlimiet, open-sell ruimte en koop-toestemming op basis van bonusrondeconfig + voltooide transfers
 - Bankverdeling is vast: altijd 4 bankslots met 1x GK, 1x DEF, 1x MID en 1x FWD
 - Basiselftal-weergave op het veld toont per slot de echte speler op die index (geen naamherhaling binnen een linie); elke speler-id mag maar 1x tegelijk in teamstate voorkomen
-- Pitch in basiselftal gebruikt een clean full-field vectorstijl met subtiele 3D-perspectieflook, horizontale maaistrepen, lichte grastextuur en standaard veldmarkeringen (middenlijn, cirkel, zestienmeter, 5-meter, hoekbogen)
+- Pitch in basiselftal gebruikt exact de aangeleverde referentie-afbeelding als achtergrondasset (`/public/images/pitch-reference.jpg`) zodat look-and-feel 1-op-1 overeenkomt met het opgegeven voorbeeld
 - Veldvisual blijft uitsluitend een achtergrondlaag: spelerskaarten, interactie en drag/drop-gedrag blijven ongewijzigd
 - MVP transferbudget-cap voor managerteam: maximaal €32.0M totale teamwaarde; transferbevestiging blokkeert automatisch boven cap
 - Demo-team (testseed) wordt standaard binnen budget opgebouwd (<= €32.0M) zodat testen direct valide start
@@ -218,7 +218,7 @@ FR-039: Als gekozen formatie met huidige spelers + beschikbare placeholders niet
 FR-040: Bij aankoop wordt pas op dat moment gevalideerd of positie in de gekozen formatie op een open slot past; zo niet toont UI exact: "deze speler past niet in de gekozen formatie".
 FR-041: Bank bevat altijd exact 1 keeper, 1 verdediger, 1 middenvelder en 1 aanvaller (bezette speler of placeholder).
 FR-042: Team-paginaheader (onder titel "Team", boven basiselftal) toont een speelrondekaart met ronde-nummer, countdown naar eerste aftrap en wedstrijden in referentie-layout met datum+tijd en club-shirticoon per thuis/uit-team.
-FR-043: Basiselftal-veld behoudt bestaande kaarten/interactie maar gebruikt een clean full-field pitch-achtergrond in referentiestijl: subtiele perspectieflook, horizontale maaistrepen, lichte grastextuur en complete standaardmarkeringen (middenlijn, middencirkel, strafschopgebieden, 5-metergebieden en hoekbogen).
+FR-043: Basiselftal-veld behoudt bestaande kaarten/interactie maar rendert de expliciet aangeleverde referentie-afbeelding als pitch-achtergrond (`/public/images/pitch-reference.jpg`) zodat de visuele veldstijl 1-op-1 overeenkomt met het goedgekeurde voorbeeld.
 FR-044: Speelrondekaart ondersteunt browsen via links/rechts-knoppen: rechts navigeert naar volgende ronde (programma), links naar vorige ronde met uitslagenweergave.
 FR-045: Manager-UI is responsive op mobiel/tablet: header, kaarten, opstellingsveld en bottom navigation blijven bruikbaar zonder horizontaal scrollen in de standaard flows.
 FR-046: In mobiele Team-weergave staan de secties in deze volgorde: basiselftal, wisselspelers, daarna statistiektegels.
@@ -364,7 +364,7 @@ Waarom zo:
 - [ ] Bank toont altijd precies 1 GK, 1 DEF, 1 MID en 1 FWD
 - [ ] Bij koop op ongeldige positie verschijnt exact: "deze speler past niet in de gekozen formatie"
 - [ ] Team-paginaheader (onder "Team", boven basiselftal) toont een speelrondekaart met ronde-nummer, start-countdown, wedstrijdrijen met shirt-icoontjes en strak referentie-grid (datum+tijd per duel)
-- [ ] Basiselftal gebruikt een clean full-field pitch-achtergrond in referentiestijl met subtiele perspectieflook, horizontale maaistrepen, lichte grastextuur en standaardmarkeringen; kaarten/interactie blijven exact gelijk
+- [ ] Basiselftal gebruikt exact de aangeleverde referentie-afbeelding als pitch-achtergrond (`/public/images/pitch-reference.jpg`), met ongewijzigde kaarten/interactie erbovenop
 - [ ] Links/rechts-knoppen browsen speelrondes: rechts toont volgende ronde-programma, links toont vorige ronde met uitslagen
 - [ ] Manager-UI blijft mobiel bruikbaar (telefoon/tablet) met responsive header, opstellingskaarten, statistiektegels en bottom navigation
 - [ ] In mobiele Team-weergave staat de volgorde als: basiselftal → wisselspelers → statistiektegels
@@ -467,4 +467,4 @@ Waarom zo:
 - 2026-05-04: Manager-state opslag gesplitst per mode (`eredivisie` vs `wk`) via scope-aware API en aparte persistencebestanden, zodat opstellingen en transferstatus volledig onafhankelijk blijven.
 - 2026-05-04: Runtime-isolatie uitgebreid met optionele env-variabele `MANAGER_STATE_WK_PATH` naast `MANAGER_STATE_PATH`, zodat ook bestandslocaties per mode expliciet te scheiden zijn op staging/prod.
 - 2026-05-04: Instellingenpagina uitgebreid met een zichtbare debug-sectie die de actieve manager-state opslagpaden voor Eredivisie en WK toont.
-- 2026-05-04: Pitch-achtergrond aangepast naar clean full-field referentiestijl (subtiele perspectieflook, horizontale maaistrepen, lichte grastextuur en standaard veldmarkeringen) op verzoek van gebruiker; eerdere zwarte dieptelijnen niet gebruikt.
+- 2026-05-04: Pitch-achtergrond vanaf nul opnieuw opgebouwd door de laatst aangeleverde referentie-afbeelding direct als asset te gebruiken (`/public/images/pitch-reference.jpg`), zodat veldvisual exact overeenkomt met het voorbeeld; overlays/dieptelijnen verwijderd.
