@@ -482,3 +482,4 @@ Waarom zo:
 - 2026-05-04: WK demo-draft spelersdataset toegevoegd (`data/players-wk.csv`) met 48 landen en mode-specifieke Players API (`/api/players?mode=wk`); waardeschaal begrensd op €4.5M voor topspelers.
 - 2026-05-04: Transfermarkt gepagineerd voor beide modes (Eredivisie + WK) met vorige/volgende navigatie en pagina-indicator die meebeweegt met filters/sortering.
 - 2026-05-04: Paginering UX uitgebreid: navigatie + pagina-indicator nu zowel boven als onder de spelerslijst in transfermarkt.
+- 2026-05-04: WK wedstrijdkaart toont nu land-specifieke thuis-shirt icoontjes per fixture op basis van recente kit-kleurpaletten (2025/2026 waar beschikbaar) zodat de schedule visueel beter overeenkomt met actuele nationale tenues.
