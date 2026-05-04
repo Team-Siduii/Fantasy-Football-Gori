@@ -467,4 +467,3 @@ Waarom zo:
 - 2026-05-04: Manager-state opslag gesplitst per mode (`eredivisie` vs `wk`) via scope-aware API en aparte persistencebestanden, zodat opstellingen en transferstatus volledig onafhankelijk blijven.
 - 2026-05-04: Runtime-isolatie uitgebreid met optionele env-variabele `MANAGER_STATE_WK_PATH` naast `MANAGER_STATE_PATH`, zodat ook bestandslocaties per mode expliciet te scheiden zijn op staging/prod.
 - 2026-05-04: Instellingenpagina uitgebreid met een zichtbare debug-sectie die de actieve manager-state opslagpaden voor Eredivisie en WK toont.
-- 2026-05-04: Pitch-achtergrond verfijnd: onderste helft (strafschopgebied) kreeg extra zwarte dieptelijnen in de veld-overlay voor betere perspectiefweergave conform referentie.
