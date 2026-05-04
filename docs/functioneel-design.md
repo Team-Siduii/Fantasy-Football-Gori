@@ -143,7 +143,7 @@ Per rol belangrijkste rechten:
 - Transfer policy-engine berekent per ronde deterministisch: transferlimiet, open-sell ruimte en koop-toestemming op basis van bonusrondeconfig + voltooide transfers
 - Bankverdeling is vast: altijd 4 bankslots met 1x GK, 1x DEF, 1x MID en 1x FWD
 - Basiselftal-weergave op het veld toont per slot de echte speler op die index (geen naamherhaling binnen een linie); elke speler-id mag maar 1x tegelijk in teamstate voorkomen
-- Pitch in basiselftal gebruikt exact de aangeleverde referentie-afbeelding als achtergrondasset (`/public/images/pitch-reference.jpg`) met lichte zoom-in (`background-size: 126% auto`) zodat het veld visueel sterker in beeld staat
+- Pitch in basiselftal gebruikt exact de aangeleverde referentie-afbeelding als achtergrondasset (`/public/images/pitch-reference.jpg`) met sterke zoom-in (`background-size: 250% auto`) zodat het veld heel nadrukkelijk close-up in beeld staat
 - Veldvisual blijft uitsluitend een achtergrondlaag: spelerskaarten, interactie en drag/drop-gedrag blijven ongewijzigd
 - MVP transferbudget-cap voor managerteam: maximaal €32.0M totale teamwaarde; transferbevestiging blokkeert automatisch boven cap
 - Demo-team (testseed) wordt standaard binnen budget opgebouwd (<= €32.0M) zodat testen direct valide start
@@ -468,4 +468,4 @@ Waarom zo:
 - 2026-05-04: Runtime-isolatie uitgebreid met optionele env-variabele `MANAGER_STATE_WK_PATH` naast `MANAGER_STATE_PATH`, zodat ook bestandslocaties per mode expliciet te scheiden zijn op staging/prod.
 - 2026-05-04: Instellingenpagina uitgebreid met een zichtbare debug-sectie die de actieve manager-state opslagpaden voor Eredivisie en WK toont.
 - 2026-05-04: Pitch-achtergrond vanaf nul opnieuw opgebouwd door de laatst aangeleverde referentie-afbeelding direct als asset te gebruiken (`/public/images/pitch-reference.jpg`), zodat veldvisual exact overeenkomt met het voorbeeld; overlays/dieptelijnen verwijderd.
-- 2026-05-04: Pitch-referentiebeeld licht ingezoomd (`background-size: 126% auto`) voor een strakkere, vollere veldweergave.
+- 2026-05-04: Pitch-referentiebeeld sterk ingezoomd (`background-size: 250% auto`) voor maximale close-up veldweergave op verzoek van gebruiker.
