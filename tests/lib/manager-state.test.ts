@@ -6,10 +6,15 @@ const testPath = "/tmp/ffg-manager-state-tests/manager-state.json";
 
 afterEach(() => {
   process.env.MANAGER_STATE_PATH = testPath;
+  process.env.MANAGER_STATE_WK_PATH = "/tmp/ffg-manager-state-tests/manager-state-wk.json";
   if (existsSync(testPath)) {
     unlinkSync(testPath);
   }
+  if (existsSync(process.env.MANAGER_STATE_WK_PATH)) {
+    unlinkSync(process.env.MANAGER_STATE_WK_PATH);
+  }
   delete process.env.MANAGER_STATE_PATH;
+  delete process.env.MANAGER_STATE_WK_PATH;
 });
 
 describe("manager-state persistence", () => {
@@ -77,7 +82,8 @@ describe("manager-state persistence", () => {
 
   it("stores eredivisie and wk manager states separately", async () => {
     mkdirSync(dirname(testPath), { recursive: true });
-    delete process.env.MANAGER_STATE_PATH;
+    process.env.MANAGER_STATE_PATH = testPath;
+    process.env.MANAGER_STATE_WK_PATH = "/tmp/ffg-manager-state-tests/manager-state-wk.json";
 
     const mod = await import("../../src/lib/manager-state");
     mod.resetManagerStateForTests("eredivisie");

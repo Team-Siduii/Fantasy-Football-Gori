@@ -43,7 +43,11 @@ const DEFAULT_STATE: ManagerState = {
 };
 
 function getStatePath(scope: ManagerStateScope = "eredivisie") {
-  if (process.env.MANAGER_STATE_PATH) {
+  if (scope === "wk" && process.env.MANAGER_STATE_WK_PATH) {
+    return process.env.MANAGER_STATE_WK_PATH;
+  }
+
+  if (scope === "eredivisie" && process.env.MANAGER_STATE_PATH) {
     return process.env.MANAGER_STATE_PATH;
   }
 
