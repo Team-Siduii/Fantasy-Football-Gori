@@ -1,0 +1,721 @@
+speler id,speler naam,positie,club,transferwaarde
+950000,Emiliano Martinez,Keeper,Argentina,3500000
+950001,Marcos Senesi,Verdediger,Argentina,4000000
+950002,Cristian Romero 1,Verdediger,Argentina,4000000
+950003,Marcos Acuna,Verdediger,Argentina,4000000
+950004,Nahuel Molina,Verdediger,Argentina,3500000
+950005,Alexis Mac Allister,Verdediger,Argentina,3500000
+950006,Nicolas Gonzalez,Middenvelder,Argentina,4000000
+950007,Thiago Almada,Middenvelder,Argentina,4000000
+950008,Julian Alvarez,Middenvelder,Argentina,3500000
+950009,Enzo Fernandez,Middenvelder,Argentina,3500000
+950010,Nico Paz,Middenvelder,Argentina,3500000
+950011,Rodrigo De Paul,Aanvaller,Argentina,4000000
+950012,Lionel Messi,Aanvaller,Argentina,4000000
+950013,Franco Mastantuono,Aanvaller,Argentina,4000000
+950014,Giuliano Simeone,Aanvaller,Argentina,4000000
+950015,Luca Zidane,Keeper,Algeria,3500000
+950016,Ramy Bensebaini,Verdediger,Algeria,4000000
+950017,Aissa Mandi,Verdediger,Algeria,4000000
+950018,Rayan Ait Nouri,Verdediger,Algeria,4000000
+950019,Rafik Belghali,Verdediger,Algeria,3500000
+950020,Hicham Boudaoui,Verdediger,Algeria,3500000
+950021,Mohamed Amoura,Middenvelder,Algeria,4000000
+950022,Fares Chaibi,Middenvelder,Algeria,4000000
+950023,Ibrahim Maza,Middenvelder,Algeria,3500000
+950024,Ismael Bennacer,Middenvelder,Algeria,3500000
+950025,Riyad Mahrez,Middenvelder,Algeria,3500000
+950026,Himad Abdelli,Aanvaller,Algeria,4000000
+950027,Anis Hadj Moussa,Aanvaller,Algeria,4000000
+950028,Zineddine Belaid,Aanvaller,Algeria,4000000
+950029,Baghdad Bounedjah,Aanvaller,Algeria,4000000
+950030,Mathew Ryan,Keeper,Australia,3500000
+950031,Lucas Herrington,Verdediger,Australia,4000000
+950032,Alessandro Circati,Verdediger,Australia,4000000
+950033,Jason Geria,Verdediger,Australia,4000000
+950034,Aiden Oneill,Verdediger,Australia,3500000
+950035,Connor Metcalfe,Verdediger,Australia,3500000
+950036,Jordan Bos,Middenvelder,Australia,4000000
+950037,Jacob Italiano,Middenvelder,Australia,4000000
+950038,Deni Juric,Middenvelder,Australia,3500000
+950039,Martin Boyle,Middenvelder,Australia,3500000
+950040,Riley Mcgree,Middenvelder,Australia,3500000
+950041,Awer Mabil,Aanvaller,Australia,4000000
+950042,Nestory Irankunda,Aanvaller,Australia,4000000
+950043,Ajdin Hrustic,Aanvaller,Australia,4000000
+950044,Paul Okon Engstler,Aanvaller,Australia,4000000
+950045,Alexander Schlager,Keeper,Austria,3500000
+950046,Marco Friedl,Verdediger,Austria,4000000
+950047,Kevin Danso,Verdediger,Austria,4000000
+950048,Phillip Mwene,Verdediger,Austria,4000000
+950049,Stefan Posch,Verdediger,Austria,3500000
+950050,Nicolas Seiwald,Verdediger,Austria,3500000
+950051,Marcel Sabitzer,Middenvelder,Austria,4000000
+950052,Florian Grillitsch,Middenvelder,Austria,4000000
+950053,Michael Gregoritsch,Middenvelder,Austria,3500000
+950054,Christoph Baumgartner,Middenvelder,Austria,3500000
+950055,Romano Schmid,Middenvelder,Austria,3500000
+950056,Patrick Wimmer,Aanvaller,Austria,4000000
+950057,Florian Wiegele,Aanvaller,Austria,4000000
+950058,Philipp Lienhart,Aanvaller,Austria,4000000
+950059,Alexander Prass,Aanvaller,Austria,4000000
+950060,Senne Lammens,Keeper,Belgium,3500000
+950061,Zeno Debast,Verdediger,Belgium,4000000
+950062,Brandon Mechele,Verdediger,Belgium,4000000
+950063,Maxim De Cuyper,Verdediger,Belgium,4000000
+950064,Thomas Meunier,Verdediger,Belgium,3500000
+950065,Amadou Onana,Verdediger,Belgium,3500000
+950066,Jeremy Doku,Middenvelder,Belgium,4000000
+950067,Nicolas Raskin,Middenvelder,Belgium,4000000
+950068,Charles De Ketelaere,Middenvelder,Belgium,3500000
+950069,Kevin De Bruyne,Middenvelder,Belgium,3500000
+950070,Alexis Saelemaekers,Middenvelder,Belgium,3500000
+950071,Joaquin Seys,Aanvaller,Belgium,4000000
+950072,Dodi Lukebakio,Aanvaller,Belgium,4000000
+950073,Lois Openda,Aanvaller,Belgium,4000000
+950074,Nathan Ngoy,Aanvaller,Belgium,4000000
+950075,Nikola Vasilj,Keeper,Bosnia and Herzegovina,3500000
+950076,Amar Dedic,Verdediger,Bosnia and Herzegovina,4000000
+950077,Nikola Katic,Verdediger,Bosnia and Herzegovina,4000000
+950078,Sead Kolasinac,Verdediger,Bosnia and Herzegovina,4000000
+950079,Tarik Muharemovic,Verdediger,Bosnia and Herzegovina,3500000
+950080,Ivan Sunjic,Verdediger,Bosnia and Herzegovina,3500000
+950081,Ivan Basic,Middenvelder,Bosnia and Herzegovina,4000000
+950082,Benjamin Tahirovic,Middenvelder,Bosnia and Herzegovina,4000000
+950083,Dzenis Burnic,Middenvelder,Bosnia and Herzegovina,3500000
+950084,Amir Hadziahmetovic,Middenvelder,Bosnia and Herzegovina,3500000
+950085,Armin Gigovic,Middenvelder,Bosnia and Herzegovina,3500000
+950086,Edin Dzeko,Aanvaller,Bosnia and Herzegovina,4000000
+950087,Esmir Bajraktarevic,Aanvaller,Bosnia and Herzegovina,4000000
+950088,Ermedin Demirovic,Aanvaller,Bosnia and Herzegovina,4000000
+950089,Amar Memic,Aanvaller,Bosnia and Herzegovina,4000000
+950090,Ederson 1,Keeper,Brazil,3500000
+950091,Leo Pereira,Verdediger,Brazil,4000000
+950092,Gleison Bremer,Verdediger,Brazil,4000000
+950093,Douglas Santos,Verdediger,Brazil,4000000
+950094,Wesley Franca,Verdediger,Brazil,3500000
+950095,Casemiro,Verdediger,Brazil,3500000
+950096,Vinicius Junior,Middenvelder,Brazil,4000000
+950097,Gabriel Martinelli,Middenvelder,Brazil,4000000
+950098,Matheus Cunha,Middenvelder,Brazil,3500000
+950099,Andrey Santos,Middenvelder,Brazil,3500000
+950100,Raphinha,Middenvelder,Brazil,3500000
+950101,Luiz Henrique,Aanvaller,Brazil,4000000
+950102,Joao Pedro 3,Aanvaller,Brazil,4000000
+950103,Roger Ibanez,Aanvaller,Brazil,4000000
+950104,Igor Thiago,Aanvaller,Brazil,4000000
+950105,James Pantemis,Keeper,Canada,3500000
+950106,Kamal Miller,Verdediger,Canada,4000000
+950107,Ralph Priso,Verdediger,Canada,4000000
+950108,Zorhan Bassong,Verdediger,Canada,4000000
+950109,Richie Laryea,Verdediger,Canada,3500000
+950110,Mathieu Choiniere,Verdediger,Canada,3500000
+950111,Jacen Russell Rowe,Middenvelder,Canada,4000000
+950112,Shola Jimoh,Middenvelder,Canada,4000000
+950113,Rayan Elloumi,Middenvelder,Canada,3500000
+950114,Jonathan Osorio,Middenvelder,Canada,3500000
+950115,Jayden Nelson,Middenvelder,Canada,3500000
+950116,Jeevan Badwal,Aanvaller,Canada,4000000
+950117,Tiago Coimbra,Aanvaller,Canada,4000000
+950118,Malik Henry,Aanvaller,Canada,4000000
+950119,Noah Abatneh,Aanvaller,Canada,4000000
+950120,Vozinha,Keeper,Cape Verde,3500000
+950121,Jorginho Soares,Verdediger,Cape Verde,4000000
+950122,Roberto Lopes,Verdediger,Cape Verde,4000000
+950123,Sidny Lopes Cabral,Verdediger,Cape Verde,4000000
+950124,Kevin Pina,Verdediger,Cape Verde,3500000
+950125,Diney Borges,Verdediger,Cape Verde,3500000
+950126,Ryan Mendes,Middenvelder,Cape Verde,4000000
+950127,Steven Moreira,Middenvelder,Cape Verde,4000000
+950128,Dailon Livramento,Middenvelder,Cape Verde,3500000
+950129,Deroy Duarte,Middenvelder,Cape Verde,3500000
+950130,Telmo Arcanjo,Middenvelder,Cape Verde,3500000
+950131,Willy Semedo,Aanvaller,Cape Verde,4000000
+950132,Jovane Cabral,Aanvaller,Cape Verde,4000000
+950133,Joao Paulo,Aanvaller,Cape Verde,4000000
+950134,Nuno Da Costa,Aanvaller,Cape Verde,4000000
+950135,Camilo Vargas,Keeper,Colombia,3500000
+950136,Jhon Lucumi,Verdediger,Colombia,4000000
+950137,Davinson Sanchez,Verdediger,Colombia,4000000
+950138,Johan Mojica,Verdediger,Colombia,4000000
+950139,Daniel Munoz,Verdediger,Colombia,3500000
+950140,Richard Rios,Verdediger,Colombia,3500000
+950141,Luis Diaz,Middenvelder,Colombia,4000000
+950142,Jefferson Lerma,Middenvelder,Colombia,4000000
+950143,Luis Suarez 1,Middenvelder,Colombia,3500000
+950144,James Rodriguez,Middenvelder,Colombia,3500000
+950145,Jhon Arias,Middenvelder,Colombia,3500000
+950146,Jorge Carrascal,Aanvaller,Colombia,4000000
+950147,Deiver Machado,Aanvaller,Colombia,4000000
+950148,Kevin Castano,Aanvaller,Colombia,4000000
+950149,Santiago Arias,Aanvaller,Colombia,4000000
+950150,Dominik Livakovic,Keeper,Croatia,3500000
+950151,Marin Pongracic,Verdediger,Croatia,4000000
+950152,Martin Erlic,Verdediger,Croatia,4000000
+950153,Ivan Perisic,Verdediger,Croatia,4000000
+950154,Nikola Moro,Verdediger,Croatia,3500000
+950155,Luka Vuskovic,Verdediger,Croatia,3500000
+950156,Nikola Vlasic,Middenvelder,Croatia,4000000
+950157,Marco Pasalic,Middenvelder,Croatia,4000000
+950158,Igor Matanovic,Middenvelder,Croatia,3500000
+950159,Petar Sucic,Middenvelder,Croatia,3500000
+950160,Mario Pasalic,Middenvelder,Croatia,3500000
+950161,Josip Stanisic,Aanvaller,Croatia,4000000
+950162,Petar Musa,Aanvaller,Croatia,4000000
+950163,Luka Sucic,Aanvaller,Croatia,4000000
+950164,Martin Baturina,Aanvaller,Croatia,4000000
+950165,Matej Kovar,Keeper,Czech Republic,3500000
+950166,Tomas Holes,Verdediger,Czech Republic,4000000
+950167,Robin Hranac,Verdediger,Czech Republic,4000000
+950168,Ladislav Krejci 1,Verdediger,Czech Republic,4000000
+950169,Vladimir Darida,Verdediger,Czech Republic,3500000
+950170,Lukas Provod,Verdediger,Czech Republic,3500000
+950171,David Jurasek,Middenvelder,Czech Republic,4000000
+950172,Vladimir Coufal,Middenvelder,Czech Republic,4000000
+950173,Tomas Chory,Middenvelder,Czech Republic,3500000
+950174,Pavel Sulc,Middenvelder,Czech Republic,3500000
+950175,Patrik Schick,Middenvelder,Czech Republic,3500000
+950176,Tomas Soucek,Aanvaller,Czech Republic,4000000
+950177,Stepan Chaloupek,Aanvaller,Czech Republic,4000000
+950178,Mojmir Chytil,Aanvaller,Czech Republic,4000000
+950179,Michal Sadilek,Aanvaller,Czech Republic,4000000
+950180,Lionel Mpasi,Keeper,DR Congo,3500000
+950181,Timothy Fayulu,Verdediger,DR Congo,4000000
+950182,Axel Tuanzebe,Verdediger,DR Congo,4000000
+950183,Arthur Masuaku,Verdediger,DR Congo,4000000
+950184,Chancel Mbemba,Verdediger,DR Congo,3500000
+950185,Aaron Wan Bissaka,Verdediger,DR Congo,3500000
+950186,Joris Kayembe,Middenvelder,DR Congo,4000000
+950187,Brian Bayeye,Middenvelder,DR Congo,4000000
+950188,Steve Kapuadi,Middenvelder,DR Congo,3500000
+950189,Dylan Batubinsika,Middenvelder,DR Congo,3500000
+950190,Rocky Bushiri,Middenvelder,DR Congo,3500000
+950191,Samuel Moutoussamy,Aanvaller,DR Congo,4000000
+950192,Noah Sadiki,Aanvaller,DR Congo,4000000
+950193,Edo Kayembe,Aanvaller,DR Congo,4000000
+950194,Ngalayel Mukau,Aanvaller,DR Congo,4000000
+950195,Hernan Galindez,Keeper,Ecuador,3500000
+950196,Willian Pacho,Verdediger,Ecuador,4000000
+950197,Joel Ordonez,Verdediger,Ecuador,4000000
+950198,Piero Hincapie,Verdediger,Ecuador,4000000
+950199,Alan Franco 1,Verdediger,Ecuador,3500000
+950200,Pedro Vite,Verdediger,Ecuador,3500000
+950201,Alan Minda,Middenvelder,Ecuador,4000000
+950202,Moises Caicedo,Middenvelder,Ecuador,4000000
+950203,Enner Valencia,Middenvelder,Ecuador,3500000
+950204,Gonzalo Plata,Middenvelder,Ecuador,3500000
+950205,John Yeboah,Middenvelder,Ecuador,3500000
+950206,Angelo Preciado,Aanvaller,Ecuador,4000000
+950207,Pervis Estupinan,Aanvaller,Ecuador,4000000
+950208,Kendry Paez,Aanvaller,Ecuador,4000000
+950209,Kevin Rodriguez,Aanvaller,Ecuador,4000000
+950210,Mohamed El Shenawy,Keeper,Egypt,3500000
+950211,Rami Hisham Rabia,Verdediger,Egypt,4000000
+950212,Hamdy Fathy,Verdediger,Egypt,4000000
+950213,Yasser Ibrahim,Verdediger,Egypt,4000000
+950214,Marwan Ateya,Verdediger,Egypt,3500000
+950215,Mohamed Hamdy,Verdediger,Egypt,3500000
+950216,Mahmoud Trezeguet,Middenvelder,Egypt,4000000
+950217,Ibrahim Adel,Middenvelder,Egypt,4000000
+950218,Mohamed Hany,Middenvelder,Egypt,3500000
+950219,Omar Marmoush,Middenvelder,Egypt,3500000
+950220,Mohamed Salah,Middenvelder,Egypt,3500000
+950221,Ahmed Aboul Al Fotouh,Aanvaller,Egypt,4000000
+950222,Ahmed Zizo,Aanvaller,Egypt,4000000
+950223,Emam Ashour,Aanvaller,Egypt,4000000
+950224,Mostafa Mohamed,Aanvaller,Egypt,4000000
+950225,James Trafford,Keeper,England,3500000
+950226,Harry Maguire,Verdediger,England,4000000
+950227,Fikayo Tomori,Verdediger,England,4000000
+950228,Djed Spence,Verdediger,England,4000000
+950229,Tino Livramento,Verdediger,England,3500000
+950230,Jordan Henderson,Verdediger,England,3500000
+950231,Marcus Rashford,Middenvelder,England,4000000
+950232,Noni Madueke,Middenvelder,England,4000000
+950233,Dominic Solanke,Middenvelder,England,3500000
+950234,James Garner,Middenvelder,England,3500000
+950235,Phil Foden,Middenvelder,England,3500000
+950236,Jarrod Bowen,Aanvaller,England,4000000
+950237,Adam Wharton,Aanvaller,England,4000000
+950238,Cole Palmer,Aanvaller,England,4000000
+950239,Dominic Calvert Lewin,Aanvaller,England,4000000
+950240,Mike Maignan,Keeper,France,3500000
+950241,Ibrahima Konate,Verdediger,France,4000000
+950242,Dayot Upamecano,Verdediger,France,4000000
+950243,Theo Hernandez,Verdediger,France,4000000
+950244,Malo Gusto,Verdediger,France,3500000
+950245,Aurelien Tchouameni,Verdediger,France,3500000
+950246,Hugo Ekitike,Middenvelder,France,4000000
+950247,Adrien Rabiot,Middenvelder,France,4000000
+950248,Kylian Mbappe,Middenvelder,France,3500000
+950249,Michael Olise,Middenvelder,France,3500000
+950250,Ousmane Dembele,Middenvelder,France,3500000
+950251,Maxence Lacroix,Aanvaller,France,4000000
+950252,N Golo Kante,Aanvaller,France,4000000
+950253,Desire Doue,Aanvaller,France,4000000
+950254,Marcus Thuram,Aanvaller,France,4000000
+950255,Oliver Baumann,Keeper,Germany,3500000
+950256,Nico Schlotterbeck,Verdediger,Germany,4000000
+950257,Jonathan Tah,Verdediger,Germany,4000000
+950258,David Raum,Verdediger,Germany,4000000
+950259,Joshua Kimmich,Verdediger,Germany,3500000
+950260,Angelo Stiller,Verdediger,Germany,3500000
+950261,Florian Wirtz,Middenvelder,Germany,4000000
+950262,Serge Gnabry,Middenvelder,Germany,4000000
+950263,Kai Havertz,Middenvelder,Germany,3500000
+950264,Leon Goretzka,Middenvelder,Germany,3500000
+950265,Leroy Sane,Middenvelder,Germany,3500000
+950266,Nick Woltemade,Aanvaller,Germany,4000000
+950267,Lennart Karl,Aanvaller,Germany,4000000
+950268,Pascal Gross,Aanvaller,Germany,4000000
+950269,Anton Stach,Aanvaller,Germany,4000000
+950270,Lawrence Ati Zigi,Keeper,Ghana,3500000
+950271,Alexander Djiku,Verdediger,Ghana,4000000
+950272,Jonas Adjetey,Verdediger,Ghana,4000000
+950273,Derrick Kohn,Verdediger,Ghana,4000000
+950274,Caleb Yirenkyi,Verdediger,Ghana,3500000
+950275,Kwasi Sibo,Verdediger,Ghana,3500000
+950276,Prince Kwabena Adu,Middenvelder,Ghana,4000000
+950277,Antoine Semenyo,Middenvelder,Ghana,4000000
+950278,Jordan Ayew,Middenvelder,Ghana,3500000
+950279,Thomas Partey,Middenvelder,Ghana,3500000
+950280,Issahaku Abdul Fatawu,Middenvelder,Ghana,3500000
+950281,Ransford Yeboah Konigsdorffer,Aanvaller,Ghana,4000000
+950282,Patric Pfeiffer,Aanvaller,Ghana,4000000
+950283,Ibrahim Sulemana,Aanvaller,Ghana,4000000
+950284,Marvin Senaya,Aanvaller,Ghana,4000000
+950285,Alexandre Pierre,Keeper,Haiti,3500000
+950286,Hannes Delcroix,Verdediger,Haiti,4000000
+950287,Ricardo Ade,Verdediger,Haiti,4000000
+950288,Duke Lacroix,Verdediger,Haiti,4000000
+950289,Jean Kevin Duverne,Verdediger,Haiti,3500000
+950290,Leverton Pierre,Verdediger,Haiti,3500000
+950291,Yassin Fortune,Middenvelder,Haiti,4000000
+950292,Danley Jean Jacques,Middenvelder,Haiti,4000000
+950293,Frantzdy Pierrot,Middenvelder,Haiti,3500000
+950294,Jean Ricner Bellegarde,Middenvelder,Haiti,3500000
+950295,Josue Casimir,Middenvelder,Haiti,3500000
+950296,Wilson Isidor,Aanvaller,Haiti,4000000
+950297,Duckens Nazon,Aanvaller,Haiti,4000000
+950298,Martin Experience,Aanvaller,Haiti,4000000
+950299,Ruben Providence,Aanvaller,Haiti,4000000
+950300,Alireza Beiranvand,Keeper,Iran,3500000
+950301,Shoja Khalilzadeh,Verdediger,Iran,4000000
+950302,Ali Nemati,Verdediger,Iran,4000000
+950303,Milad Mohammadi,Verdediger,Iran,4000000
+950304,Aria Yousefi,Verdediger,Iran,3500000
+950305,Hossein Kanaani,Verdediger,Iran,3500000
+950306,Mohammad Ghorbani,Middenvelder,Iran,4000000
+950307,Saman Ghoddos,Middenvelder,Iran,4000000
+950308,Mehdi Taremi,Middenvelder,Iran,3500000
+950309,Mohammad Mohebi,Middenvelder,Iran,3500000
+950310,Ali Gholizadeh,Middenvelder,Iran,3500000
+950311,Ehsan Hajsafi,Aanvaller,Iran,4000000
+950312,Saleh Hardani,Aanvaller,Iran,4000000
+950313,Ramin Rezaeian,Aanvaller,Iran,4000000
+950314,Alireza Jahanbakhsh,Aanvaller,Iran,4000000
+950315,Ahmed Basil Al Fadhli,Keeper,Iraq,3500000
+950316,Akam Hashim,Verdediger,Iraq,4000000
+950317,Zaid Tahseen,Verdediger,Iraq,4000000
+950318,Merchas Doski,Verdediger,Iraq,4000000
+950319,Hussein Ali,Verdediger,Iraq,3500000
+950320,Aimar Sher,Verdediger,Iraq,3500000
+950321,Ali Al Hamadi,Middenvelder,Iraq,4000000
+950322,Ibrahim Bayesh Al Kaabawi,Middenvelder,Iraq,4000000
+950323,Ayman Hussein Al Mafraje,Middenvelder,Iraq,3500000
+950324,Amir Al Ammari,Middenvelder,Iraq,3500000
+950325,Youssef Amyn,Middenvelder,Iraq,3500000
+950326,Marko Farji,Aanvaller,Iraq,4000000
+950327,Zaid Ismail Al Dulaimi,Aanvaller,Iraq,4000000
+950328,Mohanad Ali Al Shammari,Aanvaller,Iraq,4000000
+950329,Ali Jasim Al Tameemi,Aanvaller,Iraq,4000000
+950330,Yahia Fofana,Keeper,Ivory Coast,3500000
+950331,Evan Ndicka,Verdediger,Ivory Coast,4000000
+950332,Odilon Kossounou,Verdediger,Ivory Coast,4000000
+950333,Ghislain Konan,Verdediger,Ivory Coast,4000000
+950334,Guela Doue,Verdediger,Ivory Coast,3500000
+950335,Ibrahim Sangare,Verdediger,Ivory Coast,3500000
+950336,Yan Diomande,Middenvelder,Ivory Coast,4000000
+950337,Christ Inao Oulai,Middenvelder,Ivory Coast,4000000
+950338,Evann Guessand,Middenvelder,Ivory Coast,3500000
+950339,Franck Kessie,Middenvelder,Ivory Coast,3500000
+950340,Amad Diallo,Middenvelder,Ivory Coast,3500000
+950341,Jean Philippe Krasso,Aanvaller,Ivory Coast,4000000
+950342,Bazoumana Toure,Aanvaller,Ivory Coast,4000000
+950343,Seko Fofana,Aanvaller,Ivory Coast,4000000
+950344,Oumar Diakite,Aanvaller,Ivory Coast,4000000
+950345,Zion Suzuki,Keeper,Japan,3500000
+950346,Hiroki Ito,Verdediger,Japan,4000000
+950347,Tsuyoshi Watanabe,Verdediger,Japan,4000000
+950348,Ayumu Seko,Verdediger,Japan,4000000
+950349,Ao Tanaka,Verdediger,Japan,3500000
+950350,Joel Fujita,Verdediger,Japan,3500000
+950351,Daizen Maeda,Middenvelder,Japan,4000000
+950352,Yukinari Sugawara,Middenvelder,Japan,4000000
+950353,Keisuke Goto,Middenvelder,Japan,3500000
+950354,Yuito Suzuki,Middenvelder,Japan,3500000
+950355,Kodai Sano,Middenvelder,Japan,3500000
+950356,Shogo Taniguchi,Aanvaller,Japan,4000000
+950357,Junnosuke Suzuki,Aanvaller,Japan,4000000
+950358,Kaoru Mitoma,Aanvaller,Japan,4000000
+950359,Junya Ito,Aanvaller,Japan,4000000
+950360,Yazeed Abu Laila,Keeper,Jordan,3500000
+950361,Husam Abu Dahab,Verdediger,Jordan,4000000
+950362,Abdallah Mousa Nasib,Verdediger,Jordan,4000000
+950363,Mohammad Abu Hasheesh,Verdediger,Jordan,4000000
+950364,Noor Al Deen Al Rawabdeh,Verdediger,Jordan,3500000
+950365,Yazan Abu Al Arab,Verdediger,Jordan,3500000
+950366,Odeh Al Fakhouri,Middenvelder,Jordan,4000000
+950367,Ahmad Assaf,Middenvelder,Jordan,4000000
+950368,Baha Faisal,Middenvelder,Jordan,3500000
+950369,Ibrahim Sadeh,Middenvelder,Jordan,3500000
+950370,Musa Al Taamari,Middenvelder,Jordan,3500000
+950371,Abdallah Al Fakhouri,Aanvaller,Jordan,4000000
+950372,Nizar Al Rashdan,Aanvaller,Jordan,4000000
+950373,Mohannad Abu Taha,Aanvaller,Jordan,4000000
+950374,Yousef Abu Al Jazar,Aanvaller,Jordan,4000000
+950375,Raul Rangel,Keeper,Mexico,3500000
+950376,Eduardo Aguila,Verdediger,Mexico,4000000
+950377,Victor Guzman 1,Verdediger,Mexico,4000000
+950378,Bryan Gonzalez,Verdediger,Mexico,4000000
+950379,Richard Ledezma,Verdediger,Mexico,3500000
+950380,Luis Romo,Verdediger,Mexico,3500000
+950381,Brian Gutierrez,Middenvelder,Mexico,4000000
+950382,Marcel Ruiz,Middenvelder,Mexico,4000000
+950383,German Berterame,Middenvelder,Mexico,3500000
+950384,Obed Vargas,Middenvelder,Mexico,3500000
+950385,Roberto Alvarado,Middenvelder,Mexico,3500000
+950386,Kevin Castaneda,Aanvaller,Mexico,4000000
+950387,Alexis Gutierrez,Aanvaller,Mexico,4000000
+950388,Carlos Alberto Rodriguez,Aanvaller,Mexico,4000000
+950389,Armando Gonzalez 1,Aanvaller,Mexico,4000000
+950390,Yassine Bounou,Keeper,Morocco,3500000
+950391,Nayef Aguerd,Verdediger,Morocco,4000000
+950392,Adam Masina,Verdediger,Morocco,4000000
+950393,Noussair Mazraoui,Verdediger,Morocco,4000000
+950394,Achraf Hakimi,Verdediger,Morocco,3500000
+950395,Neil El Aynaoui,Verdediger,Morocco,3500000
+950396,Abde Ezzalzouli,Middenvelder,Morocco,4000000
+950397,Bilal El Khannouss,Middenvelder,Morocco,4000000
+950398,Ayoub El Kaabi,Middenvelder,Morocco,3500000
+950399,Ismael Saibari,Middenvelder,Morocco,3500000
+950400,Brahim Diaz,Middenvelder,Morocco,3500000
+950401,Anass Salah Eddine,Aanvaller,Morocco,4000000
+950402,Youssef En Nesyri,Aanvaller,Morocco,4000000
+950403,Eliesse Ben Seghir,Aanvaller,Morocco,4000000
+950404,Oussama Targhalline,Aanvaller,Morocco,4000000
+950405,Bart Verbruggen,Keeper,Netherlands,3500000
+950406,Jan Paul Van Hecke,Verdediger,Netherlands,4000000
+950407,Virgil Van Dijk,Verdediger,Netherlands,4000000
+950408,Micky Van De Ven,Verdediger,Netherlands,4000000
+950409,Denzel Dumfries,Verdediger,Netherlands,3500000
+950410,Ryan Gravenberch,Verdediger,Netherlands,3500000
+950411,Cody Gakpo,Middenvelder,Netherlands,4000000
+950412,Kees Smit,Middenvelder,Netherlands,4000000
+950413,Donyell Malen,Middenvelder,Netherlands,3500000
+950414,Tijani Reijnders,Middenvelder,Netherlands,3500000
+950415,Teun Koopmeiners,Middenvelder,Netherlands,3500000
+950416,Brian Brobbey,Aanvaller,Netherlands,4000000
+950417,Xavi Simons,Aanvaller,Netherlands,4000000
+950418,Quinten Timber,Aanvaller,Netherlands,4000000
+950419,Wout Weghorst,Aanvaller,Netherlands,4000000
+950420,Viljami Sinisalo,Keeper,New Zealand,3500000
+950421,Samuli Miettinen,Verdediger,New Zealand,4000000
+950422,Ville Koski,Verdediger,New Zealand,4000000
+950423,Juho Lahteenmaki,Verdediger,New Zealand,4000000
+950424,Nikolai Alho,Verdediger,New Zealand,3500000
+950425,Adam Markhiyev,Verdediger,New Zealand,3500000
+950426,Oliver Antman,Middenvelder,New Zealand,4000000
+950427,Leo Walta,Middenvelder,New Zealand,4000000
+950428,Joel Pohjanpalo,Middenvelder,New Zealand,3500000
+950429,Anssi Suhonen,Middenvelder,New Zealand,3500000
+950430,Naatan Skytta,Middenvelder,New Zealand,3500000
+950431,Kasper Paananen,Aanvaller,New Zealand,4000000
+950432,Tony Miettinen,Aanvaller,New Zealand,4000000
+950433,Jaakko Oksanen,Aanvaller,New Zealand,4000000
+950434,Ryan Mahuta,Aanvaller,New Zealand,4000000
+950435,Orjan Nyland,Keeper,Norway,3500000
+950436,Torbjorn Heggem,Verdediger,Norway,4000000
+950437,Kristoffer Ajer,Verdediger,Norway,4000000
+950438,David Moller Wolfe,Verdediger,Norway,4000000
+950439,Julian Ryerson,Verdediger,Norway,3500000
+950440,Patrick Berg,Verdediger,Norway,3500000
+950441,Jorgen Strand Larsen,Middenvelder,Norway,4000000
+950442,Andreas Schjelderup,Middenvelder,Norway,4000000
+950443,Alexander Sorloth,Middenvelder,Norway,3500000
+950444,Sander Berge,Middenvelder,Norway,3500000
+950445,Oscar Bobb,Middenvelder,Norway,3500000
+950446,Leo Ostigard,Aanvaller,Norway,4000000
+950447,Kristian Thorstvedt,Aanvaller,Norway,4000000
+950448,Jens Petter Hauge,Aanvaller,Norway,4000000
+950449,Felix Horn Myhre,Aanvaller,Norway,4000000
+950450,Eddie Roberts,Keeper,Panama,3500000
+950451,Javier Rivera,Verdediger,Panama,4000000
+950452,Orman Davis,Verdediger,Panama,4000000
+950453,Jorge Gutierrez,Verdediger,Panama,4000000
+950454,Abdul Knight,Verdediger,Panama,3500000
+950455,Aimar Sanchez,Verdediger,Panama,3500000
+950456,Ricardo Phillips 1,Middenvelder,Panama,4000000
+950457,Omar Cordoba,Middenvelder,Panama,4000000
+950458,Kadir Barria,Middenvelder,Panama,3500000
+950459,Jose Murillo,Middenvelder,Panama,3500000
+950460,Kahiser Lenis,Middenvelder,Panama,3500000
+950461,Giovany Herbert,Aanvaller,Panama,4000000
+950462,Luis Asprilla 1,Aanvaller,Panama,4000000
+950463,Jovani Welch,Aanvaller,Panama,4000000
+950464,Gustavo Herrera,Aanvaller,Panama,4000000
+950465,Gaston Olveira,Keeper,Paraguay,3500000
+950466,Omar Alderete,Verdediger,Paraguay,4000000
+950467,Gustavo Gomez,Verdediger,Paraguay,4000000
+950468,Junior Alonso,Verdediger,Paraguay,4000000
+950469,Alan Benitez,Verdediger,Paraguay,3500000
+950470,Lucas Romero,Verdediger,Paraguay,3500000
+950471,Miguel Almiron,Middenvelder,Paraguay,4000000
+950472,Damian Bobadilla,Middenvelder,Paraguay,4000000
+950473,Julio Enciso,Middenvelder,Paraguay,3500000
+950474,Diego Gomez,Middenvelder,Paraguay,3500000
+950475,Antonio Sanabria,Middenvelder,Paraguay,3500000
+950476,Mauricio 1,Aanvaller,Paraguay,4000000
+950477,Matias Galarza,Aanvaller,Paraguay,4000000
+950478,Jose Canale,Aanvaller,Paraguay,4000000
+950479,Ramon Sosa,Aanvaller,Paraguay,4000000
+950480,Rui Silva,Keeper,Portugal,3500000
+950481,Renato Veiga,Verdediger,Portugal,4000000
+950482,Antonio Silva,Verdediger,Portugal,4000000
+950483,Nuno Mendes,Verdediger,Portugal,4000000
+950484,Matheus Nunes,Verdediger,Portugal,3500000
+950485,Ruben Neves,Verdediger,Portugal,3500000
+950486,Joao Felix,Middenvelder,Portugal,4000000
+950487,Samu Costa,Middenvelder,Portugal,4000000
+950488,Goncalo Ramos,Middenvelder,Portugal,3500000
+950489,Bruno Fernandes 1,Middenvelder,Portugal,3500000
+950490,Francisco Conceicao,Middenvelder,Portugal,3500000
+950491,Vitinha,Aanvaller,Portugal,4000000
+950492,Goncalo Guedes,Aanvaller,Portugal,4000000
+950493,Tomas Araujo,Aanvaller,Portugal,4000000
+950494,Pedro Neto,Aanvaller,Portugal,4000000
+950495,Mahmud Abunada,Keeper,Qatar,3500000
+950496,Marwan Badreldin,Verdediger,Qatar,4000000
+950497,Meshaal Barsham,Verdediger,Qatar,4000000
+950498,Salah Zakaria Hassan,Verdediger,Qatar,4000000
+950499,Jassem Gaber Abdulsallam,Verdediger,Qatar,3500000
+950500,Homam Ahmed,Verdediger,Qatar,3500000
+950501,Sultan Al Brake,Middenvelder,Qatar,4000000
+950502,Ahmed Suhail Al Hamawende,Middenvelder,Qatar,4000000
+950503,Al Hashmi Al Hussain,Middenvelder,Qatar,3500000
+950504,Ghanem Al Minhali,Middenvelder,Qatar,3500000
+950505,Abdulla Salman Al Otaibi,Middenvelder,Qatar,3500000
+950506,Ayoub Al Oui,Aanvaller,Qatar,4000000
+950507,Bassam Hisham Al Rawi,Aanvaller,Qatar,4000000
+950508,Abdulla Al Yazidi,Aanvaller,Qatar,4000000
+950509,Abdelkarim Hassan Fadlalla,Aanvaller,Qatar,4000000
+950510,Nawaf Al Aqidi,Keeper,Saudi Arabia,3500000
+950511,Ali Lajami,Verdediger,Saudi Arabia,4000000
+950512,Abdulelah Al Amri,Verdediger,Saudi Arabia,4000000
+950513,Hassan Kadesh Mahboob,Verdediger,Saudi Arabia,4000000
+950514,Musab Al Juwayr,Verdediger,Saudi Arabia,3500000
+950515,Mohamed Kanno,Verdediger,Saudi Arabia,3500000
+950516,Ayman Yahya Salem,Middenvelder,Saudi Arabia,4000000
+950517,Saud Abdulhamid,Middenvelder,Saudi Arabia,4000000
+950518,Firas Al Buraikan,Middenvelder,Saudi Arabia,3500000
+950519,Khalid Al Ghannam,Middenvelder,Saudi Arabia,3500000
+950520,Salman Al Faraj,Middenvelder,Saudi Arabia,3500000
+950521,Marwan Al Sahafi,Aanvaller,Saudi Arabia,4000000
+950522,Ali Majrashi,Aanvaller,Saudi Arabia,4000000
+950523,Naif Masoud,Aanvaller,Saudi Arabia,4000000
+950524,Muteb Al Mufarrij,Aanvaller,Saudi Arabia,4000000
+950525,Angus Gunn,Keeper,Scotland,3500000
+950526,Scott Mckenna,Verdediger,Scotland,4000000
+950527,Jack Hendry,Verdediger,Scotland,4000000
+950528,Andrew Robertson,Verdediger,Scotland,4000000
+950529,Nathan Patterson,Verdediger,Scotland,3500000
+950530,Lewis Ferguson,Verdediger,Scotland,3500000
+950531,Tommy Conway,Middenvelder,Scotland,4000000
+950532,Kenny Mclean,Middenvelder,Scotland,4000000
+950533,Lyndon Dykes,Middenvelder,Scotland,3500000
+950534,Scott Mctominay,Middenvelder,Scotland,3500000
+950535,John Mcginn,Middenvelder,Scotland,3500000
+950536,Ryan Christie,Aanvaller,Scotland,4000000
+950537,George Hirst,Aanvaller,Scotland,4000000
+950538,Kieran Tierney,Aanvaller,Scotland,4000000
+950539,Billy Gilmour,Aanvaller,Scotland,4000000
+950540,Edouard Mendy,Keeper,Senegal,3500000
+950541,Moussa Niakhate,Verdediger,Senegal,4000000
+950542,Abdoulaye Seck,Verdediger,Senegal,4000000
+950543,Ismail Jakobs,Verdediger,Senegal,4000000
+950544,Krepin Diatta,Verdediger,Senegal,3500000
+950545,Idrissa Gueye,Verdediger,Senegal,3500000
+950546,Sadio Mane,Middenvelder,Senegal,4000000
+950547,Habib Diarra,Middenvelder,Senegal,4000000
+950548,Nicolas Jackson,Middenvelder,Senegal,3500000
+950549,Pape Gueye,Middenvelder,Senegal,3500000
+950550,Ismaila Sarr,Middenvelder,Senegal,3500000
+950551,El Hadji Malick Diouf,Aanvaller,Senegal,4000000
+950552,Boulaye Dia,Aanvaller,Senegal,4000000
+950553,Lamine Camara 1,Aanvaller,Senegal,4000000
+950554,Ibrahim Mbaye,Aanvaller,Senegal,4000000
+950555,Ronwen Williams,Keeper,South Africa,3500000
+950556,Siyabonga Ngezana,Verdediger,South Africa,4000000
+950557,Mbekezeli Mbokazi,Verdediger,South Africa,4000000
+950558,Nkosinathi Sibisi,Verdediger,South Africa,4000000
+950559,Teboho Mokoena 1,Verdediger,South Africa,3500000
+950560,Bathusi Aubaas,Verdediger,South Africa,3500000
+950561,Samukele Kabini,Middenvelder,South Africa,4000000
+950562,Khuliso Mudau,Middenvelder,South Africa,4000000
+950563,Lyle Foster,Middenvelder,South Africa,3500000
+950564,Relebohile Mofokeng,Middenvelder,South Africa,3500000
+950565,Oswin Appollis,Middenvelder,South Africa,3500000
+950566,Aubrey Modiba,Aanvaller,South Africa,4000000
+950567,Evidence Makgopa,Aanvaller,South Africa,4000000
+950568,Sipho Mbule,Aanvaller,South Africa,4000000
+950569,Tshepang Moremi,Aanvaller,South Africa,4000000
+950570,Hyeon Woo Jo,Keeper,South Korea,3500000
+950571,Min Jae Kim,Verdediger,South Korea,4000000
+950572,Tae Hyun Kim,Verdediger,South Korea,4000000
+950573,Yu Min Cho,Verdediger,South Korea,4000000
+950574,Jin Gyu Kim,Verdediger,South Korea,3500000
+950575,Jin Seob Park,Verdediger,South Korea,3500000
+950576,Young Woo Seol,Middenvelder,South Korea,4000000
+950577,Moon Hwan Kim,Middenvelder,South Korea,4000000
+950578,Hyeon Gyu Oh,Middenvelder,South Korea,3500000
+950579,Hee Chan Hwang,Middenvelder,South Korea,3500000
+950580,Jun Ho Bae,Middenvelder,South Korea,3500000
+950581,Seung Ho Paik,Aanvaller,South Korea,4000000
+950582,Han Beom Lee,Aanvaller,South Korea,4000000
+950583,Hyun Jun Yang,Aanvaller,South Korea,4000000
+950584,Kang In Lee,Aanvaller,South Korea,4000000
+950585,Unai Simon,Keeper,Spain,3500000
+950586,Aymeric Laporte,Verdediger,Spain,4000000
+950587,Pau Cubarsi,Verdediger,Spain,4000000
+950588,Marc Cucurella,Verdediger,Spain,4000000
+950589,Marcos Llorente,Verdediger,Spain,3500000
+950590,Pedri,Verdediger,Spain,3500000
+950591,Alex Baena,Middenvelder,Spain,4000000
+950592,Rodri 1,Middenvelder,Spain,4000000
+950593,Mikel Oyarzabal,Middenvelder,Spain,3500000
+950594,Fermin Lopez,Middenvelder,Spain,3500000
+950595,Lamine Yamal,Middenvelder,Spain,3500000
+950596,Pablo Fornals,Aanvaller,Spain,4000000
+950597,Dani Olmo,Aanvaller,Spain,4000000
+950598,Ferran Torres,Aanvaller,Spain,4000000
+950599,Victor Munoz 1,Aanvaller,Spain,4000000
+950600,Kristoffer Nordfeldt,Keeper,Sweden,3500000
+950601,Isak Hien,Verdediger,Sweden,4000000
+950602,Victor Lindelof,Verdediger,Sweden,4000000
+950603,Gabriel Gudmundsson,Verdediger,Sweden,4000000
+950604,Yasin Ayari,Verdediger,Sweden,3500000
+950605,Gustaf Lagerbielke,Verdediger,Sweden,3500000
+950606,Benjamin Nygren,Middenvelder,Sweden,4000000
+950607,Herman Johansson,Middenvelder,Sweden,4000000
+950608,Viktor Gyokeres,Middenvelder,Sweden,3500000
+950609,Jesper Karlstrom,Middenvelder,Sweden,3500000
+950610,Anthony Elanga,Middenvelder,Sweden,3500000
+950611,Carl Starfelt,Aanvaller,Sweden,4000000
+950612,Lucas Bergvall,Aanvaller,Sweden,4000000
+950613,Daniel Svensson,Aanvaller,Sweden,4000000
+950614,Mattias Svanberg,Aanvaller,Sweden,4000000
+950615,Gregor Kobel,Keeper,Switzerland,3500000
+950616,Nico Elvedi,Verdediger,Switzerland,4000000
+950617,Manuel Akanji,Verdediger,Switzerland,4000000
+950618,Ricardo Rodriguez,Verdediger,Switzerland,4000000
+950619,Silvan Widmer,Verdediger,Switzerland,3500000
+950620,Granit Xhaka,Verdediger,Switzerland,3500000
+950621,Dan Ndoye,Middenvelder,Switzerland,4000000
+950622,Remo Freuler,Middenvelder,Switzerland,4000000
+950623,Breel Embolo,Middenvelder,Switzerland,3500000
+950624,Fabian Rieder,Middenvelder,Switzerland,3500000
+950625,Ruben Vargas,Middenvelder,Switzerland,3500000
+950626,Ardon Jashari,Aanvaller,Switzerland,4000000
+950627,Miro Muheim,Aanvaller,Switzerland,4000000
+950628,Denis Zakaria,Aanvaller,Switzerland,4000000
+950629,Johan Manzambi,Aanvaller,Switzerland,4000000
+950630,Aymen Dahmen,Keeper,Tunisia,3500000
+950631,Dylan Bronn,Verdediger,Tunisia,4000000
+950632,Montassar Talbi,Verdediger,Tunisia,4000000
+950633,Ali Abdi,Verdediger,Tunisia,4000000
+950634,Yan Valery,Verdediger,Tunisia,3500000
+950635,Ferjani Sassi,Verdediger,Tunisia,3500000
+950636,Hannibal Mejbri,Middenvelder,Tunisia,4000000
+950637,Ellyes Skhiri,Middenvelder,Tunisia,4000000
+950638,Hazem Mastouri,Middenvelder,Tunisia,3500000
+950639,Hadj Mahmoud,Middenvelder,Tunisia,3500000
+950640,Ismael Gharbi,Middenvelder,Tunisia,3500000
+950641,Yassine Meriah,Aanvaller,Tunisia,4000000
+950642,Elias Achouri,Aanvaller,Tunisia,4000000
+950643,Elias Saad,Aanvaller,Tunisia,4000000
+950644,Firas Chaouat,Aanvaller,Tunisia,4000000
+950645,Ugurcan Cakir,Keeper,Turkey,3500000
+950646,Abdulkerim Bardakci,Verdediger,Turkey,4000000
+950647,Samet Akaydin,Verdediger,Turkey,4000000
+950648,Ferdi Kadioglu,Verdediger,Turkey,4000000
+950649,Mert Muldur,Verdediger,Turkey,3500000
+950650,Ismail Yuksek,Verdediger,Turkey,3500000
+950651,Kenan Yildiz,Middenvelder,Turkey,4000000
+950652,Hakan Calhanoglu,Middenvelder,Turkey,4000000
+950653,Kerem Akturkoglu,Middenvelder,Turkey,3500000
+950654,Arda Guler,Middenvelder,Turkey,3500000
+950655,Baris Alper Yilmaz,Middenvelder,Turkey,3500000
+950656,Orkun Kokcu,Aanvaller,Turkey,4000000
+950657,Ozan Kabak,Aanvaller,Turkey,4000000
+950658,Irfan Kahveci,Aanvaller,Turkey,4000000
+950659,Player 15 Turkey,Aanvaller,Turkey,4000000
+950660,Matt Turner,Keeper,United States,3500000
+950661,Tim Ream,Verdediger,United States,4000000
+950662,Mark Mckenzie,Verdediger,United States,4000000
+950663,Antonee Robinson,Verdediger,United States,4000000
+950664,Timothy Weah,Verdediger,United States,3500000
+950665,Johnny Cardoso,Verdediger,United States,3500000
+950666,Christian Pulisic,Middenvelder,United States,4000000
+950667,Tanner Tessmann,Middenvelder,United States,4000000
+950668,Folarin Balogun,Middenvelder,United States,3500000
+950669,Malik Tillman,Middenvelder,United States,3500000
+950670,Weston Mckennie,Middenvelder,United States,3500000
+950671,Cristian Roldan,Aanvaller,United States,4000000
+950672,Max Arfsten,Aanvaller,United States,4000000
+950673,Alex Freeman 1,Aanvaller,United States,4000000
+950674,Sebastian Berhalter,Aanvaller,United States,4000000
+950675,Fernando Muslera,Keeper,Uruguay,3500000
+950676,Mathias Olivera,Verdediger,Uruguay,4000000
+950677,Ronald Araujo,Verdediger,Uruguay,4000000
+950678,Joaquin Piquerez,Verdediger,Uruguay,4000000
+950679,Guillermo Varela,Verdediger,Uruguay,3500000
+950680,Manuel Ugarte,Verdediger,Uruguay,3500000
+950681,Maxi Araujo,Middenvelder,Uruguay,4000000
+950682,Agustin Canobbio,Middenvelder,Uruguay,4000000
+950683,Rodrigo Aguirre,Middenvelder,Uruguay,3500000
+950684,Federico Valverde,Middenvelder,Uruguay,3500000
+950685,Giorgian De Arrascaeta,Middenvelder,Uruguay,3500000
+950686,Jose Maria Gimenez,Aanvaller,Uruguay,4000000
+950687,Federico Vinas,Aanvaller,Uruguay,4000000
+950688,Facundo Pellistri,Aanvaller,Uruguay,4000000
+950689,Darwin Nunez,Aanvaller,Uruguay,4000000
+950690,Otkir Yusupov,Keeper,Uzbekistan,3500000
+950691,Jahongir Orozov,Verdediger,Uzbekistan,4000000
+950692,Umar Eshmurodov,Verdediger,Uzbekistan,4000000
+950693,Sherzod Nasrullayev,Verdediger,Uzbekistan,4000000
+950694,Odiljon Xamrobekov,Verdediger,Uzbekistan,3500000
+950695,Rustam Ashurmatov,Verdediger,Uzbekistan,3500000
+950696,Oston Urunov,Middenvelder,Uzbekistan,4000000
+950697,Xojiakbar Alijonov,Middenvelder,Uzbekistan,4000000
+950698,Eldor Shomurodov,Middenvelder,Uzbekistan,3500000
+950699,Otabek Shukurov,Middenvelder,Uzbekistan,3500000
+950700,Azizjon G Aniyev,Middenvelder,Uzbekistan,3500000
+950701,Behruz Karimov,Aanvaller,Uzbekistan,4000000
+950702,Akmal Mozgovoy,Aanvaller,Uzbekistan,4000000
+950703,Dostonbek Xamdamov,Aanvaller,Uzbekistan,4000000
+950704,Alisher Odilov,Aanvaller,Uzbekistan,4000000
+950705,Curaçao Speler 1,Keeper,Curaçao,3000000
+950706,Curaçao Speler 2,Verdediger,Curaçao,3500000
+950707,Curaçao Speler 3,Verdediger,Curaçao,3000000
+950708,Curaçao Speler 4,Verdediger,Curaçao,3000000
+950709,Curaçao Speler 5,Verdediger,Curaçao,3000000
+950710,Curaçao Speler 6,Verdediger,Curaçao,3000000
+950711,Curaçao Speler 7,Middenvelder,Curaçao,4000000
+950712,Curaçao Speler 8,Middenvelder,Curaçao,4000000
+950713,Curaçao Speler 9,Middenvelder,Curaçao,3500000
+950714,Curaçao Speler 10,Middenvelder,Curaçao,3500000
+950715,Curaçao Speler 11,Middenvelder,Curaçao,3500000
+950716,Curaçao Speler 12,Aanvaller,Curaçao,4500000
+950717,Curaçao Speler 13,Aanvaller,Curaçao,4000000
+950718,Curaçao Speler 14,Aanvaller,Curaçao,4000000
+950719,Curaçao Speler 15,Aanvaller,Curaçao,4000000

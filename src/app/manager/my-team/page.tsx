@@ -314,7 +314,7 @@ export default function ManagerMyTeamPage() {
 
       try {
         const [playersResponse, managerStateResponse] = await Promise.all([
-          fetch("/api/players", { cache: "no-store" }),
+          fetch(`/api/players?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
           fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
         ]);
 

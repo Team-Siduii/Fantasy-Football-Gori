@@ -249,6 +249,8 @@ FR-070: Manager-state persistence is competitiegescheiden: Eredivisie mode en WK
 FR-071: Deploy-config ondersteunt optionele gescheiden storage paths via `MANAGER_STATE_PATH` (Eredivisie) en `MANAGER_STATE_WK_PATH` (WK) voor veilige runtime-isolatie.
 FR-072: Instellingenpagina toont een debug-sectie met het actieve state-opslagpad voor Eredivisie mode en WK mode zodat runtime-config snel te verifiëren is.
 FR-073: In WK mode gebruikt de manager-UI overal de term `Land` waar Eredivisie mode `Club` toont (filters, zoeklabel en sorteerkolom) zonder gedragswijziging van filtering/sortering.
+FR-074: Players API ondersteunt mode-specifieke datasets: Eredivisie laadt `data/players.csv`, WK mode laadt `data/players-wk.csv` via `GET /api/players?mode=wk`.
+FR-075: WK demo-draft dataset is opgebouwd uit de meest recente nationale wedstrijdselecties waar beschikbaar, met fallback op landpagina-selecties, en gebruikt transferwaardeschaal met maximum €4.5M voor topspelers.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -391,6 +393,8 @@ Waarom zo:
 - [ ] Runtime ondersteunt aparte state-paden voor Eredivisie en WK (`MANAGER_STATE_PATH` en `MANAGER_STATE_WK_PATH`)
 - [ ] Instellingenpagina toont zichtbare debug-regels met actieve state-opslagpaden voor Eredivisie en WK
 - [ ] In WK mode zijn alle transfermarkt-termen mode-correct: `Land`, `Alle landen`, `Zoek speler/land` en kolomheader `Land`; in Eredivisie mode blijft dit `Club`
+- [ ] WK mode laadt een eigen spelersdataset via `GET /api/players?mode=wk` (`data/players-wk.csv`) en Eredivisie blijft `data/players.csv` gebruiken
+- [ ] WK demo-draft spelers bevatten deelnemende landen en realistische waardes met bovengrens €4.5M voor topspelers
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -473,3 +477,4 @@ Waarom zo:
 - 2026-05-04: Pitch-referentiebeeld ingesteld op 200% zoom en visueel aangescherpt via subtiele contrast/saturatie/brightness-filtering op de achtergrondlaag, met ongewijzigde kaart-interactie.
 - 2026-05-04: WK-mode terminologie aangepast: overal in transfermarkt `Club` vervangen door `Land` (incl. `Alle landen`, `Zoek speler/land` en sorteerkolomheader).
 - 2026-05-04: WK-speelschema vervangen met KPN-brondata (104 wedstrijden) en correcte ronde-opbouw van groepsfase t/m finale, inclusief zestiende finales en troostfinale.
+- 2026-05-04: WK demo-draft spelersdataset toegevoegd (`data/players-wk.csv`) met 48 landen en mode-specifieke Players API (`/api/players?mode=wk`); waardeschaal begrensd op €4.5M voor topspelers.
