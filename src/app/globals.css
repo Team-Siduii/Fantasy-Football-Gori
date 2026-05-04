@@ -400,7 +400,7 @@ a {
 .team-shirt--wk-aut { background: linear-gradient(90deg, #111319 0 22%, #ff0000 22% 78%, #111319 78% 100%); }
 .team-shirt--wk-bel { background: linear-gradient(90deg, #ee3137 0 44%, #f2c230 44% 56%, #ee3137 56% 100%); }
 .team-shirt--wk-bih { background: linear-gradient(90deg, #003fbf 0 80%, #ffd041 80% 100%); }
-.team-shirt--wk-bra { background: linear-gradient(90deg, #ffe540 0 72%, #0f4ba8 72% 100%); }
+.team-shirt--wk-bra { background: linear-gradient(180deg, #ffe540 0 90%, #0f8f4d 90% 100%); }
 .team-shirt--wk-can { background: linear-gradient(90deg, #d90f22 0 76%, #ffffff 76% 100%); }
 .team-shirt--wk-col { background: linear-gradient(180deg, #f4e201 0 60%, #2447b2 60% 80%, #cf1f2f 80% 100%); }
 .team-shirt--wk-cod { background: linear-gradient(135deg, #00b7ef 0 42%, #f7de3a 42% 52%, #d63832 52% 60%, #00b7ef 60% 100%); }
@@ -439,7 +439,7 @@ a {
 .team-shirt--wk-tun { background: linear-gradient(90deg, #ffffff 0 68%, #d22631 68% 100%); }
 .team-shirt--wk-tur { background: linear-gradient(90deg, #d71f30 0 100%); }
 .team-shirt--wk-uru { background: repeating-linear-gradient(90deg, #80bbff 0 18%, #ffffff 18% 36%); }
-.team-shirt--wk-usa { background: repeating-linear-gradient(90deg, #ffffff 0 18%, #d32734 18% 36%); }
+.team-shirt--wk-usa { background: linear-gradient(180deg, #2146b1 0 36%, #ffffff 36% 54%, #cf2431 54% 72%, #ffffff 72% 86%, #cf2431 86% 100%); }
 .team-shirt--wk-uzb { background: linear-gradient(180deg, #2b9be3 0 30%, #ffffff 30% 62%, #21a35f 62% 100%); }
 .team-shirt--wk-civ { background: linear-gradient(90deg, #1f8f4a 0 3%, #ee6d13 3% 97%, #1f8f4a 97% 100%); }
 
