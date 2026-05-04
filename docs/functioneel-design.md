@@ -483,3 +483,4 @@ Waarom zo:
 - 2026-05-04: Transfermarkt gepagineerd voor beide modes (Eredivisie + WK) met vorige/volgende navigatie en pagina-indicator die meebeweegt met filters/sortering.
 - 2026-05-04: Paginering UX uitgebreid: navigatie + pagina-indicator nu zowel boven als onder de spelerslijst in transfermarkt.
 - 2026-05-04: WK wedstrijdkaart toont nu land-specifieke thuis-shirt icoontjes per fixture op basis van recente kit-kleurpaletten (2025/2026 waar beschikbaar) zodat de schedule visueel beter overeenkomt met actuele nationale tenues.
+- 2026-05-04: WK shirt-icoonset verfijnd op visuele voorkeur: Kroatië checkers rood/wit, Nederland vol oranje, Turkije vol rood, Zweden geel met blauwe onderrand, Frankrijk vol blauw, Ghana wit basis met rood/geel/groen details, België met geel accent, Ivoorkust vol oranje met dunne groene zijranden en Japan lichter blauw met dunne witte zijranden.
