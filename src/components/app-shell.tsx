@@ -13,6 +13,7 @@ const navItems: NavItem[] = [
   { href: "/manager/my-team", label: "Team" },
   { href: "/manager/transfer-pool", label: "Transfers" },
   { href: "/manager/league", label: "Competities" },
+  { href: "/manager/world-cup", label: "WK 2026" },
   { href: "/profile", label: "Profiel" },
 ];
 

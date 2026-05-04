@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-04-24
+Laatste update: 2026-05-04
 
 ## 1. Productvisie
 Doel van de app:
@@ -24,6 +24,7 @@ In scope (MVP):
 - [x] Free pool mechaniek met directe transfers (drop + add)
 - [x] Adminschermen voor import/updaten van spelerslijst
 - [x] Mobielvriendelijke responsive UI (telefoon + tablet) voor managerflows
+- [x] Aparte WK 2026 module naast reguliere competitie (landen + faseschema)
 
 Out of scope (voor later):
 - [ ] Live match events en realtime scoring
@@ -238,6 +239,9 @@ FR-060 (fase 2): Admin-UI toont en beheert league-configuratie voor scoring prof
 FR-061: Auth-MVP ondersteunt twee testaccounts (manager + admin) en de login-UI prefillt standaard de gekozen account-credentials voor snelle testtoegang.
 FR-062: Manager-UI bevat een globale `Instellingen` navigatieknop; route `/instellingen` toont league-config module en redirectt naar login zonder actieve sessie.
 FR-063: Elk instelveld in de league-config module toont een hover/focus-help (`?`) met korte uitleg van de regel en de impact op competitiegedrag.
+FR-064: Manager-UI bevat een aparte WK 2026 module naast de Eredivisie-competitie met eigen route en navigatie-entry.
+FR-065: WK module toont een vaste lijst van 48 deelnemende landen inclusief hoststatus en confederatie.
+FR-066: WK module toont het toernooischema op fase-niveau (groepsfase t/m finale) met start/einddatum en aantal wedstrijden per fase.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -370,6 +374,9 @@ Waarom zo:
 - [ ] Login toont Test Manager + Test Admin quick-select en prefillt bij keuze direct e-mail + wachtwoord voor beide accounts
 - [ ] Header bevat zichtbare `Instellingen` knop en `/instellingen` is alleen bereikbaar met actieve login (anders redirect naar `/login`)
 - [ ] Instellingenvelden tonen `?` hover/focus-help met korte uitleg van scoring, waiver tie-breaker, cup tie policy en rol-lijsten
+- [ ] Manager-navigatie bevat een aparte `WK 2026` entry naast `Competities`
+- [ ] WK-module toont 48 deelnemende landen met hoststatus en confederatie
+- [ ] WK-module toont faseschema (groepsfase t/m finale) met datumbereik en matchaantallen
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -399,6 +406,7 @@ Waarom zo:
 - [x] Transferflow aangepast naar verkoop->placeholder->(formatie wissel)->aankoop zonder aparte confirm
 - [x] Positiekeuze in transfermarkt blijft vrij; positionele fit-check gebeurt bij koopactie op open slot
 - [x] Testauth uitgebreid met manager+admin account en login prefill voor snelle QA
+- [x] WK 2026 module naast reguliere competitie: aparte route + nav-entry, met deelnemende landenlijst en faseschema op toernooidatums
 
 ## 13. Besluitenlog
 - 2026-04-16: Repo + Vercel + baseline workflow opgezet.
@@ -435,3 +443,4 @@ Waarom zo:
 - 2026-04-24: Discoverability verbeterd: globale headerknop `Instellingen` toegevoegd en route `/instellingen` onder auth-middleware geplaatst.
 - 2026-04-24: League-config opslag gefixt voor Vercel runtime: standaardpad valt nu terug op `/tmp/league-admin-config.json` zodat instellingen op staging/prod niet meer falen op read-only filesystem.
 - 2026-04-24: League-config UX verduidelijkt: per instelregel een `?` hover/focus-help toegevoegd met korte functionele uitleg.
+- 2026-05-04: Aparte WK 2026 module toegevoegd naast reguliere competitie (route `/manager/world-cup` + nav-entry), inclusief 48 deelnemende landen met confederatie/hoststatus en faseschema (groepsfase t/m finale).
