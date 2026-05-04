@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PlayerCard } from "@/components/player-card";
 import { StatTile } from "@/components/stat-tile";
@@ -13,6 +14,7 @@ import { buildMarketPlayers } from "@/domain/transfer-workflow";
 import { getTransferLimitForRound } from "@/domain/rules";
 import { byPriceDesc, enrichPlayers, type EnhancedPlayer } from "@/lib/player-derived";
 import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
+import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
 
 type Position = "GK" | "DEF" | "MID" | "FWD";
 
@@ -278,6 +280,9 @@ function getCountdownParts(targetIso: string) {
 }
 
 export default function ManagerMyTeamPage() {
+  const pathname = usePathname();
+  const isWkMode = pathname.startsWith("/manager/world-cup");
+  const activeFixtures = isWkMode ? WORLD_CUP_2026_FIXTURES : REMAINING_FIXTURES_2025_2026;
   const formationOptions = useMemo(() => getFormationOptions(), []);
   const [formation, setFormation] = useState(formationOptions[0]);
   const [allPlayers, setAllPlayers] = useState<EnhancedPlayer[]>(fallbackPlayers());
@@ -502,11 +507,11 @@ export default function ManagerMyTeamPage() {
   }
 
 
-  const currentRound = useMemo(() => getCurrentOrNextRound(REMAINING_FIXTURES_2025_2026, new Date()), []);
+  const currentRound = useMemo(() => getCurrentOrNextRound(activeFixtures, new Date()), [activeFixtures]);
 
   const roundNumbers = useMemo(
-    () => Array.from(new Set(REMAINING_FIXTURES_2025_2026.map((fixture) => fixture.round))).sort((a, b) => a - b),
-    [],
+    () => Array.from(new Set(activeFixtures.map((fixture) => fixture.round))).sort((a, b) => a - b),
+    [activeFixtures],
   );
 
   const [selectedRoundIndex, setSelectedRoundIndex] = useState(() => {
@@ -525,10 +530,10 @@ export default function ManagerMyTeamPage() {
       return [] as SeasonFixture[];
     }
 
-    return REMAINING_FIXTURES_2025_2026
+    return activeFixtures
       .filter((fixture) => fixture.round === selectedRound)
       .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
-  }, [selectedRound]);
+  }, [activeFixtures, selectedRound]);
 
   const fixtureColumns = useMemo(() => chunkFixtures(selectedRoundFixtures, 3), [selectedRoundFixtures]);
 

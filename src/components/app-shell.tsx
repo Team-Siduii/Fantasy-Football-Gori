@@ -17,7 +17,9 @@ const eredivisieNavItems: NavItem[] = [
 ];
 
 const wkNavItems: NavItem[] = [
-  { href: "/manager/world-cup", label: "WK 2026" },
+  { href: "/manager/world-cup", label: "Team" },
+  { href: "/manager/world-cup/transfer-pool", label: "Transfers" },
+  { href: "/manager/world-cup/league", label: "Competities" },
   { href: "/profile", label: "Profiel" },
 ];
 

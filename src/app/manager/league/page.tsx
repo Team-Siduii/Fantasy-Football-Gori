@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import type { PlayerRecord } from "@/domain/player";
 import { derivePlayerPoints } from "@/lib/player-derived";
@@ -10,6 +11,7 @@ import {
   REMAINING_FIXTURES_2025_2026,
   SCHEDULE_SPONSOR,
 } from "@/lib/season-schedule";
+import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
 
 type MvpStateResponse = {
   snapshot: {
@@ -24,8 +26,11 @@ type ClubStanding = {
 };
 
 export default function ManagerLeaguePage() {
+  const pathname = usePathname();
+  const isWkMode = pathname.startsWith("/manager/world-cup");
+  const activeFixtures = isWkMode ? WORLD_CUP_2026_FIXTURES : REMAINING_FIXTURES_2025_2026;
   const [players, setPlayers] = useState<PlayerRecord[]>([]);
-  const [round, setRound] = useState<number | null>(() => getCurrentOrNextRound(REMAINING_FIXTURES_2025_2026, new Date()));
+  const [round, setRound] = useState<number | null>(() => getCurrentOrNextRound(activeFixtures, new Date()));
   const [transferLimit, setTransferLimit] = useState<number | null>(null);
   const [windowOpen, setWindowOpen] = useState<boolean>(false);
 
@@ -47,11 +52,11 @@ export default function ManagerLeaguePage() {
         setWindowOpen(stateData.snapshot.managerTradeWindow.isOpen);
       }
 
-      setRound(getCurrentOrNextRound(REMAINING_FIXTURES_2025_2026, new Date()));
+      setRound(getCurrentOrNextRound(activeFixtures, new Date()));
     };
 
     void load();
-  }, []);
+  }, [activeFixtures]);
 
   const standings = useMemo<ClubStanding[]>(() => {
     const byClub = new Map<string, number>();
@@ -67,10 +72,17 @@ export default function ManagerLeaguePage() {
       .slice(0, 10);
   }, [players]);
 
-  const groupedFixtures = useMemo(() => groupFixturesByRound(REMAINING_FIXTURES_2025_2026), []);
+  const groupedFixtures = useMemo(() => groupFixturesByRound(activeFixtures), [activeFixtures]);
 
   return (
-    <AppShell title="Competities" subtitle="Stand en resterende Eredivisie-speelrondes voor seizoen 2025/2026.">
+    <AppShell
+      title="Competities"
+      subtitle={
+        isWkMode
+          ? "Stand en WK-speelrondes. Ronde 1/2/3 = alle landen hebben respectievelijk 1/2/3 groepsduels gespeeld."
+          : "Stand en resterende Eredivisie-speelrondes voor seizoen 2025/2026."
+      }
+    >
       <div className="grid">
         <section className="card col-8">
           <h2>Stand (club-power ranking)</h2>
@@ -89,13 +101,17 @@ export default function ManagerLeaguePage() {
             <li>Volgende speelronde: {round ?? "-"}</li>
             <li>Transfer window: {windowOpen ? "open" : "gesloten"}</li>
             <li>Transferlimiet: {transferLimit ?? "-"}</li>
-            <li>Bonusrondes: 5, 10, 20</li>
+            <li>{isWkMode ? "WK speelrondes: 1 (MD1), 2 (MD2), 3 (MD3)" : "Bonusrondes: 5, 10, 20"}</li>
           </ul>
         </section>
 
         <section className="card col-12">
-          <h2>Resterend schema seizoen 2025/2026</h2>
-          <p className="muted-note">Gesponsord door {SCHEDULE_SPONSOR}. Ingedeeld in speelrondes 31 t/m 34.</p>
+          <h2>{isWkMode ? "WK 2026 schema" : "Resterend schema seizoen 2025/2026"}</h2>
+          <p className="muted-note">
+            {isWkMode
+              ? "Ronde-definitie WK: ronde 1/2/3 betekent dat alle landen respectievelijk hun 1e/2e/3e groepswedstrijd hebben gespeeld."
+              : `Gesponsord door ${SCHEDULE_SPONSOR}. Ingedeeld in speelrondes 31 t/m 34.`}
+          </p>
 
           {groupedFixtures.map((group) => (
             <div key={`round-${group.round}`} className="table-wrap" style={{ marginBottom: "0.85rem" }}>
