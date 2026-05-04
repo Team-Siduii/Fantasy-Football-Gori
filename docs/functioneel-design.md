@@ -423,8 +423,8 @@ Waarom zo:
 - [x] WK 2026 module naast reguliere competitie: aparte route + nav-entry, met deelnemende landenlijst en faseschema op toernooidatums
 - [x] Menu-switch toegevoegd voor managers om direct te wisselen tussen Eredivisie mode en WK mode
 - [x] WK mode uitgelijnd op dezelfde manager-UX als Eredivisie mode (zelfde Team/Transfers/Competities-structuur, aparte WK-routes)
+- [x] WK-speelschema in app wordt gevuld vanuit KPN bronpagina (`/entertainment/sport/wk-voetbal/speelschema`) en bevat 104 wedstrijden met ronde-indeling: speelronde 1-3 (groepsfase), zestiende finales, achtste finales, kwartfinales, halve finales, troostfinale en finale
 - [x] WK-rondebetekenis vastgelegd: ronde 1/2/3 mapt op groepswedstrijd 1/2/3 per land
-- [x] Manager-state persistence gescheiden per mode (Eredivisie/WK) zodat teaminstellingen niet kruislings overschreven worden
 - [x] Optionele deploy-isolatie toegevoegd met aparte env-paden voor state-opslag per mode (`MANAGER_STATE_PATH` en `MANAGER_STATE_WK_PATH`)
 - [x] Instellingenpagina toont debug-sectie met actieve state-opslagpaden voor Eredivisie en WK
 
@@ -472,3 +472,4 @@ Waarom zo:
 - 2026-05-04: Pitch-achtergrond vanaf nul opnieuw opgebouwd door de laatst aangeleverde referentie-afbeelding direct als asset te gebruiken (`/public/images/pitch-reference.jpg`), zodat veldvisual exact overeenkomt met het voorbeeld; overlays/dieptelijnen verwijderd.
 - 2026-05-04: Pitch-referentiebeeld ingesteld op 200% zoom en visueel aangescherpt via subtiele contrast/saturatie/brightness-filtering op de achtergrondlaag, met ongewijzigde kaart-interactie.
 - 2026-05-04: WK-mode terminologie aangepast: overal in transfermarkt `Club` vervangen door `Land` (incl. `Alle landen`, `Zoek speler/land` en sorteerkolomheader).
+- 2026-05-04: WK-speelschema vervangen met KPN-brondata (104 wedstrijden) en correcte ronde-opbouw van groepsfase t/m finale, inclusief zestiende finales en troostfinale.
