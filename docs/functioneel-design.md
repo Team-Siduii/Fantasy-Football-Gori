@@ -245,6 +245,7 @@ FR-066: WK module toont het toernooischema op fase-niveau (groepsfase t/m finale
 FR-067: In het manager-menu kan de gebruiker expliciet schakelen tussen `Eredivisie mode` en `WK mode`; beide modes tonen dezelfde manager-navigatiestructuur (Team, Transfers, Competities, Profiel) binnen hun eigen route-namespace.
 FR-068: WK mode gebruikt hetzelfde teambeheer- en transfer-UX patroon als Eredivisie mode (zelfde pagina-opbouw, pitch, bank, transfermarkt en interacties).
 FR-069: In WK mode betekent speelronde 1/2/3 dat alle landen respectievelijk hun 1e/2e/3e groepswedstrijd hebben gespeeld.
+FR-070: Manager-state persistence is competitiegescheiden: Eredivisie mode en WK mode bewaren opstelling/bench/pending transfer-status volledig los van elkaar.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -383,6 +384,7 @@ Waarom zo:
 - [ ] Manager-menu bevat mode-switch waarmee je direct wisselt tussen Eredivisie mode en WK mode
 - [ ] In WK mode ziet Team/Transfers/Competities eruit en werkt het hetzelfde als in Eredivisie mode (zelfde UX-structuur)
 - [ ] WK-rondebetekenis is expliciet: ronde 1/2/3 = alle landen hebben hun 1e/2e/3e groepsduel gespeeld
+- [ ] Manager-state is gescheiden per competitie-mode: wijzigingen in WK-opstelling overschrijven Eredivisie-opstelling niet (en vice versa)
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -416,6 +418,7 @@ Waarom zo:
 - [x] Menu-switch toegevoegd voor managers om direct te wisselen tussen Eredivisie mode en WK mode
 - [x] WK mode uitgelijnd op dezelfde manager-UX als Eredivisie mode (zelfde Team/Transfers/Competities-structuur, aparte WK-routes)
 - [x] WK-rondebetekenis vastgelegd: ronde 1/2/3 mapt op groepswedstrijd 1/2/3 per land
+- [x] Manager-state persistence gescheiden per mode (Eredivisie/WK) zodat teaminstellingen niet kruislings overschreven worden
 
 ## 13. Besluitenlog
 - 2026-04-16: Repo + Vercel + baseline workflow opgezet.
@@ -455,3 +458,4 @@ Waarom zo:
 - 2026-05-04: Aparte WK 2026 module toegevoegd naast reguliere competitie (route `/manager/world-cup` + nav-entry), inclusief 48 deelnemende landen met confederatie/hoststatus en faseschema (groepsfase t/m finale).
 - 2026-05-04: Manager-menu uitgebreid met expliciete mode-switch (`Eredivisie` / `WK 2026`); actieve mode bepaalt zichtbare navigatie-items.
 - 2026-05-04: WK mode functioneel gelijkgetrokken met Eredivisie mode via dezelfde Team/Transfers/Competities-paginaflow, met WK-routes en WK-speelrondes waarbij ronde 1/2/3 de groepswedstrijdvolgorde per land representeren.
+- 2026-05-04: Manager-state opslag gesplitst per mode (`eredivisie` vs `wk`) via scope-aware API en aparte persistencebestanden, zodat opstellingen en transferstatus volledig onafhankelijk blijven.

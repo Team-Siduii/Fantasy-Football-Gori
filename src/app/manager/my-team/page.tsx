@@ -312,7 +312,7 @@ export default function ManagerMyTeamPage() {
       try {
         const [playersResponse, managerStateResponse] = await Promise.all([
           fetch("/api/players", { cache: "no-store" }),
-          fetch("/api/manager/state", { cache: "no-store" }),
+          fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
         ]);
 
         if (!playersResponse.ok) {
@@ -380,7 +380,7 @@ export default function ManagerMyTeamPage() {
     };
 
     void load();
-  }, [formationOptions]);
+  }, [formationOptions, isWkMode]);
 
   useEffect(() => {
     if (!hydrated.current) {
@@ -390,7 +390,7 @@ export default function ManagerMyTeamPage() {
     const { lineupIds, benchIds } = toPersistedIds(state);
 
     const controller = new AbortController();
-    void fetch("/api/manager/state", {
+    void fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -407,7 +407,7 @@ export default function ManagerMyTeamPage() {
     });
 
     return () => controller.abort();
-  }, [formation, pendingBuyId, pendingSellId, state]);
+  }, [formation, isWkMode, pendingBuyId, pendingSellId, state]);
 
   const pitchRows = useMemo(() => {
     return buildPitchRows(formation, state.lineup);

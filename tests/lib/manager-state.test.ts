@@ -74,4 +74,24 @@ describe("manager-state persistence", () => {
     expect(unlocked.adminActionLog[0].actionType).toBe("ROUND_LOCKED");
     expect(unlocked.adminActionLog[1].actionType).toBe("ROUND_UNLOCKED");
   });
+
+  it("stores eredivisie and wk manager states separately", async () => {
+    mkdirSync(dirname(testPath), { recursive: true });
+    delete process.env.MANAGER_STATE_PATH;
+
+    const mod = await import("../../src/lib/manager-state");
+    mod.resetManagerStateForTests("eredivisie");
+    mod.resetManagerStateForTests("wk");
+
+    mod.saveManagerState({ formation: "4-4-2", lineupIds: ["edv-1"] }, "eredivisie");
+    mod.saveManagerState({ formation: "3-5-2", lineupIds: ["wk-1"] }, "wk");
+
+    const eredivisieState = mod.readManagerState("eredivisie");
+    const wkState = mod.readManagerState("wk");
+
+    expect(eredivisieState.formation).toBe("4-4-2");
+    expect(eredivisieState.lineupIds).toEqual(["edv-1"]);
+    expect(wkState.formation).toBe("3-5-2");
+    expect(wkState.lineupIds).toEqual(["wk-1"]);
+  });
 });

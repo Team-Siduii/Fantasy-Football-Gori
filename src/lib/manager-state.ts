@@ -18,6 +18,8 @@ export type AdminActionLogEntry = {
   createdAt: string;
 };
 
+export type ManagerStateScope = "eredivisie" | "wk";
+
 export type ManagerState = {
   formation: string;
   lineupIds: string[];
@@ -40,12 +42,13 @@ const DEFAULT_STATE: ManagerState = {
   adminActionLog: [],
 };
 
-function getStatePath() {
+function getStatePath(scope: ManagerStateScope = "eredivisie") {
   if (process.env.MANAGER_STATE_PATH) {
     return process.env.MANAGER_STATE_PATH;
   }
 
-  return path.join(process.cwd(), "data", "manager-state.json");
+  const suffix = scope === "wk" ? "-wk" : "";
+  return path.join(process.cwd(), "data", `manager-state${suffix}.json`);
 }
 
 function normalizeRoundLocks(input: unknown): RoundLock[] {
@@ -89,8 +92,8 @@ function normalizeAdminActionLog(input: unknown): AdminActionLogEntry[] {
   });
 }
 
-export function readManagerState(): ManagerState {
-  const target = getStatePath();
+export function readManagerState(scope: ManagerStateScope = "eredivisie"): ManagerState {
+  const target = getStatePath(scope);
 
   if (!existsSync(target)) {
     return { ...DEFAULT_STATE };
@@ -118,11 +121,11 @@ export function readManagerState(): ManagerState {
   }
 }
 
-export function saveManagerState(nextState: Partial<ManagerState>): ManagerState {
-  const target = getStatePath();
+export function saveManagerState(nextState: Partial<ManagerState>, scope: ManagerStateScope = "eredivisie"): ManagerState {
+  const target = getStatePath(scope);
   mkdirSync(path.dirname(target), { recursive: true });
 
-  const current = readManagerState();
+  const current = readManagerState(scope);
   const merged: ManagerState = {
     ...current,
     ...nextState,
@@ -142,19 +145,22 @@ export function saveManagerState(nextState: Partial<ManagerState>): ManagerState
   return merged;
 }
 
-export function isRoundLocked(roundNumber: number): boolean {
-  const state = readManagerState();
+export function isRoundLocked(roundNumber: number, scope: ManagerStateScope = "eredivisie"): boolean {
+  const state = readManagerState(scope);
   return state.roundLocks.some((lock) => lock.roundNumber === roundNumber && lock.locked);
 }
 
-export function setRoundLock(input: {
-  roundNumber: number;
-  locked: boolean;
-  reason: string;
-  actorId: string;
-  at?: string;
-}): ManagerState {
-  const state = readManagerState();
+export function setRoundLock(
+  input: {
+    roundNumber: number;
+    locked: boolean;
+    reason: string;
+    actorId: string;
+    at?: string;
+  },
+  scope: ManagerStateScope = "eredivisie",
+): ManagerState {
+  const state = readManagerState(scope);
   const now = input.at ?? new Date().toISOString();
 
   const nextLock: RoundLock = {
@@ -181,14 +187,17 @@ export function setRoundLock(input: {
     },
   ];
 
-  return saveManagerState({
-    roundLocks: nextLocks,
-    adminActionLog: nextLog,
-  });
+  return saveManagerState(
+    {
+      roundLocks: nextLocks,
+      adminActionLog: nextLog,
+    },
+    scope,
+  );
 }
 
-export function resetManagerStateForTests() {
-  const target = getStatePath();
+export function resetManagerStateForTests(scope: ManagerStateScope = "eredivisie") {
+  const target = getStatePath(scope);
   if (existsSync(target)) {
     writeFileSync(target, JSON.stringify(DEFAULT_STATE, null, 2), "utf-8");
   }
