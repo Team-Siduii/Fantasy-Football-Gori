@@ -256,6 +256,7 @@ FR-077: Instellingen voor league-config zijn mode-specifiek: Eredivisie en WK la
 FR-078: Instellingenpagina biedt een intuïtieve beheerflow met stap-geleiding (mode kiezen → regels aanpassen → opslaan), duidelijke actieve-mode indicatie, en zichtbare `niet-opgeslagen wijzigingen` status met herstelactie.
 FR-079: De route `/spelregels` toont een dynamische spelregelsweergave per mode (`?mode=eredivisie|wk`) op basis van de actuele league-config (budget-cap, scoring profile, waiver tie-breaker, cup tie policy) inclusief impactsamenvatting.
 FR-080: Instellingen ondersteunt aanvullende vrije spelregels (`customRuleNotes` met titel, beschrijving, impact); deze regels verschijnen automatisch op `/spelregels` zodat nieuwe regels zonder codewijziging beschreven kunnen worden.
+FR-081: Spelregelspagina presenteert regels in vaste hoofdstukken (Transferregels, Budgetregels, Waiverregels, Strafregels/tie policy, Custom) zodat managers sneller de impact per domein kunnen scannen.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -405,6 +406,7 @@ Waarom zo:
 - [ ] Instellingenpagina heeft een intuïtieve flow met staplabels, actieve-mode badge, niet-opgeslagen-wijzigingen status en een herstel-knop per actieve mode
 - [ ] Spelregelspagina (`/spelregels`) toont mode-switch + dynamische kernregels en impactsamenvatting op basis van actuele instellingen
 - [ ] Instellingen ondersteunt aanvullende vrije regels (titel/beschrijving/impact) en deze verschijnen automatisch op `/spelregels`
+- [ ] Spelregelspagina groepeert regels in vaste hoofdstukken (Transferregels, Budgetregels, Waiverregels, Strafregels/tie policy, Custom) met mode-specifieke inhoud
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -505,4 +507,5 @@ Waarom zo:
 - 2026-05-18: Instellingenpagina (`/instellingen`) beheert nu ook budget-cap per mode; Team-pagina leest cap uit league-config (met mode-default fallback) zodat regels echt configureerbaar zijn.
 - 2026-05-18: Nieuwe route `/spelregels` toegevoegd: dynamische spelregelspagina per mode met impactsamenvatting op basis van actuele league-config.
 - 2026-05-18: Instellingen uitgebreid met `Aanvullende spelregels` (titel, beschrijving, impact) zodat nieuwe regels direct beschreven en gepubliceerd kunnen worden op `/spelregels` zonder codewijziging.
+- 2026-05-18: Spelregelspagina (`/spelregels`) geherstructureerd in vaste hoofdstukken (Transfer, Budget, Waiver, Strafregels/tie policy, Custom) voor snellere scanbaarheid per regeldomein.
 - 2026-05-18: Instellingenpagina UX gepolijst: duidelijke 3-stappenflow, actieve mode-badge, niet-opgeslagen-wijzigingen indicator, herstelknop en inklapbare debug-sectie voor intuïtiever beheer.

@@ -15,11 +15,45 @@ export default async function SpelregelsPage({ searchParams }: PageProps) {
   const mode = resolveMode(params?.mode);
   const config = getLeagueAdminConfig(mode);
 
-  const impactRules = [
-    `Budgetcap: teamwaarde mag maximaal €${config.budget.teamValueCapMillions.toFixed(1)}M zijn in ${mode === "wk" ? "WK" : "Eredivisie"}.`,
-    `Scoring profiel: ${config.scoringProfile.label} (${config.scoringProfile.type}).`,
-    `Waiver tie-breaker: ${config.waiver.round.tieBreaker === "EARLIEST_BID" ? "Earliest bid" : "Priority"}.`,
-    `Cup tie policy: ${config.competition.cupTiePolicy === "HIGHER_SEED" ? "Higher seed" : "Penalties"}.`,
+  const modeLabel = mode === "wk" ? "WK" : "Eredivisie";
+  const transferLimit = 1;
+  const bonusLimit = 3;
+
+  const chapterCards = [
+    {
+      key: "transferregels",
+      title: "1. Transferregels",
+      bullets: [
+        `Standaard transferlimiet: ${transferLimit} per speelronde.`,
+        `Bonusrondes hebben limiet ${bonusLimit} transfers.`,
+        "Transferflow: eerst verkopen, daarna kopen op open placeholder.",
+      ],
+    },
+    {
+      key: "budgetregels",
+      title: "2. Budgetregels",
+      bullets: [
+        `Budget cap in ${modeLabel}: €${config.budget.teamValueCapMillions.toFixed(1)}M.`,
+        "Teamwaarde mag niet boven de cap uitkomen.",
+        "Budget mag op 0 eindigen, maar niet negatief worden.",
+      ],
+    },
+    {
+      key: "waiverregels",
+      title: "3. Waiverregels",
+      bullets: [
+        `Tie-breaker policy: ${config.waiver.round.tieBreaker === "EARLIEST_BID" ? "Earliest bid" : "Priority"}.`,
+        "Waiver-gedrag volgt de actuele instellingen van de actieve mode.",
+      ],
+    },
+    {
+      key: "strafregels",
+      title: "4. Strafregels & tie policy",
+      bullets: [
+        `Cup tie policy: ${config.competition.cupTiePolicy === "HIGHER_SEED" ? "Higher seed" : "Penalties"}.`,
+        `Scoring profiel: ${config.scoringProfile.label} (${config.scoringProfile.type}).`,
+      ],
+    },
   ];
 
   return (
@@ -30,7 +64,7 @@ export default async function SpelregelsPage({ searchParams }: PageProps) {
       <div className="grid">
         <section className="card col-12">
           <div className="settings-editor-head">
-            <h2>Actieve competitie: {mode === "wk" ? "WK" : "Eredivisie"}</h2>
+            <h2>Actieve competitie: {modeLabel}</h2>
             <div className="mode-switch-buttons">
               <Link href="/spelregels?mode=eredivisie" className={`mode-switch-button ${mode === "eredivisie" ? "active" : ""}`}>
                 Eredivisie
@@ -40,30 +74,22 @@ export default async function SpelregelsPage({ searchParams }: PageProps) {
               </Link>
             </div>
           </div>
-          <p className="muted-note">Pas regels aan via Instellingen en deze pagina update mee.</p>
+          <p className="muted-note">Pas regels aan via Instellingen en deze pagina update direct mee per hoofdstuk.</p>
         </section>
 
-        <section className="card col-6 settings-subcard">
-          <h3>Kernregels (dynamisch)</h3>
-          <ul>
-            <li>Budgetcap: €{config.budget.teamValueCapMillions.toFixed(1)}M</li>
-            <li>Scoring profiel: {config.scoringProfile.label}</li>
-            <li>Waiver tie-breaker: {config.waiver.round.tieBreaker === "EARLIEST_BID" ? "Earliest bid" : "Priority"}</li>
-            <li>Cup tie policy: {config.competition.cupTiePolicy === "HIGHER_SEED" ? "Higher seed" : "Penalties"}</li>
-          </ul>
-        </section>
-
-        <section className="card col-6 settings-subcard">
-          <h3>Impact van huidige regels</h3>
-          <ul>
-            {impactRules.map((rule) => (
-              <li key={rule}>{rule}</li>
-            ))}
-          </ul>
-        </section>
+        {chapterCards.map((chapter) => (
+          <section key={chapter.key} className="card col-6 settings-subcard">
+            <h3>{chapter.title}</h3>
+            <ul>
+              {chapter.bullets.map((bullet) => (
+                <li key={bullet}>{bullet}</li>
+              ))}
+            </ul>
+          </section>
+        ))}
 
         <section className="card col-12 settings-subcard">
-          <h3>Aanvullende regels</h3>
+          <h3>5. Aanvullende regels (Custom)</h3>
           {config.customRuleNotes.length === 0 ? (
             <p className="muted-note">Nog geen aanvullende regels. Voeg ze toe in Instellingen → Aanvullende spelregels.</p>
           ) : (
