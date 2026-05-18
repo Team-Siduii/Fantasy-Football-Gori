@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME } from "@/lib/auth-session";
 
 function isProtectedPath(pathname: string) {
-  return pathname.startsWith("/manager") || pathname === "/profile" || pathname === "/account" || pathname === "/instellingen";
+  return pathname.startsWith("/manager") || pathname === "/profile" || pathname === "/account" || pathname === "/instellingen" || pathname === "/spelregels";
 }
 
 function isAuthPage(pathname: string) {
@@ -28,5 +28,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/manager/:path*", "/profile", "/account", "/instellingen", "/login", "/forgot-password", "/reset-password"],
+  matcher: ["/manager/:path*", "/profile", "/account", "/instellingen", "/spelregels", "/login", "/forgot-password", "/reset-password"],
 };

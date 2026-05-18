@@ -17,6 +17,13 @@ export type LeagueCompetitionConfig = {
   cupTiePolicy: KnockoutTiePolicy;
 };
 
+export type LeagueRuleNote = {
+  id: string;
+  title: string;
+  description: string;
+  impact: string;
+};
+
 export type LeagueAdminConfig = {
   scoringProfile: ScoringProfile;
   waiver: {
@@ -28,6 +35,7 @@ export type LeagueAdminConfig = {
   };
   competition: LeagueCompetitionConfig;
   roles: LeagueRoleAssignments;
+  customRuleNotes: LeagueRuleNote[];
 };
 
 function normalizeMode(mode?: string): LeagueMode {
@@ -83,6 +91,7 @@ function defaultConfig(mode: LeagueMode): LeagueAdminConfig {
       cupTiePolicy: "PENALTIES",
     },
     roles: createDefaultRoleAssignments("owner-1", ["manager-1"]),
+    customRuleNotes: [],
   };
 }
 
@@ -119,6 +128,16 @@ function normalize(input: Partial<LeagueAdminConfig>, mode: LeagueMode): LeagueA
       cupTiePolicy: input.competition?.cupTiePolicy ?? base.competition.cupTiePolicy,
     },
     roles: input.roles ?? base.roles,
+    customRuleNotes: Array.isArray(input.customRuleNotes)
+      ? input.customRuleNotes
+          .map((note, index) => ({
+            id: typeof note?.id === "string" && note.id.trim().length > 0 ? note.id.trim() : `custom-${index + 1}`,
+            title: typeof note?.title === "string" ? note.title.trim() : "",
+            description: typeof note?.description === "string" ? note.description.trim() : "",
+            impact: typeof note?.impact === "string" ? note.impact.trim() : "",
+          }))
+          .filter((note) => note.title.length > 0 || note.description.length > 0 || note.impact.length > 0)
+      : base.customRuleNotes,
   };
 }
 
@@ -178,6 +197,7 @@ export function updateLeagueAdminConfig(next: Partial<LeagueAdminConfig>, modeIn
       commissionerIds: next.roles?.commissionerIds ?? current.roles.commissionerIds,
       managerIds: next.roles?.managerIds ?? current.roles.managerIds,
     },
+    customRuleNotes: next.customRuleNotes ?? current.customRuleNotes,
   }, mode);
 
   save(merged, mode);

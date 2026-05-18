@@ -41,6 +41,14 @@ describe("league admin config", () => {
         budget: {
           teamValueCapMillions: 40,
         },
+        customRuleNotes: [
+          {
+            id: "rule-1",
+            title: "Minimaal 1 keeper",
+            description: "Elke opstelling moet exact 1 keeper bevatten.",
+            impact: "Ongeldige opstellingen worden geweigerd bij opslaan.",
+          },
+        ],
         roles: {
           ownerId: "owner-1",
           commissionerIds: ["owner-1", "comm-1"],
@@ -52,6 +60,8 @@ describe("league admin config", () => {
 
     expect(updated.waiver.round.tieBreaker).toBe("EARLIEST_BID");
     expect(updated.budget.teamValueCapMillions).toBe(40);
+    expect(updated.customRuleNotes).toHaveLength(1);
+    expect(updated.customRuleNotes[0]?.title).toBe("Minimaal 1 keeper");
     expect(updated.roles.commissionerIds).toContain("comm-1");
   });
 

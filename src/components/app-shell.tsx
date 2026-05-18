@@ -50,6 +50,9 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
           </div>
 
           <div className="header-actions">
+            <Link href="/spelregels" className={`header-link ${isActive(pathname, "/spelregels") ? "active" : ""}`}>
+              Spelregels
+            </Link>
             <Link href="/instellingen" className={`header-link ${isActive(pathname, "/instellingen") ? "active" : ""}`}>
               Instellingen
             </Link>

@@ -254,6 +254,8 @@ FR-075: WK demo-draft dataset is opgebouwd uit de meest recente nationale wedstr
 FR-076: Transfermarkt is gepagineerd voor zowel Eredivisie als WK mode, met navigatieknoppen en paginastatus op basis van de actieve filter/sorteerset.
 FR-077: Instellingen voor league-config zijn mode-specifiek: Eredivisie en WK laden/schrijven elk naar een eigen configscope (`mode=eredivisie|wk`) met gescheiden opslagpad en onafhankelijke regels.
 FR-078: Instellingenpagina biedt een intuïtieve beheerflow met stap-geleiding (mode kiezen → regels aanpassen → opslaan), duidelijke actieve-mode indicatie, en zichtbare `niet-opgeslagen wijzigingen` status met herstelactie.
+FR-079: De route `/spelregels` toont een dynamische spelregelsweergave per mode (`?mode=eredivisie|wk`) op basis van de actuele league-config (budget-cap, scoring profile, waiver tie-breaker, cup tie policy) inclusief impactsamenvatting.
+FR-080: Instellingen ondersteunt aanvullende vrije spelregels (`customRuleNotes` met titel, beschrijving, impact); deze regels verschijnen automatisch op `/spelregels` zodat nieuwe regels zonder codewijziging beschreven kunnen worden.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -401,6 +403,8 @@ Waarom zo:
 - [ ] WK demo-draft spelers bevatten deelnemende landen en realistische waardes met bovengrens €4.5M voor topspelers
 - [ ] Transfermarkt is gepagineerd in zowel Eredivisie als WK mode (vorige/volgende + pagina-indicator boven én onder de tabel) en reset naar pagina 1 bij filter/sorteerwijzigingen
 - [ ] Instellingenpagina heeft een intuïtieve flow met staplabels, actieve-mode badge, niet-opgeslagen-wijzigingen status en een herstel-knop per actieve mode
+- [ ] Spelregelspagina (`/spelregels`) toont mode-switch + dynamische kernregels en impactsamenvatting op basis van actuele instellingen
+- [ ] Instellingen ondersteunt aanvullende vrije regels (titel/beschrijving/impact) en deze verschijnen automatisch op `/spelregels`
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -499,4 +503,6 @@ Waarom zo:
 - 2026-05-18: Budgetcap mode-specifiek gemaakt in managerflow: Eredivisie gebruikt €32.0M, WK gebruikt €100.0M; resterend budget, demo-seed en transfervalidatie volgen de actieve mode.
 - 2026-05-18: Team-statistieken uitgebreid met expliciete `Budget cap` tegel zodat managers direct de actieve mode-limiet zien (Eredivisie €32.0M / WK €100.0M).
 - 2026-05-18: Instellingenpagina (`/instellingen`) beheert nu ook budget-cap per mode; Team-pagina leest cap uit league-config (met mode-default fallback) zodat regels echt configureerbaar zijn.
+- 2026-05-18: Nieuwe route `/spelregels` toegevoegd: dynamische spelregelspagina per mode met impactsamenvatting op basis van actuele league-config.
+- 2026-05-18: Instellingen uitgebreid met `Aanvullende spelregels` (titel, beschrijving, impact) zodat nieuwe regels direct beschreven en gepubliceerd kunnen worden op `/spelregels` zonder codewijziging.
 - 2026-05-18: Instellingenpagina UX gepolijst: duidelijke 3-stappenflow, actieve mode-badge, niet-opgeslagen-wijzigingen indicator, herstelknop en inklapbare debug-sectie voor intuïtiever beheer.

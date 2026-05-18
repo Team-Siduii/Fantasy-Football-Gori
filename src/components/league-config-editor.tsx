@@ -4,12 +4,20 @@ import { useEffect, useMemo, useState } from "react";
 
 type LeagueMode = "eredivisie" | "wk";
 
+type LeagueRuleNote = {
+  id: string;
+  title: string;
+  description: string;
+  impact: string;
+};
+
 type LeagueAdminConfig = {
   scoringProfile: { id: string; type: "CLASSIC" | "CUSTOM"; label: string };
   waiver: { enabled: boolean; round: { tieBreaker: "PRIORITY" | "EARLIEST_BID" } };
   budget: { teamValueCapMillions: number };
   competition: { cupTiePolicy: "PENALTIES" | "HIGHER_SEED"; formats: string[] };
   roles: { ownerId: string; commissionerIds: string[]; managerIds: string[] };
+  customRuleNotes: LeagueRuleNote[];
 };
 
 type RuleHelpKey = "scoringProfile" | "budgetCap" | "waiverTieBreaker" | "cupTiePolicy" | "commissioners" | "managers";
@@ -53,7 +61,31 @@ function cloneConfig(input: LeagueAdminConfig): LeagueAdminConfig {
       commissionerIds: [...input.roles.commissionerIds],
       managerIds: [...input.roles.managerIds],
     },
+    customRuleNotes: (input.customRuleNotes ?? []).map((note, index) => ({
+      id: note.id || `custom-${index + 1}`,
+      title: note.title ?? "",
+      description: note.description ?? "",
+      impact: note.impact ?? "",
+    })),
   };
+}
+
+function summarizeImpact(config: LeagueAdminConfig): string[] {
+  const modeBudgetText = `Teamwaarde-cap staat op €${config.budget.teamValueCapMillions.toFixed(1)}M in deze mode.`;
+  const scoringText =
+    config.scoringProfile.type === "CUSTOM"
+      ? "Scoring profile staat op Custom: punten kunnen afwijken van standaard CVHJ-gedrag."
+      : "Scoring profile staat op Classic: standaard puntentelling blijft actief.";
+  const waiverText =
+    config.waiver.round.tieBreaker === "EARLIEST_BID"
+      ? "Waiver tie-breaker: vroegste geldige bod wint bij gelijke claims."
+      : "Waiver tie-breaker: prioriteitsvolgorde bepaalt winnaar bij gelijke claims.";
+  const cupText =
+    config.competition.cupTiePolicy === "HIGHER_SEED"
+      ? "Cup ties: hoger geplaatste team gaat door bij gelijkspel."
+      : "Cup ties: beslissen via penalties bij gelijkspel.";
+
+  return [modeBudgetText, scoringText, waiverText, cupText];
 }
 
 export function LeagueConfigEditor() {
@@ -69,6 +101,8 @@ export function LeagueConfigEditor() {
     if (!config || !initialConfig) return false;
     return JSON.stringify(config) !== JSON.stringify(initialConfig);
   }, [config, initialConfig]);
+
+  const impactSummary = useMemo(() => (config ? summarizeImpact(config) : []), [config]);
 
   useEffect(() => {
     async function run() {
@@ -117,6 +151,7 @@ export function LeagueConfigEditor() {
         commissionerIds: config.roles.commissionerIds,
         managerIds: config.roles.managerIds,
       },
+      customRuleNotes: config.customRuleNotes,
     };
 
     const res = await fetch(`/api/admin/league-config?mode=${mode}`, {
@@ -148,6 +183,38 @@ export function LeagueConfigEditor() {
     setMessage("Wijzigingen teruggezet naar laatst opgeslagen versie.");
   }
 
+  function addCustomRule() {
+    if (!config) return;
+    setConfig({
+      ...config,
+      customRuleNotes: [
+        ...config.customRuleNotes,
+        {
+          id: `custom-${Date.now()}`,
+          title: "",
+          description: "",
+          impact: "",
+        },
+      ],
+    });
+  }
+
+  function updateCustomRule(id: string, field: keyof LeagueRuleNote, value: string) {
+    if (!config) return;
+    setConfig({
+      ...config,
+      customRuleNotes: config.customRuleNotes.map((rule) => (rule.id === id ? { ...rule, [field]: value } : rule)),
+    });
+  }
+
+  function removeCustomRule(id: string) {
+    if (!config) return;
+    setConfig({
+      ...config,
+      customRuleNotes: config.customRuleNotes.filter((rule) => rule.id !== id),
+    });
+  }
+
   return (
     <section className="card col-12">
       <div className="settings-editor-head">
@@ -155,9 +222,7 @@ export function LeagueConfigEditor() {
           <h2>League instellingen beheren</h2>
           <p className="muted">Kies eerst een mode en pas daarna alleen die competitie aan. Je wijzigingen blijven gescheiden per mode.</p>
         </div>
-        <div className={`settings-mode-pill settings-mode-pill--${mode}`}>
-          Actief: {mode === "wk" ? "WK" : "Eredivisie"}
-        </div>
+        <div className={`settings-mode-pill settings-mode-pill--${mode}`}>Actief: {mode === "wk" ? "WK" : "Eredivisie"}</div>
       </div>
 
       <div className="mode-switch settings-mode-switch" aria-label="Config mode">
@@ -311,6 +376,57 @@ export function LeagueConfigEditor() {
                   />
                 </label>
               </div>
+            </section>
+
+            <section className="card col-12 settings-subcard">
+              <div className="settings-editor-head">
+                <h3>Aanvullende spelregels</h3>
+                <button type="button" className="ghost-button" onClick={addCustomRule}>+ Regel toevoegen</button>
+              </div>
+              <p className="muted-note">Gebruik dit voor nieuwe regels. Deze komen automatisch op de Spelregels-pagina met beschrijving en impact.</p>
+              <div className="grid" style={{ marginTop: 8 }}>
+                {config.customRuleNotes.length === 0 ? <p className="muted-note">Nog geen extra regels toegevoegd.</p> : null}
+                {config.customRuleNotes.map((rule) => (
+                  <div key={rule.id} className="card col-12 settings-subcard">
+                    <div className="grid">
+                      <label className="field col-4">
+                        <span className="field-label">Regel titel</span>
+                        <input value={rule.title} onChange={(event) => updateCustomRule(rule.id, "title", event.target.value)} />
+                      </label>
+                      <label className="field col-4">
+                        <span className="field-label">Beschrijving</span>
+                        <input value={rule.description} onChange={(event) => updateCustomRule(rule.id, "description", event.target.value)} />
+                      </label>
+                      <label className="field col-4">
+                        <span className="field-label">Impact</span>
+                        <input value={rule.impact} onChange={(event) => updateCustomRule(rule.id, "impact", event.target.value)} />
+                      </label>
+                    </div>
+                    <div style={{ marginTop: 8 }}>
+                      <button type="button" className="ghost-button" onClick={() => removeCustomRule(rule.id)}>Verwijder regel</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="card col-12 settings-subcard">
+              <h3>Impact van huidige regels</h3>
+              <ul>
+                {impactSummary.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+              {config.customRuleNotes.length > 0 ? (
+                <>
+                  <h4>Aanvullende impact</h4>
+                  <ul>
+                    {config.customRuleNotes.map((note) => (
+                      <li key={note.id}>{note.impact || `${note.title || "Nieuwe regel"}: impact nog niet ingevuld`}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
             </section>
           </div>
 
