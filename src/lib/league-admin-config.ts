@@ -23,6 +23,9 @@ export type LeagueAdminConfig = {
     enabled: boolean;
     round: WaiverRound;
   };
+  budget: {
+    teamValueCapMillions: number;
+  };
   competition: LeagueCompetitionConfig;
   roles: LeagueRoleAssignments;
 };
@@ -55,7 +58,11 @@ export function resolveLeagueAdminConfigPath(mode: LeagueMode = "eredivisie") {
   return path.join(process.cwd(), "data", "league-admin-config.json");
 }
 
-function defaultConfig(): LeagueAdminConfig {
+function defaultBudgetCapForMode(mode: LeagueMode): number {
+  return mode === "wk" ? 100 : 32;
+}
+
+function defaultConfig(mode: LeagueMode): LeagueAdminConfig {
   return {
     scoringProfile: getBackwardCompatibleDefaultProfile(),
     waiver: {
@@ -67,6 +74,9 @@ function defaultConfig(): LeagueAdminConfig {
         revealAt: new Date("2026-04-24T21:00:00.000Z").toISOString(),
       }),
     },
+    budget: {
+      teamValueCapMillions: defaultBudgetCapForMode(mode),
+    },
     competition: {
       formats: ["LEAGUE_TABLE", "CUP_KNOCKOUT"],
       leagueTableTieBreakers: ["GOAL_DIFFERENCE", "GOALS_FOR", "HEAD_TO_HEAD"],
@@ -76,8 +86,8 @@ function defaultConfig(): LeagueAdminConfig {
   };
 }
 
-function normalize(input: Partial<LeagueAdminConfig>): LeagueAdminConfig {
-  const base = defaultConfig();
+function normalize(input: Partial<LeagueAdminConfig>, mode: LeagueMode): LeagueAdminConfig {
+  const base = defaultConfig(mode);
 
   const scoringProfile = input.scoringProfile ?? base.scoringProfile;
   const waiverRound = input.waiver?.round ?? base.waiver.round;
@@ -95,6 +105,12 @@ function normalize(input: Partial<LeagueAdminConfig>): LeagueAdminConfig {
         ...waiverRound,
         tieBreaker,
       },
+    },
+    budget: {
+      teamValueCapMillions:
+        typeof input.budget?.teamValueCapMillions === "number" && input.budget.teamValueCapMillions > 0
+          ? input.budget.teamValueCapMillions
+          : base.budget.teamValueCapMillions,
     },
     competition: {
       formats: input.competition?.formats ?? base.competition.formats,
@@ -117,18 +133,18 @@ export function getLeagueAdminConfig(modeInput?: string): LeagueAdminConfig {
   const target = resolveLeagueAdminConfigPath(mode);
 
   if (!existsSync(target)) {
-    const config = defaultConfig();
+    const config = defaultConfig(mode);
     save(config, mode);
     return config;
   }
 
   try {
     const parsed = JSON.parse(readFileSync(target, "utf-8")) as Partial<LeagueAdminConfig>;
-    const config = normalize(parsed);
+    const config = normalize(parsed, mode);
     save(config, mode);
     return config;
   } catch {
-    const config = defaultConfig();
+    const config = defaultConfig(mode);
     save(config, mode);
     return config;
   }
@@ -148,6 +164,10 @@ export function updateLeagueAdminConfig(next: Partial<LeagueAdminConfig>, modeIn
         ...next.waiver?.round,
       },
     },
+    budget: {
+      ...current.budget,
+      ...next.budget,
+    },
     competition: {
       ...current.competition,
       ...next.competition,
@@ -158,7 +178,7 @@ export function updateLeagueAdminConfig(next: Partial<LeagueAdminConfig>, modeIn
       commissionerIds: next.roles?.commissionerIds ?? current.roles.commissionerIds,
       managerIds: next.roles?.managerIds ?? current.roles.managerIds,
     },
-  });
+  }, mode);
 
   save(merged, mode);
   return merged;

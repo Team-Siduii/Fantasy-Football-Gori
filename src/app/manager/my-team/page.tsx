@@ -44,6 +44,14 @@ type ManagerStateResponse = {
   };
 };
 
+type LeagueRuntimeConfigResponse = {
+  config?: {
+    budget?: {
+      teamValueCapMillions?: number;
+    };
+  };
+};
+
 function fallbackPlayers(): EnhancedPlayer[] {
   return enrichPlayers([
     { id: "1", naam: "Demo Keeper", positie: "GK", club: "PSV", prijs: 2 },
@@ -380,7 +388,7 @@ function getCountdownParts(targetIso: string) {
 export default function ManagerMyTeamPage() {
   const pathname = usePathname();
   const isWkMode = pathname.startsWith("/manager/world-cup");
-  const budgetCapMillions = getTransferBudgetCapMillions(isWkMode ? "wk" : "eredivisie");
+  const [budgetCapMillions, setBudgetCapMillions] = useState(() => getTransferBudgetCapMillions(isWkMode ? "wk" : "eredivisie"));
   const activeFixtures = isWkMode ? WORLD_CUP_2026_FIXTURES : REMAINING_FIXTURES_2025_2026;
   const clubLabel = isWkMode ? "Land" : "Club";
   const clubsLabel = isWkMode ? "landen" : "clubs";
@@ -415,9 +423,10 @@ export default function ManagerMyTeamPage() {
       setError("");
 
       try {
-        const [playersResponse, managerStateResponse] = await Promise.all([
+        const [playersResponse, managerStateResponse, leagueConfigResponse] = await Promise.all([
           fetch(`/api/players?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
           fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
+          fetch(`/api/admin/league-config?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
         ]);
 
         if (!playersResponse.ok) {
@@ -430,6 +439,14 @@ export default function ManagerMyTeamPage() {
         const managerData = managerStateResponse.ok
           ? ((await managerStateResponse.json()) as ManagerStateResponse)
           : { state: undefined };
+        const leagueConfigData = leagueConfigResponse.ok
+          ? ((await leagueConfigResponse.json()) as LeagueRuntimeConfigResponse)
+          : { config: undefined };
+        const fallbackBudgetCap = getTransferBudgetCapMillions(isWkMode ? "wk" : "eredivisie");
+        const configBudgetCap = leagueConfigData.config?.budget?.teamValueCapMillions;
+        const activeBudgetCap =
+          typeof configBudgetCap === "number" && configBudgetCap > 0 ? configBudgetCap : fallbackBudgetCap;
+        setBudgetCapMillions(activeBudgetCap);
 
         const enriched = enrichPlayers(playersData.players || []).sort(byPriceDesc);
         const nextPlayers = enriched.length > 0 ? enriched : fallbackPlayers();
@@ -448,14 +465,14 @@ export default function ManagerMyTeamPage() {
                 managerData.state?.lineupIds ?? [],
                 managerData.state?.benchIds ?? [],
               )
-            : buildBudgetDemoState(nextPlayers, initialFormation, budgetCapMillions);
+            : buildBudgetDemoState(nextPlayers, initialFormation, activeBudgetCap);
 
         let nextState = isWithinBudget(
           [...hydratedState.lineup, ...hydratedState.bench],
-          budgetCapMillions,
+          activeBudgetCap,
         )
           ? hydratedState
-          : buildBudgetDemoState(nextPlayers, initialFormation, budgetCapMillions);
+          : buildBudgetDemoState(nextPlayers, initialFormation, activeBudgetCap);
 
         const savedPendingSellId = managerData.state?.pendingSellId ?? null;
         if (savedPendingSellId) {
@@ -485,7 +502,7 @@ export default function ManagerMyTeamPage() {
     };
 
     void load();
-  }, [budgetCapMillions, formationOptions, isWkMode]);
+  }, [formationOptions, isWkMode]);
 
   useEffect(() => {
     if (!hydrated.current) {

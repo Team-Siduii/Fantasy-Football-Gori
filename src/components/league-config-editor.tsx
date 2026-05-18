@@ -7,15 +7,18 @@ type LeagueMode = "eredivisie" | "wk";
 type LeagueAdminConfig = {
   scoringProfile: { id: string; type: "CLASSIC" | "CUSTOM"; label: string };
   waiver: { enabled: boolean; round: { tieBreaker: "PRIORITY" | "EARLIEST_BID" } };
+  budget: { teamValueCapMillions: number };
   competition: { cupTiePolicy: "PENALTIES" | "HIGHER_SEED"; formats: string[] };
   roles: { ownerId: string; commissionerIds: string[]; managerIds: string[] };
 };
 
-type RuleHelpKey = "scoringProfile" | "waiverTieBreaker" | "cupTiePolicy" | "commissioners" | "managers";
+type RuleHelpKey = "scoringProfile" | "budgetCap" | "waiverTieBreaker" | "cupTiePolicy" | "commissioners" | "managers";
 
 const RULE_HELP_TEXT: Record<RuleHelpKey, string> = {
   scoringProfile:
     "Classic gebruikt de standaard puntentelling. Custom is bedoeld voor een eigen puntenmodel (fase 2) en laat je alternatieve bonus/malus-regels beheren.",
+  budgetCap:
+    "Maximale totale teamwaarde in miljoenen voor de actieve competitie-mode. Transfers boven deze cap worden automatisch geblokkeerd.",
   waiverTieBreaker:
     "Bepaalt wie wint als meerdere managers dezelfde speler claimen in waiver. Priority = vaste prioriteitsvolgorde. Earliest bid = vroegste geldige bod wint.",
   cupTiePolicy:
@@ -43,6 +46,7 @@ function cloneConfig(input: LeagueAdminConfig): LeagueAdminConfig {
   return {
     scoringProfile: { ...input.scoringProfile },
     waiver: { enabled: input.waiver.enabled, round: { ...input.waiver.round } },
+    budget: { teamValueCapMillions: input.budget.teamValueCapMillions },
     competition: { cupTiePolicy: input.competition.cupTiePolicy, formats: [...input.competition.formats] },
     roles: {
       ownerId: input.roles.ownerId,
@@ -104,6 +108,9 @@ export function LeagueConfigEditor() {
         type: config.scoringProfile.type,
       },
       waiver: config.waiver,
+      budget: {
+        teamValueCapMillions: config.budget.teamValueCapMillions,
+      },
       competition: config.competition,
       roles: {
         ...config.roles,
@@ -199,6 +206,25 @@ export function LeagueConfigEditor() {
                     <option value="CLASSIC">Classic (default)</option>
                     <option value="CUSTOM">Custom</option>
                   </select>
+                </label>
+
+                <label className="field col-12">
+                  <RuleLabel text="Budget cap (miljoen)" helpKey="budgetCap" />
+                  <input
+                    type="number"
+                    min={1}
+                    step={0.5}
+                    value={config.budget.teamValueCapMillions}
+                    onChange={(event) => {
+                      const parsed = Number(event.target.value);
+                      setConfig({
+                        ...config,
+                        budget: {
+                          teamValueCapMillions: Number.isFinite(parsed) && parsed > 0 ? parsed : config.budget.teamValueCapMillions,
+                        },
+                      });
+                    }}
+                  />
                 </label>
 
                 <label className="field col-12">

@@ -235,7 +235,7 @@ FR-056 (fase 2): Admin kan een waiver-ronde cancelen en heropenen met verplichte
 FR-057 (fase 2): League ondersteunt scoring profiles met backward-compatible default `Classic` en valideerbare `Custom` bonus/malus-parameters.
 FR-058 (fase 2): Competition abstraction v1 ondersteunt parallel zowel `League table` als `Cup knockout`, met expliciete configureerbare tie-breakers.
 FR-059 (fase 2): Rollenmodel owner/commissioner/manager forceert permission matrix in API; admin overrides zijn uitsluitend toegestaan met juiste rolrechten.
-FR-060 (fase 2): Admin-UI toont en beheert league-configuratie voor scoring profile, waiver tie-breaker, competition tie policy en role assignments.
+FR-060 (fase 2): Admin-UI toont en beheert league-configuratie voor scoring profile, budget-cap per mode, waiver tie-breaker, competition tie policy en role assignments.
 FR-061: Auth-MVP ondersteunt meerdere manager-accounts + admin-account, met inloggen op e-mail en accountgebonden credentials (geen globale test-prefill afhankelijkheid).
 FR-062: Manager-UI bevat een globale `Instellingen` navigatieknop; route `/instellingen` toont league-config module en redirectt naar login zonder actieve sessie.
 FR-063: Elk instelveld in de league-config module toont een hover/focus-help (`?`) met korte uitleg van de regel en de impact op competitiegedrag.
@@ -498,4 +498,5 @@ Waarom zo:
 - 2026-05-18: Instellingen opgesplitst per competitie-mode: `league-config` ondersteunt nu `mode=eredivisie|wk` met aparte opslagpaden (`league-admin-config.json` en `league-admin-config-wk.json` / Vercel `/tmp` varianten) en mode-switch in de instellingen-UI.
 - 2026-05-18: Budgetcap mode-specifiek gemaakt in managerflow: Eredivisie gebruikt €32.0M, WK gebruikt €100.0M; resterend budget, demo-seed en transfervalidatie volgen de actieve mode.
 - 2026-05-18: Team-statistieken uitgebreid met expliciete `Budget cap` tegel zodat managers direct de actieve mode-limiet zien (Eredivisie €32.0M / WK €100.0M).
+- 2026-05-18: Instellingenpagina (`/instellingen`) beheert nu ook budget-cap per mode; Team-pagina leest cap uit league-config (met mode-default fallback) zodat regels echt configureerbaar zijn.
 - 2026-05-18: Instellingenpagina UX gepolijst: duidelijke 3-stappenflow, actieve mode-badge, niet-opgeslagen-wijzigingen indicator, herstelknop en inklapbare debug-sectie voor intuïtiever beheer.

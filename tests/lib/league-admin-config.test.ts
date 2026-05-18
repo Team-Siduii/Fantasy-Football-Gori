@@ -15,15 +15,18 @@ describe("league admin config", () => {
     resetLeagueAdminConfigForTests("wk");
   });
 
-  it("heeft default config met classic scoring", () => {
-    const config = getLeagueAdminConfig("eredivisie");
+  it("heeft mode-specifieke default config met classic scoring en budget", () => {
+    const eredivisie = getLeagueAdminConfig("eredivisie");
+    const wk = getLeagueAdminConfig("wk");
 
-    expect(config.scoringProfile.id).toBe("classic");
-    expect(config.waiver.round.status).toBe("OPEN");
-    expect(config.competition.formats).toEqual(["LEAGUE_TABLE", "CUP_KNOCKOUT"]);
+    expect(eredivisie.scoringProfile.id).toBe("classic");
+    expect(eredivisie.waiver.round.status).toBe("OPEN");
+    expect(eredivisie.competition.formats).toEqual(["LEAGUE_TABLE", "CUP_KNOCKOUT"]);
+    expect(eredivisie.budget.teamValueCapMillions).toBe(32);
+    expect(wk.budget.teamValueCapMillions).toBe(100);
   });
 
-  it("kan waiver tiebreaker en roles updaten", () => {
+  it("kan waiver tiebreaker, budget en roles updaten", () => {
     const current = getLeagueAdminConfig("eredivisie");
 
     const updated = updateLeagueAdminConfig(
@@ -35,6 +38,9 @@ describe("league admin config", () => {
             tieBreaker: "EARLIEST_BID",
           },
         },
+        budget: {
+          teamValueCapMillions: 40,
+        },
         roles: {
           ownerId: "owner-1",
           commissionerIds: ["owner-1", "comm-1"],
@@ -45,6 +51,7 @@ describe("league admin config", () => {
     );
 
     expect(updated.waiver.round.tieBreaker).toBe("EARLIEST_BID");
+    expect(updated.budget.teamValueCapMillions).toBe(40);
     expect(updated.roles.commissionerIds).toContain("comm-1");
   });
 
