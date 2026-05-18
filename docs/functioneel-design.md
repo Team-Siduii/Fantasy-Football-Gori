@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-05-04
+Laatste update: 2026-05-18
 
 ## 1. Productvisie
 Doel van de app:
@@ -486,3 +486,4 @@ Waarom zo:
 - 2026-05-04: WK shirt-icoonset verfijnd op visuele voorkeur: Kroatië checkers rood/wit, Nederland vol oranje, Turkije vol rood, Zweden geel met blauwe onderrand, Frankrijk vol blauw, Ghana wit basis met rood/geel/groen details, België met geel accent, Ivoorkust vol oranje met dunne groene zijranden en Japan lichter blauw met dunne witte zijranden.
 - 2026-05-04: Verdere WK-styling en naamnormalisatie: Brazilië-shirt geel met dunne groene onderrand, Verenigde Staten-shirt in vlagkleuren, WK-landnamen doorgezet naar Nederlandse benamingen in dataset/speelschema en wedstrijdafkorting voor Verenigde Staten geforceerd op `USA`.
 - 2026-05-04: WK-afkortingen in speelschema verder afgestemd op gewenste NL-notatie: Bosnië-Herzegovina `BOS`, Zuid-Afrika `ZAF`, Zwitserland `ZWI`, Ivoorkust `IVO`, Curaçao `CUR`, Kaapverdië `KAA`, Oostenrijk `AUT` en Saoedi-Arabië `SAU`.
+- 2026-05-18: WK spelersdatabase ververst vanuit `https://www.wkcoach.nl/webapi/get_all_players/0`; `data/players-wk.csv` nu gevuld met 1.231 spelers uit 48 landen (bronpositie + transferwaarde overgenomen).

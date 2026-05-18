@@ -1,721 +1,1232 @@
 speler id,speler naam,positie,club,transferwaarde
-950000,Emiliano Martinez,Keeper,Argentinië,3500000
-950001,Marcos Senesi,Verdediger,Argentinië,4000000
-950002,Cristian Romero 1,Verdediger,Argentinië,4000000
-950003,Marcos Acuna,Verdediger,Argentinië,4000000
-950004,Nahuel Molina,Verdediger,Argentinië,3500000
-950005,Alexis Mac Allister,Verdediger,Argentinië,3500000
-950006,Nicolas Gonzalez,Middenvelder,Argentinië,4000000
-950007,Thiago Almada,Middenvelder,Argentinië,4000000
-950008,Julian Alvarez,Middenvelder,Argentinië,3500000
-950009,Enzo Fernandez,Middenvelder,Argentinië,3500000
-950010,Nico Paz,Middenvelder,Argentinië,3500000
-950011,Rodrigo De Paul,Aanvaller,Argentinië,4000000
-950012,Lionel Messi,Aanvaller,Argentinië,4000000
-950013,Franco Mastantuono,Aanvaller,Argentinië,4000000
-950014,Giuliano Simeone,Aanvaller,Argentinië,4000000
-950015,Luca Zidane,Keeper,Algerije,3500000
-950016,Ramy Bensebaini,Verdediger,Algerije,4000000
-950017,Aissa Mandi,Verdediger,Algerije,4000000
-950018,Rayan Ait Nouri,Verdediger,Algerije,4000000
-950019,Rafik Belghali,Verdediger,Algerije,3500000
-950020,Hicham Boudaoui,Verdediger,Algerije,3500000
-950021,Mohamed Amoura,Middenvelder,Algerije,4000000
-950022,Fares Chaibi,Middenvelder,Algerije,4000000
-950023,Ibrahim Maza,Middenvelder,Algerije,3500000
-950024,Ismael Bennacer,Middenvelder,Algerije,3500000
-950025,Riyad Mahrez,Middenvelder,Algerije,3500000
-950026,Himad Abdelli,Aanvaller,Algerije,4000000
-950027,Anis Hadj Moussa,Aanvaller,Algerije,4000000
-950028,Zineddine Belaid,Aanvaller,Algerije,4000000
-950029,Baghdad Bounedjah,Aanvaller,Algerije,4000000
-950030,Mathew Ryan,Keeper,Australië,3500000
-950031,Lucas Herrington,Verdediger,Australië,4000000
-950032,Alessandro Circati,Verdediger,Australië,4000000
-950033,Jason Geria,Verdediger,Australië,4000000
-950034,Aiden Oneill,Verdediger,Australië,3500000
-950035,Connor Metcalfe,Verdediger,Australië,3500000
-950036,Jordan Bos,Middenvelder,Australië,4000000
-950037,Jacob Italiano,Middenvelder,Australië,4000000
-950038,Deni Juric,Middenvelder,Australië,3500000
-950039,Martin Boyle,Middenvelder,Australië,3500000
-950040,Riley Mcgree,Middenvelder,Australië,3500000
-950041,Awer Mabil,Aanvaller,Australië,4000000
-950042,Nestory Irankunda,Aanvaller,Australië,4000000
-950043,Ajdin Hrustic,Aanvaller,Australië,4000000
-950044,Paul Okon Engstler,Aanvaller,Australië,4000000
-950045,Alexander Schlager,Keeper,Oostenrijk,3500000
-950046,Marco Friedl,Verdediger,Oostenrijk,4000000
-950047,Kevin Danso,Verdediger,Oostenrijk,4000000
-950048,Phillip Mwene,Verdediger,Oostenrijk,4000000
-950049,Stefan Posch,Verdediger,Oostenrijk,3500000
-950050,Nicolas Seiwald,Verdediger,Oostenrijk,3500000
-950051,Marcel Sabitzer,Middenvelder,Oostenrijk,4000000
-950052,Florian Grillitsch,Middenvelder,Oostenrijk,4000000
-950053,Michael Gregoritsch,Middenvelder,Oostenrijk,3500000
-950054,Christoph Baumgartner,Middenvelder,Oostenrijk,3500000
-950055,Romano Schmid,Middenvelder,Oostenrijk,3500000
-950056,Patrick Wimmer,Aanvaller,Oostenrijk,4000000
-950057,Florian Wiegele,Aanvaller,Oostenrijk,4000000
-950058,Philipp Lienhart,Aanvaller,Oostenrijk,4000000
-950059,Alexander Prass,Aanvaller,Oostenrijk,4000000
-950060,Senne Lammens,Keeper,België,3500000
-950061,Zeno Debast,Verdediger,België,4000000
-950062,Brandon Mechele,Verdediger,België,4000000
-950063,Maxim De Cuyper,Verdediger,België,4000000
-950064,Thomas Meunier,Verdediger,België,3500000
-950065,Amadou Onana,Verdediger,België,3500000
-950066,Jeremy Doku,Middenvelder,België,4000000
-950067,Nicolas Raskin,Middenvelder,België,4000000
-950068,Charles De Ketelaere,Middenvelder,België,3500000
-950069,Kevin De Bruyne,Middenvelder,België,3500000
-950070,Alexis Saelemaekers,Middenvelder,België,3500000
-950071,Joaquin Seys,Aanvaller,België,4000000
-950072,Dodi Lukebakio,Aanvaller,België,4000000
-950073,Lois Openda,Aanvaller,België,4000000
-950074,Nathan Ngoy,Aanvaller,België,4000000
-950075,Nikola Vasilj,Keeper,Bosnië-Herzegovina,3500000
-950076,Amar Dedic,Verdediger,Bosnië-Herzegovina,4000000
-950077,Nikola Katic,Verdediger,Bosnië-Herzegovina,4000000
-950078,Sead Kolasinac,Verdediger,Bosnië-Herzegovina,4000000
-950079,Tarik Muharemovic,Verdediger,Bosnië-Herzegovina,3500000
-950080,Ivan Sunjic,Verdediger,Bosnië-Herzegovina,3500000
-950081,Ivan Basic,Middenvelder,Bosnië-Herzegovina,4000000
-950082,Benjamin Tahirovic,Middenvelder,Bosnië-Herzegovina,4000000
-950083,Dzenis Burnic,Middenvelder,Bosnië-Herzegovina,3500000
-950084,Amir Hadziahmetovic,Middenvelder,Bosnië-Herzegovina,3500000
-950085,Armin Gigovic,Middenvelder,Bosnië-Herzegovina,3500000
-950086,Edin Dzeko,Aanvaller,Bosnië-Herzegovina,4000000
-950087,Esmir Bajraktarevic,Aanvaller,Bosnië-Herzegovina,4000000
-950088,Ermedin Demirovic,Aanvaller,Bosnië-Herzegovina,4000000
-950089,Amar Memic,Aanvaller,Bosnië-Herzegovina,4000000
-950090,Ederson 1,Keeper,Brazilië,3500000
-950091,Leo Pereira,Verdediger,Brazilië,4000000
-950092,Gleison Bremer,Verdediger,Brazilië,4000000
-950093,Douglas Santos,Verdediger,Brazilië,4000000
-950094,Wesley Franca,Verdediger,Brazilië,3500000
-950095,Casemiro,Verdediger,Brazilië,3500000
-950096,Vinicius Junior,Middenvelder,Brazilië,4000000
-950097,Gabriel Martinelli,Middenvelder,Brazilië,4000000
-950098,Matheus Cunha,Middenvelder,Brazilië,3500000
-950099,Andrey Santos,Middenvelder,Brazilië,3500000
-950100,Raphinha,Middenvelder,Brazilië,3500000
-950101,Luiz Henrique,Aanvaller,Brazilië,4000000
-950102,Joao Pedro 3,Aanvaller,Brazilië,4000000
-950103,Roger Ibanez,Aanvaller,Brazilië,4000000
-950104,Igor Thiago,Aanvaller,Brazilië,4000000
-950105,James Pantemis,Keeper,Canada,3500000
-950106,Kamal Miller,Verdediger,Canada,4000000
-950107,Ralph Priso,Verdediger,Canada,4000000
-950108,Zorhan Bassong,Verdediger,Canada,4000000
-950109,Richie Laryea,Verdediger,Canada,3500000
-950110,Mathieu Choiniere,Verdediger,Canada,3500000
-950111,Jacen Russell Rowe,Middenvelder,Canada,4000000
-950112,Shola Jimoh,Middenvelder,Canada,4000000
-950113,Rayan Elloumi,Middenvelder,Canada,3500000
-950114,Jonathan Osorio,Middenvelder,Canada,3500000
-950115,Jayden Nelson,Middenvelder,Canada,3500000
-950116,Jeevan Badwal,Aanvaller,Canada,4000000
-950117,Tiago Coimbra,Aanvaller,Canada,4000000
-950118,Malik Henry,Aanvaller,Canada,4000000
-950119,Noah Abatneh,Aanvaller,Canada,4000000
-950120,Vozinha,Keeper,Kaapverdië,3500000
-950121,Jorginho Soares,Verdediger,Kaapverdië,4000000
-950122,Roberto Lopes,Verdediger,Kaapverdië,4000000
-950123,Sidny Lopes Cabral,Verdediger,Kaapverdië,4000000
-950124,Kevin Pina,Verdediger,Kaapverdië,3500000
-950125,Diney Borges,Verdediger,Kaapverdië,3500000
-950126,Ryan Mendes,Middenvelder,Kaapverdië,4000000
-950127,Steven Moreira,Middenvelder,Kaapverdië,4000000
-950128,Dailon Livramento,Middenvelder,Kaapverdië,3500000
-950129,Deroy Duarte,Middenvelder,Kaapverdië,3500000
-950130,Telmo Arcanjo,Middenvelder,Kaapverdië,3500000
-950131,Willy Semedo,Aanvaller,Kaapverdië,4000000
-950132,Jovane Cabral,Aanvaller,Kaapverdië,4000000
-950133,Joao Paulo,Aanvaller,Kaapverdië,4000000
-950134,Nuno Da Costa,Aanvaller,Kaapverdië,4000000
-950135,Camilo Vargas,Keeper,Colombia,3500000
-950136,Jhon Lucumi,Verdediger,Colombia,4000000
-950137,Davinson Sanchez,Verdediger,Colombia,4000000
-950138,Johan Mojica,Verdediger,Colombia,4000000
-950139,Daniel Munoz,Verdediger,Colombia,3500000
-950140,Richard Rios,Verdediger,Colombia,3500000
-950141,Luis Diaz,Middenvelder,Colombia,4000000
-950142,Jefferson Lerma,Middenvelder,Colombia,4000000
-950143,Luis Suarez 1,Middenvelder,Colombia,3500000
-950144,James Rodriguez,Middenvelder,Colombia,3500000
-950145,Jhon Arias,Middenvelder,Colombia,3500000
-950146,Jorge Carrascal,Aanvaller,Colombia,4000000
-950147,Deiver Machado,Aanvaller,Colombia,4000000
-950148,Kevin Castano,Aanvaller,Colombia,4000000
-950149,Santiago Arias,Aanvaller,Colombia,4000000
-950150,Dominik Livakovic,Keeper,Kroatië,3500000
-950151,Marin Pongracic,Verdediger,Kroatië,4000000
-950152,Martin Erlic,Verdediger,Kroatië,4000000
-950153,Ivan Perisic,Verdediger,Kroatië,4000000
-950154,Nikola Moro,Verdediger,Kroatië,3500000
-950155,Luka Vuskovic,Verdediger,Kroatië,3500000
-950156,Nikola Vlasic,Middenvelder,Kroatië,4000000
-950157,Marco Pasalic,Middenvelder,Kroatië,4000000
-950158,Igor Matanovic,Middenvelder,Kroatië,3500000
-950159,Petar Sucic,Middenvelder,Kroatië,3500000
-950160,Mario Pasalic,Middenvelder,Kroatië,3500000
-950161,Josip Stanisic,Aanvaller,Kroatië,4000000
-950162,Petar Musa,Aanvaller,Kroatië,4000000
-950163,Luka Sucic,Aanvaller,Kroatië,4000000
-950164,Martin Baturina,Aanvaller,Kroatië,4000000
-950165,Matej Kovar,Keeper,Tsjechië,3500000
-950166,Tomas Holes,Verdediger,Tsjechië,4000000
-950167,Robin Hranac,Verdediger,Tsjechië,4000000
-950168,Ladislav Krejci 1,Verdediger,Tsjechië,4000000
-950169,Vladimir Darida,Verdediger,Tsjechië,3500000
-950170,Lukas Provod,Verdediger,Tsjechië,3500000
-950171,David Jurasek,Middenvelder,Tsjechië,4000000
-950172,Vladimir Coufal,Middenvelder,Tsjechië,4000000
-950173,Tomas Chory,Middenvelder,Tsjechië,3500000
-950174,Pavel Sulc,Middenvelder,Tsjechië,3500000
-950175,Patrik Schick,Middenvelder,Tsjechië,3500000
-950176,Tomas Soucek,Aanvaller,Tsjechië,4000000
-950177,Stepan Chaloupek,Aanvaller,Tsjechië,4000000
-950178,Mojmir Chytil,Aanvaller,Tsjechië,4000000
-950179,Michal Sadilek,Aanvaller,Tsjechië,4000000
-950180,Lionel Mpasi,Keeper,Congo,3500000
-950181,Timothy Fayulu,Verdediger,Congo,4000000
-950182,Axel Tuanzebe,Verdediger,Congo,4000000
-950183,Arthur Masuaku,Verdediger,Congo,4000000
-950184,Chancel Mbemba,Verdediger,Congo,3500000
-950185,Aaron Wan Bissaka,Verdediger,Congo,3500000
-950186,Joris Kayembe,Middenvelder,Congo,4000000
-950187,Brian Bayeye,Middenvelder,Congo,4000000
-950188,Steve Kapuadi,Middenvelder,Congo,3500000
-950189,Dylan Batubinsika,Middenvelder,Congo,3500000
-950190,Rocky Bushiri,Middenvelder,Congo,3500000
-950191,Samuel Moutoussamy,Aanvaller,Congo,4000000
-950192,Noah Sadiki,Aanvaller,Congo,4000000
-950193,Edo Kayembe,Aanvaller,Congo,4000000
-950194,Ngalayel Mukau,Aanvaller,Congo,4000000
-950195,Hernan Galindez,Keeper,Ecuador,3500000
-950196,Willian Pacho,Verdediger,Ecuador,4000000
-950197,Joel Ordonez,Verdediger,Ecuador,4000000
-950198,Piero Hincapie,Verdediger,Ecuador,4000000
-950199,Alan Franco 1,Verdediger,Ecuador,3500000
-950200,Pedro Vite,Verdediger,Ecuador,3500000
-950201,Alan Minda,Middenvelder,Ecuador,4000000
-950202,Moises Caicedo,Middenvelder,Ecuador,4000000
-950203,Enner Valencia,Middenvelder,Ecuador,3500000
-950204,Gonzalo Plata,Middenvelder,Ecuador,3500000
-950205,John Yeboah,Middenvelder,Ecuador,3500000
-950206,Angelo Preciado,Aanvaller,Ecuador,4000000
-950207,Pervis Estupinan,Aanvaller,Ecuador,4000000
-950208,Kendry Paez,Aanvaller,Ecuador,4000000
-950209,Kevin Rodriguez,Aanvaller,Ecuador,4000000
-950210,Mohamed El Shenawy,Keeper,Egypte,3500000
-950211,Rami Hisham Rabia,Verdediger,Egypte,4000000
-950212,Hamdy Fathy,Verdediger,Egypte,4000000
-950213,Yasser Ibrahim,Verdediger,Egypte,4000000
-950214,Marwan Ateya,Verdediger,Egypte,3500000
-950215,Mohamed Hamdy,Verdediger,Egypte,3500000
-950216,Mahmoud Trezeguet,Middenvelder,Egypte,4000000
-950217,Ibrahim Adel,Middenvelder,Egypte,4000000
-950218,Mohamed Hany,Middenvelder,Egypte,3500000
-950219,Omar Marmoush,Middenvelder,Egypte,3500000
-950220,Mohamed Salah,Middenvelder,Egypte,3500000
-950221,Ahmed Aboul Al Fotouh,Aanvaller,Egypte,4000000
-950222,Ahmed Zizo,Aanvaller,Egypte,4000000
-950223,Emam Ashour,Aanvaller,Egypte,4000000
-950224,Mostafa Mohamed,Aanvaller,Egypte,4000000
-950225,James Trafford,Keeper,Engeland,3500000
-950226,Harry Maguire,Verdediger,Engeland,4000000
-950227,Fikayo Tomori,Verdediger,Engeland,4000000
-950228,Djed Spence,Verdediger,Engeland,4000000
-950229,Tino Livramento,Verdediger,Engeland,3500000
-950230,Jordan Henderson,Verdediger,Engeland,3500000
-950231,Marcus Rashford,Middenvelder,Engeland,4000000
-950232,Noni Madueke,Middenvelder,Engeland,4000000
-950233,Dominic Solanke,Middenvelder,Engeland,3500000
-950234,James Garner,Middenvelder,Engeland,3500000
-950235,Phil Foden,Middenvelder,Engeland,3500000
-950236,Jarrod Bowen,Aanvaller,Engeland,4000000
-950237,Adam Wharton,Aanvaller,Engeland,4000000
-950238,Cole Palmer,Aanvaller,Engeland,4000000
-950239,Dominic Calvert Lewin,Aanvaller,Engeland,4000000
-950240,Mike Maignan,Keeper,Frankrijk,3500000
-950241,Ibrahima Konate,Verdediger,Frankrijk,4000000
-950242,Dayot Upamecano,Verdediger,Frankrijk,4000000
-950243,Theo Hernandez,Verdediger,Frankrijk,4000000
-950244,Malo Gusto,Verdediger,Frankrijk,3500000
-950245,Aurelien Tchouameni,Verdediger,Frankrijk,3500000
-950246,Hugo Ekitike,Middenvelder,Frankrijk,4000000
-950247,Adrien Rabiot,Middenvelder,Frankrijk,4000000
-950248,Kylian Mbappe,Middenvelder,Frankrijk,3500000
-950249,Michael Olise,Middenvelder,Frankrijk,3500000
-950250,Ousmane Dembele,Middenvelder,Frankrijk,3500000
-950251,Maxence Lacroix,Aanvaller,Frankrijk,4000000
-950252,N Golo Kante,Aanvaller,Frankrijk,4000000
-950253,Desire Doue,Aanvaller,Frankrijk,4000000
-950254,Marcus Thuram,Aanvaller,Frankrijk,4000000
-950255,Oliver Baumann,Keeper,Duitsland,3500000
-950256,Nico Schlotterbeck,Verdediger,Duitsland,4000000
-950257,Jonathan Tah,Verdediger,Duitsland,4000000
-950258,David Raum,Verdediger,Duitsland,4000000
-950259,Joshua Kimmich,Verdediger,Duitsland,3500000
-950260,Angelo Stiller,Verdediger,Duitsland,3500000
-950261,Florian Wirtz,Middenvelder,Duitsland,4000000
-950262,Serge Gnabry,Middenvelder,Duitsland,4000000
-950263,Kai Havertz,Middenvelder,Duitsland,3500000
-950264,Leon Goretzka,Middenvelder,Duitsland,3500000
-950265,Leroy Sane,Middenvelder,Duitsland,3500000
-950266,Nick Woltemade,Aanvaller,Duitsland,4000000
-950267,Lennart Karl,Aanvaller,Duitsland,4000000
-950268,Pascal Gross,Aanvaller,Duitsland,4000000
-950269,Anton Stach,Aanvaller,Duitsland,4000000
-950270,Lawrence Ati Zigi,Keeper,Ghana,3500000
-950271,Alexander Djiku,Verdediger,Ghana,4000000
-950272,Jonas Adjetey,Verdediger,Ghana,4000000
-950273,Derrick Kohn,Verdediger,Ghana,4000000
-950274,Caleb Yirenkyi,Verdediger,Ghana,3500000
-950275,Kwasi Sibo,Verdediger,Ghana,3500000
-950276,Prince Kwabena Adu,Middenvelder,Ghana,4000000
-950277,Antoine Semenyo,Middenvelder,Ghana,4000000
-950278,Jordan Ayew,Middenvelder,Ghana,3500000
-950279,Thomas Partey,Middenvelder,Ghana,3500000
-950280,Issahaku Abdul Fatawu,Middenvelder,Ghana,3500000
-950281,Ransford Yeboah Konigsdorffer,Aanvaller,Ghana,4000000
-950282,Patric Pfeiffer,Aanvaller,Ghana,4000000
-950283,Ibrahim Sulemana,Aanvaller,Ghana,4000000
-950284,Marvin Senaya,Aanvaller,Ghana,4000000
-950285,Alexandre Pierre,Keeper,Haïti,3500000
-950286,Hannes Delcroix,Verdediger,Haïti,4000000
-950287,Ricardo Ade,Verdediger,Haïti,4000000
-950288,Duke Lacroix,Verdediger,Haïti,4000000
-950289,Jean Kevin Duverne,Verdediger,Haïti,3500000
-950290,Leverton Pierre,Verdediger,Haïti,3500000
-950291,Yassin Fortune,Middenvelder,Haïti,4000000
-950292,Danley Jean Jacques,Middenvelder,Haïti,4000000
-950293,Frantzdy Pierrot,Middenvelder,Haïti,3500000
-950294,Jean Ricner Bellegarde,Middenvelder,Haïti,3500000
-950295,Josue Casimir,Middenvelder,Haïti,3500000
-950296,Wilson Isidor,Aanvaller,Haïti,4000000
-950297,Duckens Nazon,Aanvaller,Haïti,4000000
-950298,Martin Experience,Aanvaller,Haïti,4000000
-950299,Ruben Providence,Aanvaller,Haïti,4000000
-950300,Alireza Beiranvand,Keeper,Iran,3500000
-950301,Shoja Khalilzadeh,Verdediger,Iran,4000000
-950302,Ali Nemati,Verdediger,Iran,4000000
-950303,Milad Mohammadi,Verdediger,Iran,4000000
-950304,Aria Yousefi,Verdediger,Iran,3500000
-950305,Hossein Kanaani,Verdediger,Iran,3500000
-950306,Mohammad Ghorbani,Middenvelder,Iran,4000000
-950307,Saman Ghoddos,Middenvelder,Iran,4000000
-950308,Mehdi Taremi,Middenvelder,Iran,3500000
-950309,Mohammad Mohebi,Middenvelder,Iran,3500000
-950310,Ali Gholizadeh,Middenvelder,Iran,3500000
-950311,Ehsan Hajsafi,Aanvaller,Iran,4000000
-950312,Saleh Hardani,Aanvaller,Iran,4000000
-950313,Ramin Rezaeian,Aanvaller,Iran,4000000
-950314,Alireza Jahanbakhsh,Aanvaller,Iran,4000000
-950315,Ahmed Basil Al Fadhli,Keeper,Irak,3500000
-950316,Akam Hashim,Verdediger,Irak,4000000
-950317,Zaid Tahseen,Verdediger,Irak,4000000
-950318,Merchas Doski,Verdediger,Irak,4000000
-950319,Hussein Ali,Verdediger,Irak,3500000
-950320,Aimar Sher,Verdediger,Irak,3500000
-950321,Ali Al Hamadi,Middenvelder,Irak,4000000
-950322,Ibrahim Bayesh Al Kaabawi,Middenvelder,Irak,4000000
-950323,Ayman Hussein Al Mafraje,Middenvelder,Irak,3500000
-950324,Amir Al Ammari,Middenvelder,Irak,3500000
-950325,Youssef Amyn,Middenvelder,Irak,3500000
-950326,Marko Farji,Aanvaller,Irak,4000000
-950327,Zaid Ismail Al Dulaimi,Aanvaller,Irak,4000000
-950328,Mohanad Ali Al Shammari,Aanvaller,Irak,4000000
-950329,Ali Jasim Al Tameemi,Aanvaller,Irak,4000000
-950330,Yahia Fofana,Keeper,Ivoorkust,3500000
-950331,Evan Ndicka,Verdediger,Ivoorkust,4000000
-950332,Odilon Kossounou,Verdediger,Ivoorkust,4000000
-950333,Ghislain Konan,Verdediger,Ivoorkust,4000000
-950334,Guela Doue,Verdediger,Ivoorkust,3500000
-950335,Ibrahim Sangare,Verdediger,Ivoorkust,3500000
-950336,Yan Diomande,Middenvelder,Ivoorkust,4000000
-950337,Christ Inao Oulai,Middenvelder,Ivoorkust,4000000
-950338,Evann Guessand,Middenvelder,Ivoorkust,3500000
-950339,Franck Kessie,Middenvelder,Ivoorkust,3500000
-950340,Amad Diallo,Middenvelder,Ivoorkust,3500000
-950341,Jean Philippe Krasso,Aanvaller,Ivoorkust,4000000
-950342,Bazoumana Toure,Aanvaller,Ivoorkust,4000000
-950343,Seko Fofana,Aanvaller,Ivoorkust,4000000
-950344,Oumar Diakite,Aanvaller,Ivoorkust,4000000
-950345,Zion Suzuki,Keeper,Japan,3500000
-950346,Hiroki Ito,Verdediger,Japan,4000000
-950347,Tsuyoshi Watanabe,Verdediger,Japan,4000000
-950348,Ayumu Seko,Verdediger,Japan,4000000
-950349,Ao Tanaka,Verdediger,Japan,3500000
-950350,Joel Fujita,Verdediger,Japan,3500000
-950351,Daizen Maeda,Middenvelder,Japan,4000000
-950352,Yukinari Sugawara,Middenvelder,Japan,4000000
-950353,Keisuke Goto,Middenvelder,Japan,3500000
-950354,Yuito Suzuki,Middenvelder,Japan,3500000
-950355,Kodai Sano,Middenvelder,Japan,3500000
-950356,Shogo Taniguchi,Aanvaller,Japan,4000000
-950357,Junnosuke Suzuki,Aanvaller,Japan,4000000
-950358,Kaoru Mitoma,Aanvaller,Japan,4000000
-950359,Junya Ito,Aanvaller,Japan,4000000
-950360,Yazeed Abu Laila,Keeper,Jordanië,3500000
-950361,Husam Abu Dahab,Verdediger,Jordanië,4000000
-950362,Abdallah Mousa Nasib,Verdediger,Jordanië,4000000
-950363,Mohammad Abu Hasheesh,Verdediger,Jordanië,4000000
-950364,Noor Al Deen Al Rawabdeh,Verdediger,Jordanië,3500000
-950365,Yazan Abu Al Arab,Verdediger,Jordanië,3500000
-950366,Odeh Al Fakhouri,Middenvelder,Jordanië,4000000
-950367,Ahmad Assaf,Middenvelder,Jordanië,4000000
-950368,Baha Faisal,Middenvelder,Jordanië,3500000
-950369,Ibrahim Sadeh,Middenvelder,Jordanië,3500000
-950370,Musa Al Taamari,Middenvelder,Jordanië,3500000
-950371,Abdallah Al Fakhouri,Aanvaller,Jordanië,4000000
-950372,Nizar Al Rashdan,Aanvaller,Jordanië,4000000
-950373,Mohannad Abu Taha,Aanvaller,Jordanië,4000000
-950374,Yousef Abu Al Jazar,Aanvaller,Jordanië,4000000
-950375,Raul Rangel,Keeper,Mexico,3500000
-950376,Eduardo Aguila,Verdediger,Mexico,4000000
-950377,Victor Guzman 1,Verdediger,Mexico,4000000
-950378,Bryan Gonzalez,Verdediger,Mexico,4000000
-950379,Richard Ledezma,Verdediger,Mexico,3500000
-950380,Luis Romo,Verdediger,Mexico,3500000
-950381,Brian Gutierrez,Middenvelder,Mexico,4000000
-950382,Marcel Ruiz,Middenvelder,Mexico,4000000
-950383,German Berterame,Middenvelder,Mexico,3500000
-950384,Obed Vargas,Middenvelder,Mexico,3500000
-950385,Roberto Alvarado,Middenvelder,Mexico,3500000
-950386,Kevin Castaneda,Aanvaller,Mexico,4000000
-950387,Alexis Gutierrez,Aanvaller,Mexico,4000000
-950388,Carlos Alberto Rodriguez,Aanvaller,Mexico,4000000
-950389,Armando Gonzalez 1,Aanvaller,Mexico,4000000
-950390,Yassine Bounou,Keeper,Marokko,3500000
-950391,Nayef Aguerd,Verdediger,Marokko,4000000
-950392,Adam Masina,Verdediger,Marokko,4000000
-950393,Noussair Mazraoui,Verdediger,Marokko,4000000
-950394,Achraf Hakimi,Verdediger,Marokko,3500000
-950395,Neil El Aynaoui,Verdediger,Marokko,3500000
-950396,Abde Ezzalzouli,Middenvelder,Marokko,4000000
-950397,Bilal El Khannouss,Middenvelder,Marokko,4000000
-950398,Ayoub El Kaabi,Middenvelder,Marokko,3500000
-950399,Ismael Saibari,Middenvelder,Marokko,3500000
-950400,Brahim Diaz,Middenvelder,Marokko,3500000
-950401,Anass Salah Eddine,Aanvaller,Marokko,4000000
-950402,Youssef En Nesyri,Aanvaller,Marokko,4000000
-950403,Eliesse Ben Seghir,Aanvaller,Marokko,4000000
-950404,Oussama Targhalline,Aanvaller,Marokko,4000000
-950405,Bart Verbruggen,Keeper,Nederland,3500000
-950406,Jan Paul Van Hecke,Verdediger,Nederland,4000000
-950407,Virgil Van Dijk,Verdediger,Nederland,4000000
-950408,Micky Van De Ven,Verdediger,Nederland,4000000
-950409,Denzel Dumfries,Verdediger,Nederland,3500000
-950410,Ryan Gravenberch,Verdediger,Nederland,3500000
-950411,Cody Gakpo,Middenvelder,Nederland,4000000
-950412,Kees Smit,Middenvelder,Nederland,4000000
-950413,Donyell Malen,Middenvelder,Nederland,3500000
-950414,Tijani Reijnders,Middenvelder,Nederland,3500000
-950415,Teun Koopmeiners,Middenvelder,Nederland,3500000
-950416,Brian Brobbey,Aanvaller,Nederland,4000000
-950417,Xavi Simons,Aanvaller,Nederland,4000000
-950418,Quinten Timber,Aanvaller,Nederland,4000000
-950419,Wout Weghorst,Aanvaller,Nederland,4000000
-950420,Viljami Sinisalo,Keeper,Nieuw-Zeeland,3500000
-950421,Samuli Miettinen,Verdediger,Nieuw-Zeeland,4000000
-950422,Ville Koski,Verdediger,Nieuw-Zeeland,4000000
-950423,Juho Lahteenmaki,Verdediger,Nieuw-Zeeland,4000000
-950424,Nikolai Alho,Verdediger,Nieuw-Zeeland,3500000
-950425,Adam Markhiyev,Verdediger,Nieuw-Zeeland,3500000
-950426,Oliver Antman,Middenvelder,Nieuw-Zeeland,4000000
-950427,Leo Walta,Middenvelder,Nieuw-Zeeland,4000000
-950428,Joel Pohjanpalo,Middenvelder,Nieuw-Zeeland,3500000
-950429,Anssi Suhonen,Middenvelder,Nieuw-Zeeland,3500000
-950430,Naatan Skytta,Middenvelder,Nieuw-Zeeland,3500000
-950431,Kasper Paananen,Aanvaller,Nieuw-Zeeland,4000000
-950432,Tony Miettinen,Aanvaller,Nieuw-Zeeland,4000000
-950433,Jaakko Oksanen,Aanvaller,Nieuw-Zeeland,4000000
-950434,Ryan Mahuta,Aanvaller,Nieuw-Zeeland,4000000
-950435,Orjan Nyland,Keeper,Noorwegen,3500000
-950436,Torbjorn Heggem,Verdediger,Noorwegen,4000000
-950437,Kristoffer Ajer,Verdediger,Noorwegen,4000000
-950438,David Moller Wolfe,Verdediger,Noorwegen,4000000
-950439,Julian Ryerson,Verdediger,Noorwegen,3500000
-950440,Patrick Berg,Verdediger,Noorwegen,3500000
-950441,Jorgen Strand Larsen,Middenvelder,Noorwegen,4000000
-950442,Andreas Schjelderup,Middenvelder,Noorwegen,4000000
-950443,Alexander Sorloth,Middenvelder,Noorwegen,3500000
-950444,Sander Berge,Middenvelder,Noorwegen,3500000
-950445,Oscar Bobb,Middenvelder,Noorwegen,3500000
-950446,Leo Ostigard,Aanvaller,Noorwegen,4000000
-950447,Kristian Thorstvedt,Aanvaller,Noorwegen,4000000
-950448,Jens Petter Hauge,Aanvaller,Noorwegen,4000000
-950449,Felix Horn Myhre,Aanvaller,Noorwegen,4000000
-950450,Eddie Roberts,Keeper,Panama,3500000
-950451,Javier Rivera,Verdediger,Panama,4000000
-950452,Orman Davis,Verdediger,Panama,4000000
-950453,Jorge Gutierrez,Verdediger,Panama,4000000
-950454,Abdul Knight,Verdediger,Panama,3500000
-950455,Aimar Sanchez,Verdediger,Panama,3500000
-950456,Ricardo Phillips 1,Middenvelder,Panama,4000000
-950457,Omar Cordoba,Middenvelder,Panama,4000000
-950458,Kadir Barria,Middenvelder,Panama,3500000
-950459,Jose Murillo,Middenvelder,Panama,3500000
-950460,Kahiser Lenis,Middenvelder,Panama,3500000
-950461,Giovany Herbert,Aanvaller,Panama,4000000
-950462,Luis Asprilla 1,Aanvaller,Panama,4000000
-950463,Jovani Welch,Aanvaller,Panama,4000000
-950464,Gustavo Herrera,Aanvaller,Panama,4000000
-950465,Gaston Olveira,Keeper,Paraguay,3500000
-950466,Omar Alderete,Verdediger,Paraguay,4000000
-950467,Gustavo Gomez,Verdediger,Paraguay,4000000
-950468,Junior Alonso,Verdediger,Paraguay,4000000
-950469,Alan Benitez,Verdediger,Paraguay,3500000
-950470,Lucas Romero,Verdediger,Paraguay,3500000
-950471,Miguel Almiron,Middenvelder,Paraguay,4000000
-950472,Damian Bobadilla,Middenvelder,Paraguay,4000000
-950473,Julio Enciso,Middenvelder,Paraguay,3500000
-950474,Diego Gomez,Middenvelder,Paraguay,3500000
-950475,Antonio Sanabria,Middenvelder,Paraguay,3500000
-950476,Mauricio 1,Aanvaller,Paraguay,4000000
-950477,Matias Galarza,Aanvaller,Paraguay,4000000
-950478,Jose Canale,Aanvaller,Paraguay,4000000
-950479,Ramon Sosa,Aanvaller,Paraguay,4000000
-950480,Rui Silva,Keeper,Portugal,3500000
-950481,Renato Veiga,Verdediger,Portugal,4000000
-950482,Antonio Silva,Verdediger,Portugal,4000000
-950483,Nuno Mendes,Verdediger,Portugal,4000000
-950484,Matheus Nunes,Verdediger,Portugal,3500000
-950485,Ruben Neves,Verdediger,Portugal,3500000
-950486,Joao Felix,Middenvelder,Portugal,4000000
-950487,Samu Costa,Middenvelder,Portugal,4000000
-950488,Goncalo Ramos,Middenvelder,Portugal,3500000
-950489,Bruno Fernandes 1,Middenvelder,Portugal,3500000
-950490,Francisco Conceicao,Middenvelder,Portugal,3500000
-950491,Vitinha,Aanvaller,Portugal,4000000
-950492,Goncalo Guedes,Aanvaller,Portugal,4000000
-950493,Tomas Araujo,Aanvaller,Portugal,4000000
-950494,Pedro Neto,Aanvaller,Portugal,4000000
-950495,Mahmud Abunada,Keeper,Qatar,3500000
-950496,Marwan Badreldin,Verdediger,Qatar,4000000
-950497,Meshaal Barsham,Verdediger,Qatar,4000000
-950498,Salah Zakaria Hassan,Verdediger,Qatar,4000000
-950499,Jassem Gaber Abdulsallam,Verdediger,Qatar,3500000
-950500,Homam Ahmed,Verdediger,Qatar,3500000
-950501,Sultan Al Brake,Middenvelder,Qatar,4000000
-950502,Ahmed Suhail Al Hamawende,Middenvelder,Qatar,4000000
-950503,Al Hashmi Al Hussain,Middenvelder,Qatar,3500000
-950504,Ghanem Al Minhali,Middenvelder,Qatar,3500000
-950505,Abdulla Salman Al Otaibi,Middenvelder,Qatar,3500000
-950506,Ayoub Al Oui,Aanvaller,Qatar,4000000
-950507,Bassam Hisham Al Rawi,Aanvaller,Qatar,4000000
-950508,Abdulla Al Yazidi,Aanvaller,Qatar,4000000
-950509,Abdelkarim Hassan Fadlalla,Aanvaller,Qatar,4000000
-950510,Nawaf Al Aqidi,Keeper,Saoedi-Arabië,3500000
-950511,Ali Lajami,Verdediger,Saoedi-Arabië,4000000
-950512,Abdulelah Al Amri,Verdediger,Saoedi-Arabië,4000000
-950513,Hassan Kadesh Mahboob,Verdediger,Saoedi-Arabië,4000000
-950514,Musab Al Juwayr,Verdediger,Saoedi-Arabië,3500000
-950515,Mohamed Kanno,Verdediger,Saoedi-Arabië,3500000
-950516,Ayman Yahya Salem,Middenvelder,Saoedi-Arabië,4000000
-950517,Saud Abdulhamid,Middenvelder,Saoedi-Arabië,4000000
-950518,Firas Al Buraikan,Middenvelder,Saoedi-Arabië,3500000
-950519,Khalid Al Ghannam,Middenvelder,Saoedi-Arabië,3500000
-950520,Salman Al Faraj,Middenvelder,Saoedi-Arabië,3500000
-950521,Marwan Al Sahafi,Aanvaller,Saoedi-Arabië,4000000
-950522,Ali Majrashi,Aanvaller,Saoedi-Arabië,4000000
-950523,Naif Masoud,Aanvaller,Saoedi-Arabië,4000000
-950524,Muteb Al Mufarrij,Aanvaller,Saoedi-Arabië,4000000
-950525,Angus Gunn,Keeper,Schotland,3500000
-950526,Scott Mckenna,Verdediger,Schotland,4000000
-950527,Jack Hendry,Verdediger,Schotland,4000000
-950528,Andrew Robertson,Verdediger,Schotland,4000000
-950529,Nathan Patterson,Verdediger,Schotland,3500000
-950530,Lewis Ferguson,Verdediger,Schotland,3500000
-950531,Tommy Conway,Middenvelder,Schotland,4000000
-950532,Kenny Mclean,Middenvelder,Schotland,4000000
-950533,Lyndon Dykes,Middenvelder,Schotland,3500000
-950534,Scott Mctominay,Middenvelder,Schotland,3500000
-950535,John Mcginn,Middenvelder,Schotland,3500000
-950536,Ryan Christie,Aanvaller,Schotland,4000000
-950537,George Hirst,Aanvaller,Schotland,4000000
-950538,Kieran Tierney,Aanvaller,Schotland,4000000
-950539,Billy Gilmour,Aanvaller,Schotland,4000000
-950540,Edouard Mendy,Keeper,Senegal,3500000
-950541,Moussa Niakhate,Verdediger,Senegal,4000000
-950542,Abdoulaye Seck,Verdediger,Senegal,4000000
-950543,Ismail Jakobs,Verdediger,Senegal,4000000
-950544,Krepin Diatta,Verdediger,Senegal,3500000
-950545,Idrissa Gueye,Verdediger,Senegal,3500000
-950546,Sadio Mane,Middenvelder,Senegal,4000000
-950547,Habib Diarra,Middenvelder,Senegal,4000000
-950548,Nicolas Jackson,Middenvelder,Senegal,3500000
-950549,Pape Gueye,Middenvelder,Senegal,3500000
-950550,Ismaila Sarr,Middenvelder,Senegal,3500000
-950551,El Hadji Malick Diouf,Aanvaller,Senegal,4000000
-950552,Boulaye Dia,Aanvaller,Senegal,4000000
-950553,Lamine Camara 1,Aanvaller,Senegal,4000000
-950554,Ibrahim Mbaye,Aanvaller,Senegal,4000000
-950555,Ronwen Williams,Keeper,Zuid-Afrika,3500000
-950556,Siyabonga Ngezana,Verdediger,Zuid-Afrika,4000000
-950557,Mbekezeli Mbokazi,Verdediger,Zuid-Afrika,4000000
-950558,Nkosinathi Sibisi,Verdediger,Zuid-Afrika,4000000
-950559,Teboho Mokoena 1,Verdediger,Zuid-Afrika,3500000
-950560,Bathusi Aubaas,Verdediger,Zuid-Afrika,3500000
-950561,Samukele Kabini,Middenvelder,Zuid-Afrika,4000000
-950562,Khuliso Mudau,Middenvelder,Zuid-Afrika,4000000
-950563,Lyle Foster,Middenvelder,Zuid-Afrika,3500000
-950564,Relebohile Mofokeng,Middenvelder,Zuid-Afrika,3500000
-950565,Oswin Appollis,Middenvelder,Zuid-Afrika,3500000
-950566,Aubrey Modiba,Aanvaller,Zuid-Afrika,4000000
-950567,Evidence Makgopa,Aanvaller,Zuid-Afrika,4000000
-950568,Sipho Mbule,Aanvaller,Zuid-Afrika,4000000
-950569,Tshepang Moremi,Aanvaller,Zuid-Afrika,4000000
-950570,Hyeon Woo Jo,Keeper,Zuid-Korea,3500000
-950571,Min Jae Kim,Verdediger,Zuid-Korea,4000000
-950572,Tae Hyun Kim,Verdediger,Zuid-Korea,4000000
-950573,Yu Min Cho,Verdediger,Zuid-Korea,4000000
-950574,Jin Gyu Kim,Verdediger,Zuid-Korea,3500000
-950575,Jin Seob Park,Verdediger,Zuid-Korea,3500000
-950576,Young Woo Seol,Middenvelder,Zuid-Korea,4000000
-950577,Moon Hwan Kim,Middenvelder,Zuid-Korea,4000000
-950578,Hyeon Gyu Oh,Middenvelder,Zuid-Korea,3500000
-950579,Hee Chan Hwang,Middenvelder,Zuid-Korea,3500000
-950580,Jun Ho Bae,Middenvelder,Zuid-Korea,3500000
-950581,Seung Ho Paik,Aanvaller,Zuid-Korea,4000000
-950582,Han Beom Lee,Aanvaller,Zuid-Korea,4000000
-950583,Hyun Jun Yang,Aanvaller,Zuid-Korea,4000000
-950584,Kang In Lee,Aanvaller,Zuid-Korea,4000000
-950585,Unai Simon,Keeper,Spanje,3500000
-950586,Aymeric Laporte,Verdediger,Spanje,4000000
-950587,Pau Cubarsi,Verdediger,Spanje,4000000
-950588,Marc Cucurella,Verdediger,Spanje,4000000
-950589,Marcos Llorente,Verdediger,Spanje,3500000
-950590,Pedri,Verdediger,Spanje,3500000
-950591,Alex Baena,Middenvelder,Spanje,4000000
-950592,Rodri 1,Middenvelder,Spanje,4000000
-950593,Mikel Oyarzabal,Middenvelder,Spanje,3500000
-950594,Fermin Lopez,Middenvelder,Spanje,3500000
-950595,Lamine Yamal,Middenvelder,Spanje,3500000
-950596,Pablo Fornals,Aanvaller,Spanje,4000000
-950597,Dani Olmo,Aanvaller,Spanje,4000000
-950598,Ferran Torres,Aanvaller,Spanje,4000000
-950599,Victor Munoz 1,Aanvaller,Spanje,4000000
-950600,Kristoffer Nordfeldt,Keeper,Zweden,3500000
-950601,Isak Hien,Verdediger,Zweden,4000000
-950602,Victor Lindelof,Verdediger,Zweden,4000000
-950603,Gabriel Gudmundsson,Verdediger,Zweden,4000000
-950604,Yasin Ayari,Verdediger,Zweden,3500000
-950605,Gustaf Lagerbielke,Verdediger,Zweden,3500000
-950606,Benjamin Nygren,Middenvelder,Zweden,4000000
-950607,Herman Johansson,Middenvelder,Zweden,4000000
-950608,Viktor Gyokeres,Middenvelder,Zweden,3500000
-950609,Jesper Karlstrom,Middenvelder,Zweden,3500000
-950610,Anthony Elanga,Middenvelder,Zweden,3500000
-950611,Carl Starfelt,Aanvaller,Zweden,4000000
-950612,Lucas Bergvall,Aanvaller,Zweden,4000000
-950613,Daniel Svensson,Aanvaller,Zweden,4000000
-950614,Mattias Svanberg,Aanvaller,Zweden,4000000
-950615,Gregor Kobel,Keeper,Zwitserland,3500000
-950616,Nico Elvedi,Verdediger,Zwitserland,4000000
-950617,Manuel Akanji,Verdediger,Zwitserland,4000000
-950618,Ricardo Rodriguez,Verdediger,Zwitserland,4000000
-950619,Silvan Widmer,Verdediger,Zwitserland,3500000
-950620,Granit Xhaka,Verdediger,Zwitserland,3500000
-950621,Dan Ndoye,Middenvelder,Zwitserland,4000000
-950622,Remo Freuler,Middenvelder,Zwitserland,4000000
-950623,Breel Embolo,Middenvelder,Zwitserland,3500000
-950624,Fabian Rieder,Middenvelder,Zwitserland,3500000
-950625,Ruben Vargas,Middenvelder,Zwitserland,3500000
-950626,Ardon Jashari,Aanvaller,Zwitserland,4000000
-950627,Miro Muheim,Aanvaller,Zwitserland,4000000
-950628,Denis Zakaria,Aanvaller,Zwitserland,4000000
-950629,Johan Manzambi,Aanvaller,Zwitserland,4000000
-950630,Aymen Dahmen,Keeper,Tunesië,3500000
-950631,Dylan Bronn,Verdediger,Tunesië,4000000
-950632,Montassar Talbi,Verdediger,Tunesië,4000000
-950633,Ali Abdi,Verdediger,Tunesië,4000000
-950634,Yan Valery,Verdediger,Tunesië,3500000
-950635,Ferjani Sassi,Verdediger,Tunesië,3500000
-950636,Hannibal Mejbri,Middenvelder,Tunesië,4000000
-950637,Ellyes Skhiri,Middenvelder,Tunesië,4000000
-950638,Hazem Mastouri,Middenvelder,Tunesië,3500000
-950639,Hadj Mahmoud,Middenvelder,Tunesië,3500000
-950640,Ismael Gharbi,Middenvelder,Tunesië,3500000
-950641,Yassine Meriah,Aanvaller,Tunesië,4000000
-950642,Elias Achouri,Aanvaller,Tunesië,4000000
-950643,Elias Saad,Aanvaller,Tunesië,4000000
-950644,Firas Chaouat,Aanvaller,Tunesië,4000000
-950645,Ugurcan Cakir,Keeper,Turkije,3500000
-950646,Abdulkerim Bardakci,Verdediger,Turkije,4000000
-950647,Samet Akaydin,Verdediger,Turkije,4000000
-950648,Ferdi Kadioglu,Verdediger,Turkije,4000000
-950649,Mert Muldur,Verdediger,Turkije,3500000
-950650,Ismail Yuksek,Verdediger,Turkije,3500000
-950651,Kenan Yildiz,Middenvelder,Turkije,4000000
-950652,Hakan Calhanoglu,Middenvelder,Turkije,4000000
-950653,Kerem Akturkoglu,Middenvelder,Turkije,3500000
-950654,Arda Guler,Middenvelder,Turkije,3500000
-950655,Baris Alper Yilmaz,Middenvelder,Turkije,3500000
-950656,Orkun Kokcu,Aanvaller,Turkije,4000000
-950657,Ozan Kabak,Aanvaller,Turkije,4000000
-950658,Irfan Kahveci,Aanvaller,Turkije,4000000
-950659,Player 15 Turkey,Aanvaller,Turkije,4000000
-950660,Matt Turner,Keeper,Verenigde Staten,3500000
-950661,Tim Ream,Verdediger,Verenigde Staten,4000000
-950662,Mark Mckenzie,Verdediger,Verenigde Staten,4000000
-950663,Antonee Robinson,Verdediger,Verenigde Staten,4000000
-950664,Timothy Weah,Verdediger,Verenigde Staten,3500000
-950665,Johnny Cardoso,Verdediger,Verenigde Staten,3500000
-950666,Christian Pulisic,Middenvelder,Verenigde Staten,4000000
-950667,Tanner Tessmann,Middenvelder,Verenigde Staten,4000000
-950668,Folarin Balogun,Middenvelder,Verenigde Staten,3500000
-950669,Malik Tillman,Middenvelder,Verenigde Staten,3500000
-950670,Weston Mckennie,Middenvelder,Verenigde Staten,3500000
-950671,Cristian Roldan,Aanvaller,Verenigde Staten,4000000
-950672,Max Arfsten,Aanvaller,Verenigde Staten,4000000
-950673,Alex Freeman 1,Aanvaller,Verenigde Staten,4000000
-950674,Sebastian Berhalter,Aanvaller,Verenigde Staten,4000000
-950675,Fernando Muslera,Keeper,Uruguay,3500000
-950676,Mathias Olivera,Verdediger,Uruguay,4000000
-950677,Ronald Araujo,Verdediger,Uruguay,4000000
-950678,Joaquin Piquerez,Verdediger,Uruguay,4000000
-950679,Guillermo Varela,Verdediger,Uruguay,3500000
-950680,Manuel Ugarte,Verdediger,Uruguay,3500000
-950681,Maxi Araujo,Middenvelder,Uruguay,4000000
-950682,Agustin Canobbio,Middenvelder,Uruguay,4000000
-950683,Rodrigo Aguirre,Middenvelder,Uruguay,3500000
-950684,Federico Valverde,Middenvelder,Uruguay,3500000
-950685,Giorgian De Arrascaeta,Middenvelder,Uruguay,3500000
-950686,Jose Maria Gimenez,Aanvaller,Uruguay,4000000
-950687,Federico Vinas,Aanvaller,Uruguay,4000000
-950688,Facundo Pellistri,Aanvaller,Uruguay,4000000
-950689,Darwin Nunez,Aanvaller,Uruguay,4000000
-950690,Otkir Yusupov,Keeper,Oezbekistan,3500000
-950691,Jahongir Orozov,Verdediger,Oezbekistan,4000000
-950692,Umar Eshmurodov,Verdediger,Oezbekistan,4000000
-950693,Sherzod Nasrullayev,Verdediger,Oezbekistan,4000000
-950694,Odiljon Xamrobekov,Verdediger,Oezbekistan,3500000
-950695,Rustam Ashurmatov,Verdediger,Oezbekistan,3500000
-950696,Oston Urunov,Middenvelder,Oezbekistan,4000000
-950697,Xojiakbar Alijonov,Middenvelder,Oezbekistan,4000000
-950698,Eldor Shomurodov,Middenvelder,Oezbekistan,3500000
-950699,Otabek Shukurov,Middenvelder,Oezbekistan,3500000
-950700,Azizjon G Aniyev,Middenvelder,Oezbekistan,3500000
-950701,Behruz Karimov,Aanvaller,Oezbekistan,4000000
-950702,Akmal Mozgovoy,Aanvaller,Oezbekistan,4000000
-950703,Dostonbek Xamdamov,Aanvaller,Oezbekistan,4000000
-950704,Alisher Odilov,Aanvaller,Oezbekistan,4000000
-950705,Curaçao Speler 1,Keeper,Curaçao,3000000
-950706,Curaçao Speler 2,Verdediger,Curaçao,3500000
-950707,Curaçao Speler 3,Verdediger,Curaçao,3000000
-950708,Curaçao Speler 4,Verdediger,Curaçao,3000000
-950709,Curaçao Speler 5,Verdediger,Curaçao,3000000
-950710,Curaçao Speler 6,Verdediger,Curaçao,3000000
-950711,Curaçao Speler 7,Middenvelder,Curaçao,4000000
-950712,Curaçao Speler 8,Middenvelder,Curaçao,4000000
-950713,Curaçao Speler 9,Middenvelder,Curaçao,3500000
-950714,Curaçao Speler 10,Middenvelder,Curaçao,3500000
-950715,Curaçao Speler 11,Middenvelder,Curaçao,3500000
-950716,Curaçao Speler 12,Aanvaller,Curaçao,4500000
-950717,Curaçao Speler 13,Aanvaller,Curaçao,4000000
-950718,Curaçao Speler 14,Aanvaller,Curaçao,4000000
-950719,Curaçao Speler 15,Aanvaller,Curaçao,4000000
+1261,Abdelmouhib Chamakh,Keeper,Tunesië,4000000
+1262,Mortadha Ben Ouanes,Verdediger,Tunesië,4500000
+1263,Anis Ben Slimane,Middenvelder,Tunesië,5000000
+1264,Rani Khedira,Middenvelder,Tunesië,5000000
+1265,Hadj Mahmoud,Middenvelder,Tunesië,4000000
+1266,Nuno Da Costa,Aanvaller,Kaapverdië,3500000
+1267,Gilson Tavares,Aanvaller,Kaapverdië,4000000
+1268,Stopira,Verdediger,Kaapverdië,4000000
+1269,Helio Varela,Aanvaller,Kaapverdië,4000000
+1270,Toni Fruk,Middenvelder,Kroatië,8000000
+1271,Kristijan Jakic,Middenvelder,Kroatië,8000000
+12,Seol Young-woo,Verdediger,Zuid-Korea,5000000
+13,Bae Jun-ho,Middenvelder,Zuid-Korea,4500000
+14,Eom Ji-sung,Middenvelder,Zuid-Korea,5000000
+15,Hwang Hee-chan,Aanvaller,Zuid-Korea,6000000
+16,Hwang In-beom,Middenvelder,Zuid-Korea,5000000
+17,Kim Jin-gyu,Middenvelder,Zuid-Korea,4500000
+18,Lee Dong Kyung,Middenvelder,Zuid-Korea,4500000
+19,Lee Jae-sung,Middenvelder,Zuid-Korea,5500000
+20,Lee Kang-in,Middenvelder,Zuid-Korea,6000000
+21,Paik Seung-ho,Middenvelder,Zuid-Korea,5000000
+22,Park Jin-seop,Middenvelder,Zuid-Korea,4500000
+23,Yang Hyeon-jun,Middenvelder,Zuid-Korea,5000000
+24,Cho Gue-sung,Aanvaller,Zuid-Korea,5000000
+25,Oh Hyeon-gyu,Aanvaller,Zuid-Korea,5500000
+26,Son Heung-min,Aanvaller,Zuid-Korea,7500000
+27,Osman Hadzikic,Keeper,Bosnië en Herzegovina,5500000
+28,Nikola Vasilj,Keeper,Bosnië en Herzegovina,6500000
+29,Martin Zlomislic,Keeper,Bosnië en Herzegovina,6000000
+30,Nidal Celik,Verdediger,Bosnië en Herzegovina,5000000
+31,Amar Dedic,Verdediger,Bosnië en Herzegovina,6500000
+32,Dennis Hadzikadunic,Verdediger,Bosnië en Herzegovina,6000000
+33,Nikola Katic,Verdediger,Bosnië en Herzegovina,6000000
+34,Sead Kolašinac,Verdediger,Bosnië en Herzegovina,6500000
+35,Tarik Muharemovic,Verdediger,Bosnië en Herzegovina,6500000
+36,Nihad Mujakic,Verdediger,Bosnië en Herzegovina,5500000
+37,Stjepan Radeljic,Verdediger,Bosnië en Herzegovina,5500000
+38,Ivan Basic,Middenvelder,Bosnië en Herzegovina,5500000
+39,Dzenis Burnic,Middenvelder,Bosnië en Herzegovina,5500000
+40,Armin Gigovic,Middenvelder,Bosnië en Herzegovina,5500000
+41,Amir Hadziahmetovic,Middenvelder,Bosnië en Herzegovina,5500000
+42,Ermin Mahmic,Middenvelder,Bosnië en Herzegovina,5500000
+43,Ivan Šunjic,Middenvelder,Bosnië en Herzegovina,5500000
+44,Benjamin Tahirovic,Middenvelder,Bosnië en Herzegovina,6000000
+45,Kerim Alajbegovic,Middenvelder,Bosnië en Herzegovina,5500000
+46,Esmir Bajraktarevic,Middenvelder,Bosnië en Herzegovina,6500000
+47,Samed Bazdar,Aanvaller,Bosnië en Herzegovina,6000000
+48,Ermedin Demirovic,Aanvaller,Bosnië en Herzegovina,6500000
+49,Edin Džeko,Aanvaller,Bosnië en Herzegovina,7000000
+50,Jovo Lukic,Aanvaller,Bosnië en Herzegovina,5500000
+51,Amar Memic,Middenvelder,Bosnië en Herzegovina,6000000
+52,Haris Tabakovic,Aanvaller,Bosnië en Herzegovina,6000000
+53,Ricardo Adé,Verdediger,Haïti,3500000
+54,Hannes Delcroix,Verdediger,Haïti,4000000
+55,Jean-Kévin Duverne,Verdediger,Haïti,3500000
+56,Wilguens Paugain,Verdediger,Haïti,3000000
+57,Keeto Thermoncy,Verdediger,Haïti,3000000
+58,Jeanricner Bellegarde,Middenvelder,Haïti,4000000
+59,Carl Fred Sainte,Middenvelder,Haïti,3000000
+60,Danley Jean Jacques,Middenvelder,Haïti,3500000
+61,Leverton Pierre,Middenvelder,Haïti,3000000
+62,Woodensky Pierre,Middenvelder,Haïti,3000000
+63,Dominique Simon,Middenvelder,Haïti,3000000
+64,Josué Casimir,Aanvaller,Haïti,3500000
+65,Louicius Deedson,Aanvaller,Haïti,3500000
+66,Derrick Etienne,Aanvaller,Haïti,3500000
+67,Yassin Fortune,Aanvaller,Haïti,3000000
+68,Wilson Isidor,Aanvaller,Haïti,4000000
+69,Lenny Joseph,Aanvaller,Haïti,3500000
+70,Duckens Nazon,Aanvaller,Haïti,4000000
+71,Frantzdy Pierrot,Aanvaller,Haïti,4000000
+72,Ruben Providence,Aanvaller,Haïti,3000000
+73,Tomoki Hayakawa,Keeper,Japan,8000000
+74,Keisuke Osako,Keeper,Japan,8000000
+75,Zion Suzuki,Keeper,Japan,8500000
+76,Ko Itakura,Verdediger,Japan,8000000
+77,Hiroki Ito,Verdediger,Japan,9000000
+78,Yuto Nagatomo,Verdediger,Japan,8000000
+79,Ayumu Seko,Verdediger,Japan,8000000
+80,Yukinari Sugawara,Verdediger,Japan,8500000
+81,Junnosuke Suzuki,Verdediger,Japan,8000000
+82,Shogo Taniguchi,Verdediger,Japan,8000000
+83,Takehiro Tomiyasu,Verdediger,Japan,8000000
+84,Tsuyoshi Watanabe,Verdediger,Japan,8500000
+85,Ritsu Doan,Middenvelder,Japan,9000000
+86,Wataru Endo,Middenvelder,Japan,8000000
+87,Junya Ito,Middenvelder,Japan,8500000
+88,Daichi Kamada,Middenvelder,Japan,8500000
+89,Takefusa Kubo,Middenvelder,Japan,9500000
+90,Keito Nakamura,Middenvelder,Japan,8000000
+91,Kaishu Sano,Middenvelder,Japan,8000000
+92,Ao Tanaka,Middenvelder,Japan,8000000
+93,Keisuke Goto,Aanvaller,Japan,8000000
+94,Daizen Maeda,Aanvaller,Japan,8500000
+95,Koki Ogawa,Aanvaller,Japan,7500000
+96,Kento Shiogai,Aanvaller,Japan,7500000
+97,Yuito Suzuki,Aanvaller,Japan,8500000
+98,Ayase Ueda,Aanvaller,Japan,9000000
+99,Yahia Fofana,Keeper,Ivoorkust,7000000
+100,Mohamed Koné,Keeper,Ivoorkust,5500000
+101,Alban Lafont,Keeper,Ivoorkust,7000000
+102,Emmanuel Agbadou,Verdediger,Ivoorkust,5500000
+103,Clement Akpa,Verdediger,Ivoorkust,5000000
+104,Ousmane Diomande,Verdediger,Ivoorkust,6500000
+105,Guéla Doué,Verdediger,Ivoorkust,6000000
+106,Ghislain Konan,Verdediger,Ivoorkust,6000000
+107,Odilon Kossounou,Verdediger,Ivoorkust,6500000
+108,Evan N'Dicka,Verdediger,Ivoorkust,7000000
+109,Wilfried Singo,Verdediger,Ivoorkust,6000000
+110,Seko Fofana,Middenvelder,Ivoorkust,6500000
+111,Parfait Guiagon,Middenvelder,Ivoorkust,5000000
+112,Christ Inao Oulai,Middenvelder,Ivoorkust,5500000
+113,Franck Kessié,Middenvelder,Ivoorkust,7000000
+114,Ibrahim Sangaré,Middenvelder,Ivoorkust,6500000
+115,Jean Michaël Seri,Middenvelder,Ivoorkust,5500000
+116,Simon Adingra,Aanvaller,Ivoorkust,6000000
+117,Ange-Yoan Bonny,Aanvaller,Ivoorkust,6500000
+118,Oumar Diakité,Aanvaller,Ivoorkust,5500000
+119,Amad Diallo,Aanvaller,Ivoorkust,7000000
+120,Yan Diomande,Aanvaller,Ivoorkust,7000000
+121,Evann Guessand,Aanvaller,Ivoorkust,6000000
+122,Nicolas Pépé,Aanvaller,Ivoorkust,6500000
+123,Bazoumana Touré,Aanvaller,Ivoorkust,6000000
+124,Elye Wahi,Aanvaller,Ivoorkust,6500000
+125,Viktor Johansson,Keeper,Zweden,7500000
+126,Kristoffer Nordfeldt,Keeper,Zweden,7500000
+127,Jacob Widell Zetterström,Keeper,Zweden,7000000
+128,Hjalmar Ekdal,Verdediger,Zweden,7000000
+129,Gabriel Gudmundsson,Verdediger,Zweden,7500000
+130,Isak Hien,Verdediger,Zweden,7000000
+131,Emil Holm,Verdediger,Zweden,7500000
+132,Carl Starfelt,Verdediger,Zweden,7000000
+133,Daniel Svensson,Verdediger,Zweden,7500000
+134,Yasin Ayari,Middenvelder,Zweden,7500000
+135,Alexander Bernhardsson,Aanvaller,Zweden,7500000
+136,Jesper Karlström,Middenvelder,Zweden,7000000
+137,Ken Sema,Middenvelder,Zweden,6500000
+138,Eric Smith,Verdediger,Zweden,6500000
+139,Elliot Stroud,Middenvelder,Zweden,7000000
+140,Mattias Svanberg,Middenvelder,Zweden,7000000
+141,Besfort Zeneli,Middenvelder,Zweden,7000000
+142,Taha Abdi Ali,Aanvaller,Zweden,6500000
+143,Anthony Elanga,Aanvaller,Zweden,8500000
+144,Viktor Gyökeres,Aanvaller,Zweden,10000000
+145,Alexander Isak,Aanvaller,Zweden,10000000
+146,Gustaf Nilsson,Aanvaller,Zweden,7000000
+147,Benjamin Nygren,Aanvaller,Zweden,7500000
+148,Ali Abdi,Verdediger,Tunesië,5500000
+149,Adem Arous,Verdediger,Tunesië,4500000
+150,Mohamed Ben Hamida,Verdediger,Tunesië,4000000
+151,Raed Chikhaoui,Verdediger,Tunesië,4000000
+152,Moutaz Neffati,Verdediger,Tunesië,4500000
+153,Omar Rekik,Verdediger,Tunesië,4500000
+154,Yan Valery,Verdediger,Tunesië,5000000
+155,Elias Achouri,Aanvaller,Tunesië,4500000
+156,Khalil Ayari,Aanvaller,Tunesië,3500000
+157,Firas Chaouat,Aanvaller,Tunesië,5000000
+158,Rayan Elloumi,Aanvaller,Tunesië,4000000
+159,Hazem Mastouri,Aanvaller,Tunesië,4500000
+160,Elias Saad,Aanvaller,Tunesië,4500000
+161,Sebastian Tounekti,Aanvaller,Tunesië,4500000
+162,Thibaut Courtois,Keeper,België,11000000
+163,Senne Lammens,Keeper,België,9000000
+164,Mike Penders,Keeper,België,8500000
+165,Timothy Castagne,Verdediger,België,9500000
+166,Maxim De Cuyper,Verdediger,België,9500000
+167,Koni De Winter,Verdediger,België,8500000
+168,Zeno Debast,Verdediger,België,9000000
+169,Brandon Mechele,Verdediger,België,9000000
+170,Thomas Meunier,Verdediger,België,9500000
+171,Diego Moreira,Verdediger,België,8500000
+172,Nathan Ngoy,Verdediger,België,8000000
+173,Joaquin Seys,Verdediger,België,8500000
+174,Arthur Theate,Verdediger,België,9000000
+175,Kevin De Bruyne,Middenvelder,België,13000000
+176,Amadou Onana,Middenvelder,België,9000000
+177,Nicolas Raskin,Middenvelder,België,8500000
+178,Youri Tielemans,Middenvelder,België,9000000
+179,Hans Vanaken,Middenvelder,België,9000000
+180,Axel Witsel,Middenvelder,België,8000000
+181,Charles De Ketelaere,Aanvaller,België,11000000
+182,Jérémy Doku,Aanvaller,België,10500000
+183,Matías Fernández-Pardo,Aanvaller,België,9000000
+184,Romelu Lukaku,Aanvaller,België,12000000
+185,Dodi Lukebakio,Aanvaller,België,9500000
+186,Alexis Saelemaekers,Aanvaller,België,9500000
+187,Leandro Trossard,Aanvaller,België,11000000
+188,Max Crocombe,Keeper,Nieuw-Zeeland,4000000
+189,Alex Paulsen,Keeper,Nieuw-Zeeland,3500000
+190,Michael Woud,Keeper,Nieuw-Zeeland,3500000
+191,Tyler Bindon,Verdediger,Nieuw-Zeeland,4000000
+192,Michael Boxall,Verdediger,Nieuw-Zeeland,4000000
+193,Liberato Cacace,Verdediger,Nieuw-Zeeland,4000000
+194,Francis De Vries,Verdediger,Nieuw-Zeeland,3500000
+195,Callan Elliot,Verdediger,Nieuw-Zeeland,3500000
+196,Tim Payne,Verdediger,Nieuw-Zeeland,4000000
+197,Nando Pijnaker,Verdediger,Nieuw-Zeeland,3500000
+198,Tommy Smith,Verdediger,Nieuw-Zeeland,3000000
+199,Finn Surman,Verdediger,Nieuw-Zeeland,4000000
+200,Lachlan Bayliss,Middenvelder,Nieuw-Zeeland,3000000
+201,Joe Bell,Middenvelder,Nieuw-Zeeland,3500000
+202,Alex Rufer,Middenvelder,Nieuw-Zeeland,3500000
+203,Marko Stamenic,Middenvelder,Nieuw-Zeeland,4000000
+204,Ryan Thomas,Middenvelder,Nieuw-Zeeland,3500000
+205,Kosta Barbarouses,Aanvaller,Nieuw-Zeeland,4000000
+206,Matthew Garbett,Middenvelder,Nieuw-Zeeland,4000000
+207,Elijah Just,Middenvelder,Nieuw-Zeeland,4000000
+208,Callum McCowatt,Aanvaller,Nieuw-Zeeland,4000000
+209,Ben Old,Verdediger,Nieuw-Zeeland,4000000
+210,Jesse Randall,Aanvaller,Nieuw-Zeeland,3500000
+211,Sarpreet Singh,Middenvelder,Nieuw-Zeeland,4000000
+212,Ben Waine,Aanvaller,Nieuw-Zeeland,4000000
+213,Chris Wood,Aanvaller,Nieuw-Zeeland,5000000
+214,Mike Maignan,Keeper,Frankrijk,13000000
+215,Robin Risser,Keeper,Frankrijk,9500000
+216,Brice Samba,Keeper,Frankrijk,9000000
+217,Lucas Digne,Verdediger,Frankrijk,10000000
+218,Malo Gusto,Verdediger,Frankrijk,10000000
+219,Lucas Hernandez,Verdediger,Frankrijk,10000000
+220,Theo Hernandez,Verdediger,Frankrijk,10500000
+221,Ibrahima Konaté,Verdediger,Frankrijk,11000000
+222,Jules Koundé,Verdediger,Frankrijk,12500000
+223,Maxence Lacroix,Verdediger,Frankrijk,9500000
+224,William Saliba,Verdediger,Frankrijk,11000000
+225,Dayot Upamecano,Verdediger,Frankrijk,11000000
+226,N'Golo Kanté,Middenvelder,Frankrijk,9000000
+227,Manu Koné,Middenvelder,Frankrijk,9500000
+228,Adrien Rabiot,Middenvelder,Frankrijk,10500000
+229,Aurélien Tchouaméni,Middenvelder,Frankrijk,10500000
+230,Warren Zaïre-Emery,Middenvelder,Frankrijk,9000000
+231,Maghnes Akliouche,Aanvaller,Frankrijk,8500000
+232,Bradley Barcola,Aanvaller,Frankrijk,9000000
+233,Rayan Cherki,Aanvaller,Frankrijk,10000000
+234,Ousmane Dembélé,Aanvaller,Frankrijk,13000000
+235,Désiré Doué,Aanvaller,Frankrijk,10500000
+236,Jean-Philippe Mateta,Aanvaller,Frankrijk,9000000
+237,Kylian Mbappé,Aanvaller,Frankrijk,15000000
+238,Michael Olise,Aanvaller,Frankrijk,12500000
+239,Marcus Thuram,Aanvaller,Frankrijk,10000000
+240,Harry Kane,Aanvaller,Engeland,15000000
+241,Lamine Yamal,Aanvaller,Spanje,15000000
+242,Lionel Messi,Aanvaller,Argentinië,14500000
+243,Cristiano Ronaldo,Aanvaller,Portugal,14500000
+244,Raphinha,Aanvaller,Brazilië,14000000
+245,Vinicius Junior,Aanvaller,Brazilië,14000000
+246,Erling Haaland,Aanvaller,Noorwegen,14000000
+247,Bruno Fernandes,Middenvelder,Portugal,14000000
+248,Julian Alvarez,Aanvaller,Argentinië,13000000
+249,Jude Bellingham,Middenvelder,Engeland,13000000
+250,Florian Wirtz,Middenvelder,Duitsland,13000000
+251,Jamal Musiala,Middenvelder,Duitsland,13000000
+252,Memphis Depay,Aanvaller,Nederland,13000000
+253,Unai Simon,Keeper,Spanje,13000000
+254,Lautaro Martinez,Aanvaller,Argentinië,12500000
+255,Nuno Mendes,Verdediger,Portugal,12500000
+256,Emiliano Martinez,Keeper,Argentinië,12000000
+257,Alisson,Keeper,Brazilië,12000000
+258,Ederson,Keeper,Brazilië,12000000
+259,Jordan Pickford,Keeper,Engeland,12000000
+260,Bukayo Saka,Aanvaller,Engeland,12000000
+261,Denzel Dumfries,Verdediger,Nederland,12000000
+262,Marc Cucurella,Verdediger,Spanje,12000000
+263,Igor Thiago,Aanvaller,Brazilië,11500000
+264,Cole Palmer,Middenvelder,Engeland,11500000
+265,Joshua Kimmich,Verdediger,Duitsland,11500000
+266,Cody Gakpo,Aanvaller,Nederland,11500000
+267,Virgil van Dijk,Verdediger,Nederland,11500000
+268,Diogo Costa,Keeper,Portugal,11500000
+269,Nico Williams,Aanvaller,Spanje,11500000
+270,Cristian Romero,Verdediger,Argentinië,11000000
+271,Enzo Fernandez,Middenvelder,Argentinië,11000000
+272,Estevao,Aanvaller,Brazilië,11000000
+273,Gabriel,Verdediger,Brazilië,11000000
+274,Marquinhos,Verdediger,Brazilië,11000000
+275,Phil Foden,Middenvelder,Engeland,11000000
+277,Kai Havertz,Aanvaller,Duitsland,11000000
+278,Antonio Rudiger,Verdediger,Duitsland,11000000
+279,Alexander Nubel,Keeper,Duitsland,11000000
+280,Marc-Andre ter Stegen,Keeper,Duitsland,11000000
+281,Oliver Baumann,Keeper,Duitsland,11000000
+282,Jonathan Tah,Verdediger,Duitsland,11000000
+283,Nico Schlotterbeck,Verdediger,Duitsland,11000000
+284,Jeremie Frimpong,Verdediger,Nederland,11000000
+285,Martin Odegaard,Middenvelder,Noorwegen,11000000
+286,Joao Cancelo,Verdediger,Portugal,11000000
+287,David Raya,Keeper,Spanje,11000000
+288,Nicolas Otamendi,Verdediger,Argentinië,10500000
+289,Marcos Acuna,Verdediger,Argentinië,10500000
+290,Nahuel Molina,Verdediger,Argentinië,10500000
+291,Nicolas Tagliafico,Verdediger,Argentinië,10500000
+292,Gabriel Martinelli,Aanvaller,Brazilië,10500000
+293,Declan Rice,Middenvelder,Engeland,10500000
+294,Eberechi Eze,Middenvelder,Engeland,10500000
+295,Reece James,Verdediger,Engeland,10500000
+296,Achraf Hakimi,Verdediger,Marokko,10500000
+297,Donyell Malen,Aanvaller,Nederland,10500000
+298,Bart Verbruggen,Keeper,Nederland,10500000
+299,Ruben Dias,Verdediger,Portugal,10500000
+300,Mikel Merino,Middenvelder,Spanje,10500000
+301,Pau Cubarsi,Verdediger,Spanje,10500000
+302,Pedro Porro,Verdediger,Spanje,10500000
+303,Robin Le Normand,Verdediger,Spanje,10500000
+304,Mikel Oyarzabal,Aanvaller,Spanje,10500000
+305,Christian Pulisic,Aanvaller,Verenigde Staten,10500000
+306,Lisandro Martinez,Verdediger,Argentinië,10000000
+307,Marcos Senesi,Verdediger,Argentinië,10000000
+308,Nicolas Paz,Aanvaller,Argentinië,10000000
+309,Alexis Mac Allister,Middenvelder,Argentinië,10000000
+310,Bruno Guimaraes,Middenvelder,Brazilië,10000000
+311,James Rodriguez,Middenvelder,Colombia,10000000
+312,Luis Diaz,Aanvaller,Colombia,10000000
+313,Joško Gvardiol,Verdediger,Kroatië,10000000
+314,Luka Modric,Middenvelder,Kroatië,10000000
+315,Harry Maguire,Verdediger,Engeland,10000000
+316,Marc Guehi,Verdediger,Engeland,10000000
+317,Marcus Rashford,Aanvaller,Engeland,10000000
+318,Dean Henderson,Keeper,Engeland,10000000
+319,James Trafford,Keeper,Engeland,10000000
+320,Nico O'Reilly,Verdediger,Engeland,10000000
+322,Leroy Sane,Aanvaller,Duitsland,10000000
+323,Nick Woltemade,Aanvaller,Duitsland,10000000
+324,Santiago Gimenez,Aanvaller,Mexico,10000000
+325,Jurrien Timber,Verdediger,Nederland,10000000
+326,Tijjani Reijnders,Middenvelder,Nederland,10000000
+327,Mark Flekken,Keeper,Nederland,10000000
+328,Orjan Nyland,Keeper,Noorwegen,10000000
+329,Andreas Schjelderup,Middenvelder,Noorwegen,10000000
+330,Antonio Nusa,Middenvelder,Noorwegen,10000000
+331,Alexander Sorloth,Aanvaller,Noorwegen,10000000
+332,Jose Sa,Keeper,Portugal,10000000
+333,Vitinha,Middenvelder,Portugal,10000000
+334,Diogo Dalot,Verdediger,Portugal,10000000
+335,Bernardo Silva,Middenvelder,Portugal,10000000
+336,Goncalo Inacio,Verdediger,Portugal,10000000
+337,Fabian Ruiz,Middenvelder,Spanje,10000000
+338,Dean Huijsen,Verdediger,Spanje,10000000
+339,Dani Olmo,Aanvaller,Spanje,10000000
+340,Pedri,Middenvelder,Spanje,10000000
+341,Rodri,Middenvelder,Spanje,10000000
+342,Ferran Torres,Aanvaller,Spanje,10000000
+343,Aymeric Laporte,Verdediger,Spanje,10000000
+344,Joan Garcia,Keeper,Spanje,10000000
+345,Folarin Balogun,Aanvaller,Verenigde Staten,10000000
+346,Malik Tillman,Middenvelder,Verenigde Staten,10000000
+347,Weston McKennie,Middenvelder,Verenigde Staten,10000000
+348,Gonzalo Montiel,Verdediger,Argentinië,9500000
+349,Thiago Almada,Aanvaller,Argentinië,9500000
+350,Rodrigo De Paul,Middenvelder,Argentinië,9500000
+351,Geronimo Rulli,Keeper,Argentinië,9500000
+352,Juan Musso,Keeper,Argentinië,9500000
+353,Nicolas Gonzalez,Aanvaller,Argentinië,9500000
+354,Endrick,Aanvaller,Brazilië,9500000
+355,Matheus Cunha,Aanvaller,Brazilië,9500000
+356,Lucas Paqueta,Middenvelder,Brazilië,9500000
+357,Danilo,Verdediger,Brazilië,9500000
+358,Luis Suarez,Aanvaller,Colombia,9500000
+359,Dominik Livakovic,Keeper,Kroatië,9500000
+361,Anthony Gordon,Aanvaller,Engeland,9500000
+362,John Stones,Verdediger,Engeland,9500000
+363,Ollie Watkins,Aanvaller,Engeland,9500000
+364,Kobbie Mainoo,Middenvelder,Engeland,9500000
+365,Waldemar Anton,Verdediger,Duitsland,9500000
+366,Aleksandar Pavlovic,Middenvelder,Duitsland,9500000
+367,Leon Goretzka,Middenvelder,Duitsland,9500000
+368,Deniz Undav,Aanvaller,Duitsland,9500000
+369,Niclas Fullkrug,Aanvaller,Duitsland,9500000
+370,David Raum,Verdediger,Duitsland,9500000
+371,Malick Thiaw,Verdediger,Duitsland,9500000
+373,Brahim Diaz,Aanvaller,Marokko,9500000
+374,Wout Weghorst,Aanvaller,Nederland,9500000
+375,Jan Paul van Hecke,Verdediger,Nederland,9500000
+376,Micky van de Ven,Verdediger,Nederland,9500000
+377,Nathan Ake,Verdediger,Nederland,9500000
+378,Stefan de Vrij,Verdediger,Nederland,9500000
+379,Frenkie de Jong,Middenvelder,Nederland,9500000
+380,Ryan Gravenberch,Middenvelder,Nederland,9500000
+381,David Moller Wolfe,Verdediger,Noorwegen,9500000
+382,Fredrik Andre Bjorkan,Verdediger,Noorwegen,9500000
+383,Julian Ryerson,Verdediger,Noorwegen,9500000
+384,Rui Silva,Keeper,Portugal,9500000
+385,Francisco Trincao,Aanvaller,Portugal,9500000
+386,Goncalo Ramos,Aanvaller,Portugal,9500000
+387,Joao Felix,Aanvaller,Portugal,9500000
+388,Pedro Neto,Aanvaller,Portugal,9500000
+389,Joao Neves,Middenvelder,Portugal,9500000
+390,Francisco Conceicao,Aanvaller,Portugal,9500000
+391,Rafael Leao,Aanvaller,Portugal,9500000
+392,Antonio Silva,Verdediger,Portugal,9500000
+393,Alex Grimaldo,Verdediger,Spanje,9500000
+394,Fermin Lopez,Middenvelder,Spanje,9500000
+395,Manuel Akanji,Verdediger,Zwitserland,9500000
+396,Arda Guler,Middenvelder,Turkije,9500000
+397,Darwin Nunez,Aanvaller,Uruguay,9500000
+398,Ricardo Pepi,Aanvaller,Verenigde Staten,9500000
+399,Antonee Robinson,Verdediger,Verenigde Staten,9500000
+400,Timothy Weah,Middenvelder,Verenigde Staten,9500000
+401,Gianluca Prestianni,Aanvaller,Argentinië,9000000
+402,Leonardo Balerdi,Verdediger,Argentinië,9000000
+403,Exequiel Palacios,Middenvelder,Argentinië,9000000
+404,Leandro Paredes,Middenvelder,Argentinië,9000000
+405,Maximo Perrone,Middenvelder,Argentinië,9000000
+406,Tomas Palacios,Verdediger,Argentinië,9000000
+408,Rayan,Aanvaller,Brazilië,9000000
+409,Alex Sandro,Verdediger,Brazilië,9000000
+410,Andrey Santos,Middenvelder,Brazilië,9000000
+411,Casemiro,Middenvelder,Brazilië,9000000
+412,Bento,Keeper,Brazilië,9000000
+413,Danilo,Middenvelder,Brazilië,9000000
+414,Gabriel Sara,Middenvelder,Brazilië,9000000
+415,David Ospina,Keeper,Colombia,9000000
+416,Jhon Lucumi,Verdediger,Colombia,9000000
+417,Davinson Sanchez,Verdediger,Colombia,9000000
+418,Daniel Munoz,Verdediger,Colombia,9000000
+419,Yerson Mosquera,Verdediger,Colombia,9000000
+420,Duje Caleta-Car,Verdediger,Kroatië,9000000
+421,Josip Stanisic,Verdediger,Kroatië,9000000
+422,Mario Pašalic,Middenvelder,Kroatië,9000000
+423,Martin Baturina,Middenvelder,Kroatië,9000000
+424,Mateo Kovacic,Middenvelder,Kroatië,9000000
+425,Andrej Kramaric,Aanvaller,Kroatië,9000000
+426,Ivan Perišic,Aanvaller,Kroatië,9000000
+427,Mohamed Salah,Aanvaller,Egypte,9000000
+428,Ezri Konsa,Verdediger,Engeland,9000000
+429,Lewis Hall,Verdediger,Engeland,9000000
+430,Tino Livramento,Verdediger,Engeland,9000000
+431,Elliot Anderson,Middenvelder,Engeland,9000000
+432,Adam Wharton,Middenvelder,Engeland,9000000
+433,Angelo Stiller,Middenvelder,Duitsland,9000000
+434,Pascal Gross,Middenvelder,Duitsland,9000000
+435,Robert Andrich,Middenvelder,Duitsland,9000000
+436,Raul Jimenez,Aanvaller,Mexico,9000000
+437,Bono,Keeper,Marokko,9000000
+438,Bilal El Khannous,Middenvelder,Marokko,9000000
+439,Ismael Saibari,Middenvelder,Marokko,9000000
+440,Jorrel Hato,Verdediger,Nederland,9000000
+441,Brian Brobbey,Aanvaller,Nederland,9000000
+442,Teun Koopmeiners,Middenvelder,Nederland,9000000
+443,Kristoffer Ajer,Verdediger,Noorwegen,9000000
+444,Leo Ostigard,Verdediger,Noorwegen,9000000
+445,Torbjorn Heggem,Verdediger,Noorwegen,9000000
+446,Fredrik Aursnes,Middenvelder,Noorwegen,9000000
+447,Matheus Nunes,Middenvelder,Portugal,9000000
+448,Pedro Goncalves,Middenvelder,Portugal,9000000
+449,Renato Veiga,Verdediger,Portugal,9000000
+450,Ruben Neves,Middenvelder,Portugal,9000000
+451,Scott McTominay,Middenvelder,Schotland,9000000
+452,Sadio Mane,Aanvaller,Senegal,9000000
+453,Marcos Llorente,Middenvelder,Spanje,9000000
+454,Gregor Kobel,Keeper,Zwitserland,9000000
+455,Ricardo Rodriguez,Verdediger,Zwitserland,9000000
+456,Granit Xhaka,Middenvelder,Zwitserland,9000000
+457,Breel Embolo,Aanvaller,Zwitserland,9000000
+458,Dan Ndoye,Aanvaller,Zwitserland,9000000
+459,Ferdi Kadioglu,Verdediger,Turkije,9000000
+460,Hakan Calhanoglu,Middenvelder,Turkije,9000000
+461,Kerem Akturkoglu,Aanvaller,Turkije,9000000
+462,Baris Alper Yilmaz,Aanvaller,Turkije,9000000
+463,Kenan Yildiz,Aanvaller,Turkije,9000000
+464,Ronald Araujo,Verdediger,Uruguay,9000000
+465,Federico Valverde,Middenvelder,Uruguay,9000000
+466,Matt Freese,Keeper,Verenigde Staten,9000000
+467,Matt Turner,Keeper,Verenigde Staten,9000000
+468,Tim Ream,Verdediger,Verenigde Staten,9000000
+469,Brenden Aaronson,Middenvelder,Verenigde Staten,9000000
+470,Giovanni Reyna,Middenvelder,Verenigde Staten,9000000
+472,Douglas Santos,Verdediger,Brazilië,8500000
+473,Fabinho,Middenvelder,Brazilië,8500000
+474,Joao Gomes,Middenvelder,Brazilië,8500000
+475,Leo Pereira,Verdediger,Brazilië,8500000
+476,Alvaro Montero,Keeper,Colombia,8500000
+477,Camilo Vargas,Keeper,Colombia,8500000
+478,Santiago Arias,Verdediger,Colombia,8500000
+479,Johan Mojica,Verdediger,Colombia,8500000
+480,Jhon Arias,Aanvaller,Colombia,8500000
+481,Jorge Carrascal,Middenvelder,Colombia,8500000
+482,Juan Fernando Quintero,Middenvelder,Colombia,8500000
+483,Rafael Borre,Aanvaller,Colombia,8500000
+484,Petar Sucic,Middenvelder,Kroatië,8500000
+485,Ante Budimir,Aanvaller,Kroatië,8500000
+486,Nikola Moro,Middenvelder,Kroatië,8500000
+487,Dominik Kotarski,Keeper,Kroatië,8500000
+488,Luka Vuskovic,Verdediger,Kroatië,8500000
+489,Petar Musa,Aanvaller,Kroatië,8500000
+491,Josip Sutalo,Verdediger,Kroatië,8500000
+492,Luka Sucic,Middenvelder,Kroatië,8500000
+493,Nikola Vlašic,Middenvelder,Kroatië,8500000
+494,Patrik Schick,Aanvaller,Tsjechië,8500000
+495,Pervis Estupinan,Verdediger,Ecuador,8500000
+496,Piero Hincapie,Verdediger,Ecuador,8500000
+497,Willian Pacho,Verdediger,Ecuador,8500000
+498,Enner Valencia,Aanvaller,Ecuador,8500000
+499,James Garner,Middenvelder,Engeland,8500000
+500,Jordan Henderson,Middenvelder,Engeland,8500000
+501,Josha Vagnoman,Verdediger,Duitsland,8500000
+502,Nathaniel Brown,Verdediger,Duitsland,8500000
+503,Anton Stach,Middenvelder,Duitsland,8500000
+504,Guillermo Ochoa,Keeper,Mexico,8500000
+505,Jesus Gallardo,Verdediger,Mexico,8500000
+506,Johan Vasquez,Verdediger,Mexico,8500000
+507,Julian Quinones,Aanvaller,Mexico,8500000
+508,Roberto Alvarado,Aanvaller,Mexico,8500000
+509,Nayef Aguerd,Verdediger,Marokko,8500000
+510,Noussair Mazraoui,Verdediger,Marokko,8500000
+511,Ayoub El Kaabi,Aanvaller,Marokko,8500000
+512,Eliesse Ben Seghir,Aanvaller,Marokko,8500000
+513,Youssef En-Nesyri,Aanvaller,Marokko,8500000
+514,Justin Kluivert,Aanvaller,Nederland,8500000
+515,Noa Lang,Aanvaller,Nederland,8500000
+516,Nick Olij,Keeper,Nederland,8500000
+517,Quinten Timber,Middenvelder,Nederland,8500000
+518,Egil Selvik,Keeper,Noorwegen,8500000
+519,Viljar Myhra,Keeper,Noorwegen,8500000
+520,Jens Petter Hauge,Middenvelder,Noorwegen,8500000
+521,Patrick Berg,Middenvelder,Noorwegen,8500000
+522,Sander Berge,Middenvelder,Noorwegen,8500000
+523,Jorgen Strand Larsen,Aanvaller,Noorwegen,8500000
+524,Fredrik Sjovold,Verdediger,Noorwegen,8500000
+525,Marcus Pedersen,Verdediger,Noorwegen,8500000
+526,Oscar Bobb,Middenvelder,Noorwegen,8500000
+527,Tomas Araujo,Verdediger,Portugal,8500000
+528,Joao Palhinha,Middenvelder,Portugal,8500000
+529,Edouard Mendy,Keeper,Senegal,8500000
+530,Kalidou Koulibaly,Verdediger,Senegal,8500000
+531,Iliman Ndiaye,Aanvaller,Senegal,8500000
+532,Nicolas Jackson,Aanvaller,Senegal,8500000
+533,Martin Zubimendi,Middenvelder,Spanje,8500000
+534,Pablo Barrios,Middenvelder,Spanje,8500000
+535,Borja Iglesias,Aanvaller,Spanje,8500000
+537,Noah Okafor,Aanvaller,Zwitserland,8500000
+538,Ruben Vargas,Aanvaller,Zwitserland,8500000
+539,Nico Elvedi,Verdediger,Zwitserland,8500000
+540,Silvan Widmer,Verdediger,Zwitserland,8500000
+541,Johan Manzambi,Middenvelder,Zwitserland,8500000
+542,Ugurcan Cakir,Keeper,Turkije,8500000
+543,Abdulkerim Bardakci,Verdediger,Turkije,8500000
+544,Zeki Celik,Verdediger,Turkije,8500000
+545,Orkun Kokcu,Middenvelder,Turkije,8500000
+546,Fernando Muslera,Keeper,Uruguay,8500000
+547,Jose Maria Gimenez,Verdediger,Uruguay,8500000
+548,Mathias Olivera,Verdediger,Uruguay,8500000
+549,Giorgian de Arrascaeta,Middenvelder,Uruguay,8500000
+550,Maximiliano Araujo,Verdediger,Uruguay,8500000
+551,Chris Richards,Verdediger,Verenigde Staten,8500000
+552,Tanner Tessmann,Middenvelder,Verenigde Staten,8500000
+553,David Alaba,Verdediger,Oostenrijk,8000000
+554,Kevin Danso,Verdediger,Oostenrijk,8000000
+555,Christoph Baumgartner,Middenvelder,Oostenrijk,8000000
+556,Konrad Laimer,Verdediger,Oostenrijk,8000000
+557,Marcel Sabitzer,Middenvelder,Oostenrijk,8000000
+558,Marko Arnautovic,Aanvaller,Oostenrijk,8000000
+559,Michael Gregoritsch,Aanvaller,Oostenrijk,8000000
+560,Juan Cabal,Verdediger,Colombia,8000000
+561,Deiver Machado,Verdediger,Colombia,8000000
+562,Jefferson Lerma,Middenvelder,Colombia,8000000
+563,Richard Rios,Middenvelder,Colombia,8000000
+564,Andres Gomez,Aanvaller,Colombia,8000000
+565,Jhon Cordoba,Aanvaller,Colombia,8000000
+566,Jaminton Campaz,Middenvelder,Colombia,8000000
+567,Gustavo Puerta,Middenvelder,Colombia,8000000
+568,Johan Carbonero,Aanvaller,Colombia,8000000
+569,Ivor Pandur,Keeper,Kroatië,8000000
+570,Marin Pongracic,Verdediger,Kroatië,8000000
+571,Martin Erlic,Verdediger,Kroatië,8000000
+572,Marco Pašalic,Middenvelder,Kroatië,8000000
+573,Igor Matanovic,Aanvaller,Kroatië,8000000
+574,Pavel Sulc,Middenvelder,Tsjechië,8000000
+575,Moises Caicedo,Middenvelder,Ecuador,8000000
+576,Gonzalo Valle,Keeper,Ecuador,8000000
+577,Hernan Galindez,Keeper,Ecuador,8000000
+578,Joel Ordonez,Verdediger,Ecuador,8000000
+579,Alan Franco,Middenvelder,Ecuador,8000000
+580,Gonzalo Plata,Middenvelder,Ecuador,8000000
+581,Kendry Paez,Middenvelder,Ecuador,8000000
+582,Nilson Angulo,Aanvaller,Ecuador,8000000
+586,Cesar Montes,Verdediger,Mexico,8000000
+587,Carlos Acevedo,Keeper,Mexico,8000000
+588,Raul Rangel,Keeper,Mexico,8000000
+589,Everardo Lopez,Verdediger,Mexico,8000000
+590,Israel Reyes,Verdediger,Mexico,8000000
+591,Jesus Angulo,Verdediger,Mexico,8000000
+592,Jorge Sanchez,Verdediger,Mexico,8000000
+593,Mateo Chavez,Verdediger,Mexico,8000000
+594,Alvaro Fidalgo,Middenvelder,Mexico,8000000
+595,Brian Gutierrez,Middenvelder,Mexico,8000000
+596,Edson Alvarez,Middenvelder,Mexico,8000000
+597,Erik Lira,Middenvelder,Mexico,8000000
+598,Orbelin Pineda,Middenvelder,Mexico,8000000
+599,Alexis Vega,Aanvaller,Mexico,8000000
+600,German Berterame,Aanvaller,Mexico,8000000
+601,Anass Salah-Eddine,Verdediger,Marokko,8000000
+602,Issa Diop,Verdediger,Marokko,8000000
+603,Azzedine Ounahi,Middenvelder,Marokko,8000000
+604,Neil El Aynaoui,Middenvelder,Marokko,8000000
+605,Sofyan Amrabat,Middenvelder,Marokko,8000000
+606,Abde Ezzalzouli,Aanvaller,Marokko,8000000
+607,Amine Adli,Aanvaller,Marokko,8000000
+608,Mats Wieffer,Middenvelder,Nederland,8000000
+609,Kristian Thorstvedt,Middenvelder,Noorwegen,8000000
+610,Morten Thorsby,Middenvelder,Noorwegen,8000000
+611,Aron Donnum,Aanvaller,Noorwegen,8000000
+612,Sondre Langas,Verdediger,Noorwegen,8000000
+613,Andrew Robertson,Verdediger,Schotland,8000000
+614,El Hadji Malick Diouf,Verdediger,Senegal,8000000
+615,Pape Gueye,Middenvelder,Senegal,8000000
+616,Pape Sarr,Middenvelder,Senegal,8000000
+617,Ismaila Sarr,Aanvaller,Senegal,8000000
+618,Victor Munoz,Aanvaller,Spanje,8000000
+619,Alex Baena,Middenvelder,Spanje,8000000
+622,Ardon Jashari,Middenvelder,Zwitserland,8000000
+623,Denis Zakaria,Middenvelder,Zwitserland,8000000
+624,Djibril Sow,Middenvelder,Zwitserland,8000000
+625,Michel Aebischer,Middenvelder,Zwitserland,8000000
+626,Remo Freuler,Middenvelder,Zwitserland,8000000
+627,Cedric Itten,Aanvaller,Zwitserland,8000000
+628,Fabian Rieder,Middenvelder,Zwitserland,8000000
+629,Marvin Keller,Keeper,Zwitserland,8000000
+630,Aurele Amenda,Verdediger,Zwitserland,8000000
+631,Eray Comert,Verdediger,Zwitserland,8000000
+632,Miro Muheim,Verdediger,Zwitserland,8000000
+633,Yvon Mvogo,Keeper,Zwitserland,8000000
+634,Vincent Sierro,Middenvelder,Zwitserland,8000000
+635,Alvyn Sanches,Aanvaller,Zwitserland,8000000
+636,Altay Bayindir,Keeper,Turkije,8000000
+637,Mert Gunok,Keeper,Turkije,8000000
+638,Kaan Ayhan,Verdediger,Turkije,8000000
+639,Merih Demiral,Verdediger,Turkije,8000000
+640,Mert Muldur,Verdediger,Turkije,8000000
+641,Ozan Kabak,Verdediger,Turkije,8000000
+642,Yunus Akgun,Aanvaller,Turkije,8000000
+643,Santiago Mele,Keeper,Uruguay,8000000
+644,Sergio Rochet,Keeper,Uruguay,8000000
+645,Joaquin Piquerez,Verdediger,Uruguay,8000000
+646,Matias Vina,Verdediger,Uruguay,8000000
+647,Santiago Bueno,Verdediger,Uruguay,8000000
+648,Sebastian Caceres,Verdediger,Uruguay,8000000
+649,Facundo Pellistri,Aanvaller,Uruguay,8000000
+650,Facundo Torres,Aanvaller,Uruguay,8000000
+651,Nicolas De La Cruz,Middenvelder,Uruguay,8000000
+652,Rodrigo Bentancur,Middenvelder,Uruguay,8000000
+653,Patrick Schulte,Keeper,Verenigde Staten,8000000
+654,Auston Trusty,Verdediger,Verenigde Staten,8000000
+655,Joe Scally,Verdediger,Verenigde Staten,8000000
+656,Mark McKenzie,Verdediger,Verenigde Staten,8000000
+657,Miles Robinson,Verdediger,Verenigde Staten,8000000
+658,Tyler Adams,Middenvelder,Verenigde Staten,8000000
+659,Haji Wright,Aanvaller,Verenigde Staten,8000000
+660,Alex Freeman,Verdediger,Verenigde Staten,8000000
+661,Alexander Schlager,Keeper,Oostenrijk,7500000
+662,Gernot Trauner,Verdediger,Oostenrijk,7500000
+663,Marco Friedl,Verdediger,Oostenrijk,7500000
+664,Philipp Lienhart,Verdediger,Oostenrijk,7500000
+665,Phillipp Mwene,Verdediger,Oostenrijk,7500000
+666,Stefan Posch,Verdediger,Oostenrijk,7500000
+667,Nicolas Seiwald,Middenvelder,Oostenrijk,7500000
+668,Romano Schmid,Middenvelder,Oostenrijk,7500000
+669,Xaver Schlager,Middenvelder,Oostenrijk,7500000
+670,Saša Kalajdžic,Aanvaller,Oostenrijk,7500000
+671,Kevin Castano,Middenvelder,Colombia,7500000
+672,Ladislav Krejci,Verdediger,Tsjechië,7500000
+673,Vladimir Coufal,Verdediger,Tsjechië,7500000
+674,Tomas Soucek,Middenvelder,Tsjechië,7500000
+675,Adam Hlozek,Aanvaller,Tsjechië,7500000
+676,Angelo Preciado,Verdediger,Ecuador,7500000
+677,Moises Ramirez,Keeper,Ecuador,7500000
+678,Felix Torres,Verdediger,Ecuador,7500000
+679,Jackson Porozo,Verdediger,Ecuador,7500000
+680,Jose Hurtado,Verdediger,Ecuador,7500000
+681,John Mercado,Middenvelder,Ecuador,7500000
+682,John Yeboah,Aanvaller,Ecuador,7500000
+683,Pedro Vite,Middenvelder,Ecuador,7500000
+684,Alan Minda,Aanvaller,Ecuador,7500000
+685,Anthony Valencia,Aanvaller,Ecuador,7500000
+686,Jordy Caicedo,Aanvaller,Ecuador,7500000
+687,Kevin Rodriguez,Aanvaller,Ecuador,7500000
+688,Leonardo Campana,Aanvaller,Ecuador,7500000
+689,Omar Marmoush,Aanvaller,Egypte,7500000
+690,Carlos Rodriguez,Middenvelder,Mexico,7500000
+691,Gilberto Mora,Middenvelder,Mexico,7500000
+692,Obed Vargas,Middenvelder,Mexico,7500000
+693,Armando Gonzalez,Aanvaller,Mexico,7500000
+694,Mehdi Benabid,Keeper,Marokko,7500000
+695,Munir El Kajoui,Keeper,Marokko,7500000
+696,Chadi Riad,Verdediger,Marokko,7500000
+697,Souffian El Karouani,Verdediger,Marokko,7500000
+698,Zakaria El Ouahdi,Verdediger,Marokko,7500000
+699,Oussama Targhalline,Middenvelder,Marokko,7500000
+700,Soufiane Rahimi,Aanvaller,Marokko,7500000
+701,Aaron Hickey,Verdediger,Schotland,7500000
+702,Nathan Patterson,Verdediger,Schotland,7500000
+703,John McGinn,Middenvelder,Schotland,7500000
+704,Che Adams,Aanvaller,Schotland,7500000
+705,Ryan Christie,Middenvelder,Schotland,7500000
+706,Antoine Mendy,Verdediger,Senegal,7500000
+707,Ismail Jakobs,Verdediger,Senegal,7500000
+708,Mamadou Sarr,Verdediger,Senegal,7500000
+709,Moussa Niakhate,Verdediger,Senegal,7500000
+710,Habib Diarra,Middenvelder,Senegal,7500000
+711,Idrissa Gueye,Middenvelder,Senegal,7500000
+712,Lamine Camara,Middenvelder,Senegal,7500000
+713,Assane Diao,Aanvaller,Senegal,7500000
+714,Boulaye Dia,Aanvaller,Senegal,7500000
+715,Cherif Ndiaye,Aanvaller,Senegal,7500000
+716,Habib Diallo,Aanvaller,Senegal,7500000
+717,Ibrahim Mbaye,Aanvaller,Senegal,7500000
+718,Victor Lindelof,Verdediger,Zweden,7500000
+720,Lucas Bergvall,Middenvelder,Zweden,7500000
+722,Joel Monteiro,Aanvaller,Zwitserland,7500000
+723,Eren Elmali,Verdediger,Turkije,7500000
+724,Atakan Karazor,Middenvelder,Turkije,7500000
+725,Ismail Yuksek,Middenvelder,Turkije,7500000
+726,Salih Ozcan,Middenvelder,Turkije,7500000
+727,Deniz Gul,Aanvaller,Turkije,7500000
+728,Samet Akaydin,Verdediger,Turkije,7500000
+729,Irfan Kahveci,Aanvaller,Turkije,7500000
+730,Oguz Aydin,Aanvaller,Turkije,7500000
+731,Semih Kilicsoy,Aanvaller,Turkije,7500000
+732,Manuel Ugarte,Middenvelder,Uruguay,7500000
+733,Emiliano Martinez,Middenvelder,Uruguay,7500000
+734,Guillermo Varela,Verdediger,Uruguay,7500000
+735,Nahitan Nandez,Middenvelder,Uruguay,7500000
+736,Nicolas Fonseca,Middenvelder,Uruguay,7500000
+737,Agustin Canobbio,Aanvaller,Uruguay,7500000
+738,Brian Rodriguez,Aanvaller,Uruguay,7500000
+739,Federico Vinas,Aanvaller,Uruguay,7500000
+740,Max Arfsten,Aanvaller,Verenigde Staten,7500000
+741,Aidan Morris,Middenvelder,Verenigde Staten,7500000
+742,Cristian Roldan,Middenvelder,Verenigde Staten,7500000
+743,Sebastian Berhalter,Middenvelder,Verenigde Staten,7500000
+744,Riyad Mahrez,Aanvaller,Algerije,7000000
+745,Alexander Prass,Middenvelder,Oostenrijk,7000000
+746,Florian Grillitsch,Middenvelder,Oostenrijk,7000000
+747,Patrick Wimmer,Middenvelder,Oostenrijk,7000000
+748,Paul Wanner,Middenvelder,Oostenrijk,7000000
+749,Patrick Pentz,Keeper,Oostenrijk,7000000
+750,Tobias Lawal,Keeper,Oostenrijk,7000000
+751,Leopold Querfeld,Verdediger,Oostenrijk,7000000
+752,Carney Chukwuemeka,Middenvelder,Oostenrijk,7000000
+753,Andreas Weimann,Aanvaller,Oostenrijk,7000000
+754,Alphonso Davies,Verdediger,Canada,7000000
+755,Jonathan David,Aanvaller,Canada,7000000
+756,Matej Kovar,Keeper,Tsjechië,7000000
+757,David Jurasek,Verdediger,Tsjechië,7000000
+758,Martin Vitik,Verdediger,Tsjechië,7000000
+759,Robin Hranac,Verdediger,Tsjechië,7000000
+760,Stepan Chaloupek,Verdediger,Tsjechië,7000000
+761,Tomas Holes,Verdediger,Tsjechië,7000000
+762,Adam Karabec,Middenvelder,Tsjechië,7000000
+763,Lukas Provod,Middenvelder,Tsjechië,7000000
+764,Vladimir Darida,Middenvelder,Tsjechië,7000000
+765,Mojmir Chytil,Aanvaller,Tsjechië,7000000
+766,Tomas Chory,Aanvaller,Tsjechië,7000000
+767,Jordy Alcivar,Middenvelder,Ecuador,7000000
+768,Antoine Semenyo,Aanvaller,Ghana,7000000
+769,Julio Enciso,Middenvelder,Paraguay,7000000
+770,Miguel Almiron,Aanvaller,Paraguay,7000000
+771,Angus Gunn,Keeper,Schotland,7000000
+772,Craig Gordon,Keeper,Schotland,7000000
+773,Grant Hanley,Verdediger,Schotland,7000000
+774,Jack Hendry,Verdediger,Schotland,7000000
+775,John Souttar,Verdediger,Schotland,7000000
+776,Kieran Tierney,Verdediger,Schotland,7000000
+777,Scott McKenna,Verdediger,Schotland,7000000
+778,Billy Gilmour,Middenvelder,Schotland,7000000
+779,Lewis Ferguson,Middenvelder,Schotland,7000000
+780,Ben Gannon-Doak,Aanvaller,Schotland,7000000
+781,Lawrence Shankland,Aanvaller,Schotland,7000000
+782,Lyndon Dykes,Aanvaller,Schotland,7000000
+783,Mory Diaw,Keeper,Senegal,7000000
+784,Yehvann Diouf,Keeper,Senegal,7000000
+785,Abdoulaye Seck,Verdediger,Senegal,7000000
+786,Krepin Diatta,Verdediger,Senegal,7000000
+787,Pathe Ciss,Middenvelder,Senegal,7000000
+789,Gustaf Lagerbielke,Verdediger,Zweden,7000000
+791,Rayan Ait-Nouri,Verdediger,Algerije,6500000
+792,Amine Gouiri,Aanvaller,Algerije,6500000
+793,Mohamed Amoura,Aanvaller,Algerije,6500000
+794,Cyle Larin,Aanvaller,Canada,6500000
+795,Tajon Buchanan,Middenvelder,Canada,6500000
+796,Lukas Hornicek,Keeper,Tsjechië,6500000
+797,Martin Jedlicka,Keeper,Tsjechië,6500000
+798,Jaroslav Zeleny,Verdediger,Tsjechië,6500000
+799,Lukas Cerv,Middenvelder,Tsjechië,6500000
+800,Michal Sadilek,Middenvelder,Tsjechië,6500000
+801,Pavel Bucha,Middenvelder,Tsjechië,6500000
+802,Mohamed Al-Shenawi,Keeper,Egypte,6500000
+803,Mahmoud Trezeguet,Middenvelder,Egypte,6500000
+804,Mostafa Mohamed,Aanvaller,Egypte,6500000
+805,Mohammed Kudus,Middenvelder,Ghana,6500000
+806,Inaki Williams,Aanvaller,Ghana,6500000
+807,Gatito Fernandez,Keeper,Paraguay,6500000
+808,Gustavo Gomez,Verdediger,Paraguay,6500000
+809,Junior Alonso,Verdediger,Paraguay,6500000
+810,Omar Alderete,Verdediger,Paraguay,6500000
+811,Diego Gomez,Middenvelder,Paraguay,6500000
+812,Kaku,Middenvelder,Paraguay,6500000
+813,Ramon Sosa,Aanvaller,Paraguay,6500000
+814,Antonio Sanabria,Aanvaller,Paraguay,6500000
+815,Liam Kelly,Keeper,Schotland,6500000
+816,Dominic Hyam,Verdediger,Schotland,6500000
+817,Ross McCrorie,Verdediger,Schotland,6500000
+818,Kenny McLean,Middenvelder,Schotland,6500000
+819,Lennon Miller,Middenvelder,Schotland,6500000
+820,George Hirst,Aanvaller,Schotland,6500000
+821,Tommy Conway,Aanvaller,Schotland,6500000
+822,Aissa Mandi,Verdediger,Algerije,6000000
+823,Ramy Bensebaini,Verdediger,Algerije,6000000
+824,Fares Chaibi,Middenvelder,Algerije,6000000
+825,Houssem Aouar,Middenvelder,Algerije,6000000
+826,Ismael Bennacer,Middenvelder,Algerije,6000000
+827,Anis Hadj Moussa,Aanvaller,Algerije,6000000
+828,Jordan Bos,Verdediger,Australië,6000000
+830,Dayne St. Clair,Keeper,Canada,6000000
+831,Maxime Crepeau,Keeper,Canada,6000000
+832,Alistair Johnston,Verdediger,Canada,6000000
+833,Derek Cornelius,Verdediger,Canada,6000000
+834,Luc De Fougerolles,Verdediger,Canada,6000000
+835,Moise Bombito,Verdediger,Canada,6000000
+836,Richie Laryea,Verdediger,Canada,6000000
+837,Ismael Kone,Middenvelder,Canada,6000000
+838,Stephen Eustaquio,Middenvelder,Canada,6000000
+839,Tani Oluwaseyi,Aanvaller,Canada,6000000
+841,Denis Visinsky,Middenvelder,Tsjechië,6000000
+842,Jan Kliment,Aanvaller,Tsjechië,6000000
+843,Mohamed Sobhy,Keeper,Egypte,6000000
+844,Mostafa Shobeir,Keeper,Egypte,6000000
+845,Alexander Djiku,Verdediger,Ghana,6000000
+846,Alidu Seidu,Verdediger,Ghana,6000000
+847,Derrick Kohn,Verdediger,Ghana,6000000
+848,Ernest Nuamah,Middenvelder,Ghana,6000000
+849,Thomas Partey,Middenvelder,Ghana,6000000
+850,Abdul Fatawu,Aanvaller,Ghana,6000000
+851,Jordan Ayew,Aanvaller,Ghana,6000000
+852,Gaston Olveira,Keeper,Paraguay,6000000
+853,Orlando Gill,Keeper,Paraguay,6000000
+854,Agustin Sandez,Verdediger,Paraguay,6000000
+855,Fabian Balbuena,Verdediger,Paraguay,6000000
+856,Andres Cubas,Middenvelder,Paraguay,6000000
+857,Braian Ojeda,Middenvelder,Paraguay,6000000
+858,Damian Bobadilla,Middenvelder,Paraguay,6000000
+859,Mathias Villasanti,Middenvelder,Paraguay,6000000
+860,Matias Galarza,Middenvelder,Paraguay,6000000
+861,Alex Arce,Aanvaller,Paraguay,6000000
+862,Angel Romero,Aanvaller,Paraguay,6000000
+863,Luca Zidane,Keeper,Algerije,5500000
+864,Rafik Belghali,Verdediger,Algerije,5500000
+865,Hicham Boudaoui,Middenvelder,Algerije,5500000
+866,Ibrahim Maza,Middenvelder,Algerije,5500000
+867,Ramiz Zerrouki,Middenvelder,Algerije,5500000
+868,Yacine Titraoui,Middenvelder,Algerije,5500000
+869,Mathew Ryan,Keeper,Australië,5500000
+870,Alessandro Circati,Verdediger,Australië,5500000
+871,Aziz Behich,Verdediger,Australië,5500000
+872,Harry Souttar,Verdediger,Australië,5500000
+873,Jackson Irvine,Middenvelder,Australië,5500000
+874,Mitchell Duke,Aanvaller,Australië,5500000
+875,Owen Goodman,Keeper,Canada,5500000
+876,Joel Waterman,Verdediger,Canada,5500000
+877,Kamal Miller,Verdediger,Canada,5500000
+878,Ali Ahmed,Middenvelder,Canada,5500000
+879,Mathieu Choiniere,Middenvelder,Canada,5500000
+880,Nathan-Dylan Saliba,Middenvelder,Canada,5500000
+881,Niko Sigur,Middenvelder,Canada,5500000
+882,Daniel Jebbison,Aanvaller,Canada,5500000
+883,Jacob Shaffelburg,Aanvaller,Canada,5500000
+884,Jonathan Osorio,Middenvelder,Canada,5500000
+885,Liam Millar,Aanvaller,Canada,5500000
+886,Marcelo Flores,Aanvaller,Canada,5500000
+887,Aaron Wan-Bissaka,Verdediger,Democratische Republiek Congo,5500000
+888,Arthur Masuaku,Verdediger,Democratische Republiek Congo,5500000
+889,Axel Tuanzebe,Verdediger,Democratische Republiek Congo,5500000
+890,Chancel Mbemba,Verdediger,Democratische Republiek Congo,5500000
+891,Cedric Bakambu,Aanvaller,Democratische Republiek Congo,5500000
+892,Yoane Wissa,Aanvaller,Democratische Republiek Congo,5500000
+893,Tomas Ladra,Aanvaller,Tsjechië,5500000
+894,Ahmed Abou El Fotouh,Verdediger,Egypte,5500000
+895,Mohamed Hany,Verdediger,Egypte,5500000
+896,Haissem Hassan,Aanvaller,Egypte,5500000
+897,Osama Faisal,Aanvaller,Egypte,5500000
+898,Salah Mohsen,Aanvaller,Egypte,5500000
+899,Lawrence Ati-Zigi,Keeper,Ghana,5500000
+900,Derrick Luckassen,Verdediger,Ghana,5500000
+901,Gideon Mensah,Verdediger,Ghana,5500000
+902,Jerome Opoku,Verdediger,Ghana,5500000
+903,Jonas Adjetey,Verdediger,Ghana,5500000
+904,Brandon Thomas-Asante,Aanvaller,Ghana,5500000
+905,Ibrahim Sulemana,Middenvelder,Ghana,5500000
+906,Joseph Paintsil,Aanvaller,Ghana,5500000
+907,Kamaldeen Sulemana,Aanvaller,Ghana,5500000
+908,Alan Benitez,Verdediger,Paraguay,5500000
+909,Blas Riveros,Verdediger,Paraguay,5500000
+910,Gustavo Velazquez,Verdediger,Paraguay,5500000
+911,Juan Jose Caceres,Verdediger,Paraguay,5500000
+912,Gabriel Avalos,Aanvaller,Paraguay,5500000
+913,Ellyes Skhiri,Middenvelder,Tunesië,5500000
+914,Hannibal Mejbri,Middenvelder,Tunesië,5500000
+915,Anthony Mandrea,Keeper,Algerije,5000000
+916,Melvin Mastil,Keeper,Algerije,5000000
+917,Mehdi Dorval,Verdediger,Algerije,5000000
+918,Zineddine Belaid,Verdediger,Algerije,5000000
+919,Amin Chiakha,Aanvaller,Algerije,5000000
+920,Joe Gauci,Keeper,Australië,5000000
+921,Cameron Burgess,Verdediger,Australië,5000000
+922,Kye Rowles,Verdediger,Australië,5000000
+923,Milos Degenek,Verdediger,Australië,5000000
+924,Aiden O'Neill,Middenvelder,Australië,5000000
+925,Ajdin Hrustic,Middenvelder,Australië,5000000
+926,Connor Metcalfe,Middenvelder,Australië,5000000
+927,Riley McGree,Middenvelder,Australië,5000000
+928,Ryan Teague,Middenvelder,Australië,5000000
+929,Adam Taggart,Aanvaller,Australië,5000000
+930,Craig Goodwin,Aanvaller,Australië,5000000
+931,Martin Boyle,Aanvaller,Australië,5000000
+932,Nestory Irankunda,Aanvaller,Australië,5000000
+933,Lionel Mpasi-Nzau,Keeper,Democratische Republiek Congo,5000000
+934,Gedeon Kalulu,Verdediger,Democratische Republiek Congo,5000000
+935,Joris Kayembe,Verdediger,Democratische Republiek Congo,5000000
+936,Edo Kayembe,Middenvelder,Democratische Republiek Congo,5000000
+937,Grady Diangana,Middenvelder,Democratische Republiek Congo,5000000
+938,Noah Sadiki,Middenvelder,Democratische Republiek Congo,5000000
+939,Theo Bongonda,Middenvelder,Democratische Republiek Congo,5000000
+940,Gael Kakuta,Middenvelder,Democratische Republiek Congo,5000000
+941,Meschack Elia,Aanvaller,Democratische Republiek Congo,5000000
+942,Simon Banza,Aanvaller,Democratische Republiek Congo,5000000
+944,Hossam Abdulmajeed,Verdediger,Egypte,5000000
+945,Mohamed Abdel Monem,Verdediger,Egypte,5000000
+946,Rami Rabia,Verdediger,Egypte,5000000
+947,Yasser Ibrahim,Verdediger,Egypte,5000000
+948,Ahmed Zizo,Middenvelder,Egypte,5000000
+949,Emam Ashour,Middenvelder,Egypte,5000000
+950,Hamdy Fathy,Middenvelder,Egypte,5000000
+951,Benjamin Asare,Keeper,Ghana,5000000
+952,Joseph Tetteh Anang,Keeper,Ghana,5000000
+953,Marvin Senaya,Verdediger,Ghana,5000000
+954,Caleb Marfo Yirenkyi,Middenvelder,Ghana,5000000
+955,Elisha Owusu,Middenvelder,Ghana,5000000
+956,Kwasi Sibo,Middenvelder,Ghana,5000000
+957,Ransford Konigsdorffer,Aanvaller,Ghana,5000000
+958,Alireza Beiranvand,Keeper,Iran,5000000
+959,Mehdi Taremi,Aanvaller,Iran,5000000
+961,Salem Al-Dawsari,Middenvelder,Saudi-Arabië,5000000
+962,Lyle Foster,Aanvaller,Zuid-Afrika,5000000
+963,Aymen Dahmen,Keeper,Tunesië,5000000
+964,Dylan Bronn,Verdediger,Tunesië,5000000
+965,Montassar Talbi,Verdediger,Tunesië,5000000
+968,Ismaël Gharbi,Middenvelder,Tunesië,5000000
+971,Paul Izzo,Keeper,Australië,4500000
+972,Fran Karacic,Verdediger,Australië,4500000
+973,Jason Geria,Verdediger,Australië,4500000
+974,Lucas Herrington,Verdediger,Australië,4500000
+975,Alexander Robertson,Middenvelder,Australië,4500000
+976,Sam Silvera,Aanvaller,Australië,4500000
+977,Logan Costa,Verdediger,Kaapverdië,4500000
+979,Dailon Livramento,Aanvaller,Kaapverdië,4500000
+980,Ryan Mendes,Aanvaller,Kaapverdië,4500000
+981,Matthieu Epolo,Keeper,Democratische Republiek Congo,4500000
+982,Timothy Fayulu,Keeper,Democratische Republiek Congo,4500000
+983,Dylan Batubinsika,Verdediger,Democratische Republiek Congo,4500000
+984,Rocky Bushiri,Verdediger,Democratische Republiek Congo,4500000
+985,Steve Kapuadi,Verdediger,Democratische Republiek Congo,4500000
+986,Charles Pickel,Middenvelder,Democratische Republiek Congo,4500000
+987,Nathanael Mbuku,Middenvelder,Democratische Republiek Congo,4500000
+988,Ngal'ayel Mukau,Middenvelder,Democratische Republiek Congo,4500000
+989,Samuel Moutoussamy,Middenvelder,Democratische Republiek Congo,4500000
+990,Fiston Mayele,Aanvaller,Democratische Republiek Congo,4500000
+991,Armando Obispo,Verdediger,Curaçao,4500000
+992,Tahith Chong,Middenvelder,Curaçao,4500000
+993,Ahmed Eid,Verdediger,Egypte,4500000
+994,Mohamed Hamdy,Verdediger,Egypte,4500000
+995,Ahmed Nabil Kouka,Middenvelder,Egypte,4500000
+996,Ibrahim Adel,Middenvelder,Egypte,4500000
+997,Marwan Attia,Middenvelder,Egypte,4500000
+998,Mohanad Lasheen,Middenvelder,Egypte,4500000
+999,Ali Nemati,Verdediger,Iran,4500000
+1000,Hossein Kanaani,Verdediger,Iran,4500000
+1001,Milad Mohammadi,Verdediger,Iran,4500000
+1002,Ramin Rezaeian,Verdediger,Iran,4500000
+1003,Shojae Khalilzadeh,Verdediger,Iran,4500000
+1004,Ali Gholizadeh,Middenvelder,Iran,4500000
+1005,Alireza Jahanbakhsh,Middenvelder,Iran,4500000
+1006,Amirhossein Hosseinzadeh,Aanvaller,Iran,4500000
+1007,Mohammad Mohebi,Aanvaller,Iran,4500000
+1008,Saeid Ezatolahi,Middenvelder,Iran,4500000
+1009,Saman Ghoddos,Middenvelder,Iran,4500000
+1010,Mehdi Ghayedi,Aanvaller,Iran,4500000
+1011,Ibrahim Bayesh,Middenvelder,Irak,4500000
+1012,Ali Al-Hamadi,Aanvaller,Irak,4500000
+1013,Aymen Hussein,Aanvaller,Irak,4500000
+1014,Mohanad Ali,Aanvaller,Irak,4500000
+1017,Amir Murillo,Verdediger,Panama,4500000
+1018,Akram Afif,Aanvaller,Qatar,4500000
+1019,Almoez Ali,Aanvaller,Qatar,4500000
+1020,Saud Abdulhamid,Verdediger,Saudi-Arabië,4500000
+1021,Musab Fahz Aljuwayr,Middenvelder,Saudi-Arabië,4500000
+1022,Salman Al-Faraj,Middenvelder,Saudi-Arabië,4500000
+1023,Firas Al-Buraikan,Aanvaller,Saudi-Arabië,4500000
+1024,Ronwen Williams,Keeper,Zuid-Afrika,4500000
+1029,Eldor Shomurodov,Aanvaller,Oezbekistan,4500000
+1030,Vozinha,Keeper,Kaapverdië,4000000
+1031,Diney Borges,Verdediger,Kaapverdië,4000000
+1032,João Paulo,Verdediger,Kaapverdië,4000000
+1033,Roberto Lopes,Verdediger,Kaapverdië,4000000
+1034,Sidny Cabral,Verdediger,Kaapverdië,4000000
+1035,Steven Moreira,Verdediger,Kaapverdië,4000000
+1036,Wagner Pina,Verdediger,Kaapverdië,4000000
+1038,Deroy Duarte,Middenvelder,Kaapverdië,4000000
+1039,Jamiro Monteiro,Middenvelder,Kaapverdië,4000000
+1040,Kevin Pina,Middenvelder,Kaapverdië,4000000
+1041,Telmo Arcanjo,Middenvelder,Kaapverdië,4000000
+1042,Yannick Semedo,Middenvelder,Kaapverdië,4000000
+1043,Garry Rodrigues,Aanvaller,Kaapverdië,4000000
+1044,Jovane Cabral,Aanvaller,Kaapverdië,4000000
+1045,Willy Semedo,Aanvaller,Kaapverdië,4000000
+1046,Eloy Room,Keeper,Curaçao,4000000
+1047,Joshua Brenet,Verdediger,Curaçao,4000000
+1048,Jurien Gaari,Verdediger,Curaçao,4000000
+1049,Riechedly Bazoer,Verdediger,Curaçao,4000000
+1050,Roshon van Eijma,Verdediger,Curaçao,4000000
+1051,Sherel Floranus,Verdediger,Curaçao,4000000
+1052,Shurandy Sambo,Verdediger,Curaçao,4000000
+1053,Juninho Bacuna,Middenvelder,Curaçao,4000000
+1054,Leandro Bacuna,Middenvelder,Curaçao,4000000
+1055,Livano Comenencia,Middenvelder,Curaçao,4000000
+1056,Brandley Kuwas,Aanvaller,Curaçao,4000000
+1057,Gervane Kastaneer,Aanvaller,Curaçao,4000000
+1058,Jurgen Locadia,Aanvaller,Curaçao,4000000
+1059,Kenji Gorre,Aanvaller,Curaçao,4000000
+1060,Sontje Hansen,Aanvaller,Curaçao,4000000
+1061,Mohamed Shehata,Middenvelder,Egypte,4000000
+1062,Hossein Hosseini,Keeper,Iran,4000000
+1063,Payam Niazmand,Keeper,Iran,4000000
+1064,Aria Yousefi,Verdediger,Iran,4000000
+1065,Ehsan Hajsafi,Verdediger,Iran,4000000
+1066,Majid Hosseini,Verdediger,Iran,4000000
+1067,Omid Noorafkan,Verdediger,Iran,4000000
+1068,Saleh Hardani,Verdediger,Iran,4000000
+1069,Mehdi Hashemnejad,Middenvelder,Iran,4000000
+1070,Mehdi Torabi,Middenvelder,Iran,4000000
+1071,Mohammad Ghorbani,Middenvelder,Iran,4000000
+1072,Allahyar Sayyadmanesh,Aanvaller,Iran,4000000
+1073,Shahriar Moghanlou,Aanvaller,Iran,4000000
+1074,Ahmed Basil,Keeper,Irak,4000000
+1075,Jalal Hassan,Keeper,Irak,4000000
+1076,Akam Hashim Rahman,Verdediger,Irak,4000000
+1077,Frans Putros,Verdediger,Irak,4000000
+1078,Hussein Ali,Verdediger,Irak,4000000
+1079,Manaf Younis,Verdediger,Irak,4000000
+1080,Merchas Doski,Verdediger,Irak,4000000
+1081,Zaid Tahseen,Verdediger,Irak,4000000
+1082,Aimar Sher,Middenvelder,Irak,4000000
+1083,Ali Jasim,Middenvelder,Irak,4000000
+1084,Amir Al Ammari,Middenvelder,Irak,4000000
+1085,Zidane Iqbal,Middenvelder,Irak,4000000
+1086,Ehsan Haddad,Verdediger,Jordanië,4000000
+1087,Ali Iyad Ali Olwan,Aanvaller,Jordanië,4000000
+1088,Musa Tamari,Aanvaller,Jordanië,4000000
+1089,Yazan Al Namat,Aanvaller,Jordanië,4000000
+1091,Luis Mejia,Keeper,Panama,4000000
+1092,Orlando Mosquera,Keeper,Panama,4000000
+1093,Andres Andrade,Verdediger,Panama,4000000
+1094,Fidel Escobar,Verdediger,Panama,4000000
+1095,Jorge Gutierrez,Verdediger,Panama,4000000
+1096,Jose Cordoba,Verdediger,Panama,4000000
+1097,Adalberto Carrasquilla,Middenvelder,Panama,4000000
+1098,Anibal Godoy,Middenvelder,Panama,4000000
+1099,Cesar Blackman,Verdediger,Panama,4000000
+1100,Jose Luis Rodriguez,Middenvelder,Panama,4000000
+1101,Cecilio Waterman,Aanvaller,Panama,4000000
+1102,Ismael Diaz,Aanvaller,Panama,4000000
+1103,Jose Fajardo,Aanvaller,Panama,4000000
+1104,Yoel Barcenas,Aanvaller,Panama,4000000
+1105,Mahmud Abunada,Keeper,Qatar,4000000
+1106,Meshaal Barsham,Keeper,Qatar,4000000
+1107,Boualem Khoukhi,Verdediger,Qatar,4000000
+1108,Homam Ahmed,Verdediger,Qatar,4000000
+1109,Pedro Miguel,Verdediger,Qatar,4000000
+1110,Tarek Salman,Verdediger,Qatar,4000000
+1111,Karim Boudiaf,Middenvelder,Qatar,4000000
+1,Jo Hyun-woo,Keeper,Zuid-Korea,5500000
+1113,Mohammed Al-Owais,Keeper,Saudi-Arabië,4000000
+1114,Nawaf Al-Aqidi,Keeper,Saudi-Arabië,4000000
+1115,Abdulelah Al-Amri,Verdediger,Saudi-Arabië,4000000
+1116,Ali Lajami,Verdediger,Saudi-Arabië,4000000
+1117,Nawaf Boushal,Verdediger,Saudi-Arabië,4000000
+1118,Mohamed Kanno,Middenvelder,Saudi-Arabië,4000000
+1119,Abdullah Al-Hamdan,Aanvaller,Saudi-Arabië,4000000
+1120,Renaldo Leaner,Keeper,Zuid-Afrika,4000000
+1121,Ricardo Goss,Keeper,Zuid-Afrika,4000000
+1122,Aubrey Modiba,Verdediger,Zuid-Afrika,4000000
+1123,Khuliso Mudau,Verdediger,Zuid-Afrika,4000000
+1124,Mbekezeli Mbokazi,Verdediger,Zuid-Afrika,4000000
+1125,Nkosinathi Sibisi,Verdediger,Zuid-Afrika,4000000
+1126,Siyabonga Ngezana,Verdediger,Zuid-Afrika,4000000
+1127,Teboho Mokoena,Middenvelder,Zuid-Afrika,4000000
+1128,Themba Zwane,Middenvelder,Zuid-Afrika,4000000
+1129,Bongokuhle Hlongwane,Aanvaller,Zuid-Afrika,4000000
+1130,Oswin Appollis,Aanvaller,Zuid-Afrika,4000000
+1131,Sabri Ben Hessen,Keeper,Tunesië,4000000
+1133,Abdukodir Khusanov,Verdediger,Oezbekistan,4000000
+1134,Abbosbek Fayzullayev,Aanvaller,Oezbekistan,4000000
+1135,Jaloliddin Masharipov,Middenvelder,Oezbekistan,4000000
+1136,Oston Urunov,Aanvaller,Oezbekistan,4000000
+1137,CJ Dos Santos,Keeper,Kaapverdië,3500000
+1138,Márcio Rosa,Keeper,Kaapverdië,3500000
+1140,Kelvin Pires,Verdediger,Kaapverdië,3500000
+1142,Laros Duarte,Middenvelder,Kaapverdië,3500000
+1143,Trevor Doornbusch,Keeper,Curaçao,3500000
+1144,Tyrick Bodak,Keeper,Curaçao,3500000
+1145,Deveron Fonville,Verdediger,Curaçao,3500000
+1146,Ar'jany Martha,Middenvelder,Curaçao,3500000
+1147,Godfried Roemeratoe,Middenvelder,Curaçao,3500000
+1148,Kevin Felida,Middenvelder,Curaçao,3500000
+1149,Tyrese Noslin,Middenvelder,Curaçao,3500000
+1150,Jearl Margaritha,Aanvaller,Curaçao,3500000
+1151,Jeremy Antonisse,Aanvaller,Curaçao,3500000
+1152,Johny Placide,Keeper,Haïti,3500000
+1153,Carlens Arcus,Verdediger,Haïti,3500000
+1154,Martin Expérience,Verdediger,Haïti,3500000
+1155,Fahad Talib,Keeper,Irak,3500000
+1156,Ahmed Maknzi,Verdediger,Irak,3500000
+1157,Rebin Sulaka,Verdediger,Irak,3500000
+1158,Kevin Yakob,Middenvelder,Irak,3500000
+1159,Marko Farji,Middenvelder,Irak,3500000
+1160,Youssef Amyn,Middenvelder,Irak,3500000
+1161,Zaid Ismael,Middenvelder,Irak,3500000
+1162,Ali Yousif,Aanvaller,Irak,3500000
+1163,Hasan Abdulkareem,Aanvaller,Irak,3500000
+1164,Yazeed Moien Abdulaila,Keeper,Jordanië,3500000
+1165,Abdullah Naseeb,Verdediger,Jordanië,3500000
+1166,Mohamed Abou Hashish,Verdediger,Jordanië,3500000
+1167,Mohannad Abu Taha,Verdediger,Jordanië,3500000
+1168,Yazan Al-Arab,Verdediger,Jordanië,3500000
+1169,Ibrahim Saadeh,Middenvelder,Jordanië,3500000
+1170,Nizar Al Rashdan,Middenvelder,Jordanië,3500000
+1171,Noor Al-Rawabdeh,Middenvelder,Jordanië,3500000
+1172,Rajaee Ayed,Middenvelder,Jordanië,3500000
+1173,Baha' Faisal,Aanvaller,Jordanië,3500000
+1174,Mahmoud Al Mardi,Aanvaller,Jordanië,3500000
+1175,Mohammad Abu Zrayq,Aanvaller,Jordanië,3500000
+1176,Cesar Samudio,Keeper,Panama,3500000
+1177,Edgardo Farina,Verdediger,Panama,3500000
+1178,Jiovany Ramos,Verdediger,Panama,3500000
+1179,Carlos Harvey,Middenvelder,Panama,3500000
+1180,Cristian Martinez,Middenvelder,Panama,3500000
+1181,Eric Davis,Middenvelder,Panama,3500000
+1182,Azarias Londono,Aanvaller,Panama,3500000
+1183,Cesar Yanis,Aanvaller,Panama,3500000
+1184,Salah Zakaria,Keeper,Qatar,3500000
+1185,Ayoub Al-Oui,Verdediger,Qatar,3500000
+1186,Bassam Al Rawi,Verdediger,Qatar,3500000
+1187,Lucas Mendes,Verdediger,Qatar,3500000
+1188,Sultan Al-Braik,Verdediger,Qatar,3500000
+1189,Ahmed Fathy,Middenvelder,Qatar,3500000
+1190,Assim Madibo,Middenvelder,Qatar,3500000
+1191,Mohammed Waad,Middenvelder,Qatar,3500000
+1192,Mustafa Mashaal,Middenvelder,Qatar,3500000
+1193,Ahmed Al-Ganehi,Aanvaller,Qatar,3500000
+1194,Edmilson Junior,Aanvaller,Qatar,3500000
+1195,Yusuf Abdurisag,Aanvaller,Qatar,3500000
+1196,Ahmed Al-Kassar,Keeper,Saudi-Arabië,3500000
+1197,Ali Majrashi,Verdediger,Saudi-Arabië,3500000
+1198,Hasan Kadesh,Verdediger,Saudi-Arabië,3500000
+1199,Muteb Almufarrij,Verdediger,Saudi-Arabië,3500000
+1200,Abdullah Al-Khaibari,Middenvelder,Saudi-Arabië,3500000
+1201,Ziyad Al Johani,Middenvelder,Saudi-Arabië,3500000
+1202,Ayman Yahya,Aanvaller,Saudi-Arabië,3500000
+1203,Marwan Al Sahafi,Aanvaller,Saudi-Arabië,3500000
+1204,Saleh Alshamat,Aanvaller,Saudi-Arabië,3500000
+1205,Ime Okon,Verdediger,Zuid-Afrika,3500000
+1206,Bathusi Aubaas,Middenvelder,Zuid-Afrika,3500000
+1207,Patrick Maswanganyi,Middenvelder,Zuid-Afrika,3500000
+1208,Thalente Mbatha,Middenvelder,Zuid-Afrika,3500000
+1209,Yaya Sithole,Middenvelder,Zuid-Afrika,3500000
+1210,Evidence Makgopa,Aanvaller,Zuid-Afrika,3500000
+1211,Iqraam Rayners,Aanvaller,Zuid-Afrika,3500000
+1212,Relebohile Mofokeng,Aanvaller,Zuid-Afrika,3500000
+1213,Tshepang Moremi,Aanvaller,Zuid-Afrika,3500000
+1214,Abduvakhid Nematov,Keeper,Oezbekistan,3500000
+1215,Utkir Yusupov,Keeper,Oezbekistan,3500000
+1216,Farrukh Sayfiev,Verdediger,Oezbekistan,3500000
+1217,Khozhiakbar Alidzhanov,Verdediger,Oezbekistan,3500000
+1218,Rustamjon Ashurmatov,Verdediger,Oezbekistan,3500000
+1219,Sherzod Nasrulloev,Verdediger,Oezbekistan,3500000
+1220,Umar Eshmuradov,Verdediger,Oezbekistan,3500000
+1221,Akmal Mozgovoy,Middenvelder,Oezbekistan,3500000
+1222,Azizjon Ganiyev,Middenvelder,Oezbekistan,3500000
+1223,Jamshid Iskanderov,Middenvelder,Oezbekistan,3500000
+1224,Khojimat Erkinov,Middenvelder,Oezbekistan,3500000
+1225,Odiljon Hamrobekov,Middenvelder,Oezbekistan,3500000
+1226,Otabek Shukurov,Middenvelder,Oezbekistan,3500000
+1227,Igor Sergeev,Aanvaller,Oezbekistan,3500000
+1228,Alexandre Pierre,Keeper,Haïti,3000000
+1229,Josue Duverger,Keeper,Haïti,3000000
+1231,Duke Lacroix,Verdediger,Haïti,3000000
+1234,Ali Auglah,Aanvaller,Irak,3000000
+1235,Abdallah Al Fakhouri,Keeper,Jordanië,3000000
+1236,Nour Bani Attiah,Keeper,Jordanië,3000000
+1237,Ahmad Assaf,Middenvelder,Jordanië,3000000
+1238,Husam Abu Dahab,Verdediger,Jordanië,3000000
+1239,Issam Salem Smeeri,Verdediger,Jordanië,3000000
+1240,Mohammad Abualnadi,Verdediger,Jordanië,3000000
+1241,Saed Al Rosan,Verdediger,Jordanië,3000000
+1242,Amer Rasem Jamous,Middenvelder,Jordanië,3000000
+1243,Ibrahim Sabra,Aanvaller,Jordanië,3000000
+1244,Odeh Al-Fakhouri,Aanvaller,Jordanië,3000000
+1245,Martin Krug,Verdediger,Panama,3000000
+1246,Roderick Miller,Verdediger,Panama,3000000
+1247,Kadir Barria,Aanvaller,Panama,3000000
+1248,Al Hashmi Al Hussain Mohi Aldin,Verdediger,Qatar,3000000
+1249,Ibrahim Al-Hassan,Middenvelder,Qatar,3000000
+1250,Mohamed Al Mannai,Middenvelder,Qatar,3000000
+1251,Ahmed Al-Rawi,Aanvaller,Qatar,3000000
+1252,Saleh Al-Shehri,Aanvaller,Saudi-Arabië,3000000
+1253,Sultan Mandash,Aanvaller,Saudi-Arabië,3000000
+1254,Khulumani Ndamane,Verdediger,Zuid-Afrika,3000000
+1255,Thabang Matuludi,Verdediger,Zuid-Afrika,3000000
+1256,Jayden Adams,Middenvelder,Zuid-Afrika,3000000
+1257,Luke Le Roux,Middenvelder,Zuid-Afrika,3000000
+1258,Botirali Ergashev,Keeper,Oezbekistan,3000000
+1259,Jakhongir Urozov,Verdediger,Oezbekistan,3000000
+1260,Mukhammadkodir Khamraliev,Verdediger,Oezbekistan,3000000
+1112,Hassan Al Haydos,Middenvelder,Qatar,4000000
+2,Kim Seung-gyu,Keeper,Zuid-Korea,5500000
+3,Song Bum-keun,Keeper,Zuid-Korea,5000000
+4,Jens Castrop,Verdediger,Zuid-Korea,5000000
+5,Cho Yu-min,Verdediger,Zuid-Korea,4500000
+6,Kim Min-jae,Verdediger,Zuid-Korea,6000000
+7,Kim Moon-hwan,Verdediger,Zuid-Korea,5000000
+8,Kim Tae-Hyeon,Verdediger,Zuid-Korea,4500000
+9,Lee Gi Hyeok,Verdediger,Zuid-Korea,4500000
+10,Lee Han-beom,Verdediger,Zuid-Korea,4500000
+11,Lee Tae-seok,Verdediger,Zuid-Korea,4500000
