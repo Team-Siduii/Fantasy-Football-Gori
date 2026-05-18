@@ -8,7 +8,7 @@ import { StatTile } from "@/components/stat-tile";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
 import { reorderAcrossZones, type ZoneName, type ZoneState } from "@/domain/lineup-state";
 import { buildPitchRows } from "@/domain/pitch-layout";
-import { MAX_TRANSFER_BUDGET_MILLIONS, calculateRemainingBudget, isWithinBudget } from "@/domain/team-budget";
+import { calculateRemainingBudget, getTransferBudgetCapMillions, isWithinBudget } from "@/domain/team-budget";
 import type { PlayerRecord } from "@/domain/player";
 import { buildMarketPlayers } from "@/domain/transfer-workflow";
 import { getTransferLimitForRound } from "@/domain/rules";
@@ -152,11 +152,11 @@ function buildStateForFormation(players: EnhancedPlayer[], formation: string): Z
   };
 }
 
-function buildBudgetDemoState(players: EnhancedPlayer[], formation: string): ZoneState<EnhancedPlayer> {
+function buildBudgetDemoState(players: EnhancedPlayer[], formation: string, budgetCapMillions: number): ZoneState<EnhancedPlayer> {
   const ordered = [...players].sort((a, b) => a.prijs - b.prijs || a.naam.localeCompare(b.naam));
   const candidate = buildStateWithVacancies(ordered, formation, 0);
 
-  if (candidate && isWithinBudget([...candidate.lineup, ...candidate.bench], MAX_TRANSFER_BUDGET_MILLIONS)) {
+  if (candidate && isWithinBudget([...candidate.lineup, ...candidate.bench], budgetCapMillions)) {
     return candidate;
   }
 
@@ -380,6 +380,7 @@ function getCountdownParts(targetIso: string) {
 export default function ManagerMyTeamPage() {
   const pathname = usePathname();
   const isWkMode = pathname.startsWith("/manager/world-cup");
+  const budgetCapMillions = getTransferBudgetCapMillions(isWkMode ? "wk" : "eredivisie");
   const activeFixtures = isWkMode ? WORLD_CUP_2026_FIXTURES : REMAINING_FIXTURES_2025_2026;
   const clubLabel = isWkMode ? "Land" : "Club";
   const clubsLabel = isWkMode ? "landen" : "clubs";
@@ -387,7 +388,9 @@ export default function ManagerMyTeamPage() {
   const formationOptions = useMemo(() => getFormationOptions(), []);
   const [formation, setFormation] = useState(formationOptions[0]);
   const [allPlayers, setAllPlayers] = useState<EnhancedPlayer[]>(fallbackPlayers());
-  const [state, setState] = useState<ZoneState<EnhancedPlayer>>(() => buildBudgetDemoState(fallbackPlayers(), formationOptions[0]));
+  const [state, setState] = useState<ZoneState<EnhancedPlayer>>(() =>
+    buildBudgetDemoState(fallbackPlayers(), formationOptions[0], getTransferBudgetCapMillions("eredivisie")),
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -445,14 +448,14 @@ export default function ManagerMyTeamPage() {
                 managerData.state?.lineupIds ?? [],
                 managerData.state?.benchIds ?? [],
               )
-            : buildBudgetDemoState(nextPlayers, initialFormation);
+            : buildBudgetDemoState(nextPlayers, initialFormation, budgetCapMillions);
 
         let nextState = isWithinBudget(
           [...hydratedState.lineup, ...hydratedState.bench],
-          MAX_TRANSFER_BUDGET_MILLIONS,
+          budgetCapMillions,
         )
           ? hydratedState
-          : buildBudgetDemoState(nextPlayers, initialFormation);
+          : buildBudgetDemoState(nextPlayers, initialFormation, budgetCapMillions);
 
         const savedPendingSellId = managerData.state?.pendingSellId ?? null;
         if (savedPendingSellId) {
@@ -482,7 +485,7 @@ export default function ManagerMyTeamPage() {
     };
 
     void load();
-  }, [formationOptions, isWkMode]);
+  }, [budgetCapMillions, formationOptions, isWkMode]);
 
   useEffect(() => {
     if (!hydrated.current) {
@@ -520,8 +523,8 @@ export default function ManagerMyTeamPage() {
   }, [state.bench, state.lineup]);
 
   const remainingBudget = useMemo(
-    () => calculateRemainingBudget(squadPlayers, MAX_TRANSFER_BUDGET_MILLIONS),
-    [squadPlayers],
+    () => calculateRemainingBudget(squadPlayers, budgetCapMillions),
+    [budgetCapMillions, squadPlayers],
   );
 
   const openSlots = useMemo(
@@ -893,8 +896,8 @@ export default function ManagerMyTeamPage() {
       }
 
       const candidate = { lineup: nextLineup, bench: nextBench };
-      if (!isWithinBudget([...candidate.lineup, ...candidate.bench], MAX_TRANSFER_BUDGET_MILLIONS)) {
-        setTransferMessage(`Transfer geblokkeerd: team mag maximaal € ${MAX_TRANSFER_BUDGET_MILLIONS.toFixed(1)}M kosten.`);
+      if (!isWithinBudget([...candidate.lineup, ...candidate.bench], budgetCapMillions)) {
+        setTransferMessage(`Transfer geblokkeerd: team mag maximaal € ${budgetCapMillions.toFixed(1)}M kosten.`);
         return previous;
       }
 

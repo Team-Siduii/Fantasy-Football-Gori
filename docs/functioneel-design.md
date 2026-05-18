@@ -145,8 +145,8 @@ Per rol belangrijkste rechten:
 - Basiselftal-weergave op het veld toont per slot de echte speler op die index (geen naamherhaling binnen een linie); elke speler-id mag maar 1x tegelijk in teamstate voorkomen
 - Pitch in basiselftal gebruikt exact de aangeleverde referentie-afbeelding als achtergrondasset (`/public/images/pitch-reference.jpg`) met sterke zoom-in (`background-size: 200% auto`) zodat het veld close-up in beeld staat
 - Voor scherper beeld gebruikt de pitch-laag subtiele beeldversterking (`contrast(1.12) saturate(1.08) brightness(1.02)`) zonder spelerskaarten of interacties te beïnvloeden
-- MVP transferbudget-cap voor managerteam: maximaal €100.0M totale teamwaarde; transferbevestiging blokkeert automatisch boven cap
-- Demo-team (testseed) wordt standaard binnen budget opgebouwd (<= €100.0M) zodat testen direct valide start
+- MVP transferbudget-cap is mode-specifiek: Eredivisie maximaal €32.0M, WK maximaal €100.0M; transferbevestiging blokkeert automatisch boven de cap van de actieve mode
+- Demo-team (testseed) wordt per actieve mode binnen budget opgebouwd (Eredivisie <= €32.0M, WK <= €100.0M) zodat testen direct valide start
 - Mobiele volgorde op Team-pagina: basiselftal eerst, daarna wisselspelers, daarna statistiektegels
 - Transfermarkt-kolommen zijn sorteerbaar op spelernaam, positie (GK→DEF→MID→FWD), club en transferwaarde
 
@@ -211,7 +211,7 @@ FR-032: Transfer wordt direct verwerkt bij aankoop op een open placeholder; er i
 FR-033: Transfermarkt in managerweergave ondersteunt filtering op positie, club en maximale transferwaarde.
 FR-034: Basiselftal-rendering gebruikt unieke lineup-index mapping zodat spelersnamen niet onterecht per linie gedupliceerd worden.
 FR-035: Teamweergave op het veld bevat een halve-veld visualisatie als achtergrond zonder drag/drop-interactie te blokkeren.
-FR-036: Teamwaarde voor manager-opstelling is hard begrensd op €100.0M in MVP; transfers die de cap overschrijden worden geweigerd.
+FR-036: Teamwaarde-cap is mode-specifiek in MVP: Eredivisie max €32.0M en WK max €100.0M; transfers boven de cap van de actieve mode worden geweigerd.
 FR-037: Competitiepagina bevat het resterende Eredivisie-schema opgesplitst in speelrondes 31 t/m 34, inclusief datum/tijd en sponsorvermelding (Staatsloterij).
 FR-038: Na verkoop verschijnt direct een open placeholder op het veld of op de bank; formatie wisselen gebruikt deze placeholder(s) voor opbouw.
 FR-039: Als gekozen formatie met huidige spelers + beschikbare placeholders niet haalbaar is, toont UI exact: "je kunt niet in deze formatie spelen met deze spelers".
@@ -361,7 +361,7 @@ Waarom zo:
 - [ ] Transfermarkt staat onder teamoverzicht en ondersteunt filters op positie, club en maximale transferwaarde
 - [ ] Basiselftal toont de daadwerkelijk geselecteerde spelers per slot (geen visuele naamduplicatie door renderfout)
 - [ ] Basiselftal heeft een halve-veld achtergrondvisual (zoals voetbalveld-helft) terwijl kaarten volledig bruikbaar blijven
-- [ ] Teamwaarde blijft op of onder €100.0M; transfer boven cap wordt geblokkeerd met duidelijke melding
+- [ ] Teamwaarde blijft binnen de mode-cap: Eredivisie <= €32.0M en WK <= €100.0M; transfer boven de actieve cap wordt geblokkeerd met duidelijke melding
 - [ ] Competitiepagina toont alle resterende wedstrijden ingedeeld in speelrondes 31, 32, 33 en 34 met correcte datum/tijd
 - [ ] Verkoopactie maakt direct een zichtbare placeholder op juiste plek (veld of bank)
 - [ ] Formatie-wissel met actieve placeholder blokkeert onhaalbare formaties met melding: "je kunt niet in deze formatie spelen met deze spelers"
@@ -424,7 +424,7 @@ Waarom zo:
 - [x] MVP transfer-UX bevestigd: eerst verkopen, dan kopen op open placeholder, zonder aparte confirm-stap
 - [x] Wissels op het veld respecteren positie-slots (geen MID op DEF-slot)
 - [x] Transfermarkt blijft op managerpagina zichtbaar onder teamoverzicht met filters op positie, club en transferwaarde
-- [x] MVP transferbudget-cap vastgesteld op €100.0M en demo-team start binnen deze cap
+- [x] MVP transferbudget-cap vastgesteld op mode-specifieke cap: Eredivisie €32.0M en WK €100.0M; teamopbouw/transfervalidatie gebruikt de actieve mode-cap.
 - [x] Resterend schema vastgesteld: speelronde 31 (22-26 apr), 32 (2-3 mei), 33 (10 mei), 34 (17 mei), met sponsorvermelding Staatsloterij
 - [x] Transferflow aangepast naar verkoop->placeholder->(formatie wissel)->aankoop zonder aparte confirm
 - [x] Positiekeuze in transfermarkt blijft vrij; positionele fit-check gebeurt bij koopactie op open slot
@@ -495,4 +495,5 @@ Waarom zo:
 - 2026-05-18: Manager-accountlijst bijgewerkt: Jack e-mail gecorrigeerd naar `Jackvandereep@hotmail.com` en nieuw manageraccount `emielzomerdijk@gmail.com` toegevoegd met first-login inlogcode.
 - 2026-05-18: Extra adminaccount toegevoegd voor `s.j.m.duindam@gmail.com` met first-login inlogcode zodat regels direct via instellingen beheerd kunnen worden.
 - 2026-05-18: Instellingen opgesplitst per competitie-mode: `league-config` ondersteunt nu `mode=eredivisie|wk` met aparte opslagpaden (`league-admin-config.json` en `league-admin-config-wk.json` / Vercel `/tmp` varianten) en mode-switch in de instellingen-UI.
+- 2026-05-18: Budgetcap mode-specifiek gemaakt in managerflow: Eredivisie gebruikt €32.0M, WK gebruikt €100.0M; resterend budget, demo-seed en transfervalidatie volgen de actieve mode.
 - 2026-05-18: Instellingenpagina UX gepolijst: duidelijke 3-stappenflow, actieve mode-badge, niet-opgeslagen-wijzigingen indicator, herstelknop en inklapbare debug-sectie voor intuïtiever beheer.

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  MAX_TRANSFER_BUDGET_MILLIONS,
+  EREDIVISIE_TRANSFER_BUDGET_MILLIONS,
+  WORLD_CUP_TRANSFER_BUDGET_MILLIONS,
   calculateRemainingBudget,
   calculateSquadCost,
+  getTransferBudgetCapMillions,
   isWithinBudget,
 } from "../../src/domain/team-budget";
 
@@ -17,15 +19,20 @@ describe("team-budget", () => {
     expect(cost).toBe(5.5);
   });
 
-  it("calculates remaining budget against 100M cap", () => {
+  it("calculates remaining budget against eredivisie 32M cap", () => {
     const remaining = calculateRemainingBudget([
       { id: "1", prijs: 12 },
       { id: "2", prijs: 9 },
       { id: "3", prijs: 8 },
     ]);
 
-    expect(remaining).toBe(71);
-    expect(isWithinBudget([{ id: "1", prijs: 99.9 }], MAX_TRANSFER_BUDGET_MILLIONS)).toBe(true);
-    expect(isWithinBudget([{ id: "1", prijs: 100.1 }], MAX_TRANSFER_BUDGET_MILLIONS)).toBe(false);
+    expect(remaining).toBe(3);
+    expect(isWithinBudget([{ id: "1", prijs: 31.9 }], EREDIVISIE_TRANSFER_BUDGET_MILLIONS)).toBe(true);
+    expect(isWithinBudget([{ id: "1", prijs: 32.1 }], EREDIVISIE_TRANSFER_BUDGET_MILLIONS)).toBe(false);
+  });
+
+  it("resolves budget cap by mode", () => {
+    expect(getTransferBudgetCapMillions("eredivisie")).toBe(EREDIVISIE_TRANSFER_BUDGET_MILLIONS);
+    expect(getTransferBudgetCapMillions("wk")).toBe(WORLD_CUP_TRANSFER_BUDGET_MILLIONS);
   });
 });

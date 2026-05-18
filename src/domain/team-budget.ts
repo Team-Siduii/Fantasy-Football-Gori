@@ -1,4 +1,12 @@
-export const MAX_TRANSFER_BUDGET_MILLIONS = 100;
+export type BudgetLeagueMode = "eredivisie" | "wk";
+
+export const EREDIVISIE_TRANSFER_BUDGET_MILLIONS = 32;
+export const WORLD_CUP_TRANSFER_BUDGET_MILLIONS = 100;
+export const MAX_TRANSFER_BUDGET_MILLIONS = EREDIVISIE_TRANSFER_BUDGET_MILLIONS;
+
+export function getTransferBudgetCapMillions(mode: BudgetLeagueMode): number {
+  return mode === "wk" ? WORLD_CUP_TRANSFER_BUDGET_MILLIONS : EREDIVISIE_TRANSFER_BUDGET_MILLIONS;
+}
 
 type BudgetPlayer = {
   id: string;
