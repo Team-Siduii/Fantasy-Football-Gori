@@ -489,3 +489,4 @@ Waarom zo:
 - 2026-05-18: WK spelersdatabase ververst vanuit `https://www.wkcoach.nl/webapi/get_all_players/0`; `data/players-wk.csv` nu gevuld met 1.231 spelers uit 48 landen (bronpositie + transferwaarde overgenomen).
 - 2026-05-18: Team budget-cap verhoogd van €32.0M naar €100.0M (domain budget constant + default ruleset + tests + design sync).
 - 2026-05-18: WK manager-auth uitgebreid naar multi-account onboarding: drie manager-mails met eigen eerste inlogcode, verplichte first-login setup (nieuw wachtwoord + teamnaam), accountpagina (`/account`) met teamnaam-wijziging en wachtwoord wijzigen/resetten.
+- 2026-05-18: Manager-accountlijst bijgewerkt: Jack e-mail gecorrigeerd naar `Jackvandereep@hotmail.com` en nieuw manageraccount `emielzomerdijk@gmail.com` toegevoegd met first-login inlogcode.

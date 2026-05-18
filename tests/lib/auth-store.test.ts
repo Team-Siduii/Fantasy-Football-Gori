@@ -19,7 +19,8 @@ describe("auth-store security", () => {
 
     expect(store.authenticateManager("Johan201@hotmail.com", "WK-JOHAN-2026")).toBe(true);
     expect(store.authenticateManager("Thomasbart91@gmail.com", "WK-THOMAS-2026")).toBe(true);
-    expect(store.authenticateManager("Jackvandereep@hotmail.con", "WK-JACK-2026")).toBe(true);
+    expect(store.authenticateManager("Jackvandereep@hotmail.com", "WK-JACK-2026")).toBe(true);
+    expect(store.authenticateManager("emielzomerdijk@gmail.com", "WK-EMIEL-2026")).toBe(true);
     expect(store.authenticateManager("admin@gori.local", "admin1234")).toBe(true);
     expect(store.authenticateManager("Johan201@hotmail.com", "wrong")).toBe(false);
   });
