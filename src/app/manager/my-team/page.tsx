@@ -971,6 +971,7 @@ export default function ManagerMyTeamPage() {
           <div className="stat-grid stats-desktop">
             <StatTile label="Totaal Punten" value={state.lineup.reduce((sum, player) => sum + player.punten, 0)} />
             <StatTile label="Resterend Budget" value={`€ ${remainingBudget.toFixed(1)}M`} />
+            <StatTile label="Budget cap" value={`€ ${budgetCapMillions.toFixed(1)}M`} />
             <StatTile label="Transfers deze ronde" value={currentTransferLimit} />
           </div>
         </section>
@@ -1005,6 +1006,7 @@ export default function ManagerMyTeamPage() {
           <div className="stat-grid">
             <StatTile label="Totaal Punten" value={state.lineup.reduce((sum, player) => sum + player.punten, 0)} />
             <StatTile label="Resterend Budget" value={`€ ${remainingBudget.toFixed(1)}M`} />
+            <StatTile label="Budget cap" value={`€ ${budgetCapMillions.toFixed(1)}M`} />
             <StatTile label="Transfers deze ronde" value={currentTransferLimit} />
           </div>
         </section>

@@ -362,6 +362,7 @@ Waarom zo:
 - [ ] Basiselftal toont de daadwerkelijk geselecteerde spelers per slot (geen visuele naamduplicatie door renderfout)
 - [ ] Basiselftal heeft een halve-veld achtergrondvisual (zoals voetbalveld-helft) terwijl kaarten volledig bruikbaar blijven
 - [ ] Teamwaarde blijft binnen de mode-cap: Eredivisie <= €32.0M en WK <= €100.0M; transfer boven de actieve cap wordt geblokkeerd met duidelijke melding
+- [ ] Team-pagina toont expliciet de actieve `Budget cap` tegel (Eredivisie €32.0M, WK €100.0M)
 - [ ] Competitiepagina toont alle resterende wedstrijden ingedeeld in speelrondes 31, 32, 33 en 34 met correcte datum/tijd
 - [ ] Verkoopactie maakt direct een zichtbare placeholder op juiste plek (veld of bank)
 - [ ] Formatie-wissel met actieve placeholder blokkeert onhaalbare formaties met melding: "je kunt niet in deze formatie spelen met deze spelers"
@@ -496,4 +497,5 @@ Waarom zo:
 - 2026-05-18: Extra adminaccount toegevoegd voor `s.j.m.duindam@gmail.com` met first-login inlogcode zodat regels direct via instellingen beheerd kunnen worden.
 - 2026-05-18: Instellingen opgesplitst per competitie-mode: `league-config` ondersteunt nu `mode=eredivisie|wk` met aparte opslagpaden (`league-admin-config.json` en `league-admin-config-wk.json` / Vercel `/tmp` varianten) en mode-switch in de instellingen-UI.
 - 2026-05-18: Budgetcap mode-specifiek gemaakt in managerflow: Eredivisie gebruikt €32.0M, WK gebruikt €100.0M; resterend budget, demo-seed en transfervalidatie volgen de actieve mode.
+- 2026-05-18: Team-statistieken uitgebreid met expliciete `Budget cap` tegel zodat managers direct de actieve mode-limiet zien (Eredivisie €32.0M / WK €100.0M).
 - 2026-05-18: Instellingenpagina UX gepolijst: duidelijke 3-stappenflow, actieve mode-badge, niet-opgeslagen-wijzigingen indicator, herstelknop en inklapbare debug-sectie voor intuïtiever beheer.
