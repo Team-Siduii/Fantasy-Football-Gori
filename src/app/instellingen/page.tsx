@@ -1,10 +1,13 @@
 import { AppShell } from "@/components/app-shell";
 import { LeagueConfigEditor } from "@/components/league-config-editor";
+import { resolveLeagueAdminConfigPath } from "@/lib/league-admin-config";
 import { resolveManagerStatePath } from "@/lib/manager-state";
 
 export default function InstellingenPage() {
   const eredivisieStatePath = resolveManagerStatePath("eredivisie");
   const wkStatePath = resolveManagerStatePath("wk");
+  const eredivisieConfigPath = resolveLeagueAdminConfigPath("eredivisie");
+  const wkConfigPath = resolveLeagueAdminConfigPath("wk");
 
   return (
     <AppShell title="Instellingen" subtitle="League instellingen voor transferregels, scoring en competitiemodes.">
@@ -38,6 +41,19 @@ export default function InstellingenPage() {
             </li>
             <li>
               <strong>WK mode:</strong> <code>{wkStatePath}</code>
+            </li>
+          </ul>
+        </section>
+
+        <section className="card col-12">
+          <h2>League-config opslag per mode (debug)</h2>
+          <p className="muted-note">Instellingen worden nu per competitie apart opgeslagen zodat WK en Eredivisie los configureerbaar zijn.</p>
+          <ul>
+            <li>
+              <strong>Eredivisie config:</strong> <code>{eredivisieConfigPath}</code>
+            </li>
+            <li>
+              <strong>WK config:</strong> <code>{wkConfigPath}</code>
             </li>
           </ul>
         </section>

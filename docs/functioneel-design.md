@@ -252,6 +252,7 @@ FR-073: In WK mode gebruikt de manager-UI overal de term `Land` waar Eredivisie 
 FR-074: Players API ondersteunt mode-specifieke datasets: Eredivisie laadt `data/players.csv`, WK mode laadt `data/players-wk.csv` via `GET /api/players?mode=wk`.
 FR-075: WK demo-draft dataset is opgebouwd uit de meest recente nationale wedstrijdselecties waar beschikbaar, met fallback op landpagina-selecties, en gebruikt transferwaardeschaal met maximum €4.5M voor topspelers.
 FR-076: Transfermarkt is gepagineerd voor zowel Eredivisie als WK mode, met navigatieknoppen en paginastatus op basis van de actieve filter/sorteerset.
+FR-077: Instellingen voor league-config zijn mode-specifiek: Eredivisie en WK laden/schrijven elk naar een eigen configscope (`mode=eredivisie|wk`) met gescheiden opslagpad en onafhankelijke regels.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -491,3 +492,4 @@ Waarom zo:
 - 2026-05-18: WK manager-auth uitgebreid naar multi-account onboarding: drie manager-mails met eigen eerste inlogcode, verplichte first-login setup (nieuw wachtwoord + teamnaam), accountpagina (`/account`) met teamnaam-wijziging en wachtwoord wijzigen/resetten.
 - 2026-05-18: Manager-accountlijst bijgewerkt: Jack e-mail gecorrigeerd naar `Jackvandereep@hotmail.com` en nieuw manageraccount `emielzomerdijk@gmail.com` toegevoegd met first-login inlogcode.
 - 2026-05-18: Extra adminaccount toegevoegd voor `s.j.m.duindam@gmail.com` met first-login inlogcode zodat regels direct via instellingen beheerd kunnen worden.
+- 2026-05-18: Instellingen opgesplitst per competitie-mode: `league-config` ondersteunt nu `mode=eredivisie|wk` met aparte opslagpaden (`league-admin-config.json` en `league-admin-config-wk.json` / Vercel `/tmp` varianten) en mode-switch in de instellingen-UI.

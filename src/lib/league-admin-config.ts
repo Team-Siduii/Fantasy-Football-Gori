@@ -9,6 +9,8 @@ import {
 import type { LeagueTableTieBreaker, KnockoutTiePolicy } from "../domain/competition-engine";
 import { createDefaultRoleAssignments, type LeagueRoleAssignments } from "../domain/roles-permissions";
 
+export type LeagueMode = "eredivisie" | "wk";
+
 export type LeagueCompetitionConfig = {
   formats: Array<"LEAGUE_TABLE" | "CUP_KNOCKOUT">;
   leagueTableTieBreakers: LeagueTableTieBreaker[];
@@ -25,7 +27,23 @@ export type LeagueAdminConfig = {
   roles: LeagueRoleAssignments;
 };
 
-function getConfigPath() {
+function normalizeMode(mode?: string): LeagueMode {
+  return mode === "wk" ? "wk" : "eredivisie";
+}
+
+export function resolveLeagueAdminConfigPath(mode: LeagueMode = "eredivisie") {
+  if (mode === "wk") {
+    if (process.env.LEAGUE_ADMIN_CONFIG_WK_PATH) {
+      return process.env.LEAGUE_ADMIN_CONFIG_WK_PATH;
+    }
+
+    if (process.env.VERCEL === "1" || process.env.VERCEL_ENV) {
+      return "/tmp/league-admin-config-wk.json";
+    }
+
+    return path.join(process.cwd(), "data", "league-admin-config-wk.json");
+  }
+
   if (process.env.LEAGUE_ADMIN_CONFIG_PATH) {
     return process.env.LEAGUE_ADMIN_CONFIG_PATH;
   }
@@ -88,35 +106,37 @@ function normalize(input: Partial<LeagueAdminConfig>): LeagueAdminConfig {
   };
 }
 
-function save(config: LeagueAdminConfig) {
-  const target = getConfigPath();
+function save(config: LeagueAdminConfig, mode: LeagueMode) {
+  const target = resolveLeagueAdminConfigPath(mode);
   mkdirSync(path.dirname(target), { recursive: true });
   writeFileSync(target, JSON.stringify(config, null, 2), "utf-8");
 }
 
-export function getLeagueAdminConfig(): LeagueAdminConfig {
-  const target = getConfigPath();
+export function getLeagueAdminConfig(modeInput?: string): LeagueAdminConfig {
+  const mode = normalizeMode(modeInput);
+  const target = resolveLeagueAdminConfigPath(mode);
 
   if (!existsSync(target)) {
     const config = defaultConfig();
-    save(config);
+    save(config, mode);
     return config;
   }
 
   try {
     const parsed = JSON.parse(readFileSync(target, "utf-8")) as Partial<LeagueAdminConfig>;
     const config = normalize(parsed);
-    save(config);
+    save(config, mode);
     return config;
   } catch {
     const config = defaultConfig();
-    save(config);
+    save(config, mode);
     return config;
   }
 }
 
-export function updateLeagueAdminConfig(next: Partial<LeagueAdminConfig>): LeagueAdminConfig {
-  const current = getLeagueAdminConfig();
+export function updateLeagueAdminConfig(next: Partial<LeagueAdminConfig>, modeInput?: string): LeagueAdminConfig {
+  const mode = normalizeMode(modeInput);
+  const current = getLeagueAdminConfig(mode);
   const merged = normalize({
     ...current,
     ...next,
@@ -140,12 +160,12 @@ export function updateLeagueAdminConfig(next: Partial<LeagueAdminConfig>): Leagu
     },
   });
 
-  save(merged);
+  save(merged, mode);
   return merged;
 }
 
-export function resetLeagueAdminConfigForTests() {
-  const target = getConfigPath();
+export function resetLeagueAdminConfigForTests(modeInput?: string) {
+  const target = resolveLeagueAdminConfigPath(normalizeMode(modeInput));
   if (existsSync(target)) {
     unlinkSync(target);
   }
