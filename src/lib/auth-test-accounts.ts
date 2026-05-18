@@ -51,6 +51,16 @@ export const AUTH_TEST_ACCOUNT_PRESETS: AuthTestAccountPreset[] = [
     inviteCode: "WK-EMIEL-2026",
   },
   {
+    id: "sim-duindam-admin",
+    label: "Sim Duindam (Admin)",
+    role: "admin",
+    name: "Sim Duindam",
+    email: "s.j.m.duindam@gmail.com",
+    teamName: "Admin Console",
+    password: "unused-after-setup",
+    inviteCode: "WK-SIM-ADMIN-2026",
+  },
+  {
     id: "admin",
     label: "Test Admin",
     role: "admin",
