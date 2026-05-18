@@ -17,15 +17,15 @@ describe("team-budget", () => {
     expect(cost).toBe(5.5);
   });
 
-  it("calculates remaining budget against 32M cap", () => {
+  it("calculates remaining budget against 100M cap", () => {
     const remaining = calculateRemainingBudget([
       { id: "1", prijs: 12 },
       { id: "2", prijs: 9 },
       { id: "3", prijs: 8 },
     ]);
 
-    expect(remaining).toBe(3);
-    expect(isWithinBudget([{ id: "1", prijs: 31.9 }], MAX_TRANSFER_BUDGET_MILLIONS)).toBe(true);
-    expect(isWithinBudget([{ id: "1", prijs: 32.1 }], MAX_TRANSFER_BUDGET_MILLIONS)).toBe(false);
+    expect(remaining).toBe(71);
+    expect(isWithinBudget([{ id: "1", prijs: 99.9 }], MAX_TRANSFER_BUDGET_MILLIONS)).toBe(true);
+    expect(isWithinBudget([{ id: "1", prijs: 100.1 }], MAX_TRANSFER_BUDGET_MILLIONS)).toBe(false);
   });
 });

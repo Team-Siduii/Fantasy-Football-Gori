@@ -1,4 +1,4 @@
-export const MAX_TRANSFER_BUDGET_MILLIONS = 32;
+export const MAX_TRANSFER_BUDGET_MILLIONS = 100;
 
 type BudgetPlayer = {
   id: string;

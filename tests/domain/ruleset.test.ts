@@ -21,7 +21,7 @@ describe("ruleset v1", () => {
           bonusRounds: [5, 5, -1],
           allowMultipleSellsInBonusRound: true,
         },
-        budget: { teamValueCapMillions: 32 },
+        budget: { teamValueCapMillions: 100 },
         bench: { composition: { GK: 1, DEF: 1, MID: 1, FWD: 1 } },
       },
     };

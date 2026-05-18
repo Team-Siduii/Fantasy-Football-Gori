@@ -40,7 +40,7 @@ export function createDefaultRuleSetV1(): RuleSetV1 {
         allowMultipleSellsInBonusRound: true,
       },
       budget: {
-        teamValueCapMillions: 32,
+        teamValueCapMillions: 100,
       },
       bench: {
         composition: {

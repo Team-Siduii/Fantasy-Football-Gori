@@ -145,8 +145,8 @@ Per rol belangrijkste rechten:
 - Basiselftal-weergave op het veld toont per slot de echte speler op die index (geen naamherhaling binnen een linie); elke speler-id mag maar 1x tegelijk in teamstate voorkomen
 - Pitch in basiselftal gebruikt exact de aangeleverde referentie-afbeelding als achtergrondasset (`/public/images/pitch-reference.jpg`) met sterke zoom-in (`background-size: 200% auto`) zodat het veld close-up in beeld staat
 - Voor scherper beeld gebruikt de pitch-laag subtiele beeldversterking (`contrast(1.12) saturate(1.08) brightness(1.02)`) zonder spelerskaarten of interacties te beïnvloeden
-- MVP transferbudget-cap voor managerteam: maximaal €32.0M totale teamwaarde; transferbevestiging blokkeert automatisch boven cap
-- Demo-team (testseed) wordt standaard binnen budget opgebouwd (<= €32.0M) zodat testen direct valide start
+- MVP transferbudget-cap voor managerteam: maximaal €100.0M totale teamwaarde; transferbevestiging blokkeert automatisch boven cap
+- Demo-team (testseed) wordt standaard binnen budget opgebouwd (<= €100.0M) zodat testen direct valide start
 - Mobiele volgorde op Team-pagina: basiselftal eerst, daarna wisselspelers, daarna statistiektegels
 - Transfermarkt-kolommen zijn sorteerbaar op spelernaam, positie (GK→DEF→MID→FWD), club en transferwaarde
 
@@ -211,7 +211,7 @@ FR-032: Transfer wordt direct verwerkt bij aankoop op een open placeholder; er i
 FR-033: Transfermarkt in managerweergave ondersteunt filtering op positie, club en maximale transferwaarde.
 FR-034: Basiselftal-rendering gebruikt unieke lineup-index mapping zodat spelersnamen niet onterecht per linie gedupliceerd worden.
 FR-035: Teamweergave op het veld bevat een halve-veld visualisatie als achtergrond zonder drag/drop-interactie te blokkeren.
-FR-036: Teamwaarde voor manager-opstelling is hard begrensd op €32.0M in MVP; transfers die de cap overschrijden worden geweigerd.
+FR-036: Teamwaarde voor manager-opstelling is hard begrensd op €100.0M in MVP; transfers die de cap overschrijden worden geweigerd.
 FR-037: Competitiepagina bevat het resterende Eredivisie-schema opgesplitst in speelrondes 31 t/m 34, inclusief datum/tijd en sponsorvermelding (Staatsloterij).
 FR-038: Na verkoop verschijnt direct een open placeholder op het veld of op de bank; formatie wisselen gebruikt deze placeholder(s) voor opbouw.
 FR-039: Als gekozen formatie met huidige spelers + beschikbare placeholders niet haalbaar is, toont UI exact: "je kunt niet in deze formatie spelen met deze spelers".
@@ -359,7 +359,7 @@ Waarom zo:
 - [ ] Transfermarkt staat onder teamoverzicht en ondersteunt filters op positie, club en maximale transferwaarde
 - [ ] Basiselftal toont de daadwerkelijk geselecteerde spelers per slot (geen visuele naamduplicatie door renderfout)
 - [ ] Basiselftal heeft een halve-veld achtergrondvisual (zoals voetbalveld-helft) terwijl kaarten volledig bruikbaar blijven
-- [ ] Teamwaarde blijft op of onder €32.0M; transfer boven cap wordt geblokkeerd met duidelijke melding
+- [ ] Teamwaarde blijft op of onder €100.0M; transfer boven cap wordt geblokkeerd met duidelijke melding
 - [ ] Competitiepagina toont alle resterende wedstrijden ingedeeld in speelrondes 31, 32, 33 en 34 met correcte datum/tijd
 - [ ] Verkoopactie maakt direct een zichtbare placeholder op juiste plek (veld of bank)
 - [ ] Formatie-wissel met actieve placeholder blokkeert onhaalbare formaties met melding: "je kunt niet in deze formatie spelen met deze spelers"
@@ -421,7 +421,7 @@ Waarom zo:
 - [x] MVP transfer-UX bevestigd: eerst verkopen, dan kopen op open placeholder, zonder aparte confirm-stap
 - [x] Wissels op het veld respecteren positie-slots (geen MID op DEF-slot)
 - [x] Transfermarkt blijft op managerpagina zichtbaar onder teamoverzicht met filters op positie, club en transferwaarde
-- [x] MVP transferbudget-cap vastgesteld op €32.0M en demo-team start binnen deze cap
+- [x] MVP transferbudget-cap vastgesteld op €100.0M en demo-team start binnen deze cap
 - [x] Resterend schema vastgesteld: speelronde 31 (22-26 apr), 32 (2-3 mei), 33 (10 mei), 34 (17 mei), met sponsorvermelding Staatsloterij
 - [x] Transferflow aangepast naar verkoop->placeholder->(formatie wissel)->aankoop zonder aparte confirm
 - [x] Positiekeuze in transfermarkt blijft vrij; positionele fit-check gebeurt bij koopactie op open slot
@@ -487,3 +487,4 @@ Waarom zo:
 - 2026-05-04: Verdere WK-styling en naamnormalisatie: Brazilië-shirt geel met dunne groene onderrand, Verenigde Staten-shirt in vlagkleuren, WK-landnamen doorgezet naar Nederlandse benamingen in dataset/speelschema en wedstrijdafkorting voor Verenigde Staten geforceerd op `USA`.
 - 2026-05-04: WK-afkortingen in speelschema verder afgestemd op gewenste NL-notatie: Bosnië-Herzegovina `BOS`, Zuid-Afrika `ZAF`, Zwitserland `ZWI`, Ivoorkust `IVO`, Curaçao `CUR`, Kaapverdië `KAA`, Oostenrijk `AUT` en Saoedi-Arabië `SAU`.
 - 2026-05-18: WK spelersdatabase ververst vanuit `https://www.wkcoach.nl/webapi/get_all_players/0`; `data/players-wk.csv` nu gevuld met 1.231 spelers uit 48 landen (bronpositie + transferwaarde overgenomen).
+- 2026-05-18: Team budget-cap verhoogd van €32.0M naar €100.0M (domain budget constant + default ruleset + tests + design sync).
