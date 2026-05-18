@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type LeagueMode = "eredivisie" | "wk";
 
@@ -11,12 +11,7 @@ type LeagueAdminConfig = {
   roles: { ownerId: string; commissionerIds: string[]; managerIds: string[] };
 };
 
-type RuleHelpKey =
-  | "scoringProfile"
-  | "waiverTieBreaker"
-  | "cupTiePolicy"
-  | "commissioners"
-  | "managers";
+type RuleHelpKey = "scoringProfile" | "waiverTieBreaker" | "cupTiePolicy" | "commissioners" | "managers";
 
 const RULE_HELP_TEXT: Record<RuleHelpKey, string> = {
   scoringProfile:
@@ -27,8 +22,7 @@ const RULE_HELP_TEXT: Record<RuleHelpKey, string> = {
     "Bepaalt hoe een gelijke stand in de cup wordt beslist. Penalties = strafschoppen. Higher seed = hoger geplaatste team gaat door.",
   commissioners:
     "Manager-ID's met extra beheerdersrechten voor league-regels en instellingen. Komma-gescheiden lijst, bijvoorbeeld: owner-1,comm-1.",
-  managers:
-    "Alle manager-ID's die in deze league actief zijn. Deze lijst wordt gebruikt voor permissies en rolvalidatie.",
+  managers: "Alle manager-ID's die in deze league actief zijn. Deze lijst wordt gebruikt voor permissies en rolvalidatie.",
 };
 
 function RuleLabel({ text, helpKey }: { text: string; helpKey: RuleHelpKey }) {
@@ -45,24 +39,52 @@ function RuleLabel({ text, helpKey }: { text: string; helpKey: RuleHelpKey }) {
   );
 }
 
+function cloneConfig(input: LeagueAdminConfig): LeagueAdminConfig {
+  return {
+    scoringProfile: { ...input.scoringProfile },
+    waiver: { enabled: input.waiver.enabled, round: { ...input.waiver.round } },
+    competition: { cupTiePolicy: input.competition.cupTiePolicy, formats: [...input.competition.formats] },
+    roles: {
+      ownerId: input.roles.ownerId,
+      commissionerIds: [...input.roles.commissionerIds],
+      managerIds: [...input.roles.managerIds],
+    },
+  };
+}
+
 export function LeagueConfigEditor() {
   const [mode, setMode] = useState<LeagueMode>("eredivisie");
   const [config, setConfig] = useState<LeagueAdminConfig | null>(null);
+  const [initialConfig, setInitialConfig] = useState<LeagueAdminConfig | null>(null);
   const [message, setMessage] = useState<string>("");
+  const [messageType, setMessageType] = useState<"info" | "success" | "error">("info");
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (!config || !initialConfig) return false;
+    return JSON.stringify(config) !== JSON.stringify(initialConfig);
+  }, [config, initialConfig]);
 
   useEffect(() => {
     async function run() {
       setLoading(true);
+      setMessage("");
+      setSaving(false);
       const res = await fetch(`/api/admin/league-config?mode=${mode}`, { cache: "no-store" });
       const data = (await res.json()) as { config?: LeagueAdminConfig; error?: string };
+
       if (!res.ok || !data.config) {
+        setMessageType("error");
         setMessage(data.error ?? "Kon config niet laden");
         setConfig(null);
+        setInitialConfig(null);
       } else {
-        setConfig(data.config);
-        setMessage("");
+        const copied = cloneConfig(data.config);
+        setConfig(copied);
+        setInitialConfig(cloneConfig(copied));
       }
+
       setLoading(false);
     }
 
@@ -70,11 +92,12 @@ export function LeagueConfigEditor() {
   }, [mode]);
 
   async function save() {
-    if (!config) {
-      return;
-    }
+    if (!config || saving) return;
 
-    setMessage("Opslaan...");
+    setSaving(true);
+    setMessageType("info");
+    setMessage("Instellingen opslaan...");
+
     const payload = {
       scoringProfile: {
         ...config.scoringProfile,
@@ -97,21 +120,41 @@ export function LeagueConfigEditor() {
 
     const data = (await res.json()) as { ok?: boolean; error?: string; config?: LeagueAdminConfig };
     if (!res.ok || !data.ok || !data.config) {
+      setMessageType("error");
       setMessage(data.error ?? "Opslaan mislukt");
+      setSaving(false);
       return;
     }
 
-    setConfig(data.config);
-    setMessage("Opgeslagen ✅");
+    const copied = cloneConfig(data.config);
+    setConfig(copied);
+    setInitialConfig(cloneConfig(copied));
+    setMessageType("success");
+    setMessage(`${mode === "wk" ? "WK" : "Eredivisie"} instellingen opgeslagen ✅`);
+    setSaving(false);
+  }
+
+  function resetChanges() {
+    if (!initialConfig) return;
+    setConfig(cloneConfig(initialConfig));
+    setMessageType("info");
+    setMessage("Wijzigingen teruggezet naar laatst opgeslagen versie.");
   }
 
   return (
     <section className="card col-12">
-      <h2>League Config (Fase 2)</h2>
-      <p className="muted">Beheer scoring-profiel, waiver tie-breaker, competition policy en rollenmodel per competitie-mode.</p>
+      <div className="settings-editor-head">
+        <div>
+          <h2>League instellingen beheren</h2>
+          <p className="muted">Kies eerst een mode en pas daarna alleen die competitie aan. Je wijzigingen blijven gescheiden per mode.</p>
+        </div>
+        <div className={`settings-mode-pill settings-mode-pill--${mode}`}>
+          Actief: {mode === "wk" ? "WK" : "Eredivisie"}
+        </div>
+      </div>
 
-      <div className="mode-switch" style={{ marginTop: 8, marginBottom: 8 }} aria-label="Config mode">
-        <span className="mode-switch-label">Config mode</span>
+      <div className="mode-switch settings-mode-switch" aria-label="Config mode">
+        <span className="mode-switch-label">Stap 1 — kies competitie</span>
         <div className="mode-switch-buttons">
           <button type="button" className={`mode-switch-button ${mode === "eredivisie" ? "active" : ""}`} onClick={() => setMode("eredivisie")}>
             Eredivisie
@@ -122,119 +165,139 @@ export function LeagueConfigEditor() {
         </div>
       </div>
 
-      {loading ? <p>Config laden...</p> : null}
-      {!loading && !config ? <p>{message || "Geen config"}</p> : null}
+      {loading ? <p className="muted" style={{ marginTop: 12 }}>Config laden...</p> : null}
+      {!loading && !config ? <p className="error-text">{message || "Geen config"}</p> : null}
 
       {!loading && config ? (
         <>
+          <div className="settings-hint-list">
+            <span>Stap 2 — pas regels aan</span>
+            <span>Stap 3 — sla op</span>
+            {hasUnsavedChanges ? <span className="settings-hint-warning">Niet-opgeslagen wijzigingen</span> : <span>Alles opgeslagen</span>}
+          </div>
+
           <div className="grid" style={{ marginTop: 12 }}>
-            <label className="field col-4">
-              <RuleLabel text="Scoring profiel" helpKey="scoringProfile" />
-              <select
-                value={config.scoringProfile.type}
-                onChange={(event) =>
-                  setConfig({
-                    ...config,
-                    scoringProfile: {
-                      ...config.scoringProfile,
-                      type: event.target.value as "CLASSIC" | "CUSTOM",
-                      id: event.target.value === "CLASSIC" ? "classic" : "custom",
-                      label: event.target.value === "CLASSIC" ? "Classic" : "Custom",
-                    },
-                  })
-                }
-              >
-                <option value="CLASSIC">Classic (default)</option>
-                <option value="CUSTOM">Custom</option>
-              </select>
-            </label>
+            <section className="card col-6 settings-subcard">
+              <h3>Spelregels</h3>
+              <div className="grid">
+                <label className="field col-12">
+                  <RuleLabel text="Scoring profiel" helpKey="scoringProfile" />
+                  <select
+                    value={config.scoringProfile.type}
+                    onChange={(event) =>
+                      setConfig({
+                        ...config,
+                        scoringProfile: {
+                          ...config.scoringProfile,
+                          type: event.target.value as "CLASSIC" | "CUSTOM",
+                          id: event.target.value === "CLASSIC" ? "classic" : "custom",
+                          label: event.target.value === "CLASSIC" ? "Classic" : "Custom",
+                        },
+                      })
+                    }
+                  >
+                    <option value="CLASSIC">Classic (default)</option>
+                    <option value="CUSTOM">Custom</option>
+                  </select>
+                </label>
 
-            <label className="field col-4">
-              <RuleLabel text="Waiver tie-breaker" helpKey="waiverTieBreaker" />
-              <select
-                value={config.waiver.round.tieBreaker}
-                onChange={(event) =>
-                  setConfig({
-                    ...config,
-                    waiver: {
-                      ...config.waiver,
-                      round: {
-                        ...config.waiver.round,
-                        tieBreaker: event.target.value as "PRIORITY" | "EARLIEST_BID",
-                      },
-                    },
-                  })
-                }
-              >
-                <option value="PRIORITY">Priority</option>
-                <option value="EARLIEST_BID">Earliest bid</option>
-              </select>
-            </label>
+                <label className="field col-12">
+                  <RuleLabel text="Waiver tie-breaker" helpKey="waiverTieBreaker" />
+                  <select
+                    value={config.waiver.round.tieBreaker}
+                    onChange={(event) =>
+                      setConfig({
+                        ...config,
+                        waiver: {
+                          ...config.waiver,
+                          round: {
+                            ...config.waiver.round,
+                            tieBreaker: event.target.value as "PRIORITY" | "EARLIEST_BID",
+                          },
+                        },
+                      })
+                    }
+                  >
+                    <option value="PRIORITY">Priority</option>
+                    <option value="EARLIEST_BID">Earliest bid</option>
+                  </select>
+                </label>
 
-            <label className="field col-4">
-              <RuleLabel text="Cup tie policy" helpKey="cupTiePolicy" />
-              <select
-                value={config.competition.cupTiePolicy}
-                onChange={(event) =>
-                  setConfig({
-                    ...config,
-                    competition: {
-                      ...config.competition,
-                      cupTiePolicy: event.target.value as "PENALTIES" | "HIGHER_SEED",
-                    },
-                  })
-                }
-              >
-                <option value="PENALTIES">Penalties</option>
-                <option value="HIGHER_SEED">Higher seed</option>
-              </select>
-            </label>
+                <label className="field col-12">
+                  <RuleLabel text="Cup tie policy" helpKey="cupTiePolicy" />
+                  <select
+                    value={config.competition.cupTiePolicy}
+                    onChange={(event) =>
+                      setConfig({
+                        ...config,
+                        competition: {
+                          ...config.competition,
+                          cupTiePolicy: event.target.value as "PENALTIES" | "HIGHER_SEED",
+                        },
+                      })
+                    }
+                  >
+                    <option value="PENALTIES">Penalties</option>
+                    <option value="HIGHER_SEED">Higher seed</option>
+                  </select>
+                </label>
+              </div>
+            </section>
 
-            <label className="field col-6">
-              <RuleLabel text="Commissioners (comma-separated manager ids)" helpKey="commissioners" />
-              <input
-                value={config.roles.commissionerIds.join(",")}
-                onChange={(event) =>
-                  setConfig({
-                    ...config,
-                    roles: {
-                      ...config.roles,
-                      commissionerIds: event.target.value
-                        .split(",")
-                        .map((id) => id.trim())
-                        .filter(Boolean),
-                    },
-                  })
-                }
-              />
-            </label>
+            <section className="card col-6 settings-subcard">
+              <h3>Rollen & rechten</h3>
+              <div className="grid">
+                <label className="field col-12">
+                  <RuleLabel text="Commissioners (comma-separated manager ids)" helpKey="commissioners" />
+                  <input
+                    value={config.roles.commissionerIds.join(",")}
+                    onChange={(event) =>
+                      setConfig({
+                        ...config,
+                        roles: {
+                          ...config.roles,
+                          commissionerIds: event.target.value
+                            .split(",")
+                            .map((id) => id.trim())
+                            .filter(Boolean),
+                        },
+                      })
+                    }
+                  />
+                </label>
 
-            <label className="field col-6">
-              <RuleLabel text="Managers (comma-separated manager ids)" helpKey="managers" />
-              <input
-                value={config.roles.managerIds.join(",")}
-                onChange={(event) =>
-                  setConfig({
-                    ...config,
-                    roles: {
-                      ...config.roles,
-                      managerIds: event.target.value
-                        .split(",")
-                        .map((id) => id.trim())
-                        .filter(Boolean),
-                    },
-                  })
-                }
-              />
-            </label>
+                <label className="field col-12">
+                  <RuleLabel text="Managers (comma-separated manager ids)" helpKey="managers" />
+                  <input
+                    value={config.roles.managerIds.join(",")}
+                    onChange={(event) =>
+                      setConfig({
+                        ...config,
+                        roles: {
+                          ...config.roles,
+                          managerIds: event.target.value
+                            .split(",")
+                            .map((id) => id.trim())
+                            .filter(Boolean),
+                        },
+                      })
+                    }
+                  />
+                </label>
+              </div>
+            </section>
           </div>
 
-          <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>
-            <button type="button" onClick={() => void save()}>
-              Opslaan ({mode === "wk" ? "WK" : "Eredivisie"})
+          <div className="settings-actions">
+            <button type="button" onClick={() => void save()} disabled={!hasUnsavedChanges || saving}>
+              {saving ? "Opslaan..." : `Opslaan (${mode === "wk" ? "WK" : "Eredivisie"})`}
             </button>
-            <span className="muted">{message}</span>
+            <button type="button" className="ghost-button" onClick={resetChanges} disabled={!hasUnsavedChanges || saving}>
+              Herstel wijzigingen
+            </button>
           </div>
+
+          {message ? <p className={messageType === "error" ? "error-text" : messageType === "success" ? "success-text" : "muted-note"}>{message}</p> : null}
         </>
       ) : null}
     </section>

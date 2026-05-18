@@ -253,6 +253,7 @@ FR-074: Players API ondersteunt mode-specifieke datasets: Eredivisie laadt `data
 FR-075: WK demo-draft dataset is opgebouwd uit de meest recente nationale wedstrijdselecties waar beschikbaar, met fallback op landpagina-selecties, en gebruikt transferwaardeschaal met maximum €4.5M voor topspelers.
 FR-076: Transfermarkt is gepagineerd voor zowel Eredivisie als WK mode, met navigatieknoppen en paginastatus op basis van de actieve filter/sorteerset.
 FR-077: Instellingen voor league-config zijn mode-specifiek: Eredivisie en WK laden/schrijven elk naar een eigen configscope (`mode=eredivisie|wk`) met gescheiden opslagpad en onafhankelijke regels.
+FR-078: Instellingenpagina biedt een intuïtieve beheerflow met stap-geleiding (mode kiezen → regels aanpassen → opslaan), duidelijke actieve-mode indicatie, en zichtbare `niet-opgeslagen wijzigingen` status met herstelactie.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -398,6 +399,7 @@ Waarom zo:
 - [ ] WK mode laadt een eigen spelersdataset via `GET /api/players?mode=wk` (`data/players-wk.csv`) en Eredivisie blijft `data/players.csv` gebruiken
 - [ ] WK demo-draft spelers bevatten deelnemende landen en realistische waardes met bovengrens €4.5M voor topspelers
 - [ ] Transfermarkt is gepagineerd in zowel Eredivisie als WK mode (vorige/volgende + pagina-indicator boven én onder de tabel) en reset naar pagina 1 bij filter/sorteerwijzigingen
+- [ ] Instellingenpagina heeft een intuïtieve flow met staplabels, actieve-mode badge, niet-opgeslagen-wijzigingen status en een herstel-knop per actieve mode
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -493,3 +495,4 @@ Waarom zo:
 - 2026-05-18: Manager-accountlijst bijgewerkt: Jack e-mail gecorrigeerd naar `Jackvandereep@hotmail.com` en nieuw manageraccount `emielzomerdijk@gmail.com` toegevoegd met first-login inlogcode.
 - 2026-05-18: Extra adminaccount toegevoegd voor `s.j.m.duindam@gmail.com` met first-login inlogcode zodat regels direct via instellingen beheerd kunnen worden.
 - 2026-05-18: Instellingen opgesplitst per competitie-mode: `league-config` ondersteunt nu `mode=eredivisie|wk` met aparte opslagpaden (`league-admin-config.json` en `league-admin-config-wk.json` / Vercel `/tmp` varianten) en mode-switch in de instellingen-UI.
+- 2026-05-18: Instellingenpagina UX gepolijst: duidelijke 3-stappenflow, actieve mode-badge, niet-opgeslagen-wijzigingen indicator, herstelknop en inklapbare debug-sectie voor intuïtiever beheer.

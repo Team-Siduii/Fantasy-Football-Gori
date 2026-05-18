@@ -10,55 +10,56 @@ export default function InstellingenPage() {
   const wkConfigPath = resolveLeagueAdminConfigPath("wk");
 
   return (
-    <AppShell title="Instellingen" subtitle="League instellingen voor transferregels, scoring en competitiemodes.">
+    <AppShell title="Instellingen" subtitle="Beheer je league regels snel, veilig en per competitie-mode gescheiden.">
       <div className="grid">
-        <section className="card col-6">
-          <h2>Sprint 2 modules</h2>
+        <section className="card col-4">
+          <h2>Zo gebruik je dit</h2>
+          <ol className="settings-steps-list">
+            <li>Kies eerst Eredivisie of WK.</li>
+            <li>Pas alleen die mode aan.</li>
+            <li>Sla op en ga door naar de andere mode.</li>
+          </ol>
+        </section>
+
+        <section className="card col-4">
+          <h2>Wat je hier beheert</h2>
           <ul>
-            <li>Waiver/Blind bid mode v1 (gesloten biedingen + reveal)</li>
-            <li>Scoring profiles: Classic en Custom</li>
-            <li>Competition pack: League table + Cup knockout</li>
-            <li>Rollenmodel: owner / commissioner / manager</li>
+            <li>Scoring-profiel en cup tie policy</li>
+            <li>Waiver tie-breaker per competitie</li>
+            <li>Commissioners en managers per mode</li>
           </ul>
         </section>
 
-        <section className="card col-6">
-          <h2>Notificaties</h2>
-          <ul>
-            <li>Draft aan de beurt</li>
-            <li>Speler teruggezet naar pool tijdens draft</li>
-            <li>Transferwindow open/closing soon</li>
-            <li>Trade approval requested</li>
-          </ul>
-        </section>
-
-        <section className="card col-12">
-          <h2>State-opslag per mode (debug)</h2>
-          <p className="muted-note">Actieve opslagpaden voor manager-state. Gebruik dit om staging/prod runtime-isolatie te controleren.</p>
-          <ul>
-            <li>
-              <strong>Eredivisie mode:</strong> <code>{eredivisieStatePath}</code>
-            </li>
-            <li>
-              <strong>WK mode:</strong> <code>{wkStatePath}</code>
-            </li>
-          </ul>
-        </section>
-
-        <section className="card col-12">
-          <h2>League-config opslag per mode (debug)</h2>
-          <p className="muted-note">Instellingen worden nu per competitie apart opgeslagen zodat WK en Eredivisie los configureerbaar zijn.</p>
-          <ul>
-            <li>
-              <strong>Eredivisie config:</strong> <code>{eredivisieConfigPath}</code>
-            </li>
-            <li>
-              <strong>WK config:</strong> <code>{wkConfigPath}</code>
-            </li>
-          </ul>
+        <section className="card col-4">
+          <h2>Belangrijk</h2>
+          <p className="muted-note">Instellingen zijn volledig gescheiden tussen WK en Eredivisie. Wijzigingen in WK hebben geen effect op Eredivisie en andersom.</p>
         </section>
 
         <LeagueConfigEditor />
+
+        <details className="card col-12 settings-debug-panel">
+          <summary>Technische opslagpaden (debug)</summary>
+          <div className="settings-debug-grid">
+            <div>
+              <h3>Manager state</h3>
+              <p>
+                <strong>Eredivisie:</strong> <code>{eredivisieStatePath}</code>
+              </p>
+              <p>
+                <strong>WK:</strong> <code>{wkStatePath}</code>
+              </p>
+            </div>
+            <div>
+              <h3>League config</h3>
+              <p>
+                <strong>Eredivisie:</strong> <code>{eredivisieConfigPath}</code>
+              </p>
+              <p>
+                <strong>WK:</strong> <code>{wkConfigPath}</code>
+              </p>
+            </div>
+          </div>
+        </details>
       </div>
     </AppShell>
   );
