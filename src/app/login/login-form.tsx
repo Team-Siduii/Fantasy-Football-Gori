@@ -2,35 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
-import { AUTH_TEST_ACCOUNT_PRESETS } from "@/lib/auth-test-accounts";
-
-const DEFAULT_PRESET = AUTH_TEST_ACCOUNT_PRESETS[0];
+import { FormEvent, useState } from "react";
 
 export default function LoginForm({ nextPath }: { nextPath: string }) {
   const router = useRouter();
-  const [activePresetId, setActivePresetId] = useState(DEFAULT_PRESET.id);
-  const [email, setEmail] = useState(DEFAULT_PRESET.email);
-  const [password, setPassword] = useState(DEFAULT_PRESET.password);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const activePreset = useMemo(
-    () => AUTH_TEST_ACCOUNT_PRESETS.find((preset) => preset.id === activePresetId) ?? DEFAULT_PRESET,
-    [activePresetId],
-  );
-
-  function applyPreset(presetId: string) {
-    const preset = AUTH_TEST_ACCOUNT_PRESETS.find((item) => item.id === presetId);
-    if (!preset) {
-      return;
-    }
-
-    setActivePresetId(preset.id);
-    setEmail(preset.email);
-    setPassword(preset.password);
-    setError("");
-  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -44,9 +23,15 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = (await response.json()) as { error?: string };
+      const data = (await response.json()) as { error?: string; requiresSetup?: boolean };
       if (!response.ok) {
         setError(data.error ?? "Login mislukt");
+        return;
+      }
+
+      if (data.requiresSetup) {
+        router.push("/account");
+        router.refresh();
         return;
       }
 
@@ -61,24 +46,7 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
     <main className="auth-wrap">
       <section className="auth-card">
         <h1>Manager login</h1>
-        <p>Log in om je team, transfer pool en league-pagina te beheren.</p>
-
-        <div className="auth-preset-list" aria-label="Testaccounts">
-          {AUTH_TEST_ACCOUNT_PRESETS.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              className="secondary-button"
-              onClick={() => applyPreset(preset.id)}
-              aria-pressed={activePresetId === preset.id}
-            >
-              {preset.label}
-            </button>
-          ))}
-        </div>
-        <p className="auth-helper-text">
-          Actieve testlogin: <strong>{activePreset.email}</strong> · wachtwoord staat alvast ingevuld.
-        </p>
+        <p>Log in met je e-mail + wachtwoord of eerste inlogcode.</p>
 
         <form onSubmit={onSubmit} className="auth-form">
           <label>
@@ -87,7 +55,7 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
           </label>
 
           <label>
-            Wachtwoord
+            Wachtwoord / Inlogcode
             <input
               type="password"
               value={password}

@@ -13,14 +13,14 @@ const eredivisieNavItems: NavItem[] = [
   { href: "/manager/my-team", label: "Team" },
   { href: "/manager/transfer-pool", label: "Transfers" },
   { href: "/manager/league", label: "Competities" },
-  { href: "/profile", label: "Profiel" },
+  { href: "/account", label: "Account" },
 ];
 
 const wkNavItems: NavItem[] = [
   { href: "/manager/world-cup", label: "Team" },
   { href: "/manager/world-cup/transfer-pool", label: "Transfers" },
   { href: "/manager/world-cup/league", label: "Competities" },
-  { href: "/profile", label: "Profiel" },
+  { href: "/account", label: "Account" },
 ];
 
 function isActive(pathname: string, href: string) {

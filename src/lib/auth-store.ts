@@ -17,6 +17,7 @@ type AuthAccount = {
   profile: ManagerProfile;
   passwordHash: string;
   passwordSalt: string;
+  mustSetup: boolean;
 };
 
 type ResetTokenRecord = {
@@ -30,13 +31,6 @@ type PersistedAuthState = {
   resetTokens: ResetTokenRecord[];
 };
 
-type LegacyPersistedAuthState = {
-  profile?: ManagerProfile;
-  passwordHash?: string;
-  passwordSalt?: string;
-  resetTokens?: ResetTokenRecord[];
-};
-
 function getAuthStatePath() {
   return process.env.AUTH_STATE_PATH || path.join(process.cwd(), "data", "auth-state.json");
 }
@@ -47,6 +41,7 @@ function hashPassword(password: string, salt: string) {
 
 function createDefaultAccountFromPreset(preset: (typeof AUTH_TEST_ACCOUNT_PRESETS)[number]): AuthAccount {
   const salt = randomBytes(16).toString("hex");
+  const initialSecret = preset.inviteCode ?? preset.password;
 
   return {
     id: preset.id,
@@ -57,7 +52,8 @@ function createDefaultAccountFromPreset(preset: (typeof AUTH_TEST_ACCOUNT_PRESET
       teamName: preset.teamName,
     },
     passwordSalt: salt,
-    passwordHash: hashPassword(preset.password, salt),
+    passwordHash: hashPassword(initialSecret, salt),
+    mustSetup: Boolean(preset.inviteCode),
   };
 }
 
@@ -104,45 +100,12 @@ function isAuthAccount(input: unknown): input is AuthAccount {
     typeof maybe.id === "string" &&
     typeof maybe.passwordHash === "string" &&
     typeof maybe.passwordSalt === "string" &&
+    typeof maybe.mustSetup === "boolean" &&
     !!profile &&
     typeof profile.name === "string" &&
     typeof profile.email === "string" &&
     typeof profile.teamName === "string"
   );
-}
-
-function getAccountByRole(accounts: AuthAccount[], role: AuthRole): AuthAccount | undefined {
-  return accounts.find((account) => account.role === role);
-}
-
-function buildMigratedStateFromLegacy(parsed: LegacyPersistedAuthState): PersistedAuthState | null {
-  if (!parsed.passwordHash || !parsed.passwordSalt || !parsed.profile?.email) {
-    return null;
-  }
-
-  const managerPreset = AUTH_TEST_ACCOUNT_PRESETS.find((preset) => preset.role === "manager");
-  const managerRole: AuthRole = managerPreset?.role ?? "manager";
-
-  const managerAccount: AuthAccount = {
-    id: managerPreset?.id ?? "manager",
-    role: managerRole,
-    profile: {
-      name: parsed.profile.name,
-      email: parsed.profile.email,
-      teamName: parsed.profile.teamName,
-    },
-    passwordHash: parsed.passwordHash,
-    passwordSalt: parsed.passwordSalt,
-  };
-
-  const defaults = AUTH_TEST_ACCOUNT_PRESETS.map(createDefaultAccountFromPreset);
-  const adminDefault = getAccountByRole(defaults, "admin");
-  const accounts = adminDefault ? [managerAccount, adminDefault] : [managerAccount];
-
-  return {
-    accounts,
-    resetTokens: normalizeResetTokens(parsed.resetTokens),
-  };
 }
 
 function loadState(): PersistedAuthState {
@@ -155,22 +118,16 @@ function loadState(): PersistedAuthState {
   }
 
   try {
-    const parsed = JSON.parse(readFileSync(target, "utf-8")) as PersistedAuthState | LegacyPersistedAuthState;
+    const parsed = JSON.parse(readFileSync(target, "utf-8")) as PersistedAuthState;
 
-    if (Array.isArray((parsed as PersistedAuthState).accounts)) {
-      const validAccounts = (parsed as PersistedAuthState).accounts.filter(isAuthAccount);
+    if (Array.isArray(parsed.accounts)) {
+      const validAccounts = parsed.accounts.filter(isAuthAccount);
       if (validAccounts.length > 0) {
         return {
           accounts: validAccounts,
-          resetTokens: normalizeResetTokens((parsed as PersistedAuthState).resetTokens),
+          resetTokens: normalizeResetTokens(parsed.resetTokens),
         };
       }
-    }
-
-    const migrated = buildMigratedStateFromLegacy(parsed as LegacyPersistedAuthState);
-    if (migrated) {
-      saveState(migrated);
-      return migrated;
     }
 
     const reset = createStateFromDefaults();
@@ -209,42 +166,133 @@ function cleanupExpiredTokens() {
   authState.resetTokens = authState.resetTokens.filter((token) => token.expiresAt > now);
 }
 
-export function authenticateManager(email: string, password: string): boolean {
+export type LoginStatus = {
+  ok: boolean;
+  requiresSetup: boolean;
+};
+
+export function authenticateManagerWithStatus(email: string, password: string): LoginStatus {
   cleanupExpiredTokens();
 
   const account = findAccountByEmail(email);
   if (!account) {
-    return false;
+    return { ok: false, requiresSetup: false };
   }
 
-  return comparePassword(password, account);
+  const ok = comparePassword(password, account);
+  if (!ok) {
+    return { ok: false, requiresSetup: false };
+  }
+
+  return { ok: true, requiresSetup: account.mustSetup };
+}
+
+export function authenticateManager(email: string, password: string): boolean {
+  return authenticateManagerWithStatus(email, password).ok;
+}
+
+export function getProfileByEmail(email: string): ManagerProfile | null {
+  const account = findAccountByEmail(email);
+  return account ? account.profile : null;
 }
 
 export function getManagerProfile(): ManagerProfile {
-  const manager = getAccountByRole(authState.accounts, "manager") ?? authState.accounts[0];
-
-  return manager?.profile ?? { name: "Manager", email: "manager@gori.local", teamName: "FC Slot" };
+  return (
+    authState.accounts.find((account) => account.role === "manager")?.profile ?? {
+      name: "Manager",
+      email: "manager@gori.local",
+      teamName: "FC Slot",
+    }
+  );
 }
 
-export function updateManagerProfile(input: Pick<ManagerProfile, "name" | "teamName">): ManagerProfile {
-  if (authState.accounts.length === 0) {
-    authState = createStateFromDefaults();
+export function updateProfileByEmail(email: string, input: Pick<ManagerProfile, "name" | "teamName">): ManagerProfile | null {
+  const accountIndex = authState.accounts.findIndex((account) => account.profile.email.toLowerCase() === email.toLowerCase());
+  if (accountIndex === -1) {
+    return null;
   }
 
-  const managerIndex = authState.accounts.findIndex((account) => account.role === "manager");
-  const targetIndex = managerIndex >= 0 ? managerIndex : 0;
-
-  authState.accounts[targetIndex] = {
-    ...authState.accounts[targetIndex],
+  authState.accounts[accountIndex] = {
+    ...authState.accounts[accountIndex],
     profile: {
-      ...authState.accounts[targetIndex].profile,
+      ...authState.accounts[accountIndex].profile,
       name: input.name,
       teamName: input.teamName,
     },
   };
 
   saveState(authState);
-  return authState.accounts[targetIndex].profile;
+  return authState.accounts[accountIndex].profile;
+}
+
+export function updateManagerProfile(input: Pick<ManagerProfile, "name" | "teamName">): ManagerProfile {
+  const manager = authState.accounts.find((account) => account.role === "manager");
+  if (!manager) {
+    authState = createStateFromDefaults();
+    saveState(authState);
+  }
+  const refreshed = authState.accounts.find((account) => account.role === "manager") ?? authState.accounts[0];
+  return (
+    updateProfileByEmail(refreshed.profile.email, input) ?? {
+      name: input.name,
+      email: refreshed.profile.email,
+      teamName: input.teamName,
+    }
+  );
+}
+
+export function changePassword(email: string, currentPassword: string, newPassword: string): boolean {
+  const accountIndex = authState.accounts.findIndex((account) => account.profile.email.toLowerCase() === email.toLowerCase());
+  if (accountIndex === -1) {
+    return false;
+  }
+
+  const account = authState.accounts[accountIndex];
+  if (!comparePassword(currentPassword, account)) {
+    return false;
+  }
+
+  const salt = randomBytes(16).toString("hex");
+  authState.accounts[accountIndex] = {
+    ...account,
+    passwordSalt: salt,
+    passwordHash: hashPassword(newPassword, salt),
+    mustSetup: false,
+  };
+
+  saveState(authState);
+  return true;
+}
+
+export function completeInitialSetup(email: string, inviteCode: string, newPassword: string, teamName: string): boolean {
+  const accountIndex = authState.accounts.findIndex((account) => account.profile.email.toLowerCase() === email.toLowerCase());
+  if (accountIndex === -1) {
+    return false;
+  }
+
+  const account = authState.accounts[accountIndex];
+  if (!account.mustSetup) {
+    return false;
+  }
+
+  if (!comparePassword(inviteCode, account)) {
+    return false;
+  }
+
+  const salt = randomBytes(16).toString("hex");
+  authState.accounts[accountIndex] = {
+    ...account,
+    passwordSalt: salt,
+    passwordHash: hashPassword(newPassword, salt),
+    mustSetup: false,
+    profile: {
+      ...account.profile,
+      teamName: teamName.trim(),
+    },
+  };
+
+  saveState(authState);
+  return true;
 }
 
 export function createPasswordResetToken(email: string, ttlSeconds = 1800): string | null {
@@ -288,6 +336,7 @@ export function consumePasswordResetToken(token: string, newPassword: string): b
     ...authState.accounts[accountIndex],
     passwordSalt: salt,
     passwordHash: hashPassword(newPassword, salt),
+    mustSetup: false,
   };
   authState.resetTokens.splice(foundIndex, 1);
   saveState(authState);

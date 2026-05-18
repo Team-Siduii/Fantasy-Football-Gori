@@ -1,17 +1,24 @@
 import { NextResponse } from "next/server";
-import { getManagerProfile, updateManagerProfile } from "@/lib/auth-store";
-import { isAuthenticatedSession } from "@/lib/auth-session";
+import { getProfileByEmail, updateProfileByEmail } from "@/lib/auth-store";
+import { getAuthenticatedEmail } from "@/lib/auth-session";
 
 export async function GET() {
-  if (!(await isAuthenticatedSession())) {
+  const email = await getAuthenticatedEmail();
+  if (!email) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
 
-  return NextResponse.json({ profile: getManagerProfile() });
+  const profile = getProfileByEmail(email);
+  if (!profile) {
+    return NextResponse.json({ error: "Account niet gevonden" }, { status: 404 });
+  }
+
+  return NextResponse.json({ profile });
 }
 
 export async function PUT(request: Request) {
-  if (!(await isAuthenticatedSession())) {
+  const email = await getAuthenticatedEmail();
+  if (!email) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
 
@@ -21,10 +28,14 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Naam en teamnaam zijn verplicht." }, { status: 400 });
   }
 
-  const profile = updateManagerProfile({
+  const profile = updateProfileByEmail(email, {
     name: body.name.trim(),
     teamName: body.teamName.trim(),
   });
+
+  if (!profile) {
+    return NextResponse.json({ error: "Account niet gevonden" }, { status: 404 });
+  }
 
   return NextResponse.json({ ok: true, profile });
 }

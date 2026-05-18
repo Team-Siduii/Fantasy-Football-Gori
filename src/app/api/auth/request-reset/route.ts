@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createPasswordResetToken, getManagerProfile, getPasswordResetLink } from "@/lib/auth-store";
+import { createPasswordResetToken, getPasswordResetLink, getProfileByEmail } from "@/lib/auth-store";
 import { sendPasswordResetEmail } from "@/lib/mailer";
 
 export async function POST(request: Request) {
@@ -18,10 +18,10 @@ export async function POST(request: Request) {
   let mailReason: string | undefined;
 
   if (resetLink && token) {
-    const profile = getManagerProfile();
+    const profile = getProfileByEmail(body.email);
     const mailResult = await sendPasswordResetEmail({
-      toEmail: profile.email,
-      toName: profile.name,
+      toEmail: body.email,
+      toName: profile?.name ?? "Manager",
       resetLink,
     });
 

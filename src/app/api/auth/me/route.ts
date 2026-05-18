@@ -1,16 +1,21 @@
 import { NextResponse } from "next/server";
-import { getManagerProfile } from "@/lib/auth-store";
-import { isAuthenticatedSession } from "@/lib/auth-session";
+import { getProfileByEmail } from "@/lib/auth-store";
+import { getAuthenticatedEmail } from "@/lib/auth-session";
 
 export async function GET() {
-  const authenticated = await isAuthenticatedSession();
+  const email = await getAuthenticatedEmail();
 
-  if (!authenticated) {
+  if (!email) {
+    return NextResponse.json({ authenticated: false });
+  }
+
+  const profile = getProfileByEmail(email);
+  if (!profile) {
     return NextResponse.json({ authenticated: false });
   }
 
   return NextResponse.json({
     authenticated: true,
-    profile: getManagerProfile(),
+    profile,
   });
 }

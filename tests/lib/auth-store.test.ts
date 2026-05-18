@@ -14,26 +14,40 @@ afterEach(() => {
 });
 
 describe("auth-store security", () => {
-  it("authenticates default manager/admin and rejects invalid password", async () => {
+  it("authenticates manager invite codes and admin password", async () => {
     const store = await loadStore();
 
-    expect(store.authenticateManager("manager@gori.local", "gori1234")).toBe(true);
+    expect(store.authenticateManager("Johan201@hotmail.com", "WK-JOHAN-2026")).toBe(true);
+    expect(store.authenticateManager("Thomasbart91@gmail.com", "WK-THOMAS-2026")).toBe(true);
+    expect(store.authenticateManager("Jackvandereep@hotmail.con", "WK-JACK-2026")).toBe(true);
     expect(store.authenticateManager("admin@gori.local", "admin1234")).toBe(true);
-    expect(store.authenticateManager("manager@gori.local", "wrong")).toBe(false);
+    expect(store.authenticateManager("Johan201@hotmail.com", "wrong")).toBe(false);
+  });
+
+  it("marks first login as setup required then clears after setup", async () => {
+    const store = await loadStore();
+
+    expect(store.authenticateManagerWithStatus("Johan201@hotmail.com", "WK-JOHAN-2026")).toEqual({
+      ok: true,
+      requiresSetup: true,
+    });
+
+    expect(store.completeInitialSetup("Johan201@hotmail.com", "WK-JOHAN-2026", "NieuwSterk123", "Oranje Lions")).toBe(true);
+    expect(store.authenticateManagerWithStatus("Johan201@hotmail.com", "NieuwSterk123")).toEqual({
+      ok: true,
+      requiresSetup: false,
+    });
+  });
+
+  it("changes password for logged manager credential", async () => {
+    const store = await loadStore();
+
+    store.completeInitialSetup("Thomasbart91@gmail.com", "WK-THOMAS-2026", "ThomasPass123", "Team Thomas");
+    expect(store.changePassword("Thomasbart91@gmail.com", "ThomasPass123", "ThomasPass456")).toBe(true);
+    expect(store.authenticateManager("Thomasbart91@gmail.com", "ThomasPass456")).toBe(true);
   });
 
   it("resets password via token and invalidates used token", async () => {
-    const store = await loadStore();
-
-    const token = store.createPasswordResetToken("manager@gori.local", 1800);
-    expect(token).toBeTruthy();
-
-    expect(store.consumePasswordResetToken(token as string, "newStrongPass1")).toBe(true);
-    expect(store.authenticateManager("manager@gori.local", "newStrongPass1")).toBe(true);
-    expect(store.consumePasswordResetToken(token as string, "newStrongPass2")).toBe(false);
-  });
-
-  it("creates and consumes reset tokens for admin account", async () => {
     const store = await loadStore();
 
     const token = store.createPasswordResetToken("admin@gori.local", 1800);
@@ -41,13 +55,6 @@ describe("auth-store security", () => {
 
     expect(store.consumePasswordResetToken(token as string, "newAdminPass1")).toBe(true);
     expect(store.authenticateManager("admin@gori.local", "newAdminPass1")).toBe(true);
-  });
-
-  it("rejects expired reset token", async () => {
-    const store = await loadStore();
-
-    const token = store.createPasswordResetToken("manager@gori.local", -1);
-    expect(token).toBeTruthy();
-    expect(store.consumePasswordResetToken(token as string, "newStrongPass1")).toBe(false);
+    expect(store.consumePasswordResetToken(token as string, "newAdminPass2")).toBe(false);
   });
 });

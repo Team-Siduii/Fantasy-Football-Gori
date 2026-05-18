@@ -6,17 +6,39 @@ export type AuthTestAccountPreset = {
   email: string;
   teamName: string;
   password: string;
+  inviteCode?: string;
 };
 
 export const AUTH_TEST_ACCOUNT_PRESETS: AuthTestAccountPreset[] = [
   {
-    id: "manager",
-    label: "Test Manager",
+    id: "johan-swart",
+    label: "Johan Swart",
     role: "manager",
-    name: "Manager",
-    email: "manager@gori.local",
-    teamName: "FC Slot",
-    password: "gori1234",
+    name: "Johan Swart",
+    email: "Johan201@hotmail.com",
+    teamName: "Kies teamnaam",
+    password: "unused-after-setup",
+    inviteCode: "WK-JOHAN-2026",
+  },
+  {
+    id: "thomas-bart",
+    label: "Thomas",
+    role: "manager",
+    name: "Thomas",
+    email: "Thomasbart91@gmail.com",
+    teamName: "Kies teamnaam",
+    password: "unused-after-setup",
+    inviteCode: "WK-THOMAS-2026",
+  },
+  {
+    id: "jack-van-der-reep",
+    label: "Jack",
+    role: "manager",
+    name: "Jack",
+    email: "Jackvandereep@hotmail.con",
+    teamName: "Kies teamnaam",
+    password: "unused-after-setup",
+    inviteCode: "WK-JACK-2026",
   },
   {
     id: "admin",

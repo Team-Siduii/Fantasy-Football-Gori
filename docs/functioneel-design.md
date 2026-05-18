@@ -48,8 +48,8 @@ Per rol belangrijkste rechten:
 ### 4.1 Authenticatie & accounts
 - E-mail/social login
 - Lid worden via invite code/link
-- MVP testauth bevat 2 seed-accounts: Test Manager (`manager@gori.local`) en Test Admin (`admin@gori.local`)
-- Login-UI biedt accountknoppen die e-mail + wachtwoord direct prefillen voor snelle QA (wachtwoorden niet onthouden nodig)
+- MVP testauth voor WK bevat seed-accounts per manager met unieke e-mail + eerste inlogcode, plus een admin-account (`admin@gori.local`)
+- Eerste login werkt met e-mail + inlogcode; daarna maakt de manager verplicht een eigen wachtwoord en teamnaam aan via de accountpagina
 
 ### 4.2 League management
 - League aanmaken en spelers uitnodigen
@@ -236,13 +236,13 @@ FR-057 (fase 2): League ondersteunt scoring profiles met backward-compatible def
 FR-058 (fase 2): Competition abstraction v1 ondersteunt parallel zowel `League table` als `Cup knockout`, met expliciete configureerbare tie-breakers.
 FR-059 (fase 2): Rollenmodel owner/commissioner/manager forceert permission matrix in API; admin overrides zijn uitsluitend toegestaan met juiste rolrechten.
 FR-060 (fase 2): Admin-UI toont en beheert league-configuratie voor scoring profile, waiver tie-breaker, competition tie policy en role assignments.
-FR-061: Auth-MVP ondersteunt twee testaccounts (manager + admin) en de login-UI prefillt standaard de gekozen account-credentials voor snelle testtoegang.
+FR-061: Auth-MVP ondersteunt meerdere manager-accounts + admin-account, met inloggen op e-mail en accountgebonden credentials (geen globale test-prefill afhankelijkheid).
 FR-062: Manager-UI bevat een globale `Instellingen` navigatieknop; route `/instellingen` toont league-config module en redirectt naar login zonder actieve sessie.
 FR-063: Elk instelveld in de league-config module toont een hover/focus-help (`?`) met korte uitleg van de regel en de impact op competitiegedrag.
 FR-064: Manager-UI bevat een aparte WK 2026 module naast de Eredivisie-competitie met eigen route en navigatie-entry.
 FR-065: WK module toont een vaste lijst van 48 deelnemende landen inclusief hoststatus en confederatie.
 FR-066: WK module toont het toernooischema op fase-niveau (groepsfase t/m finale) met start/einddatum en aantal wedstrijden per fase.
-FR-067: In het manager-menu kan de gebruiker expliciet schakelen tussen `Eredivisie mode` en `WK mode`; beide modes tonen dezelfde manager-navigatiestructuur (Team, Transfers, Competities, Profiel) binnen hun eigen route-namespace.
+FR-067: In het manager-menu kan de gebruiker expliciet schakelen tussen `Eredivisie mode` en `WK mode`; beide modes tonen dezelfde manager-navigatiestructuur (Team, Transfers, Competities, Account) binnen hun eigen route-namespace.
 FR-068: WK mode gebruikt hetzelfde teambeheer- en transfer-UX patroon als Eredivisie mode (zelfde pagina-opbouw, pitch, bank, transfermarkt en interacties).
 FR-069: In WK mode betekent speelronde 1/2/3 dat alle landen respectievelijk hun 1e/2e/3e groepswedstrijd hebben gespeeld.
 FR-070: Manager-state persistence is competitiegescheiden: Eredivisie mode en WK mode bewaren opstelling/bench/pending transfer-status volledig los van elkaar.
@@ -488,3 +488,4 @@ Waarom zo:
 - 2026-05-04: WK-afkortingen in speelschema verder afgestemd op gewenste NL-notatie: Bosnië-Herzegovina `BOS`, Zuid-Afrika `ZAF`, Zwitserland `ZWI`, Ivoorkust `IVO`, Curaçao `CUR`, Kaapverdië `KAA`, Oostenrijk `AUT` en Saoedi-Arabië `SAU`.
 - 2026-05-18: WK spelersdatabase ververst vanuit `https://www.wkcoach.nl/webapi/get_all_players/0`; `data/players-wk.csv` nu gevuld met 1.231 spelers uit 48 landen (bronpositie + transferwaarde overgenomen).
 - 2026-05-18: Team budget-cap verhoogd van €32.0M naar €100.0M (domain budget constant + default ruleset + tests + design sync).
+- 2026-05-18: WK manager-auth uitgebreid naar multi-account onboarding: drie manager-mails met eigen eerste inlogcode, verplichte first-login setup (nieuw wachtwoord + teamnaam), accountpagina (`/account`) met teamnaam-wijziging en wachtwoord wijzigen/resetten.
