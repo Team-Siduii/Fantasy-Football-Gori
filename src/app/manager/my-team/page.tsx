@@ -581,18 +581,7 @@ export default function ManagerMyTeamPage() {
         setDraftTeamOrder(teamOrder);
         setDraftTeamRosters(rosters);
 
-        setSelectedDraftTeam((current) => {
-          const managerTeamMatch = resolveDraftTeamForManager(teamOrder, managerTeamName);
-
-          if (managerTeamMatch) {
-            return managerTeamMatch;
-          }
-
-          if (current && teamOrder.includes(current)) {
-            return current;
-          }
-          return teamOrder[0] ?? "";
-        });
+        setSelectedDraftTeam(resolveDraftTeamForManager(teamOrder, managerTeamName));
       } catch {
         // silent fail: manager page moet bruikbaar blijven zonder draft data
       }
@@ -649,11 +638,7 @@ export default function ManagerMyTeamPage() {
   }, [draftTeamOrder, managerTeamName]);
 
   useEffect(() => {
-    if (!managerDraftTeam) {
-      return;
-    }
-
-    setSelectedDraftTeam(managerDraftTeam);
+    setSelectedDraftTeam(managerDraftTeam || "");
   }, [managerDraftTeam]);
 
   const selectedDraftTeamRoster = useMemo(() => {
@@ -1164,17 +1149,9 @@ export default function ManagerMyTeamPage() {
               Gekoppeld draft team: <strong>{managerDraftTeam}</strong>
             </p>
           ) : (
-            <label>
-              Draft team
-              <select value={selectedDraftTeam} onChange={(event) => setSelectedDraftTeam(event.target.value)}>
-                <option value="">Kies team</option>
-                {draftTeamOrder.map((teamId) => (
-                  <option key={teamId} value={teamId}>
-                    {teamId}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <p className="muted-note">
+              Geen gekoppeld draft team gevonden voor jouw account-teamnaam. Je kunt hier geen ander team kiezen.
+            </p>
           )}
           {selectedDraftTeam ? (
             <>
