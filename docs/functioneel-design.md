@@ -98,6 +98,7 @@ Per rol belangrijkste rechten:
 - Geen auto-pick in MVP
 - Draft-engine exposeert API-acties `start`, `pick`, `return` en `current` via `/api/draft` met persistente draft-state
 - Draft-pick is turn-based en atomisch: alleen actieve team aan beurt mag picken; dezelfde speler kan niet 2x gepickt worden
+- Draftpagina (`/draft`) gebruikt deze API direct met startformulier, live beurtindicator, pick-actie en return-actie voor testdrafts
 
 ### 4.5 Transfers (kern van MVP)
 - Er is een vrije pool met beschikbare spelers
@@ -516,3 +517,4 @@ Waarom zo:
 - 2026-05-18: Instellingenpagina UX gepolijst: duidelijke 3-stappenflow, actieve mode-badge, niet-opgeslagen-wijzigingen indicator, herstelknop en inklapbare debug-sectie voor intuïtiever beheer.
 - 2026-05-24: Rule-engine uitgebreid naar RuleProfile v2 met preset-ondersteuning (`eredivisie`, `fantasycalcio`, `custom`), schema-validatie en automatische migratie van legacy RuleSet v1; transfer policy leest nu v2-profielen.
 - 2026-05-24: Draft MVP backend basis toegevoegd: persistente draft-state (`src/lib/draft-state.ts`) en nieuwe `/api/draft` endpoint met acties `start`, `pick`, `return` en `GET current`, inclusief turn-order + unieke spelerhandhaving.
+- 2026-05-24: Draftpagina (`/draft`) gekoppeld aan live draft API met startflow, current-turn indicator, pick-actie en return-actie zodat testdrafts end-to-end in UI uitgevoerd kunnen worden.
