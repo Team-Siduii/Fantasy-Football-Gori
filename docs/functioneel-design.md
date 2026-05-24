@@ -533,3 +533,4 @@ Waarom zo:
 - 2026-05-24: WK ronde-overzicht toont nu per wedstrijd de poule-indicatie (`Poule X`) in groepsfase, met `Knock-out` label buiten groepsfase.
 - 2026-05-24: Poule-mapping WK hersteld op basis van bronvolgorde uit KPN speelschema (pouleletters op eerste speeldagvolgorde) en corrupte fixturetekst opgeschoond (`Jordanië - Argentinië`).
 - 2026-05-24: Draft team-overzicht verwijderd van Manager Team-pagina; draft blijft exclusief in aparte seizoensstart-modus op `/draft`.
+- 2026-05-24: Fictieve startpunten verwijderd: alle spelers starten nu op `0 PN` (afleiding in `player-derived` uitgezet).

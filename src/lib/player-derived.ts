@@ -4,20 +4,9 @@ export type EnhancedPlayer = PlayerRecord & {
   punten: number;
 };
 
-const positionWeight: Record<string, number> = {
-  GK: 8,
-  DEF: 10,
-  MID: 12,
-  FWD: 14,
-};
-
 export function derivePlayerPoints(player: PlayerRecord): number {
-  const numericId = Number(player.id);
-  const idSeed = Number.isFinite(numericId) ? numericId : player.id.length * 37;
-  const base = positionWeight[player.positie] ?? 9;
-  const variance = Math.abs(idSeed % 13);
-
-  return base + variance;
+  void player;
+  return 0;
 }
 
 export function enrichPlayers(players: PlayerRecord[]): EnhancedPlayer[] {
