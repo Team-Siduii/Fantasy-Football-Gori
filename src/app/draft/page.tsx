@@ -29,6 +29,8 @@ type DraftState = {
   currentTurnTeamId: string | null;
 };
 
+type TeamRostersByTeamId = Record<string, string[]>;
+
 const DEFAULT_TEAMS = "Team A,Team B,Team C,Team D";
 
 export default function DraftPage() {
@@ -37,6 +39,7 @@ export default function DraftPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [draft, setDraft] = useState<DraftState | null>(null);
+  const [teamRosters, setTeamRosters] = useState<TeamRostersByTeamId>({});
   const [players, setPlayers] = useState<PlayerRecord[]>([]);
 
   const [leagueId, setLeagueId] = useState("league-1");
@@ -50,11 +53,12 @@ export default function DraftPage() {
 
   async function loadDraft() {
     const response = await fetch("/api/draft", { cache: "no-store" });
-    const data = (await response.json()) as { error?: string; draft?: DraftState };
+    const data = (await response.json()) as { error?: string; draft?: DraftState; teamRosters?: TeamRostersByTeamId };
     if (!response.ok) {
       throw new Error(data.error ?? "Draft laden mislukt");
     }
     setDraft(data.draft ?? null);
+    setTeamRosters(data.teamRosters ?? {});
   }
 
   async function loadPlayers() {
@@ -114,11 +118,12 @@ export default function DraftPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await response.json()) as { error?: string; draft?: DraftState };
+      const data = (await response.json()) as { error?: string; draft?: DraftState; teamRosters?: TeamRostersByTeamId };
       if (!response.ok) {
         throw new Error(data.error ?? "Draft actie mislukt");
       }
       setDraft(data.draft ?? null);
+      setTeamRosters(data.teamRosters ?? {});
       setSuccess(okMessage);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Onbekende fout");
@@ -257,6 +262,33 @@ export default function DraftPage() {
           >
             Return player
           </button>
+        </section>
+
+        <section className="card col-12">
+          <h2>Team-overview (draft roster)</h2>
+          {(draft?.teamOrder ?? []).length === 0 ? <p>Start eerst een draft om teamrosters te tonen.</p> : null}
+          {(draft?.teamOrder ?? []).length > 0 ? (
+            <div className="grid">
+              {(draft?.teamOrder ?? []).map((teamId) => {
+                const roster = teamRosters[teamId] ?? [];
+                return (
+                  <article key={teamId} className="card col-3">
+                    <h3>{teamId}</h3>
+                    <p>{roster.length} spelers gepickt</p>
+                    {roster.length === 0 ? <p>Nog geen spelers</p> : null}
+                    {roster.length > 0 ? (
+                      <ul>
+                        {roster.map((playerId) => {
+                          const player = players.find((entry) => entry.id === playerId);
+                          return <li key={`${teamId}-${playerId}`}>{player?.naam ?? playerId}</li>;
+                        })}
+                      </ul>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          ) : null}
         </section>
 
         <section className="card col-12">

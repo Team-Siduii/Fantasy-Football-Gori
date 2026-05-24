@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { isAuthenticatedSession } from "@/lib/auth-session";
 import { readDraftState, registerPick, returnPickedPlayerToPool, startDraft } from "@/lib/draft-state";
+import { readTeamRosterState } from "@/lib/team-roster-state";
 
 export async function GET() {
   if (!(await isAuthenticatedSession())) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
 
-  return NextResponse.json({ draft: readDraftState() });
+  return NextResponse.json({ draft: readDraftState(), teamRosters: readTeamRosterState().byTeamId });
 }
 
 export async function POST(request: Request) {
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
         totalRounds: body.totalRounds,
         startedBy: body.startedBy,
       });
-      return NextResponse.json({ ok: true, draft });
+      return NextResponse.json({ ok: true, draft, teamRosters: readTeamRosterState().byTeamId });
     }
 
     if (body.action === "pick") {
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "teamId en playerId zijn verplicht" }, { status: 400 });
       }
       const draft = registerPick({ teamId: body.teamId, playerId: body.playerId });
-      return NextResponse.json({ ok: true, draft });
+      return NextResponse.json({ ok: true, draft, teamRosters: readTeamRosterState().byTeamId });
     }
 
     if (body.action === "return") {
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
         playerId: body.playerId,
         reason: body.reason,
       });
-      return NextResponse.json({ ok: true, draft });
+      return NextResponse.json({ ok: true, draft, teamRosters: readTeamRosterState().byTeamId });
     }
 
     return NextResponse.json({ error: "Onbekende action" }, { status: 400 });
