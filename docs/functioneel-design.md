@@ -533,3 +533,4 @@ Waarom zo:
 - 2026-05-24: Alias-mapping toegevoegd voor draft-teamkoppeling (o.a. `FC Slot`→`Team A`) zodat account-teamnamen en draftteamnamen consistent gematcht blijven.
 - 2026-05-24: Manager Team-widget staat geen handmatige draftteam-keuze meer toe; managers zien alleen eigen gekoppelde team of een geen-koppeling melding.
 - 2026-05-24: WK ronde-overzicht toont nu per wedstrijd de poule-indicatie (`Poule X`) in groepsfase, met `Knock-out` label buiten groepsfase.
+- 2026-05-24: Poule-mapping WK hersteld op basis van bronvolgorde uit KPN speelschema (pouleletters op eerste speeldagvolgorde) en corrupte fixturetekst opgeschoond (`Jordanië - Argentinië`).

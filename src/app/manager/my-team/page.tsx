@@ -461,8 +461,24 @@ function buildWorldCupGroupLookup(fixtures: SeasonFixture[]) {
     groupsByRoot.set(root, list);
   }
 
+  const earliestKickoffByRoot = new Map<string, string>();
+  for (const fixture of groupStage) {
+    const root = find(fixture.home);
+    const current = earliestKickoffByRoot.get(root);
+    if (!current || fixture.kickoffAt < current) {
+      earliestKickoffByRoot.set(root, fixture.kickoffAt);
+    }
+  }
+
   const rootsSorted = [...groupsByRoot.entries()]
-    .sort((a, b) => a[1].slice().sort()[0].localeCompare(b[1].slice().sort()[0]))
+    .sort((a, b) => {
+      const kickoffA = earliestKickoffByRoot.get(a[0]) ?? "9999-12-31T23:59:59+00:00";
+      const kickoffB = earliestKickoffByRoot.get(b[0]) ?? "9999-12-31T23:59:59+00:00";
+      if (kickoffA !== kickoffB) {
+        return kickoffA.localeCompare(kickoffB);
+      }
+      return a[1].slice().sort()[0].localeCompare(b[1].slice().sort()[0]);
+    })
     .map(([root]) => root);
 
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";

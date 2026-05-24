@@ -74,7 +74,7 @@ export const WORLD_CUP_2026_FIXTURES: SeasonFixture[] = [
   { round: 3, dateLabel: "Zondag 28 juni 2026", kickoff: "01:30", kickoffAt: "2026-06-28T01:30:00+02:00", home: "Colombia", away: "Portugal" },
   { round: 3, dateLabel: "Zondag 28 juni 2026", kickoff: "01:30", kickoffAt: "2026-06-28T01:30:00+02:00", home: "Congo", away: "Oezbekistan" },
   { round: 3, dateLabel: "Zondag 28 juni 2026", kickoff: "04:00", kickoffAt: "2026-06-28T04:00:00+02:00", home: "Algerije", away: "Oostenrijk" },
-  { round: 3, dateLabel: "Zondag 28 juni 2026", kickoff: "04:00", kickoffAt: "2026-06-28T04:00:00+02:00", home: "Jordanië", away: "Argentinië Knock-outfase Op zondag 28 juni begint de knock-out fase. In totaal gaan 32 landen door. Deze fase bestaat uit de zestiende finales, de achtste finales, de kwartfinales, de halve finales en daarna de WK‑finale. De wedstrijden worden gespeeld door de nummers 1 en 2 van elke groep én de acht beste nummers 3. De teams die verliezen, liggen direct uit het toernooi. Hieronder vind je het complete speelschema van de knock-out fase." },
+  { round: 3, dateLabel: "Zondag 28 juni 2026", kickoff: "04:00", kickoffAt: "2026-06-28T04:00:00+02:00", home: "Jordanië", away: "Argentinië" },
   { round: 4, dateLabel: "Zondag 28 juni 2026", kickoff: "21:00", kickoffAt: "2026-06-28T21:00:00+02:00", home: "Nummer 2 Poule A", away: "Nummer 2 Poule B" },
   { round: 4, dateLabel: "Maandag 29 juni 2026", kickoff: "19:00", kickoffAt: "2026-06-29T19:00:00+02:00", home: "Winnaar Poule C", away: "Nummer 2 Poule F" },
   { round: 4, dateLabel: "Maandag 29 juni 2026", kickoff: "22:30", kickoffAt: "2026-06-29T22:30:00+02:00", home: "Winnaar Poule E", away: "Nummer 3 Poule AB/C/D/F" },
