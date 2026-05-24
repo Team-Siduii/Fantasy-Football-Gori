@@ -778,6 +778,7 @@ export default function ManagerMyTeamPage() {
   }, [selectedRoundFixtures]);
 
   const isPastRound = selectedRound !== null && currentRound !== null && selectedRound < currentRound;
+  const shouldShowPlayerPoints = selectedRound !== null && currentRound !== null && selectedRound <= currentRound;
   const currentTransferLimit = currentRound ? getTransferLimitForRound(currentRound, [...BONUS_ROUNDS]) : 1;
   const canSellMore = openSlots.length < currentTransferLimit;
 
@@ -1063,7 +1064,7 @@ export default function ManagerMyTeamPage() {
                         position={player.positie}
                         club={player.club}
                         name={player.naam}
-                        pointsLabel={`${player.punten} PN`}
+                        pointsLabel={shouldShowPlayerPoints ? `${player.punten} PN` : ""}
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",
                           player.id.startsWith("open-") ? "player-card--open" : "",
@@ -1084,7 +1085,6 @@ export default function ManagerMyTeamPage() {
           <div className="stat-grid stats-desktop">
             <StatTile label="Totaal Punten" value={state.lineup.reduce((sum, player) => sum + player.punten, 0)} />
             <StatTile label="Resterend Budget" value={`€ ${remainingBudget.toFixed(1)}M`} />
-            <StatTile label="Budget cap" value={`€ ${budgetCapMillions.toFixed(1)}M`} />
             <StatTile label="Transfers deze ronde" value={currentTransferLimit} />
           </div>
         </section>
@@ -1100,7 +1100,7 @@ export default function ManagerMyTeamPage() {
                 position={player.positie}
                 club={player.club}
                 name={player.naam}
-                pointsLabel={`${player.punten} PN`}
+                pointsLabel={shouldShowPlayerPoints ? `${player.punten} PN` : ""}
                 className={[
                   pendingSellId === player.id ? "player-card--sell" : "",
                   player.id.startsWith("open-") ? "player-card--open" : "",
@@ -1119,7 +1119,6 @@ export default function ManagerMyTeamPage() {
           <div className="stat-grid">
             <StatTile label="Totaal Punten" value={state.lineup.reduce((sum, player) => sum + player.punten, 0)} />
             <StatTile label="Resterend Budget" value={`€ ${remainingBudget.toFixed(1)}M`} />
-            <StatTile label="Budget cap" value={`€ ${budgetCapMillions.toFixed(1)}M`} />
             <StatTile label="Transfers deze ronde" value={currentTransferLimit} />
           </div>
         </section>
