@@ -778,7 +778,6 @@ export default function ManagerMyTeamPage() {
   }, [selectedRoundFixtures]);
 
   const isPastRound = selectedRound !== null && currentRound !== null && selectedRound < currentRound;
-  const shouldShowPlayerPoints = selectedRound !== null && currentRound !== null && selectedRound <= currentRound;
   const currentTransferLimit = currentRound ? getTransferLimitForRound(currentRound, [...BONUS_ROUNDS]) : 1;
   const canSellMore = openSlots.length < currentTransferLimit;
 
@@ -1061,10 +1060,10 @@ export default function ManagerMyTeamPage() {
                         key={`lineup-${lineupIndex}-${player.id}`}
                         data-testid={`lineup-card-${lineupIndex}`}
                         draggable={!player.id.startsWith("open-")}
-                        position={player.positie}
+                        position=""
                         club={player.club}
                         name={player.naam}
-                        pointsLabel={shouldShowPlayerPoints ? `${player.punten} PN` : ""}
+                        pointsLabel=""
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",
                           player.id.startsWith("open-") ? "player-card--open" : "",
@@ -1100,7 +1099,7 @@ export default function ManagerMyTeamPage() {
                 position={player.positie}
                 club={player.club}
                 name={player.naam}
-                pointsLabel={shouldShowPlayerPoints ? `${player.punten} PN` : ""}
+                pointsLabel=""
                 className={[
                   pendingSellId === player.id ? "player-card--sell" : "",
                   player.id.startsWith("open-") ? "player-card--open" : "",
