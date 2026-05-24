@@ -60,6 +60,17 @@ type DraftRuntimeResponse = {
   teamRosters?: Record<string, string[]>;
 };
 
+type AuthMeResponse = {
+  authenticated?: boolean;
+  profile?: {
+    teamName?: string;
+  };
+};
+
+function normalizeDraftTeamKey(value: string) {
+  return value.trim().toLowerCase();
+}
+
 function fallbackPlayers(): EnhancedPlayer[] {
   return enrichPlayers([
     { id: "1", naam: "Demo Keeper", positie: "GK", club: "PSV", prijs: 2 },
@@ -426,6 +437,7 @@ export default function ManagerMyTeamPage() {
   const [draftTeamOrder, setDraftTeamOrder] = useState<string[]>([]);
   const [selectedDraftTeam, setSelectedDraftTeam] = useState("");
   const [draftTeamRosters, setDraftTeamRosters] = useState<Record<string, string[]>>({});
+  const [managerTeamName, setManagerTeamName] = useState("");
 
   const hydrated = useRef(false);
 
@@ -435,10 +447,11 @@ export default function ManagerMyTeamPage() {
       setError("");
 
       try {
-        const [playersResponse, managerStateResponse, leagueConfigResponse] = await Promise.all([
+        const [playersResponse, managerStateResponse, leagueConfigResponse, authMeResponse] = await Promise.all([
           fetch(`/api/players?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
           fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
           fetch(`/api/admin/league-config?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
+          fetch("/api/auth/me", { cache: "no-store" }),
         ]);
 
         if (!playersResponse.ok) {
@@ -454,6 +467,8 @@ export default function ManagerMyTeamPage() {
         const leagueConfigData = leagueConfigResponse.ok
           ? ((await leagueConfigResponse.json()) as LeagueRuntimeConfigResponse)
           : { config: undefined };
+        const authMeData = authMeResponse.ok ? ((await authMeResponse.json()) as AuthMeResponse) : { authenticated: false };
+        setManagerTeamName((authMeData.profile?.teamName ?? "").trim());
         const fallbackBudgetCap = getTransferBudgetCapMillions(isWkMode ? "wk" : "eredivisie");
         const configBudgetCap = leagueConfigData.config?.budget?.teamValueCapMillions;
         const activeBudgetCap =
@@ -539,6 +554,14 @@ export default function ManagerMyTeamPage() {
         setDraftTeamRosters(rosters);
 
         setSelectedDraftTeam((current) => {
+          const managerTeamMatch = teamOrder.find(
+            (teamId) => normalizeDraftTeamKey(teamId) === normalizeDraftTeamKey(managerTeamName),
+          );
+
+          if (managerTeamMatch) {
+            return managerTeamMatch;
+          }
+
           if (current && teamOrder.includes(current)) {
             return current;
           }
@@ -558,7 +581,7 @@ export default function ManagerMyTeamPage() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [managerTeamName]);
 
   useEffect(() => {
     if (!hydrated.current) {
@@ -594,6 +617,24 @@ export default function ManagerMyTeamPage() {
   const squadPlayers = useMemo(() => {
     return [...state.lineup, ...state.bench].filter((player) => !player.id.startsWith("open-"));
   }, [state.bench, state.lineup]);
+
+  const managerDraftTeam = useMemo(() => {
+    if (!managerTeamName) {
+      return "";
+    }
+
+    return (
+      draftTeamOrder.find((teamId) => normalizeDraftTeamKey(teamId) === normalizeDraftTeamKey(managerTeamName)) ?? ""
+    );
+  }, [draftTeamOrder, managerTeamName]);
+
+  useEffect(() => {
+    if (!managerDraftTeam) {
+      return;
+    }
+
+    setSelectedDraftTeam(managerDraftTeam);
+  }, [managerDraftTeam]);
 
   const selectedDraftTeamRoster = useMemo(() => {
     if (!selectedDraftTeam) {
@@ -1098,17 +1139,23 @@ export default function ManagerMyTeamPage() {
         <section className="card col-4">
           <h2>Draft team-overzicht</h2>
           <p className="muted-note">Status: {draftStatus ?? "onbekend"}</p>
-          <label>
-            Draft team
-            <select value={selectedDraftTeam} onChange={(event) => setSelectedDraftTeam(event.target.value)}>
-              <option value="">Kies team</option>
-              {draftTeamOrder.map((teamId) => (
-                <option key={teamId} value={teamId}>
-                  {teamId}
-                </option>
-              ))}
-            </select>
-          </label>
+          {managerDraftTeam ? (
+            <p className="muted-note">
+              Gekoppeld draft team: <strong>{managerDraftTeam}</strong>
+            </p>
+          ) : (
+            <label>
+              Draft team
+              <select value={selectedDraftTeam} onChange={(event) => setSelectedDraftTeam(event.target.value)}>
+                <option value="">Kies team</option>
+                {draftTeamOrder.map((teamId) => (
+                  <option key={teamId} value={teamId}>
+                    {teamId}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {selectedDraftTeam ? (
             <>
               <p className="muted-note">Gepickte spelers: {selectedDraftTeamRoster.length}</p>
