@@ -263,6 +263,7 @@ FR-080: Instellingen ondersteunt aanvullende vrije spelregels (`customRuleNotes`
 FR-081: Spelregelspagina presenteert regels in vaste hoofdstukken (Transferregels, Budgetregels, Waiverregels, Strafregels/tie policy, Custom) zodat managers sneller de impact per domein kunnen scannen.
 FR-082: Draft-state wordt persistent opgeslagen en is via `/api/draft` uitleesbaar voor de huidige status (`IDLE|ACTIVE|COMPLETED`), huidige beurt en pickhistorie.
 FR-083: Draft API forceert turn-order en speler-exclusiviteit: `pick` buiten beurt of met al-gepickte speler wordt geweigerd; `return` zet speler terug in pool en herberekent de beurt.
+FR-084: Elke draft `pick`/`return` synchroniseert direct naar persistente team-roster-state per team, zodat teamselecties niet alleen in draft-log maar ook in teamstate landen.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -518,3 +519,4 @@ Waarom zo:
 - 2026-05-24: Rule-engine uitgebreid naar RuleProfile v2 met preset-ondersteuning (`eredivisie`, `fantasycalcio`, `custom`), schema-validatie en automatische migratie van legacy RuleSet v1; transfer policy leest nu v2-profielen.
 - 2026-05-24: Draft MVP backend basis toegevoegd: persistente draft-state (`src/lib/draft-state.ts`) en nieuwe `/api/draft` endpoint met acties `start`, `pick`, `return` en `GET current`, inclusief turn-order + unieke spelerhandhaving.
 - 2026-05-24: Draftpagina (`/draft`) gekoppeld aan live draft API met startflow, current-turn indicator, pick-actie en return-actie zodat testdrafts end-to-end in UI uitgevoerd kunnen worden.
+- 2026-05-24: Team-roster-state toegevoegd (`src/lib/team-roster-state.ts`); draft `pick` en `return` syncen nu direct naar persistente roster-per-team opslag.

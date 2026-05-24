@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { buildDraftPickSequence } from "../domain/rules";
+import { addPlayerToTeamRoster, removePlayerFromTeamRoster } from "./team-roster-state";
 
 export type DraftStatus = "IDLE" | "ACTIVE" | "COMPLETED";
 
@@ -178,6 +179,8 @@ export function registerPick(input: { teamId: string; playerId: string; at?: str
     ],
   };
 
+  addPlayerToTeamRoster(input.teamId, input.playerId);
+
   return writeDraftState(next);
 }
 
@@ -214,6 +217,8 @@ export function returnPickedPlayerToPool(input: {
       },
     ],
   };
+
+  removePlayerFromTeamRoster(input.teamId, input.playerId);
 
   return writeDraftState(next);
 }
