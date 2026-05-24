@@ -96,6 +96,8 @@ Per rol belangrijkste rechten:
 - Bij teruggeven aan de vrije pool ontvangen andere managers een notificatie
 - Geen pick timer in MVP
 - Geen auto-pick in MVP
+- Draft-engine exposeert API-acties `start`, `pick`, `return` en `current` via `/api/draft` met persistente draft-state
+- Draft-pick is turn-based en atomisch: alleen actieve team aan beurt mag picken; dezelfde speler kan niet 2x gepickt worden
 
 ### 4.5 Transfers (kern van MVP)
 - Er is een vrije pool met beschikbare spelers
@@ -258,6 +260,8 @@ FR-078: Instellingenpagina biedt een intuïtieve beheerflow met stap-geleiding (
 FR-079: De route `/spelregels` toont een dynamische spelregelsweergave per mode (`?mode=eredivisie|wk`) op basis van de actuele league-config (budget-cap, scoring profile, waiver tie-breaker, cup tie policy) inclusief impactsamenvatting.
 FR-080: Instellingen ondersteunt aanvullende vrije spelregels (`customRuleNotes` met titel, beschrijving, impact); deze regels verschijnen automatisch op `/spelregels` zodat nieuwe regels zonder codewijziging beschreven kunnen worden.
 FR-081: Spelregelspagina presenteert regels in vaste hoofdstukken (Transferregels, Budgetregels, Waiverregels, Strafregels/tie policy, Custom) zodat managers sneller de impact per domein kunnen scannen.
+FR-082: Draft-state wordt persistent opgeslagen en is via `/api/draft` uitleesbaar voor de huidige status (`IDLE|ACTIVE|COMPLETED`), huidige beurt en pickhistorie.
+FR-083: Draft API forceert turn-order en speler-exclusiviteit: `pick` buiten beurt of met al-gepickte speler wordt geweigerd; `return` zet speler terug in pool en herberekent de beurt.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -511,3 +515,4 @@ Waarom zo:
 - 2026-05-18: Spelregelspagina (`/spelregels`) geherstructureerd in vaste hoofdstukken (Transfer, Budget, Waiver, Strafregels/tie policy, Custom) voor snellere scanbaarheid per regeldomein.
 - 2026-05-18: Instellingenpagina UX gepolijst: duidelijke 3-stappenflow, actieve mode-badge, niet-opgeslagen-wijzigingen indicator, herstelknop en inklapbare debug-sectie voor intuïtiever beheer.
 - 2026-05-24: Rule-engine uitgebreid naar RuleProfile v2 met preset-ondersteuning (`eredivisie`, `fantasycalcio`, `custom`), schema-validatie en automatische migratie van legacy RuleSet v1; transfer policy leest nu v2-profielen.
+- 2026-05-24: Draft MVP backend basis toegevoegd: persistente draft-state (`src/lib/draft-state.ts`) en nieuwe `/api/draft` endpoint met acties `start`, `pick`, `return` en `GET current`, inclusief turn-order + unieke spelerhandhaving.
