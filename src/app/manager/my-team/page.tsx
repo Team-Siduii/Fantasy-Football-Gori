@@ -52,6 +52,14 @@ type LeagueRuntimeConfigResponse = {
   };
 };
 
+type DraftRuntimeResponse = {
+  draft?: {
+    status?: "IDLE" | "ACTIVE" | "COMPLETED";
+    teamOrder?: string[];
+  };
+  teamRosters?: Record<string, string[]>;
+};
+
 function fallbackPlayers(): EnhancedPlayer[] {
   return enrichPlayers([
     { id: "1", naam: "Demo Keeper", positie: "GK", club: "PSV", prijs: 2 },
@@ -414,6 +422,10 @@ export default function ManagerMyTeamPage() {
   const [marketSortField, setMarketSortField] = useState<MarketSortField>("prijs");
   const [marketSortDirection, setMarketSortDirection] = useState<MarketSortDirection>("desc");
   const [marketPage, setMarketPage] = useState(1);
+  const [draftStatus, setDraftStatus] = useState<"IDLE" | "ACTIVE" | "COMPLETED" | null>(null);
+  const [draftTeamOrder, setDraftTeamOrder] = useState<string[]>([]);
+  const [selectedDraftTeam, setSelectedDraftTeam] = useState("");
+  const [draftTeamRosters, setDraftTeamRosters] = useState<Record<string, string[]>>({});
 
   const hydrated = useRef(false);
 
@@ -505,6 +517,50 @@ export default function ManagerMyTeamPage() {
   }, [formationOptions, isWkMode]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadDraftSnapshot = async () => {
+      try {
+        const response = await fetch("/api/draft", { cache: "no-store" });
+        if (!response.ok) {
+          return;
+        }
+        const payload = (await response.json()) as DraftRuntimeResponse;
+        if (cancelled) {
+          return;
+        }
+
+        const status = payload.draft?.status ?? null;
+        const teamOrder = payload.draft?.teamOrder ?? [];
+        const rosters = payload.teamRosters ?? {};
+
+        setDraftStatus(status);
+        setDraftTeamOrder(teamOrder);
+        setDraftTeamRosters(rosters);
+
+        setSelectedDraftTeam((current) => {
+          if (current && teamOrder.includes(current)) {
+            return current;
+          }
+          return teamOrder[0] ?? "";
+        });
+      } catch {
+        // silent fail: manager page moet bruikbaar blijven zonder draft data
+      }
+    };
+
+    void loadDraftSnapshot();
+    const interval = setInterval(() => {
+      void loadDraftSnapshot();
+    }, 5000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!hydrated.current) {
       return;
     }
@@ -538,6 +594,17 @@ export default function ManagerMyTeamPage() {
   const squadPlayers = useMemo(() => {
     return [...state.lineup, ...state.bench].filter((player) => !player.id.startsWith("open-"));
   }, [state.bench, state.lineup]);
+
+  const selectedDraftTeamRoster = useMemo(() => {
+    if (!selectedDraftTeam) {
+      return [] as EnhancedPlayer[];
+    }
+
+    const ids = draftTeamRosters[selectedDraftTeam] ?? [];
+    return ids
+      .map((id) => allPlayers.find((player) => player.id === id))
+      .filter((player): player is EnhancedPlayer => Boolean(player));
+  }, [allPlayers, draftTeamRosters, selectedDraftTeam]);
 
   const remainingBudget = useMemo(
     () => calculateRemainingBudget(squadPlayers, budgetCapMillions),
@@ -1026,6 +1093,38 @@ export default function ManagerMyTeamPage() {
             <StatTile label="Budget cap" value={`€ ${budgetCapMillions.toFixed(1)}M`} />
             <StatTile label="Transfers deze ronde" value={currentTransferLimit} />
           </div>
+        </section>
+
+        <section className="card col-4">
+          <h2>Draft team-overzicht</h2>
+          <p className="muted-note">Status: {draftStatus ?? "onbekend"}</p>
+          <label>
+            Draft team
+            <select value={selectedDraftTeam} onChange={(event) => setSelectedDraftTeam(event.target.value)}>
+              <option value="">Kies team</option>
+              {draftTeamOrder.map((teamId) => (
+                <option key={teamId} value={teamId}>
+                  {teamId}
+                </option>
+              ))}
+            </select>
+          </label>
+          {selectedDraftTeam ? (
+            <>
+              <p className="muted-note">Gepickte spelers: {selectedDraftTeamRoster.length}</p>
+              {selectedDraftTeamRoster.length === 0 ? (
+                <p className="muted-note">Nog geen picks voor dit team.</p>
+              ) : (
+                <ul>
+                  {selectedDraftTeamRoster.map((player) => (
+                    <li key={`draft-roster-${selectedDraftTeam}-${player.id}`}>
+                      {player.naam} ({player.positie})
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          ) : null}
         </section>
 
         <section className="card col-12" id="transfermarkt">

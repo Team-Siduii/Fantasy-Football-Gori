@@ -99,6 +99,7 @@ Per rol belangrijkste rechten:
 - Draft-engine exposeert API-acties `start`, `pick`, `return` en `current` via `/api/draft` met persistente draft-state
 - Draft-pick is turn-based en atomisch: alleen actieve team aan beurt mag picken; dezelfde speler kan niet 2x gepickt worden
 - Draftpagina (`/draft`) gebruikt deze API direct met startformulier, live beurtindicator, pick-actie en return-actie voor testdrafts
+- Manager Team-pagina toont een live draft team-overzicht (status + teamselectie + gepickte spelers) op basis van `/api/draft` zodat picks automatisch zichtbaar worden zonder handmatige refresh
 
 ### 4.5 Transfers (kern van MVP)
 - Er is een vrije pool met beschikbare spelers
@@ -265,6 +266,7 @@ FR-082: Draft-state wordt persistent opgeslagen en is via `/api/draft` uitleesba
 FR-083: Draft API forceert turn-order en speler-exclusiviteit: `pick` buiten beurt of met al-gepickte speler wordt geweigerd; `return` zet speler terug in pool en herberekent de beurt.
 FR-084: Elke draft `pick`/`return` synchroniseert direct naar persistente team-roster-state per team, zodat teamselecties niet alleen in draft-log maar ook in teamstate landen.
 FR-085: Draftpagina toont per team een live roster-overzicht (gepickte spelers) op basis van team-roster-state zodat draftresultaat direct visueel te controleren is.
+FR-086: Manager Team-pagina bevat een live draft-teamwidget die elke paar seconden `/api/draft` ververst en per geselecteerd team de actuele gepickte spelers toont zonder handmatige page refresh.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -522,3 +524,4 @@ Waarom zo:
 - 2026-05-24: Draftpagina (`/draft`) gekoppeld aan live draft API met startflow, current-turn indicator, pick-actie en return-actie zodat testdrafts end-to-end in UI uitgevoerd kunnen worden.
 - 2026-05-24: Team-roster-state toegevoegd (`src/lib/team-roster-state.ts`); draft `pick` en `return` syncen nu direct naar persistente roster-per-team opslag.
 - 2026-05-24: Draft API response uitgebreid met `teamRosters` en draftpagina toont nu live team-overview met gepickte spelers per team.
+- 2026-05-24: Manager Team-pagina uitgebreid met live draft team-widget (status/teamselectie/roster) gevoed door `/api/draft` polling voor automatische zichtbaarheid van picks.
