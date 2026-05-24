@@ -423,6 +423,75 @@ function chunkFixtures(fixtures: SeasonFixture[], perColumn: number) {
   return columns;
 }
 
+function buildWorldCupGroupLookup(fixtures: SeasonFixture[]) {
+  const groupStage = fixtures.filter((fixture) => fixture.round >= 1 && fixture.round <= 3);
+  const parent = new Map<string, string>();
+
+  const find = (team: string): string => {
+    const current = parent.get(team);
+    if (!current) {
+      parent.set(team, team);
+      return team;
+    }
+    if (current === team) {
+      return team;
+    }
+    const root = find(current);
+    parent.set(team, root);
+    return root;
+  };
+
+  const union = (a: string, b: string) => {
+    const ra = find(a);
+    const rb = find(b);
+    if (ra !== rb) {
+      parent.set(rb, ra);
+    }
+  };
+
+  for (const fixture of groupStage) {
+    union(fixture.home, fixture.away);
+  }
+
+  const groupsByRoot = new Map<string, string[]>();
+  for (const team of parent.keys()) {
+    const root = find(team);
+    const list = groupsByRoot.get(root) ?? [];
+    list.push(team);
+    groupsByRoot.set(root, list);
+  }
+
+  const rootsSorted = [...groupsByRoot.entries()]
+    .sort((a, b) => a[1].slice().sort()[0].localeCompare(b[1].slice().sort()[0]))
+    .map(([root]) => root);
+
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const labelByRoot = new Map<string, string>();
+  rootsSorted.forEach((root, index) => {
+    labelByRoot.set(root, letters[index] ?? `X${index + 1}`);
+  });
+
+  const lookup = new Map<string, string>();
+  for (const team of parent.keys()) {
+    const root = find(team);
+    const label = labelByRoot.get(root);
+    if (label) {
+      lookup.set(team, label);
+    }
+  }
+
+  return lookup;
+}
+
+function getFixturePouleLabel(fixture: SeasonFixture, lookup: Map<string, string>) {
+  const homeGroup = lookup.get(fixture.home);
+  const awayGroup = lookup.get(fixture.away);
+  if (!homeGroup || !awayGroup || homeGroup !== awayGroup) {
+    return null;
+  }
+  return `Poule ${homeGroup}`;
+}
+
 function getCountdownParts(targetIso: string) {
   const diffMs = new Date(targetIso).getTime() - Date.now();
   const safeDiff = Math.max(0, diffMs);
@@ -789,6 +858,13 @@ export default function ManagerMyTeamPage() {
 
   const fixtureColumns = useMemo(() => chunkFixtures(selectedRoundFixtures, 3), [selectedRoundFixtures]);
 
+  const wkGroupLookup = useMemo(() => {
+    if (!isWkMode) {
+      return new Map<string, string>();
+    }
+    return buildWorldCupGroupLookup(activeFixtures);
+  }, [activeFixtures, isWkMode]);
+
   const roundCountdown = useMemo(() => {
     const firstFixture = selectedRoundFixtures[0];
     if (!firstFixture) {
@@ -861,11 +937,13 @@ export default function ManagerMyTeamPage() {
                       <>
                         {fixture.homeScore ?? "-"} - {fixture.awayScore ?? "-"}
                         <small>uitslag</small>
+                        {isWkMode ? <small>{getFixturePouleLabel(fixture, wkGroupLookup) ?? "Knock-out"}</small> : null}
                       </>
                     ) : (
                       <>
                         {toDutchDayAbbreviation(fixture.kickoffAt)} {fixture.kickoff}
                         <small>{toShortDate(fixture.kickoffAt)}</small>
+                        {isWkMode ? <small>{getFixturePouleLabel(fixture, wkGroupLookup) ?? "Knock-out"}</small> : null}
                       </>
                     )}
                   </span>
@@ -883,11 +961,13 @@ export default function ManagerMyTeamPage() {
   }, [
     fixtureColumns,
     isPastRound,
+    isWkMode,
     roundCountdown,
     roundNumbers.length,
     selectedRound,
     selectedRoundFixtures,
     selectedRoundIndex,
+    wkGroupLookup,
   ]);
 
   function handleFormationChange(nextFormation: string) {

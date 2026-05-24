@@ -270,6 +270,7 @@ FR-086: Manager Team-pagina bevat een live draft-teamwidget die elke paar second
 FR-087: Manager Team-pagina koppelt draft-roster standaard automatisch aan het ingelogde manager-team (via account `teamName`), zodat team-scheiding bewaakt blijft; alleen zonder match blijft handmatige teamselectie zichtbaar.
 FR-088: Draft team-koppeling ondersteunt alias-mapping (bijv. `FC Slot` → `Team A`) zodat afwijkende account-teamnamen toch deterministisch aan het juiste draftteam gekoppeld blijven.
 FR-089: Managers kunnen in de Team-pagina geen draftteam handmatig kiezen; de widget toont uitsluitend het automatisch gekoppelde eigen team, of een duidelijke melding als koppeling ontbreekt.
+FR-090: In WK mode toont het ronde-wedstrijdenoverzicht per wedstrijd expliciet de poule-indicatie (bij groepsfase `Poule X`, anders `Knock-out`) zodat direct zichtbaar is in welke poule de wedstrijd valt.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -531,3 +532,4 @@ Waarom zo:
 - 2026-05-24: Manager Team-widget koppelt draft-roster nu automatisch aan ingelogde `teamName`; bij match wordt teamselectie vergrendeld op eigen team, bij geen match blijft handmatige keuze beschikbaar.
 - 2026-05-24: Alias-mapping toegevoegd voor draft-teamkoppeling (o.a. `FC Slot`→`Team A`) zodat account-teamnamen en draftteamnamen consistent gematcht blijven.
 - 2026-05-24: Manager Team-widget staat geen handmatige draftteam-keuze meer toe; managers zien alleen eigen gekoppelde team of een geen-koppeling melding.
+- 2026-05-24: WK ronde-overzicht toont nu per wedstrijd de poule-indicatie (`Poule X`) in groepsfase, met `Knock-out` label buiten groepsfase.
