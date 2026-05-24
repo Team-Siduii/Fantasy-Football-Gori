@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-05-18
+Laatste update: 2026-05-24
 
 ## 1. Productvisie
 Doel van de app:
@@ -63,7 +63,8 @@ Per rol belangrijkste rechten:
 - Admin stelt startbudget per team in voor het seizoen
 - Speelrondes worden op basis van competitieschema ingeladen bij seizoenstart
 - Admin kan gedurende seizoen speelrondes corrigeren (wedstrijd-naar-ronde mapping + start/eindtijd ronde)
-- Regels draaien op een versieerbaar RuleSet v1-profiel per league (rules-as-data), inclusief validatie van bonusrondes, budget-cap en bankopbouw
+- Regels draaien op een versieerbaar RuleProfile v2-profiel per league (rules-as-data), inclusief presets (`eredivisie`, `fantasycalcio`, `custom`) en schema-validatie
+- Legacy RuleSet v1-config blijft ondersteund via automatische v1→v2 migratie bij inladen
 - League Admin kan per ronde een lock/unlock uitvoeren met verplichte reden en actorregistratie
 
 ### 4.3 Teams & spelers
@@ -225,8 +226,8 @@ FR-046: In mobiele Team-weergave staan de secties in deze volgorde: basiselftal,
 FR-047: Transfermarkt ondersteunt kolomsortering op spelernaam, positie (GK, DEF, MID, FWD), club en transferwaarde, met omschakelbare oplopend/aflopend sorteerrichting.
 FR-048: Transfermarkt-filters blijven op mobiel volledig bruikbaar: Positie/Club/Zoek stacken verticaal en elk veld gebruikt full-width.
 FR-049: Verkoop-selector staat open totdat de transferlimiet van de actieve ronde is bereikt; in rondes met limiet 1 is na 1 open placeholder een koopactie vereist, in bonusrondes met limiet 3 mogen eerst tot 3 verkopen worden gedaan.
-FR-050: League RuleSet v1 is versieerbaar en valideert strikt op: defaultLimit=1, bonusRoundLimit=3, exact 3 unieke bonusronde-nummers, budget-cap en bankcompositie (GK/DEF/MID/FWD elk 1).
-FR-051: Transfer policy-engine bepaalt per ronde deterministisch of SELL en BUY zijn toegestaan op basis van RuleSet, aantal voltooide transfers en aantal open verkopen.
+FR-050: League RuleProfile v2 is versieerbaar en valideert schema-gedreven op transferregels (default/bonusrondes), budget-cap, round-lock gedrag en benchcompositie.
+FR-051: Transfer policy-engine bepaalt per ronde deterministisch of SELL en BUY zijn toegestaan op basis van RuleProfile, aantal voltooide transfers en aantal open verkopen.
 FR-052: Admin kan speelrondes locken/unlocken via API; elke lock-statuswijziging schrijft een audit-entry met actie-type, actor, target, reden en timestamp.
 FR-053: Notificatie-eventbus v1 slaat transferwindow- en trade-approval-events persistent op met type, league, manager, payload en timestamp.
 FR-054: Eventbus-API ondersteunt uitlezen met filters op managerId, leagueId en event type.
@@ -509,3 +510,4 @@ Waarom zo:
 - 2026-05-18: Instellingen uitgebreid met `Aanvullende spelregels` (titel, beschrijving, impact) zodat nieuwe regels direct beschreven en gepubliceerd kunnen worden op `/spelregels` zonder codewijziging.
 - 2026-05-18: Spelregelspagina (`/spelregels`) geherstructureerd in vaste hoofdstukken (Transfer, Budget, Waiver, Strafregels/tie policy, Custom) voor snellere scanbaarheid per regeldomein.
 - 2026-05-18: Instellingenpagina UX gepolijst: duidelijke 3-stappenflow, actieve mode-badge, niet-opgeslagen-wijzigingen indicator, herstelknop en inklapbare debug-sectie voor intuïtiever beheer.
+- 2026-05-24: Rule-engine uitgebreid naar RuleProfile v2 met preset-ondersteuning (`eredivisie`, `fantasycalcio`, `custom`), schema-validatie en automatische migratie van legacy RuleSet v1; transfer policy leest nu v2-profielen.

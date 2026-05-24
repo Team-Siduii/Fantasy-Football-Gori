@@ -1,34 +1,56 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultRuleSetV1, validateRuleSetV1 } from "../../src/domain/ruleset";
+import {
+  createDefaultRuleProfile,
+  createFantasyCalcioRuleProfile,
+  createLegacyRuleSetV1,
+  migrateRuleSetV1ToRuleProfile,
+  validateRuleProfile,
+} from "../../src/domain/ruleset";
 
-describe("ruleset v1", () => {
-  it("builds a valid default ruleset", () => {
-    const ruleset = createDefaultRuleSetV1();
-    const result = validateRuleSetV1(ruleset);
+describe("ruleset rule-profile v2", () => {
+  it("builds a valid default Eredivisie profile", () => {
+    const profile = createDefaultRuleProfile();
+    const result = validateRuleProfile(profile);
 
     expect(result.isValid).toBe(true);
     expect(result.errors).toEqual([]);
-    expect(result.normalized?.version).toBe("1.0");
+    expect(result.normalized?.version).toBe("2.0");
+    expect(result.normalized?.id).toBe("eredivisie");
   });
 
-  it("rejects bonus rounds that are not exactly 3 unique positive round numbers", () => {
+  it("supports a fantasycalcio preset with different transfer configuration", () => {
+    const profile = createFantasyCalcioRuleProfile();
+    const result = validateRuleProfile(profile);
+
+    expect(result.isValid).toBe(true);
+    expect(profile.transfer.defaultPerRound).toBe(2);
+    expect(profile.transfer.bonusRounds?.[0]).toEqual({ round: 10, limit: 4 });
+  });
+
+  it("rejects invalid bonus-round entries", () => {
     const invalid = {
-      version: "1.0",
-      config: {
-        transfer: {
-          defaultLimit: 1,
-          bonusRoundLimit: 3,
-          bonusRounds: [5, 5, -1],
-          allowMultipleSellsInBonusRound: true,
-        },
-        budget: { teamValueCapMillions: 100 },
-        bench: { composition: { GK: 1, DEF: 1, MID: 1, FWD: 1 } },
+      ...createDefaultRuleProfile(),
+      transfer: {
+        ...createDefaultRuleProfile().transfer,
+        bonusRounds: [{ round: 0, limit: 3 }],
       },
     };
 
-    const result = validateRuleSetV1(invalid);
+    const result = validateRuleProfile(invalid);
 
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain("config.transfer.bonusRounds must contain exactly 3 unique positive round numbers");
+    expect(result.errors).toContain("transfer.bonusRounds entries must use positive round and positive limit");
+  });
+
+  it("migrates legacy RuleSet v1 into v2 profile", () => {
+    const legacy = createLegacyRuleSetV1();
+    const migrated = migrateRuleSetV1ToRuleProfile(legacy, "eredivisie");
+    const result = validateRuleProfile(migrated);
+
+    expect(result.isValid).toBe(true);
+    expect(migrated.version).toBe("2.0");
+    expect(migrated.transfer.defaultPerRound).toBe(legacy.config.transfer.defaultLimit);
+    expect(migrated.transfer.allowMultiSell).toBe(legacy.config.transfer.allowMultipleSellsInBonusRound);
+    expect(migrated.squad.budgetCap).toBe(legacy.config.budget.teamValueCapMillions);
   });
 });

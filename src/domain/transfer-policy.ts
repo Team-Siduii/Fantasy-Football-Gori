@@ -1,4 +1,4 @@
-import type { RuleSetV1 } from "./ruleset";
+import type { RuleProfile } from "./ruleset";
 
 export type TransferPolicyContext = {
   roundNumber: number;
@@ -19,18 +19,16 @@ export type TransferPolicyDecision = {
   };
 };
 
-function getTransferLimit(ruleset: RuleSetV1, roundNumber: number): number {
-  return ruleset.config.transfer.bonusRounds.includes(roundNumber)
-    ? ruleset.config.transfer.bonusRoundLimit
-    : ruleset.config.transfer.defaultLimit;
+function getTransferLimit(profile: RuleProfile, roundNumber: number): number {
+  const hit = profile.transfer.bonusRounds?.find((bonus) => bonus.round === roundNumber);
+  return hit?.limit ?? profile.transfer.defaultPerRound;
 }
 
-export function evaluateTransferPolicy(ruleset: RuleSetV1, context: TransferPolicyContext): TransferPolicyDecision {
-  const transferLimit = getTransferLimit(ruleset, context.roundNumber);
+export function evaluateTransferPolicy(profile: RuleProfile, context: TransferPolicyContext): TransferPolicyDecision {
+  const transferLimit = getTransferLimit(profile, context.roundNumber);
   const totalReserved = context.completedTransfers + context.openSells;
-  const isBonusRound = ruleset.config.transfer.bonusRounds.includes(context.roundNumber);
 
-  const maxOpenSells = isBonusRound && ruleset.config.transfer.allowMultipleSellsInBonusRound ? transferLimit : 1;
+  const maxOpenSells = profile.transfer.allowMultiSell ? transferLimit : 1;
   const maxOpenSellsRemaining = Math.max(0, maxOpenSells - context.openSells);
 
   const sellAllowed = totalReserved < transferLimit && context.openSells < maxOpenSells;

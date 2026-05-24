@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultRuleSetV1 } from "../../src/domain/ruleset";
+import {
+  createDefaultRuleProfile,
+  createFantasyCalcioRuleProfile,
+  createLegacyRuleSetV1,
+  migrateRuleSetV1ToRuleProfile,
+} from "../../src/domain/ruleset";
 import { evaluateTransferPolicy } from "../../src/domain/transfer-policy";
 
 describe("transfer policy layer", () => {
-  it("enforces buy-first after one open sell in normal rounds", () => {
-    const ruleset = createDefaultRuleSetV1();
+  it("enforces buy-first after one open sell in normal rounds for default profile", () => {
+    const ruleset = createDefaultRuleProfile();
 
     const decision = evaluateTransferPolicy(ruleset, {
       roundNumber: 6,
@@ -17,8 +22,8 @@ describe("transfer policy layer", () => {
     expect(decision.buy.allowed).toBe(true);
   });
 
-  it("allows up to 3 open sells first in configured bonus rounds", () => {
-    const ruleset = createDefaultRuleSetV1();
+  it("allows up to configured open sells in configured bonus rounds", () => {
+    const ruleset = createDefaultRuleProfile();
 
     const atTwoOpenSells = evaluateTransferPolicy(ruleset, {
       roundNumber: 5,
@@ -37,10 +42,25 @@ describe("transfer policy layer", () => {
     expect(atLimit.buy.allowed).toBe(true);
   });
 
-  it("blocks all new actions when round limit already exhausted", () => {
-    const ruleset = createDefaultRuleSetV1();
+  it("respects fantasycalcio preset defaults", () => {
+    const ruleset = createFantasyCalcioRuleProfile();
 
     const decision = evaluateTransferPolicy(ruleset, {
+      roundNumber: 8,
+      completedTransfers: 0,
+      openSells: 1,
+    });
+
+    expect(decision.transferLimit).toBe(2);
+    expect(decision.sell.allowed).toBe(true);
+    expect(decision.buy.allowed).toBe(true);
+  });
+
+  it("supports legacy rules via migration", () => {
+    const legacy = createLegacyRuleSetV1();
+    const migrated = migrateRuleSetV1ToRuleProfile(legacy);
+
+    const decision = evaluateTransferPolicy(migrated, {
       roundNumber: 20,
       completedTransfers: 3,
       openSells: 0,

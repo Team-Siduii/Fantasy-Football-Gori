@@ -1,7 +1,8 @@
-export type RuleSetVersion = "1.0";
+export type RuleProfileId = "eredivisie" | "fantasycalcio" | "custom";
+export type RuleProfileVersion = "2.0";
 
-export type RuleSetV1 = {
-  version: RuleSetVersion;
+export type LegacyRuleSetV1 = {
+  version: "1.0";
   config: {
     transfer: {
       defaultLimit: number;
@@ -23,13 +24,32 @@ export type RuleSetV1 = {
   };
 };
 
-export type RuleSetValidationResult = {
-  isValid: boolean;
-  errors: string[];
-  normalized?: RuleSetV1;
+export type RuleProfile = {
+  id: RuleProfileId;
+  version: RuleProfileVersion;
+  transfer: {
+    mode: "sell-then-buy" | "free-order";
+    defaultPerRound: number;
+    bonusRounds?: Array<{ round: number; limit: number }>;
+    allowMultiSell: boolean;
+  };
+  squad: {
+    budgetCap: number;
+    benchComposition?: { GK: number; DEF: number; MID: number; FWD: number };
+  };
+  roundLock: {
+    lockDeadlineMode: "manual" | "kickoff";
+    allowAdminOverride: boolean;
+  };
 };
 
-export function createDefaultRuleSetV1(): RuleSetV1 {
+export type RuleProfileValidationResult = {
+  isValid: boolean;
+  errors: string[];
+  normalized?: RuleProfile;
+};
+
+export function createLegacyRuleSetV1(): LegacyRuleSetV1 {
   return {
     version: "1.0",
     config: {
@@ -54,63 +74,110 @@ export function createDefaultRuleSetV1(): RuleSetV1 {
   };
 }
 
+export function createDefaultRuleProfile(): RuleProfile {
+  return {
+    id: "eredivisie",
+    version: "2.0",
+    transfer: {
+      mode: "sell-then-buy",
+      defaultPerRound: 1,
+      bonusRounds: [
+        { round: 5, limit: 3 },
+        { round: 10, limit: 3 },
+        { round: 20, limit: 3 },
+      ],
+      allowMultiSell: true,
+    },
+    squad: {
+      budgetCap: 100,
+      benchComposition: { GK: 1, DEF: 1, MID: 1, FWD: 1 },
+    },
+    roundLock: {
+      lockDeadlineMode: "kickoff",
+      allowAdminOverride: true,
+    },
+  };
+}
+
+export function createFantasyCalcioRuleProfile(): RuleProfile {
+  return {
+    id: "fantasycalcio",
+    version: "2.0",
+    transfer: {
+      mode: "sell-then-buy",
+      defaultPerRound: 2,
+      bonusRounds: [
+        { round: 10, limit: 4 },
+        { round: 20, limit: 4 },
+      ],
+      allowMultiSell: true,
+    },
+    squad: {
+      budgetCap: 100,
+      benchComposition: { GK: 1, DEF: 1, MID: 1, FWD: 1 },
+    },
+    roundLock: {
+      lockDeadlineMode: "kickoff",
+      allowAdminOverride: true,
+    },
+  };
+}
+
 function isPositiveInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value > 0;
 }
 
-export function validateRuleSetV1(input: unknown): RuleSetValidationResult {
+export function validateRuleProfile(input: unknown): RuleProfileValidationResult {
   const errors: string[] = [];
 
   if (!input || typeof input !== "object") {
-    return { isValid: false, errors: ["ruleset must be an object"] };
+    return { isValid: false, errors: ["rule profile must be an object"] };
   }
 
-  const candidate = input as Partial<RuleSetV1>;
+  const candidate = input as Partial<RuleProfile>;
 
-  if (candidate.version !== "1.0") {
-    errors.push("version must be '1.0'");
+  if (!candidate.version || candidate.version !== "2.0") {
+    errors.push("version must be '2.0'");
   }
 
-  const transfer = candidate.config?.transfer;
-  const budget = candidate.config?.budget;
-  const bench = candidate.config?.bench;
-
-  if (!transfer || transfer.defaultLimit !== 1) {
-    errors.push("config.transfer.defaultLimit must be 1");
+  if (!candidate.id || !["eredivisie", "fantasycalcio", "custom"].includes(candidate.id)) {
+    errors.push("id must be one of: eredivisie, fantasycalcio, custom");
   }
 
-  if (!transfer || transfer.bonusRoundLimit !== 3) {
-    errors.push("config.transfer.bonusRoundLimit must be 3");
+  if (!candidate.transfer || !isPositiveInteger(candidate.transfer.defaultPerRound)) {
+    errors.push("transfer.defaultPerRound must be a positive integer");
   }
 
-  const bonusRounds = transfer?.bonusRounds;
-  if (!Array.isArray(bonusRounds)) {
-    errors.push("config.transfer.bonusRounds must be an array");
-  } else {
-    const valid = bonusRounds.every((round) => isPositiveInteger(round));
-    const unique = new Set(bonusRounds).size === bonusRounds.length;
-    if (!valid || !unique || bonusRounds.length !== 3) {
-      errors.push("config.transfer.bonusRounds must contain exactly 3 unique positive round numbers");
+  if (!candidate.transfer || typeof candidate.transfer.allowMultiSell !== "boolean") {
+    errors.push("transfer.allowMultiSell must be a boolean");
+  }
+
+  if (!candidate.transfer || !["sell-then-buy", "free-order"].includes(candidate.transfer.mode ?? "")) {
+    errors.push("transfer.mode must be 'sell-then-buy' or 'free-order'");
+  }
+
+  if (candidate.transfer?.bonusRounds) {
+    const entries = candidate.transfer.bonusRounds;
+    const validEntries = entries.every((it) => isPositiveInteger(it.round) && isPositiveInteger(it.limit));
+    if (!validEntries) {
+      errors.push("transfer.bonusRounds entries must use positive round and positive limit");
+    }
+    const uniqueRounds = new Set(entries.map((it) => it.round)).size === entries.length;
+    if (!uniqueRounds) {
+      errors.push("transfer.bonusRounds must not contain duplicate rounds");
     }
   }
 
-  if (!transfer || typeof transfer.allowMultipleSellsInBonusRound !== "boolean") {
-    errors.push("config.transfer.allowMultipleSellsInBonusRound must be a boolean");
+  if (!candidate.squad || typeof candidate.squad.budgetCap !== "number" || candidate.squad.budgetCap <= 0) {
+    errors.push("squad.budgetCap must be a positive number");
   }
 
-  if (!budget || typeof budget.teamValueCapMillions !== "number" || budget.teamValueCapMillions <= 0) {
-    errors.push("config.budget.teamValueCapMillions must be a positive number");
+  if (!candidate.roundLock || !["manual", "kickoff"].includes(candidate.roundLock.lockDeadlineMode ?? "")) {
+    errors.push("roundLock.lockDeadlineMode must be 'manual' or 'kickoff'");
   }
 
-  const composition = bench?.composition;
-  if (
-    !composition ||
-    composition.GK !== 1 ||
-    composition.DEF !== 1 ||
-    composition.MID !== 1 ||
-    composition.FWD !== 1
-  ) {
-    errors.push("config.bench.composition must be { GK:1, DEF:1, MID:1, FWD:1 }");
+  if (!candidate.roundLock || typeof candidate.roundLock.allowAdminOverride !== "boolean") {
+    errors.push("roundLock.allowAdminOverride must be a boolean");
   }
 
   if (errors.length > 0) {
@@ -120,6 +187,30 @@ export function validateRuleSetV1(input: unknown): RuleSetValidationResult {
   return {
     isValid: true,
     errors,
-    normalized: candidate as RuleSetV1,
+    normalized: candidate as RuleProfile,
+  };
+}
+
+export function migrateRuleSetV1ToRuleProfile(legacy: LegacyRuleSetV1, profileId: RuleProfileId = "custom"): RuleProfile {
+  return {
+    id: profileId,
+    version: "2.0",
+    transfer: {
+      mode: "sell-then-buy",
+      defaultPerRound: legacy.config.transfer.defaultLimit,
+      bonusRounds: legacy.config.transfer.bonusRounds.map((round) => ({
+        round,
+        limit: legacy.config.transfer.bonusRoundLimit,
+      })),
+      allowMultiSell: legacy.config.transfer.allowMultipleSellsInBonusRound,
+    },
+    squad: {
+      budgetCap: legacy.config.budget.teamValueCapMillions,
+      benchComposition: legacy.config.bench.composition,
+    },
+    roundLock: {
+      lockDeadlineMode: "kickoff",
+      allowAdminOverride: true,
+    },
   };
 }
