@@ -67,8 +67,36 @@ type AuthMeResponse = {
   };
 };
 
+const DRAFT_TEAM_NAME_ALIASES: Record<string, string[]> = {
+  "team a": ["fc slot", "slot", "team slot"],
+  "team b": ["fc sprint", "sprint", "team sprint"],
+  "team c": ["fc turbo", "turbo", "team turbo"],
+  "team d": ["fc rocket", "rocket", "team rocket"],
+};
+
 function normalizeDraftTeamKey(value: string) {
-  return value.trim().toLowerCase();
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function resolveDraftTeamForManager(teamOrder: string[], managerTeamName: string) {
+  const normalizedManagerTeam = normalizeDraftTeamKey(managerTeamName);
+  if (!normalizedManagerTeam) {
+    return "";
+  }
+
+  const directMatch = teamOrder.find((teamId) => normalizeDraftTeamKey(teamId) === normalizedManagerTeam);
+  if (directMatch) {
+    return directMatch;
+  }
+
+  for (const teamId of teamOrder) {
+    const aliases = DRAFT_TEAM_NAME_ALIASES[normalizeDraftTeamKey(teamId)] ?? [];
+    if (aliases.some((alias) => normalizeDraftTeamKey(alias) === normalizedManagerTeam)) {
+      return teamId;
+    }
+  }
+
+  return "";
 }
 
 function fallbackPlayers(): EnhancedPlayer[] {
@@ -554,9 +582,7 @@ export default function ManagerMyTeamPage() {
         setDraftTeamRosters(rosters);
 
         setSelectedDraftTeam((current) => {
-          const managerTeamMatch = teamOrder.find(
-            (teamId) => normalizeDraftTeamKey(teamId) === normalizeDraftTeamKey(managerTeamName),
-          );
+          const managerTeamMatch = resolveDraftTeamForManager(teamOrder, managerTeamName);
 
           if (managerTeamMatch) {
             return managerTeamMatch;
@@ -619,13 +645,7 @@ export default function ManagerMyTeamPage() {
   }, [state.bench, state.lineup]);
 
   const managerDraftTeam = useMemo(() => {
-    if (!managerTeamName) {
-      return "";
-    }
-
-    return (
-      draftTeamOrder.find((teamId) => normalizeDraftTeamKey(teamId) === normalizeDraftTeamKey(managerTeamName)) ?? ""
-    );
+    return resolveDraftTeamForManager(draftTeamOrder, managerTeamName);
   }, [draftTeamOrder, managerTeamName]);
 
   useEffect(() => {
