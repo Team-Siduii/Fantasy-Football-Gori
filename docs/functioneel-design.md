@@ -266,10 +266,8 @@ FR-082: Draft-state wordt persistent opgeslagen en is via `/api/draft` uitleesba
 FR-083: Draft API forceert turn-order en speler-exclusiviteit: `pick` buiten beurt of met al-gepickte speler wordt geweigerd; `return` zet speler terug in pool en herberekent de beurt.
 FR-084: Elke draft `pick`/`return` synchroniseert direct naar persistente team-roster-state per team, zodat teamselecties niet alleen in draft-log maar ook in teamstate landen.
 FR-085: Draftpagina toont per team een live roster-overzicht (gepickte spelers) op basis van team-roster-state zodat draftresultaat direct visueel te controleren is.
-FR-086: Manager Team-pagina bevat een live draft-teamwidget die elke paar seconden `/api/draft` ververst en per geselecteerd team de actuele gepickte spelers toont zonder handmatige page refresh.
-FR-087: Manager Team-pagina koppelt draft-roster standaard automatisch aan het ingelogde manager-team (via account `teamName`), zodat team-scheiding bewaakt blijft; alleen zonder match blijft handmatige teamselectie zichtbaar.
-FR-088: Draft team-koppeling ondersteunt alias-mapping (bijv. `FC Slot` → `Team A`) zodat afwijkende account-teamnamen toch deterministisch aan het juiste draftteam gekoppeld blijven.
-FR-089: Managers kunnen in de Team-pagina geen draftteam handmatig kiezen; de widget toont uitsluitend het automatisch gekoppelde eigen team, of een duidelijke melding als koppeling ontbreekt.
+FR-086: Draftfunctionaliteit is een aparte seizoensstart-modus op `/draft`; de reguliere Manager Team-pagina toont geen draft-overzicht of draft-rostercomponent.
+FR-087: Manager Team-pagina focust uitsluitend op eigen teambeheer (opstelling, bank, transfers en ronde-overzicht) en bevat geen cross-team draftcontext.
 FR-090: In WK mode toont het ronde-wedstrijdenoverzicht per wedstrijd expliciet de poule-indicatie (bij groepsfase `Poule X`, anders `Knock-out`) zodat direct zichtbaar is in welke poule de wedstrijd valt.
 
 ## 7. Niet-functionele requirements (NFR)
@@ -534,3 +532,4 @@ Waarom zo:
 - 2026-05-24: Manager Team-widget staat geen handmatige draftteam-keuze meer toe; managers zien alleen eigen gekoppelde team of een geen-koppeling melding.
 - 2026-05-24: WK ronde-overzicht toont nu per wedstrijd de poule-indicatie (`Poule X`) in groepsfase, met `Knock-out` label buiten groepsfase.
 - 2026-05-24: Poule-mapping WK hersteld op basis van bronvolgorde uit KPN speelschema (pouleletters op eerste speeldagvolgorde) en corrupte fixturetekst opgeschoond (`Jordanië - Argentinië`).
+- 2026-05-24: Draft team-overzicht verwijderd van Manager Team-pagina; draft blijft exclusief in aparte seizoensstart-modus op `/draft`.

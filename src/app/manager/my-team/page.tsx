@@ -52,53 +52,6 @@ type LeagueRuntimeConfigResponse = {
   };
 };
 
-type DraftRuntimeResponse = {
-  draft?: {
-    status?: "IDLE" | "ACTIVE" | "COMPLETED";
-    teamOrder?: string[];
-  };
-  teamRosters?: Record<string, string[]>;
-};
-
-type AuthMeResponse = {
-  authenticated?: boolean;
-  profile?: {
-    teamName?: string;
-  };
-};
-
-const DRAFT_TEAM_NAME_ALIASES: Record<string, string[]> = {
-  "team a": ["fc slot", "slot", "team slot"],
-  "team b": ["fc sprint", "sprint", "team sprint"],
-  "team c": ["fc turbo", "turbo", "team turbo"],
-  "team d": ["fc rocket", "rocket", "team rocket"],
-};
-
-function normalizeDraftTeamKey(value: string) {
-  return value.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-function resolveDraftTeamForManager(teamOrder: string[], managerTeamName: string) {
-  const normalizedManagerTeam = normalizeDraftTeamKey(managerTeamName);
-  if (!normalizedManagerTeam) {
-    return "";
-  }
-
-  const directMatch = teamOrder.find((teamId) => normalizeDraftTeamKey(teamId) === normalizedManagerTeam);
-  if (directMatch) {
-    return directMatch;
-  }
-
-  for (const teamId of teamOrder) {
-    const aliases = DRAFT_TEAM_NAME_ALIASES[normalizeDraftTeamKey(teamId)] ?? [];
-    if (aliases.some((alias) => normalizeDraftTeamKey(alias) === normalizedManagerTeam)) {
-      return teamId;
-    }
-  }
-
-  return "";
-}
-
 function fallbackPlayers(): EnhancedPlayer[] {
   return enrichPlayers([
     { id: "1", naam: "Demo Keeper", positie: "GK", club: "PSV", prijs: 2 },
@@ -546,11 +499,6 @@ export default function ManagerMyTeamPage() {
   const [marketSortField, setMarketSortField] = useState<MarketSortField>("prijs");
   const [marketSortDirection, setMarketSortDirection] = useState<MarketSortDirection>("desc");
   const [marketPage, setMarketPage] = useState(1);
-  const [draftStatus, setDraftStatus] = useState<"IDLE" | "ACTIVE" | "COMPLETED" | null>(null);
-  const [draftTeamOrder, setDraftTeamOrder] = useState<string[]>([]);
-  const [selectedDraftTeam, setSelectedDraftTeam] = useState("");
-  const [draftTeamRosters, setDraftTeamRosters] = useState<Record<string, string[]>>({});
-  const [managerTeamName, setManagerTeamName] = useState("");
 
   const hydrated = useRef(false);
 
@@ -560,11 +508,10 @@ export default function ManagerMyTeamPage() {
       setError("");
 
       try {
-        const [playersResponse, managerStateResponse, leagueConfigResponse, authMeResponse] = await Promise.all([
+        const [playersResponse, managerStateResponse, leagueConfigResponse] = await Promise.all([
           fetch(`/api/players?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
           fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
           fetch(`/api/admin/league-config?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
-          fetch("/api/auth/me", { cache: "no-store" }),
         ]);
 
         if (!playersResponse.ok) {
@@ -580,8 +527,6 @@ export default function ManagerMyTeamPage() {
         const leagueConfigData = leagueConfigResponse.ok
           ? ((await leagueConfigResponse.json()) as LeagueRuntimeConfigResponse)
           : { config: undefined };
-        const authMeData = authMeResponse.ok ? ((await authMeResponse.json()) as AuthMeResponse) : { authenticated: false };
-        setManagerTeamName((authMeData.profile?.teamName ?? "").trim());
         const fallbackBudgetCap = getTransferBudgetCapMillions(isWkMode ? "wk" : "eredivisie");
         const configBudgetCap = leagueConfigData.config?.budget?.teamValueCapMillions;
         const activeBudgetCap =
@@ -645,45 +590,6 @@ export default function ManagerMyTeamPage() {
   }, [formationOptions, isWkMode]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const loadDraftSnapshot = async () => {
-      try {
-        const response = await fetch("/api/draft", { cache: "no-store" });
-        if (!response.ok) {
-          return;
-        }
-        const payload = (await response.json()) as DraftRuntimeResponse;
-        if (cancelled) {
-          return;
-        }
-
-        const status = payload.draft?.status ?? null;
-        const teamOrder = payload.draft?.teamOrder ?? [];
-        const rosters = payload.teamRosters ?? {};
-
-        setDraftStatus(status);
-        setDraftTeamOrder(teamOrder);
-        setDraftTeamRosters(rosters);
-
-        setSelectedDraftTeam(resolveDraftTeamForManager(teamOrder, managerTeamName));
-      } catch {
-        // silent fail: manager page moet bruikbaar blijven zonder draft data
-      }
-    };
-
-    void loadDraftSnapshot();
-    const interval = setInterval(() => {
-      void loadDraftSnapshot();
-    }, 5000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [managerTeamName]);
-
-  useEffect(() => {
     if (!hydrated.current) {
       return;
     }
@@ -717,25 +623,6 @@ export default function ManagerMyTeamPage() {
   const squadPlayers = useMemo(() => {
     return [...state.lineup, ...state.bench].filter((player) => !player.id.startsWith("open-"));
   }, [state.bench, state.lineup]);
-
-  const managerDraftTeam = useMemo(() => {
-    return resolveDraftTeamForManager(draftTeamOrder, managerTeamName);
-  }, [draftTeamOrder, managerTeamName]);
-
-  useEffect(() => {
-    setSelectedDraftTeam(managerDraftTeam || "");
-  }, [managerDraftTeam]);
-
-  const selectedDraftTeamRoster = useMemo(() => {
-    if (!selectedDraftTeam) {
-      return [] as EnhancedPlayer[];
-    }
-
-    const ids = draftTeamRosters[selectedDraftTeam] ?? [];
-    return ids
-      .map((id) => allPlayers.find((player) => player.id === id))
-      .filter((player): player is EnhancedPlayer => Boolean(player));
-  }, [allPlayers, draftTeamRosters, selectedDraftTeam]);
 
   const remainingBudget = useMemo(
     () => calculateRemainingBudget(squadPlayers, budgetCapMillions),
@@ -1235,36 +1122,6 @@ export default function ManagerMyTeamPage() {
             <StatTile label="Budget cap" value={`€ ${budgetCapMillions.toFixed(1)}M`} />
             <StatTile label="Transfers deze ronde" value={currentTransferLimit} />
           </div>
-        </section>
-
-        <section className="card col-4">
-          <h2>Draft team-overzicht</h2>
-          <p className="muted-note">Status: {draftStatus ?? "onbekend"}</p>
-          {managerDraftTeam ? (
-            <p className="muted-note">
-              Gekoppeld draft team: <strong>{managerDraftTeam}</strong>
-            </p>
-          ) : (
-            <p className="muted-note">
-              Geen gekoppeld draft team gevonden voor jouw account-teamnaam. Je kunt hier geen ander team kiezen.
-            </p>
-          )}
-          {selectedDraftTeam ? (
-            <>
-              <p className="muted-note">Gepickte spelers: {selectedDraftTeamRoster.length}</p>
-              {selectedDraftTeamRoster.length === 0 ? (
-                <p className="muted-note">Nog geen picks voor dit team.</p>
-              ) : (
-                <ul>
-                  {selectedDraftTeamRoster.map((player) => (
-                    <li key={`draft-roster-${selectedDraftTeam}-${player.id}`}>
-                      {player.naam} ({player.positie})
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
-          ) : null}
         </section>
 
         <section className="card col-12" id="transfermarkt">
