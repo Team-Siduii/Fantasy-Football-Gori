@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getCountryFlag } from "../../src/lib/country-flags";
+import { getCountryAbbreviation, getCountryFlag } from "../../src/lib/country-flags";
 
 describe("getCountryFlag", () => {
   it("returns a flag for all WK countries", () => {
@@ -63,5 +63,16 @@ describe("getCountryFlag", () => {
     expect(getCountryFlag("Bosnië-Herzegovina")).toBe("🇧🇦");
     expect(getCountryFlag("Saoedi-Arabië")).toBe("🇸🇦");
     expect(getCountryFlag("Ajax")).toBe("");
+  });
+});
+
+describe("getCountryAbbreviation", () => {
+  it("returns uppercase country abbreviations for WK countries", () => {
+    expect(getCountryAbbreviation("Nederland")).toBe("NL");
+    expect(getCountryAbbreviation("Saoedi-Arabië")).toBe("SA");
+  });
+
+  it("returns empty for non-country clubs", () => {
+    expect(getCountryAbbreviation("Ajax")).toBe("");
   });
 });

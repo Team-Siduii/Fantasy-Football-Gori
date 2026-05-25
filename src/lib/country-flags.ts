@@ -62,8 +62,13 @@ function toFlagEmoji(iso2: string) {
   return chars.join("");
 }
 
-export function getCountryFlag(countryOrClub: string) {
+export function getCountryAbbreviation(countryOrClub: string) {
   const iso2 = COUNTRY_TO_ISO2[countryOrClub];
+  return iso2 ? iso2.toUpperCase() : "";
+}
+
+export function getCountryFlag(countryOrClub: string) {
+  const iso2 = getCountryAbbreviation(countryOrClub);
   if (!iso2) {
     return "";
   }

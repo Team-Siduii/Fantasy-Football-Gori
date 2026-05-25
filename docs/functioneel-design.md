@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-05-24
+Laatste update: 2026-05-25
 
 ## 1. Productvisie
 Doel van de app:
@@ -153,6 +153,8 @@ Per rol belangrijkste rechten:
 - MVP transferbudget-cap is mode-specifiek: Eredivisie maximaal €32.0M, WK maximaal €100.0M; transferbevestiging blokkeert automatisch boven de cap van de actieve mode
 - Demo-team (testseed) wordt per actieve mode binnen budget opgebouwd (Eredivisie <= €32.0M, WK <= €100.0M) zodat testen direct valide start
 - Mobiele volgorde op Team-pagina: basiselftal eerst, daarna wisselspelers, daarna statistiektegels
+- Spelerkaart-onderregel toont de transferprijs van de speler (format `€ x.xxM`) in plaats van puntenlabel.
+- Spelerkaart-bovenregel toont links de landenvlag en rechts de landafkorting in hoofdletters (ISO-2/alias fallback) voor basiselftal en wisselspelers.
 - Transfermarkt-kolommen zijn sorteerbaar op spelernaam, positie (GK→DEF→MID→FWD), club en transferwaarde
 
 ### 4.6 Notificaties
@@ -538,4 +540,5 @@ Waarom zo:
 - 2026-05-24: Spelerkaart-onderregel blijft visueel staan maar zonder puntentekst (`PN`) in zowel basiselftal als wisselspelers.
 - 2026-05-24: In het basiselftal is de positie-aanduiding op de spelerskaart verborgen (DEF/MID/FWD/GK niet meer getoond).
 - 2026-05-24: WK-landenvlaggen toegevoegd op spelerskaarten en in transfermarkt/sell-lijsten vóór de spelersnaam, met centrale landnaam→emoji mapping en alias-ondersteuning.
+- 2026-05-25: Opstellingskaarten aangepast: bovenregel toont links vlag en rechts landafkorting (hoofdletters), onderregel toont nu transferprijs (`€ x.xxM`) voor basiselftal en wisselspelers.
 - 2026-05-24: Boven basiselftal een compacte design-topbar geplaatst met links `Resterende waarde`, midden `Totaal punten` en rechts de formatie-dropdown; oude stat-tiles onder/naast het veld verwijderd.
