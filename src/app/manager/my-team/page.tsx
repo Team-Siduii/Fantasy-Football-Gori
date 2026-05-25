@@ -1075,7 +1075,7 @@ export default function ManagerMyTeamPage() {
                         draggable={!player.id.startsWith("open-")}
                         position={cardMeta.flag}
                         club={cardMeta.countryCode}
-                        name={player.naam}
+                        name={cardMeta.displayName}
                         pointsLabel={cardMeta.priceLabel}
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",

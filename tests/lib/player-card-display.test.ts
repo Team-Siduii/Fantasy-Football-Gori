@@ -13,6 +13,7 @@ describe("getPlayerCardMeta", () => {
     expect(meta.flag).toBe("🇫🇷");
     expect(meta.countryCode).toBe("FR");
     expect(meta.priceLabel).toBe("€ 15.00M");
+    expect(meta.displayName).toBe("Kylian Mbappé");
   });
 
   it("keeps open slots visually empty in top and bottom rows", () => {
@@ -26,5 +27,6 @@ describe("getPlayerCardMeta", () => {
     expect(meta.flag).toBe("");
     expect(meta.countryCode).toBe("");
     expect(meta.priceLabel).toBe("");
+    expect(meta.displayName).toBe("");
   });
 });
