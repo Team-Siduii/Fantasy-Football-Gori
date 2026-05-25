@@ -13,6 +13,7 @@ import type { PlayerRecord } from "@/domain/player";
 import { buildMarketPlayers } from "@/domain/transfer-workflow";
 import { getTransferLimitForRound } from "@/domain/rules";
 import { byPriceDesc, enrichPlayers, type EnhancedPlayer } from "@/lib/player-derived";
+import { withCountryFlag } from "@/lib/country-flags";
 import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
 
@@ -1062,7 +1063,7 @@ export default function ManagerMyTeamPage() {
                         draggable={!player.id.startsWith("open-")}
                         position=""
                         club={player.club}
-                        name={player.naam}
+                        name={withCountryFlag(player.club, player.naam)}
                         pointsLabel=""
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",
@@ -1098,7 +1099,7 @@ export default function ManagerMyTeamPage() {
                 draggable={!player.id.startsWith("open-")}
                 position={player.positie}
                 club={player.club}
-                name={player.naam}
+                name={withCountryFlag(player.club, player.naam)}
                 pointsLabel=""
                 className={[
                   pendingSellId === player.id ? "player-card--sell" : "",
@@ -1142,7 +1143,7 @@ export default function ManagerMyTeamPage() {
                 <option value="">Kies speler om te verkopen</option>
                 {squadPlayers.map((player) => (
                   <option key={player.id} value={player.id}>
-                    {player.naam} ({player.positie}) - {player.club}
+                    {withCountryFlag(player.club, player.naam)} ({player.positie}) - {player.club}
                   </option>
                 ))}
               </select>
@@ -1286,7 +1287,7 @@ export default function ManagerMyTeamPage() {
               <tbody>
                 {pagedMarket.map((item, index) => (
                   <tr key={item.id} data-testid={`transfer-row-${index}`}>
-                    <td>{item.naam}</td>
+                    <td>{withCountryFlag(item.club, item.naam)}</td>
                     <td>{item.positie}</td>
                     <td>{item.club}</td>
                     <td>€ {item.prijs.toFixed(2)}M</td>

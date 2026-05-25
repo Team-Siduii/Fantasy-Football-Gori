@@ -1,0 +1,67 @@
+import { describe, expect, it } from "vitest";
+import { getCountryFlag } from "../../src/lib/country-flags";
+
+describe("getCountryFlag", () => {
+  it("returns a flag for all WK countries", () => {
+    const countries = [
+      "Algerije",
+      "Argentinië",
+      "Australië",
+      "België",
+      "Bosnië en Herzegovina",
+      "Brazilië",
+      "Canada",
+      "Colombia",
+      "Curaçao",
+      "Democratische Republiek Congo",
+      "Duitsland",
+      "Ecuador",
+      "Egypte",
+      "Engeland",
+      "Frankrijk",
+      "Ghana",
+      "Haïti",
+      "Irak",
+      "Iran",
+      "Ivoorkust",
+      "Japan",
+      "Jordanië",
+      "Kaapverdië",
+      "Kroatië",
+      "Marokko",
+      "Mexico",
+      "Nederland",
+      "Nieuw-Zeeland",
+      "Noorwegen",
+      "Oezbekistan",
+      "Oostenrijk",
+      "Panama",
+      "Paraguay",
+      "Portugal",
+      "Qatar",
+      "Saudi-Arabië",
+      "Schotland",
+      "Senegal",
+      "Spanje",
+      "Tsjechië",
+      "Tunesië",
+      "Turkije",
+      "Uruguay",
+      "Verenigde Staten",
+      "Zuid-Afrika",
+      "Zuid-Korea",
+      "Zweden",
+      "Zwitserland",
+    ];
+
+    for (const country of countries) {
+      expect(getCountryFlag(country), `missing flag for ${country}`).not.toBe("");
+    }
+  });
+
+  it("supports known aliases and returns empty for non-country club", () => {
+    expect(getCountryFlag("Bosnië-Herzegovina")).toBe("🇧🇦");
+    expect(getCountryFlag("Saoedi-Arabië")).toBe("🇸🇦");
+    expect(getCountryFlag("Ajax")).toBe("");
+  });
+});

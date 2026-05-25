@@ -537,3 +537,4 @@ Waarom zo:
 - 2026-05-24: Team-totaaloverzicht toont geen `Budget cap` meer (alleen resterend budget).
 - 2026-05-24: Spelerkaart-onderregel blijft visueel staan maar zonder puntentekst (`PN`) in zowel basiselftal als wisselspelers.
 - 2026-05-24: In het basiselftal is de positie-aanduiding op de spelerskaart verborgen (DEF/MID/FWD/GK niet meer getoond).
+- 2026-05-24: WK-landenvlaggen toegevoegd op spelerskaarten en in transfermarkt/sell-lijsten vóór de spelersnaam, met centrale landnaam→emoji mapping en alias-ondersteuning.
