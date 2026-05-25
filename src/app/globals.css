@@ -939,32 +939,32 @@ select {
 }
 
 .pitch-row {
+  --slot-width: clamp(74px, 21vw, 96px);
   position: relative;
   z-index: 1;
   display: grid;
+  justify-content: center;
   gap: 0.5rem;
 }
 
 .pitch-row[data-size="1"] {
-  grid-template-columns: 1fr;
-  max-width: 180px;
-  margin: 0 auto;
+  grid-template-columns: repeat(1, var(--slot-width));
 }
 
 .pitch-row[data-size="2"] {
-  grid-template-columns: repeat(2, minmax(130px, 1fr));
+  grid-template-columns: repeat(2, var(--slot-width));
 }
 
 .pitch-row[data-size="3"] {
-  grid-template-columns: repeat(3, minmax(110px, 1fr));
+  grid-template-columns: repeat(3, var(--slot-width));
 }
 
 .pitch-row[data-size="4"] {
-  grid-template-columns: repeat(4, minmax(95px, 1fr));
+  grid-template-columns: repeat(4, var(--slot-width));
 }
 
 .pitch-row[data-size="5"] {
-  grid-template-columns: repeat(5, minmax(80px, 1fr));
+  grid-template-columns: repeat(5, var(--slot-width));
 }
 
 .player-card {
@@ -1038,7 +1038,8 @@ select {
 
 .bench-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, clamp(74px, 21vw, 96px));
+  justify-content: center;
   gap: 0.55rem;
 }
 
@@ -1336,7 +1337,7 @@ select {
   .pitch-row[data-size="3"],
   .pitch-row[data-size="4"],
   .pitch-row[data-size="5"] {
-    grid-template-columns: repeat(var(--pitch-cols), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--pitch-cols), var(--slot-width));
   }
 
   .pitch-row[data-size="2"] {
@@ -1366,7 +1367,9 @@ select {
   }
 
   .bench-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, clamp(74px, 21vw, 96px));
+    justify-content: center;
+    gap: 0.5rem;
   }
 
   .transfer-controls {

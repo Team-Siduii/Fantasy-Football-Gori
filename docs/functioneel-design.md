@@ -158,6 +158,7 @@ Per rol belangrijkste rechten:
 - Open slots tonen in de onderste regel geen prijslabel en in de naamregel geen placeholdertekst.
 - Naam- en waarderegel op spelerskaarten zijn gecentreerd uitgelijnd.
 - Alle spelerskaarten gebruiken vaste rijhoogtes zodat gevulde slots en open slots exact dezelfde kaartgrootte behouden.
+- Slotbreedtes zijn uniform per kaarttype (veld + wisselspelers) via vaste responsive slotbreedte, zodat open slots visueel gelijk zijn aan gevulde spelerskaarten.
 - Spelersnamen op kaarten worden nooit afgekapt met ellipsis; naamregels wrappen volledig binnen uniforme vaste kaarthoogte/rijverdeling.
 - Transfermarkt-kolommen zijn sorteerbaar op spelernaam, positie (GK→DEF→MID→FWD), club en transferwaarde
 
@@ -549,5 +550,6 @@ Waarom zo:
 - 2026-05-25: Open slots tonen nu ook geen placeholdernaam meer; naam- en waarderegel zijn gecentreerd uitgelijnd voor consistente kaartlayout.
 - 2026-05-25: Kaartlayout gefixeerd met vaste rijhoogtes + ellipsis zodat gevulde spelersslots en open slots altijd exact dezelfde hoogte/breedte-indruk behouden.
 - 2026-05-25: Spelerskaart-typografie hersteld voor volledige zichtbaarheid van lange namen (geen ellipsis), met wrapping binnen een uniforme vaste kaartmaat voor zowel gevulde als open slots.
+- 2026-05-25: Gridbreedtes van veld- en wisselslots gelijkgetrokken met vaste responsive slotbreedtes; open slots en gevulde slots blijven daardoor uniform in afmeting.
 - 2026-05-25: Demo-voorbeeld ingeladen voor UI-verificatie: Kylian Mbappé start met `8` punten in de afgeleide puntenlogica.
 - 2026-05-24: Boven basiselftal een compacte design-topbar geplaatst met links `Resterende waarde`, midden `Totaal punten` en rechts de formatie-dropdown; oude stat-tiles onder/naast het veld verwijderd.
