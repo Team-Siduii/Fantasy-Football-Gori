@@ -12,7 +12,8 @@ import type { PlayerRecord } from "@/domain/player";
 import { buildMarketPlayers } from "@/domain/transfer-workflow";
 import { getTransferLimitForRound } from "@/domain/rules";
 import { byPriceDesc, enrichPlayers, type EnhancedPlayer } from "@/lib/player-derived";
-import { getCountryAbbreviation, getCountryFlag, withCountryFlag } from "@/lib/country-flags";
+import { withCountryFlag } from "@/lib/country-flags";
+import { getPlayerCardMeta } from "@/lib/player-card-display";
 import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
 
@@ -1065,18 +1066,17 @@ export default function ManagerMyTeamPage() {
                 <div key={`row-${rowIndex}`} className="pitch-row" data-size={row.length}>
                   {row.map((player, colIndex) => {
                     const lineupIndex = rowStart + colIndex;
-                    const countryCode = getCountryAbbreviation(player.club) || player.club.slice(0, 3).toUpperCase();
-                    const playerPriceLabel = `€ ${player.prijs.toFixed(2)}M`;
+                    const cardMeta = getPlayerCardMeta(player);
 
                     return (
                       <PlayerCard
                         key={`lineup-${lineupIndex}-${player.id}`}
                         data-testid={`lineup-card-${lineupIndex}`}
                         draggable={!player.id.startsWith("open-")}
-                        position={getCountryFlag(player.club)}
-                        club={countryCode}
+                        position={cardMeta.flag}
+                        club={cardMeta.countryCode}
                         name={player.naam}
-                        pointsLabel={playerPriceLabel}
+                        pointsLabel={cardMeta.priceLabel}
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",
                           player.id.startsWith("open-") ? "player-card--open" : "",
@@ -1100,18 +1100,17 @@ export default function ManagerMyTeamPage() {
           <h2>Wisselspelers</h2>
           <div className="bench-grid">
             {state.bench.slice(0, BENCH_LIMIT).map((player, benchIndex) => {
-              const countryCode = getCountryAbbreviation(player.club) || player.club.slice(0, 3).toUpperCase();
-              const playerPriceLabel = `€ ${player.prijs.toFixed(2)}M`;
+              const cardMeta = getPlayerCardMeta(player);
 
               return (
                 <PlayerCard
                   key={`bench-${benchIndex}-${player.id}`}
                   data-testid={`bench-card-${benchIndex}`}
                   draggable={!player.id.startsWith("open-")}
-                  position={getCountryFlag(player.club)}
-                  club={countryCode}
+                  position={cardMeta.flag}
+                  club={cardMeta.countryCode}
                   name={player.naam}
-                  pointsLabel={playerPriceLabel}
+                  pointsLabel={cardMeta.priceLabel}
                   className={[
                     pendingSellId === player.id ? "player-card--sell" : "",
                     player.id.startsWith("open-") ? "player-card--open" : "",
