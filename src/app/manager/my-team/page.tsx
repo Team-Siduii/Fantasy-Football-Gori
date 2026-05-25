@@ -1112,6 +1112,7 @@ export default function ManagerMyTeamPage() {
                   name={player.naam}
                   pointsLabel={cardMeta.priceLabel}
                   className={[
+                    "player-card--bench-row",
                     pendingSellId === player.id ? "player-card--sell" : "",
                     player.id.startsWith("open-") ? "player-card--open" : "",
                   ]

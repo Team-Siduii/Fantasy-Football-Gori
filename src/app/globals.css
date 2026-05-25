@@ -1038,9 +1038,8 @@ select {
 
 .bench-grid {
   display: grid;
-  grid-template-columns: repeat(2, clamp(74px, 21vw, 96px));
-  justify-content: center;
-  gap: 0.55rem;
+  grid-template-columns: 1fr;
+  gap: 0;
 }
 
 .muted-note {
@@ -1136,6 +1135,48 @@ select {
 .player-card--open .player-points {
   background: rgba(229, 233, 242, 0.5);
   color: #5f6f8d;
+}
+
+.player-card--bench-row {
+  height: auto;
+  min-height: 2.5rem;
+  grid-template-rows: none;
+  grid-template-columns: 1.7rem minmax(0, 1fr) auto;
+  align-items: center;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px dashed rgba(122, 134, 160, 0.55);
+  background: transparent;
+}
+
+.player-card--bench-row .player-top,
+.player-card--bench-row .player-name,
+.player-card--bench-row .player-points {
+  background: transparent;
+  padding: 0.2rem 0.25rem;
+}
+
+.player-card--bench-row .player-top {
+  grid-column: 1;
+  justify-content: center;
+  gap: 0;
+}
+
+.player-card--bench-row .player-top .player-club {
+  display: none;
+}
+
+.player-card--bench-row .player-name {
+  grid-column: 2;
+  justify-content: flex-start;
+  text-align: left;
+  font-size: 0.72rem;
+}
+
+.player-card--bench-row .player-points {
+  grid-column: 3;
+  font-size: 0.68rem;
+  white-space: nowrap;
 }
 
 .transfer-controls {
@@ -1367,9 +1408,9 @@ select {
   }
 
   .bench-grid {
-    grid-template-columns: repeat(2, clamp(74px, 21vw, 96px));
-    justify-content: center;
-    gap: 0.5rem;
+    grid-template-columns: 1fr;
+    justify-content: stretch;
+    gap: 0;
   }
 
   .transfer-controls {
