@@ -855,10 +855,49 @@ select {
   background: #f9fbff;
 }
 
+.team-topbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 12px;
+  background: linear-gradient(140deg, #f2f6ff 0%, #e7efff 100%);
+  border: 1px solid #cfe0ff;
+}
+
+.team-topbar__metric {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.team-topbar__metric span {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #5a6f95;
+  font-weight: 700;
+}
+
+.team-topbar__metric strong {
+  font-size: 1.12rem;
+  color: #0a2f73;
+  line-height: 1.15;
+}
+
+.team-topbar__metric--center {
+  text-align: center;
+}
+
+.team-topbar__formation {
+  min-width: 130px;
+}
+
 .formation-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 0.8rem;
   margin-bottom: 0.6rem;
 }
@@ -1155,6 +1194,20 @@ select {
 
   .top-header {
     align-items: flex-start;
+  }
+
+  .team-topbar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 0.45rem;
+  }
+
+  .team-topbar__metric--center {
+    text-align: left;
+  }
+
+  .team-topbar__formation {
+    width: 100%;
   }
 
   .formation-header {

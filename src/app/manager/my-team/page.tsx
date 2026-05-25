@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PlayerCard } from "@/components/player-card";
-import { StatTile } from "@/components/stat-tile";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
 import { reorderAcrossZones, type ZoneName, type ZoneState } from "@/domain/lineup-state";
 import { buildPitchRows } from "@/domain/pitch-layout";
@@ -1030,10 +1029,17 @@ export default function ManagerMyTeamPage() {
     <AppShell title="Team" subtitle={scheduleSubtitle}>
       <div className="grid">
         <section className="card col-8">
-          <div className="formation-header">
-            <h2>Basiselftal</h2>
-            <label className="formation-select">
-              Formatie
+          <div className="team-topbar" aria-label="Team overzicht">
+            <div className="team-topbar__metric team-topbar__metric--left">
+              <span>Resterende waarde</span>
+              <strong>€ {remainingBudget.toFixed(1)}M</strong>
+            </div>
+            <div className="team-topbar__metric team-topbar__metric--center">
+              <span>Totaal punten</span>
+              <strong>{state.lineup.reduce((sum, player) => sum + player.punten, 0)}</strong>
+            </div>
+            <label className="formation-select team-topbar__formation">
+              <span>Formatie</span>
               <select value={formation} onChange={(event) => handleFormationChange(event.target.value)} data-testid="formation-select">
                 {formationOptions.map((option) => (
                   <option value={option} key={option}>
@@ -1042,6 +1048,10 @@ export default function ManagerMyTeamPage() {
                 ))}
               </select>
             </label>
+          </div>
+
+          <div className="formation-header">
+            <h2>Basiselftal</h2>
           </div>
 
           {loading ? <p className="muted-note">Spelers laden...</p> : null}
@@ -1082,11 +1092,6 @@ export default function ManagerMyTeamPage() {
             })}
           </div>
 
-          <div className="stat-grid stats-desktop">
-            <StatTile label="Totaal Punten" value={state.lineup.reduce((sum, player) => sum + player.punten, 0)} />
-            <StatTile label="Resterend Budget" value={`€ ${remainingBudget.toFixed(1)}M`} />
-            <StatTile label="Transfers deze ronde" value={currentTransferLimit} />
-          </div>
         </section>
 
         <section className="card col-4">
@@ -1115,13 +1120,6 @@ export default function ManagerMyTeamPage() {
           </div>
         </section>
 
-        <section className="card col-8 stats-mobile" aria-label="Teamstatistieken mobiel">
-          <div className="stat-grid">
-            <StatTile label="Totaal Punten" value={state.lineup.reduce((sum, player) => sum + player.punten, 0)} />
-            <StatTile label="Resterend Budget" value={`€ ${remainingBudget.toFixed(1)}M`} />
-            <StatTile label="Transfers deze ronde" value={currentTransferLimit} />
-          </div>
-        </section>
 
         <section className="card col-12" id="transfermarkt">
           <h2>Transfermarkt</h2>
