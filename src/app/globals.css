@@ -973,6 +973,7 @@ select {
   background: #fff;
   overflow: hidden;
   display: grid;
+  grid-template-rows: 1.8rem 2rem 1.6rem;
   gap: 0;
 }
 
@@ -1003,6 +1004,9 @@ select {
   font-weight: 700;
   padding: 0.35rem 0.5rem;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .player-points {
@@ -1013,6 +1017,9 @@ select {
   font-weight: 700;
   padding: 0.25rem 0.5rem;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .draggable {
