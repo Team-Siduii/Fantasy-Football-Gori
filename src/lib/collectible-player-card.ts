@@ -6,6 +6,7 @@ export type CollectiblePlayerCardData = {
   flagAsset: string;
   shirtAsset: string;
   badgeAsset: string;
+  baseCardAsset?: string;
 };
 
 const EXAMPLES: Record<string, CollectiblePlayerCardData> = {
@@ -17,6 +18,7 @@ const EXAMPLES: Record<string, CollectiblePlayerCardData> = {
     flagAsset: "/assets/cards/france-flag.svg",
     shirtAsset: "/assets/cards/france-shirt.svg",
     badgeAsset: "/assets/cards/gold-shield.svg",
+    baseCardAsset: "/assets/cards/france-base-card.jpg",
   },
 };
 

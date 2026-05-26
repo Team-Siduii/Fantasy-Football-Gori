@@ -10,5 +10,6 @@ describe("getCollectibleCardExample", () => {
     expect(card.flagAsset).toBe("/assets/cards/france-flag.svg");
     expect(card.shirtAsset).toBe("/assets/cards/france-shirt.svg");
     expect(card.badgeAsset).toBe("/assets/cards/gold-shield.svg");
+    expect(card.baseCardAsset).toBe("/assets/cards/france-base-card.jpg");
   });
 });

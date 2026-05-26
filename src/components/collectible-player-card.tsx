@@ -12,17 +12,36 @@ export function CollectiblePlayerCard({ card, className }: Props) {
   const style = {
     "--card-flag-image": `url('${card.flagAsset}')`,
   } as CSSProperties;
+  const usesBaseCard = Boolean(card.baseCardAsset);
 
   return (
-    <article className={`${styles.card} ${className ?? ""}`.trim()} style={style} aria-label={`Spelerskaart ${card.name}`}>
-      <div className={styles.badgeWrap}>
-        <Image src={card.badgeAsset} alt="Punten badge" className={styles.badgeAsset} width={52} height={62} />
-        <span className={styles.badgeText}>{card.points}</span>
-      </div>
+    <article
+      className={`${styles.card} ${usesBaseCard ? styles.baseCardMode : ""} ${className ?? ""}`.trim()}
+      style={style}
+      aria-label={`Spelerskaart ${card.name}`}
+    >
+      {usesBaseCard ? (
+        <Image
+          src={card.baseCardAsset as string}
+          alt={`${card.country} basiskaart`}
+          className={styles.baseCardImage}
+          fill
+          sizes="(max-width: 768px) 45vw, 210px"
+        />
+      ) : null}
 
-      <div className={styles.shirtWrap}>
-        <Image src={card.shirtAsset} alt={`${card.country} shirt`} className={styles.shirtAsset} width={120} height={142} />
-      </div>
+      {!usesBaseCard ? (
+        <div className={styles.badgeWrap}>
+          <Image src={card.badgeAsset} alt="Punten badge" className={styles.badgeAsset} width={52} height={62} />
+          <span className={styles.badgeText}>{card.points}</span>
+        </div>
+      ) : null}
+
+      {!usesBaseCard ? (
+        <div className={styles.shirtWrap}>
+          <Image src={card.shirtAsset} alt={`${card.country} shirt`} className={styles.shirtAsset} width={120} height={142} />
+        </div>
+      ) : null}
 
       <footer className={styles.footer}>
         <h3>{card.name}</h3>
