@@ -6,26 +6,7 @@
   border: 3px solid #beb4a2;
   background: #d8cfbf;
   padding: 10px;
-  overflow: hidden;
   box-shadow: 0 12px 22px rgba(16, 24, 40, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-.baseCardImage {
-  object-fit: cover;
-  border-radius: 20px;
-  z-index: 0;
-}
-
-.baseCardMode {
-  border-color: transparent;
-  background: transparent;
-  padding: 0;
-  box-shadow: none;
-}
-
-.baseCardMode::before,
-.baseCardMode::after {
-  content: none;
 }
 
 .card::before {
@@ -103,26 +84,12 @@
   z-index: 2;
 }
 
-.baseCardMode .footer {
-  left: 30px;
-  right: 30px;
-  bottom: 38px;
-  background: transparent;
-  border-top: 0;
-  padding: 0;
-}
-
 .footer h3 {
   margin: 0;
   font-size: 0.68rem;
   color: #5a2615;
   letter-spacing: 0.05em;
   font-family: Georgia, "Times New Roman", serif;
-}
-
-.baseCardMode .footer h3 {
-  font-size: 0.62rem;
-  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.35);
 }
 
 .divider {
@@ -136,16 +103,5 @@
   margin: 0;
   font-size: 0.92rem;
   font-weight: 800;
-  color: #111;
-}
-
-.baseCardMode .divider {
-  background: #7b6f62;
-  width: 30px;
-  margin: 5px auto;
-}
-
-.baseCardMode .footer p {
-  font-size: 0.86rem;
   color: #111;
 }
