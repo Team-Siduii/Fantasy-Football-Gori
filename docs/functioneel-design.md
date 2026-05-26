@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-05-25
+Laatste update: 2026-05-26
 
 ## 1. Productvisie
 Doel van de app:
@@ -555,3 +555,4 @@ Waarom zo:
 - 2026-05-25: Wisselspelers-sectie omgezet van blokkaarten naar regel-layout (lijstregels) met dashed scheidingslijn per slot/speler.
 - 2026-05-25: Demo-voorbeeld ingeladen voor UI-verificatie: Kylian Mbappé start met `8` punten in de afgeleide puntenlogica.
 - 2026-05-24: Boven basiselftal een compacte design-topbar geplaatst met links `Resterende waarde`, midden `Totaal punten` en rechts de formatie-dropdown; oude stat-tiles onder/naast het veld verwijderd.
+- 2026-05-26: Tijdelijke design-lab pagina toegevoegd op `/manager/design-lab/player-cards` met 4 spelerskaart-concepten (Modern/Minimal, Dark Data, Panini Classic, Dynamic Action) voor visuele vergelijking en keuze.
