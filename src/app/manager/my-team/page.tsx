@@ -1080,7 +1080,6 @@ export default function ManagerMyTeamPage() {
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",
                           player.id.startsWith("open-") ? "player-card--open" : "",
-                          !player.id.startsWith("open-") ? "player-card--reference-preview" : "",
                         ]
                           .filter(Boolean)
                           .join(" ") || undefined}
