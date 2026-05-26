@@ -9,6 +9,13 @@ const samplePlayer = {
   price: "€ 14.50M",
 };
 
+const collectorCards = [
+  { name: "KYLIAN MBAPPÉ", flag: "🇫🇷", rating: 14, price: "€9.0M", jersey: "FFF" },
+  { name: "VIRGIL VAN DIJK", flag: "🇳🇱", rating: 13, price: "€8.5M", jersey: "KNVB" },
+  { name: "CRISTIANO RONALDO", flag: "🇵🇹", rating: 14, price: "€9.2M", jersey: "FPF" },
+  { name: "LUKA MODRIĆ", flag: "🇭🇷", rating: 12, price: "€7.8M", jersey: "HNS" },
+];
+
 export default function PlayerCardsDesignLabPage() {
   const concepts = getPlayerCardDesignConcepts();
 
@@ -78,6 +85,40 @@ export default function PlayerCardsDesignLabPage() {
             ) : null}
           </article>
         ))}
+      </section>
+
+      <section className={styles.referenceSection}>
+        <div className={styles.referenceHead}>
+          <h2>Referentie-stijl: Collectible National Card</h2>
+          <p>
+            Geïnspireerd op je voorbeeld: premium frame, vlag-achtergrond, goud schild, shirt-focus en klassieke
+            naam/prijsbalk.
+          </p>
+        </div>
+
+        <div className={styles.referenceGrid}>
+          {collectorCards.map((player) => (
+            <article key={player.name} className={styles.collectorCard}>
+              <div className={styles.collectorInner}>
+                <div className={styles.collectorMiniFlag}>{player.flag}</div>
+                <div className={styles.collectorBadge}>{player.rating}</div>
+
+                <div className={styles.collectorShirtWrap}>
+                  <div className={styles.collectorShirt}>
+                    <span>★</span>
+                    <small>{player.jersey}</small>
+                  </div>
+                </div>
+
+                <div className={styles.collectorFooter}>
+                  <h3>{player.name}</h3>
+                  <div className={styles.collectorDivider}>✦</div>
+                  <p>{player.price}</p>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
       </section>
     </main>
   );
