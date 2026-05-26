@@ -557,3 +557,4 @@ Waarom zo:
 - 2026-05-24: Boven basiselftal een compacte design-topbar geplaatst met links `Resterende waarde`, midden `Totaal punten` en rechts de formatie-dropdown; oude stat-tiles onder/naast het veld verwijderd.
 - 2026-05-26: Tijdelijke design-lab pagina toegevoegd op `/manager/design-lab/player-cards` met 4 spelerskaart-concepten (Modern/Minimal, Dark Data, Panini Classic, Dynamic Action) voor visuele vergelijking en keuze.
 - 2026-05-26: Design-lab uitgebreid met een referentie-sectie `Collectible National Card` (vlag-achtergrond, gouden rating-shield, jersey-focus, klassieke naam/prijsbalk) om de aangeleverde kaartstijl in-app te valideren tegen de bestaande manager UI.
+- 2026-05-26: Tijdelijke veld-preview toegevoegd op `/manager/my-team`: zodra een speler in het basiselftal staat, toont de kaart het exacte aangeleverde referentiebeeld (`/public/images/player-card-reference.jpg`) zodat visuele fit in echte pitch-layout direct beoordeeld kan worden.

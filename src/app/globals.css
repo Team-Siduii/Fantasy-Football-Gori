@@ -1137,6 +1137,23 @@ select {
   color: #5f6f8d;
 }
 
+.player-card--reference-preview {
+  border: 0;
+  border-radius: 10px;
+  background-image: url('/images/player-card-reference.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: 0 4px 10px rgba(12, 24, 42, 0.25);
+}
+
+.player-card--reference-preview .player-top,
+.player-card--reference-preview .player-name,
+.player-card--reference-preview .player-points {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .player-card--bench-row {
   height: auto;
   min-height: 2.5rem;
