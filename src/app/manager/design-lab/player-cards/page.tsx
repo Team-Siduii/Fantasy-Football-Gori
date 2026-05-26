@@ -1,3 +1,5 @@
+import { CollectiblePlayerCard } from "@/components/collectible-player-card";
+import { getCollectibleCardExample } from "@/lib/collectible-player-card";
 import { getPlayerCardDesignConcepts } from "@/lib/player-card-designs";
 import styles from "./player-cards-lab.module.css";
 
@@ -15,6 +17,8 @@ const collectorCards = [
   { name: "CRISTIANO RONALDO", flag: "🇵🇹", rating: 14, price: "€9.2M", jersey: "FPF" },
   { name: "LUKA MODRIĆ", flag: "🇭🇷", rating: 12, price: "€7.8M", jersey: "HNS" },
 ];
+
+const franceExample = getCollectibleCardExample("france");
 
 export default function PlayerCardsDesignLabPage() {
   const concepts = getPlayerCardDesignConcepts();
@@ -118,6 +122,19 @@ export default function PlayerCardsDesignLabPage() {
               </div>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className={styles.componentSection}>
+        <div className={styles.referenceHead}>
+          <h2>Nieuwe herbruikbare component (asset-driven)</h2>
+          <p>
+            Deze variant gebruikt exact de laagstructuur uit je prompt: vlag als achtergrond, transparant shirt in het
+            midden en een los overlappend goud schildje met punten.
+          </p>
+        </div>
+        <div className={styles.componentPreviewRow}>
+          <CollectiblePlayerCard card={franceExample} />
         </div>
       </section>
     </main>

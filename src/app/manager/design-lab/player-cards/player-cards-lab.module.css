@@ -377,3 +377,19 @@
   font-weight: 800;
   color: #111;
 }
+
+.componentSection {
+  background: #fff;
+  border: 1px solid #e6e8ef;
+  border-radius: 18px;
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.componentPreviewRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0 4px;
+}
