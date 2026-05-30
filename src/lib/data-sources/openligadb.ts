@@ -1,3 +1,5 @@
+import type { NormalizedMatch, NormalizedMatchEvent } from "./match-events-merge";
+
 export type OpenLigaDbMatchResult = {
   resultName?: string;
   pointsTeam1?: number;
@@ -22,39 +24,6 @@ export type OpenLigaDbMatch = {
   goals?: OpenLigaDbGoal[];
 };
 
-export type NormalizedEventType = "goal" | "assist" | "yellow_card" | "red_card" | "goalkeeper_save";
-
-export type NormalizedMatchEvent = {
-  type: NormalizedEventType;
-  minute: number | null;
-  team: string | null;
-  playerName: string | null;
-  playerExternalId: string | null;
-  relatedPlayerName?: string | null;
-  source: "openligadb";
-  confidence: "high" | "medium" | "low";
-};
-
-export type NormalizedMatch = {
-  source: "openligadb";
-  sourceMatchId: string;
-  kickoffAt: string | null;
-  homeTeam: string;
-  awayTeam: string;
-  scoreHT: { home: number; away: number } | null;
-  scoreFT: { home: number; away: number } | null;
-  events: NormalizedMatchEvent[];
-  quality: {
-    hasScoreHT: boolean;
-    hasScoreFT: boolean;
-    hasGoals: boolean;
-    hasAssists: boolean;
-    hasSaves: boolean;
-    hasCards: boolean;
-    completeness: number;
-  };
-};
-
 function pickResult(
   matchResults: OpenLigaDbMatchResult[] | undefined,
   expected: "half" | "final",
@@ -77,11 +46,7 @@ function parseCommentEvents(goal: OpenLigaDbGoal, homeTeam: string, awayTeam: st
 
   const events: NormalizedMatchEvent[] = [];
 
-  const addEvent = (
-    type: Exclude<NormalizedEventType, "goal" | "goalkeeper_save">,
-    regex: RegExp,
-    confidence: "medium" | "low",
-  ) => {
+  const addEvent = (type: "assist" | "yellow_card" | "red_card", regex: RegExp, confidence: "medium" | "low") => {
     const match = goal.comment?.match(regex);
     if (!match) return;
 
@@ -124,20 +89,16 @@ export function mapOpenLigaDbMatchesToNormalized(matches: OpenLigaDbMatch[]): No
     const scoreHT = pickResult(match.matchResults, "half");
     const scoreFT = pickResult(match.matchResults, "final");
 
-    const hasAssists = allEvents.some((event) => event.type === "assist");
-    const hasCards = allEvents.some((event) => event.type === "yellow_card" || event.type === "red_card");
-
-    const qualityFlags = {
+    const quality = {
       hasScoreHT: scoreHT !== null,
       hasScoreFT: scoreFT !== null,
       hasGoals: goalEvents.length > 0,
-      hasAssists,
+      hasAssists: allEvents.some((event) => event.type === "assist"),
       hasSaves: false,
-      hasCards,
+      hasCards: allEvents.some((event) => event.type === "yellow_card" || event.type === "red_card"),
+      completeness: 0,
     };
-
-    const completenessRaw = Object.values(qualityFlags).filter(Boolean).length;
-    const completeness = Math.round((completenessRaw / Object.keys(qualityFlags).length) * 100);
+    quality.completeness = Math.round((Object.values(quality).filter(Boolean).length / 6) * 100);
 
     return {
       source: "openligadb",
@@ -148,10 +109,7 @@ export function mapOpenLigaDbMatchesToNormalized(matches: OpenLigaDbMatch[]): No
       scoreHT,
       scoreFT,
       events: allEvents,
-      quality: {
-        ...qualityFlags,
-        completeness,
-      },
+      quality,
     };
   });
 }
