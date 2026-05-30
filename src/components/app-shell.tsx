@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 type NavItem = {
   href: string;
@@ -28,11 +28,44 @@ function isActive(pathname: string, href: string) {
   return href !== "/" && pathname.startsWith(`${href}/`);
 }
 
+type SubpouleSummaryResponse = {
+  teamName?: string;
+  standing?: {
+    subpoule: string;
+    rank: number;
+    totalManagersInSubpoule: number;
+    points: number;
+  } | null;
+};
+
 export function AppShell({ title, subtitle, children }: { title: string; subtitle: ReactNode; children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isWkMode = pathname.startsWith("/manager/world-cup");
   const activeNavItems = isWkMode ? wkNavItems : eredivisieNavItems;
+  const [summaryTeamName, setSummaryTeamName] = useState("Mijn Super Team");
+  const [summaryRankLabel, setSummaryRankLabel] = useState("1st (29)");
+  const [summaryPoints, setSummaryPoints] = useState("190");
+
+  useEffect(() => {
+    const mode = isWkMode ? "wk" : "eredivisie";
+    const load = async () => {
+      const response = await fetch(`/api/manager/subpoule-summary?mode=${mode}`, { cache: "no-store" });
+      if (!response.ok) return;
+      const data = (await response.json()) as SubpouleSummaryResponse;
+
+      if (data.teamName) {
+        setSummaryTeamName(data.teamName);
+      }
+
+      if (data.standing) {
+        setSummaryRankLabel(`#${data.standing.rank} (${data.standing.totalManagersInSubpoule}) · Poule ${data.standing.subpoule}`);
+        setSummaryPoints(String(data.standing.points));
+      }
+    };
+
+    void load();
+  }, [isWkMode]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -65,15 +98,15 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
         <section className="summary-strip" aria-label="Teamoverzicht">
           <article>
             <span>Team</span>
-            <strong>Mijn Super Team</strong>
+            <strong>{summaryTeamName}</strong>
           </article>
           <article>
-            <span>Rank</span>
-            <strong>1st (29)</strong>
+            <span>Subpoule rank</span>
+            <strong>{summaryRankLabel}</strong>
           </article>
           <article>
             <span>Totaal Punten</span>
-            <strong>190</strong>
+            <strong>{summaryPoints}</strong>
           </article>
         </section>
 
