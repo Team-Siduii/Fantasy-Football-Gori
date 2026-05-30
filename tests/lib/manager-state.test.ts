@@ -110,4 +110,39 @@ describe("manager-state persistence", () => {
     expect(mod.resolveManagerStatePath("eredivisie")).toBe("/tmp/eredivisie-state.json");
     expect(mod.resolveManagerStatePath("wk")).toBe("/tmp/wk-state.json");
   });
+
+  it("keeps round lineup persistent and propagates changes to future rounds", async () => {
+    mkdirSync(dirname(testPath), { recursive: true });
+    process.env.MANAGER_STATE_PATH = testPath;
+
+    const mod = await import("../../src/lib/manager-state");
+
+    mod.saveManagerStateForRound(4, {
+      formation: "4-3-3",
+      lineupIds: ["r4-a", "r4-b"],
+      benchIds: ["r4-c"],
+    });
+
+    mod.saveManagerStateForRound(5, {
+      formation: "4-4-2",
+      lineupIds: ["r5-a", "r5-b"],
+      benchIds: ["r5-c"],
+    });
+
+    const round6Before = mod.readManagerStateForRound(6);
+    expect(round6Before.lineupIds).toEqual(["r5-a", "r5-b"]);
+
+    mod.saveManagerStateForRound(5, {
+      formation: "3-5-2",
+      lineupIds: ["r5-new-a", "r5-new-b"],
+      benchIds: ["r5-new-c"],
+    });
+
+    const round5After = mod.readManagerStateForRound(5);
+    const round6After = mod.readManagerStateForRound(6);
+
+    expect(round5After.formation).toBe("3-5-2");
+    expect(round5After.lineupIds).toEqual(["r5-new-a", "r5-new-b"]);
+    expect(round6After.lineupIds).toEqual(["r5-new-a", "r5-new-b"]);
+  });
 });

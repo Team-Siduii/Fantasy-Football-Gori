@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { readManagerState, saveManagerState, type ManagerStateScope } from "@/lib/manager-state";
+import {
+  readManagerState,
+  readManagerStateForRound,
+  saveManagerState,
+  saveManagerStateForRound,
+  type ManagerStateScope,
+} from "@/lib/manager-state";
 import { isAuthenticatedSession } from "@/lib/auth-session";
 
 function getScopeFromRequest(request: Request): ManagerStateScope {
@@ -13,6 +19,13 @@ export async function GET(request: Request) {
   }
 
   const scope = getScopeFromRequest(request);
+  const roundNumberParam = new URL(request.url).searchParams.get("roundNumber");
+  const roundNumber = roundNumberParam ? Number(roundNumberParam) : null;
+
+  if (roundNumber && Number.isInteger(roundNumber) && roundNumber > 0) {
+    return NextResponse.json({ state: readManagerStateForRound(roundNumber, scope) });
+  }
+
   return NextResponse.json({ state: readManagerState(scope) });
 }
 
@@ -28,6 +41,8 @@ export async function PUT(request: Request) {
     pickedTransferId?: string | null;
     pendingSellId?: string | null;
     pendingBuyId?: string | null;
+    roundNumber?: number;
+    propagateToFutureRounds?: boolean;
   } = {};
 
   try {
@@ -38,6 +53,8 @@ export async function PUT(request: Request) {
       pickedTransferId?: string | null;
       pendingSellId?: string | null;
       pendingBuyId?: string | null;
+      roundNumber?: number;
+      propagateToFutureRounds?: boolean;
     };
   } catch {
     body = {};
@@ -45,17 +62,25 @@ export async function PUT(request: Request) {
 
   const scope = getScopeFromRequest(request);
 
-  const state = saveManagerState(
-    {
-      formation: body.formation,
-      lineupIds: body.lineupIds,
-      benchIds: body.benchIds,
-      pickedTransferId: body.pickedTransferId === null ? null : body.pickedTransferId,
-      pendingSellId: body.pendingSellId === null ? null : body.pendingSellId,
-      pendingBuyId: body.pendingBuyId === null ? null : body.pendingBuyId,
-    },
-    scope,
-  );
+  const partialState = {
+    formation: body.formation,
+    lineupIds: body.lineupIds,
+    benchIds: body.benchIds,
+    pickedTransferId: body.pickedTransferId === null ? null : body.pickedTransferId,
+    pendingSellId: body.pendingSellId === null ? null : body.pendingSellId,
+    pendingBuyId: body.pendingBuyId === null ? null : body.pendingBuyId,
+  };
+
+  const hasRoundNumber = Number.isInteger(body.roundNumber) && (body.roundNumber as number) > 0;
+
+  const state = hasRoundNumber
+    ? saveManagerStateForRound(
+        body.roundNumber as number,
+        partialState,
+        scope,
+        body.propagateToFutureRounds !== false,
+      )
+    : saveManagerState(partialState, scope);
 
   return NextResponse.json({ ok: true, state });
 }

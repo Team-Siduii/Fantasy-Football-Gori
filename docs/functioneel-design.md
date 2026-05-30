@@ -555,4 +555,6 @@ Waarom zo:
 - 2026-05-25: Wisselspelers-sectie omgezet van blokkaarten naar regel-layout (lijstregels) met dashed scheidingslijn per slot/speler.
 - 2026-05-30: Demo-voorbeeld voor huidige ronde bijgewerkt: Kylian Mbappé krijgt `12` punten in de afgeleide puntenlogica.
 - 2026-05-30: Puntenscore per speler wordt nu als opvallende ronde badge bovenop spelerskaarten getoond (gele/oranje contrastbadge), inclusief in wisselspelerslijst.
+- 2026-05-30: My Team bewaart opstelling/wissels nu per speelronde persistent; bij switchen van ronde wordt de bijbehorende snapshot geladen met fallback naar de laatst bekende vorige ronde.
+- 2026-05-30: Wijzigingen (incl. wissels/transfers) die je in een ronde doet, worden automatisch doorgezet naar toekomstige rondes zodat je teamcontext consistent blijft.
 - 2026-05-24: Boven basiselftal een compacte design-topbar geplaatst met links `Resterende waarde`, midden `Totaal punten` en rechts de formatie-dropdown; oude stat-tiles onder/naast het veld verwijderd.

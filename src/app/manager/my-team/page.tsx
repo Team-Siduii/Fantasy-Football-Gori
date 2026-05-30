@@ -480,6 +480,21 @@ export default function ManagerMyTeamPage() {
   const clubsLabel = isWkMode ? "landen" : "clubs";
   const searchLabel = isWkMode ? "Zoek speler/land" : "Zoek speler/club";
   const formationOptions = useMemo(() => getFormationOptions(), []);
+  const currentRound = useMemo(() => getCurrentOrNextRound(activeFixtures, new Date()), [activeFixtures]);
+  const roundNumbers = useMemo(
+    () => Array.from(new Set(activeFixtures.map((fixture) => fixture.round))).sort((a, b) => a - b),
+    [activeFixtures],
+  );
+  const [selectedRoundIndex, setSelectedRoundIndex] = useState(() => {
+    if (roundNumbers.length === 0) {
+      return 0;
+    }
+
+    const currentIndex = currentRound ? roundNumbers.indexOf(currentRound) : -1;
+    return currentIndex >= 0 ? currentIndex : 0;
+  });
+  const selectedRound = roundNumbers[selectedRoundIndex] ?? null;
+
   const [formation, setFormation] = useState(formationOptions[0]);
   const [allPlayers, setAllPlayers] = useState<EnhancedPlayer[]>(fallbackPlayers());
   const [state, setState] = useState<ZoneState<EnhancedPlayer>>(() =>
@@ -502,6 +517,7 @@ export default function ManagerMyTeamPage() {
   const [marketPage, setMarketPage] = useState(1);
 
   const hydrated = useRef(false);
+  const suppressNextPersist = useRef(false);
 
   useEffect(() => {
     const load = async () => {
@@ -509,9 +525,14 @@ export default function ManagerMyTeamPage() {
       setError("");
 
       try {
+        const initialRound =
+          getCurrentOrNextRound(activeFixtures, new Date()) ??
+          [...new Set(activeFixtures.map((fixture) => fixture.round))].sort((a, b) => a - b)[0] ??
+          1;
+
         const [playersResponse, managerStateResponse, leagueConfigResponse] = await Promise.all([
           fetch(`/api/players?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
-          fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
+          fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}&roundNumber=${initialRound}`, { cache: "no-store" }),
           fetch(`/api/admin/league-config?mode=${isWkMode ? "wk" : "eredivisie"}`, { cache: "no-store" }),
         ]);
 
@@ -591,7 +612,60 @@ export default function ManagerMyTeamPage() {
   }, [formationOptions, isWkMode]);
 
   useEffect(() => {
+    if (!hydrated.current || !selectedRound) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const hydrateRoundState = async () => {
+      try {
+        const response = await fetch(
+          `/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}&roundNumber=${selectedRound}`,
+          { cache: "no-store", signal: controller.signal },
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const managerData = (await response.json()) as ManagerStateResponse;
+        const savedFormation = managerData.state?.formation;
+        const nextFormation =
+          savedFormation && formationOptions.includes(savedFormation) ? savedFormation : formationOptions[0];
+
+        const hydratedState =
+          managerData.state?.lineupIds || managerData.state?.benchIds
+            ? buildStateFromSaved(
+                allPlayers,
+                nextFormation,
+                managerData.state?.lineupIds ?? [],
+                managerData.state?.benchIds ?? [],
+              )
+            : buildBudgetDemoState(allPlayers, nextFormation, budgetCapMillions);
+
+        suppressNextPersist.current = true;
+        setFormation(nextFormation);
+        setState(hydratedState);
+        setPendingSellId(managerData.state?.pendingSellId ?? null);
+        setPendingBuyId(managerData.state?.pendingBuyId ?? managerData.state?.pickedTransferId ?? null);
+      } catch {
+        // no-op
+      }
+    };
+
+    void hydrateRoundState();
+
+    return () => controller.abort();
+  }, [allPlayers, budgetCapMillions, formationOptions, isWkMode, selectedRound]);
+
+  useEffect(() => {
     if (!hydrated.current) {
+      return;
+    }
+
+    if (suppressNextPersist.current) {
+      suppressNextPersist.current = false;
       return;
     }
 
@@ -608,6 +682,8 @@ export default function ManagerMyTeamPage() {
         pendingSellId,
         pendingBuyId,
         pickedTransferId: pendingBuyId,
+        roundNumber: selectedRound,
+        propagateToFutureRounds: true,
       }),
       signal: controller.signal,
     }).catch(() => {
@@ -615,7 +691,7 @@ export default function ManagerMyTeamPage() {
     });
 
     return () => controller.abort();
-  }, [formation, isWkMode, pendingBuyId, pendingSellId, state]);
+  }, [formation, isWkMode, pendingBuyId, pendingSellId, selectedRound, state]);
 
   const pitchRows = useMemo(() => {
     return buildPitchRows(formation, state.lineup);
@@ -731,24 +807,6 @@ export default function ManagerMyTeamPage() {
     return marketSortDirection === "asc" ? "↑" : "↓";
   }
 
-
-  const currentRound = useMemo(() => getCurrentOrNextRound(activeFixtures, new Date()), [activeFixtures]);
-
-  const roundNumbers = useMemo(
-    () => Array.from(new Set(activeFixtures.map((fixture) => fixture.round))).sort((a, b) => a - b),
-    [activeFixtures],
-  );
-
-  const [selectedRoundIndex, setSelectedRoundIndex] = useState(() => {
-    if (roundNumbers.length === 0) {
-      return 0;
-    }
-
-    const currentIndex = currentRound ? roundNumbers.indexOf(currentRound) : -1;
-    return currentIndex >= 0 ? currentIndex : 0;
-  });
-
-  const selectedRound = roundNumbers[selectedRoundIndex] ?? null;
 
   const selectedRoundFixtures = useMemo(() => {
     if (!selectedRound) {
