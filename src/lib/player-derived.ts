@@ -6,7 +6,7 @@ export type EnhancedPlayer = PlayerRecord & {
 
 export function derivePlayerPoints(player: PlayerRecord): number {
   if (player.naam.toLowerCase().includes("mbapp")) {
-    return 8;
+    return 12;
   }
 
   return 0;
