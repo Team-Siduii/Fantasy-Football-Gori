@@ -29,6 +29,10 @@ export type RoundSnapshot = {
   pendingBuyId: string | null;
 };
 
+type ManagerPersonalState = RoundSnapshot & {
+  roundStates: Record<string, RoundSnapshot>;
+};
+
 export type ManagerState = {
   formation: string;
   lineupIds: string[];
@@ -37,25 +41,31 @@ export type ManagerState = {
   pendingSellId: string | null;
   pendingBuyId: string | null;
   roundStates: Record<string, RoundSnapshot>;
+  managerStates: Record<string, ManagerPersonalState>;
   roundLocks: RoundLock[];
   adminActionLog: AdminActionLogEntry[];
 };
 
-const DEFAULT_STATE: ManagerState = {
+const DEFAULT_SNAPSHOT: RoundSnapshot = {
   formation: "4-3-3",
   lineupIds: [],
   benchIds: [],
   pickedTransferId: null,
   pendingSellId: null,
   pendingBuyId: null,
+};
+
+const DEFAULT_STATE: ManagerState = {
+  ...DEFAULT_SNAPSHOT,
   roundStates: {},
+  managerStates: {},
   roundLocks: [],
   adminActionLog: [],
 };
 
-function toRoundSnapshot(input: Partial<ManagerState>): RoundSnapshot {
+function toRoundSnapshot(input: Partial<RoundSnapshot>): RoundSnapshot {
   return {
-    formation: typeof input.formation === "string" ? input.formation : DEFAULT_STATE.formation,
+    formation: typeof input.formation === "string" ? input.formation : DEFAULT_SNAPSHOT.formation,
     lineupIds: Array.isArray(input.lineupIds) ? input.lineupIds.filter((id): id is string => typeof id === "string") : [],
     benchIds: Array.isArray(input.benchIds) ? input.benchIds.filter((id): id is string => typeof id === "string") : [],
     pickedTransferId: typeof input.pickedTransferId === "string" ? input.pickedTransferId : null,
@@ -66,6 +76,13 @@ function toRoundSnapshot(input: Partial<ManagerState>): RoundSnapshot {
         : typeof input.pickedTransferId === "string"
           ? input.pickedTransferId
           : null,
+  };
+}
+
+function toPersonalState(input: Partial<ManagerPersonalState>): ManagerPersonalState {
+  return {
+    ...toRoundSnapshot(input),
+    roundStates: normalizeRoundStates(input.roundStates),
   };
 }
 
@@ -134,13 +151,52 @@ function normalizeRoundStates(input: unknown): Record<string, RoundSnapshot> {
       continue;
     }
 
-    normalized[roundKey] = toRoundSnapshot(raw as Partial<ManagerState>);
+    normalized[roundKey] = toRoundSnapshot(raw as Partial<RoundSnapshot>);
   }
 
   return normalized;
 }
 
-export function readManagerState(scope: ManagerStateScope = "eredivisie"): ManagerState {
+function normalizeManagerStates(input: unknown): Record<string, ManagerPersonalState> {
+  if (!input || typeof input !== "object") {
+    return {};
+  }
+
+  const normalized: Record<string, ManagerPersonalState> = {};
+  for (const [managerKey, raw] of Object.entries(input as Record<string, unknown>)) {
+    if (!managerKey || !raw || typeof raw !== "object") {
+      continue;
+    }
+
+    normalized[managerKey] = toPersonalState(raw as Partial<ManagerPersonalState>);
+  }
+
+  return normalized;
+}
+
+function normalizeManagerKey(managerKey?: string | null): string | null {
+  if (!managerKey) {
+    return null;
+  }
+
+  const normalized = managerKey.trim().toLowerCase();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function resolvePersonalState(state: ManagerState, managerKey?: string | null): ManagerPersonalState {
+  const key = normalizeManagerKey(managerKey);
+  if (key && state.managerStates[key]) {
+    return state.managerStates[key];
+  }
+
+  // Backward-compatible fallback for legacy single-manager state files.
+  return {
+    ...toRoundSnapshot(state),
+    roundStates: normalizeRoundStates(state.roundStates),
+  };
+}
+
+export function readManagerState(scope: ManagerStateScope = "eredivisie", managerKey?: string | null): ManagerState {
   const target = resolveManagerStatePath(scope);
 
   if (!existsSync(target)) {
@@ -148,8 +204,13 @@ export function readManagerState(scope: ManagerStateScope = "eredivisie"): Manag
   }
 
   try {
-    const parsed = JSON.parse(readFileSync(target, "utf-8")) as Partial<ManagerState> & { roundStates?: unknown };
-    return {
+    const parsed = JSON.parse(readFileSync(target, "utf-8")) as Partial<ManagerState> & {
+      roundStates?: unknown;
+      managerStates?: unknown;
+    };
+
+    const state: ManagerState = {
+      ...DEFAULT_STATE,
       formation: typeof parsed.formation === "string" ? parsed.formation : DEFAULT_STATE.formation,
       lineupIds: Array.isArray(parsed.lineupIds) ? parsed.lineupIds.filter((id): id is string => typeof id === "string") : [],
       benchIds: Array.isArray(parsed.benchIds) ? parsed.benchIds.filter((id): id is string => typeof id === "string") : [],
@@ -162,41 +223,90 @@ export function readManagerState(scope: ManagerStateScope = "eredivisie"): Manag
             ? parsed.pickedTransferId
             : null,
       roundStates: normalizeRoundStates(parsed.roundStates),
+      managerStates: normalizeManagerStates(parsed.managerStates),
       roundLocks: normalizeRoundLocks(parsed.roundLocks),
       adminActionLog: normalizeAdminActionLog(parsed.adminActionLog),
+    };
+
+    const personal = resolvePersonalState(state, managerKey);
+
+    return {
+      ...state,
+      formation: personal.formation,
+      lineupIds: personal.lineupIds,
+      benchIds: personal.benchIds,
+      pickedTransferId: personal.pickedTransferId,
+      pendingSellId: personal.pendingSellId,
+      pendingBuyId: personal.pendingBuyId,
+      roundStates: personal.roundStates,
     };
   } catch {
     return { ...DEFAULT_STATE };
   }
 }
 
-export function saveManagerState(nextState: Partial<ManagerState>, scope: ManagerStateScope = "eredivisie"): ManagerState {
+export function saveManagerState(
+  nextState: Partial<ManagerState>,
+  scope: ManagerStateScope = "eredivisie",
+  managerKey?: string | null,
+): ManagerState {
   const target = resolveManagerStatePath(scope);
   mkdirSync(path.dirname(target), { recursive: true });
 
   const current = readManagerState(scope);
+  const key = normalizeManagerKey(managerKey);
+  const currentPersonal = resolvePersonalState(current, key);
+
+  const nextPersonal: ManagerPersonalState = {
+    ...currentPersonal,
+    ...toRoundSnapshot(nextState),
+    roundStates: nextState.roundStates ? normalizeRoundStates(nextState.roundStates) : currentPersonal.roundStates,
+  };
+
+  const mergedManagerStates = { ...current.managerStates };
+  if (key) {
+    mergedManagerStates[key] = nextPersonal;
+  }
+
   const merged: ManagerState = {
     ...current,
     ...nextState,
-    lineupIds: Array.isArray(nextState.lineupIds)
-      ? nextState.lineupIds.filter((id): id is string => typeof id === "string")
-      : current.lineupIds,
-    benchIds: Array.isArray(nextState.benchIds)
-      ? nextState.benchIds.filter((id): id is string => typeof id === "string")
-      : current.benchIds,
-    roundStates: nextState.roundStates ? normalizeRoundStates(nextState.roundStates) : current.roundStates,
+    formation: nextPersonal.formation,
+    lineupIds: nextPersonal.lineupIds,
+    benchIds: nextPersonal.benchIds,
+    pickedTransferId: nextPersonal.pickedTransferId,
+    pendingSellId: nextPersonal.pendingSellId,
+    pendingBuyId: nextPersonal.pendingBuyId,
+    roundStates: nextPersonal.roundStates,
+    managerStates: mergedManagerStates,
     roundLocks: Array.isArray(nextState.roundLocks) ? normalizeRoundLocks(nextState.roundLocks) : current.roundLocks,
     adminActionLog: Array.isArray(nextState.adminActionLog)
       ? normalizeAdminActionLog(nextState.adminActionLog)
       : current.adminActionLog,
   };
 
-  writeFileSync(target, JSON.stringify(merged, null, 2), "utf-8");
-  return merged;
+  // Keep global top-level snapshot in sync for backward compatibility.
+  const toWrite: ManagerState = {
+    ...merged,
+    formation: nextPersonal.formation,
+    lineupIds: nextPersonal.lineupIds,
+    benchIds: nextPersonal.benchIds,
+    pickedTransferId: nextPersonal.pickedTransferId,
+    pendingSellId: nextPersonal.pendingSellId,
+    pendingBuyId: nextPersonal.pendingBuyId,
+    roundStates: nextPersonal.roundStates,
+  };
+
+  writeFileSync(target, JSON.stringify(toWrite, null, 2), "utf-8");
+  return key ? readManagerState(scope, key) : toWrite;
 }
 
-export function readManagerStateForRound(roundNumber: number, scope: ManagerStateScope = "eredivisie"): RoundSnapshot {
-  const state = readManagerState(scope);
+export function readManagerStateForRound(
+  roundNumber: number,
+  scope: ManagerStateScope = "eredivisie",
+  managerKey?: string | null,
+): RoundSnapshot {
+  const state = readManagerState(scope, managerKey);
   const entries = Object.entries(state.roundStates)
     .map(([key, snapshot]) => ({ round: Number(key), snapshot }))
     .filter((entry) => Number.isInteger(entry.round) && entry.round > 0 && entry.round <= roundNumber)
@@ -214,8 +324,9 @@ export function saveManagerStateForRound(
   nextState: Partial<ManagerState>,
   scope: ManagerStateScope = "eredivisie",
   propagateToFutureRounds = true,
+  managerKey?: string | null,
 ): ManagerState {
-  const state = readManagerState(scope);
+  const state = readManagerState(scope, managerKey);
   const snapshot = toRoundSnapshot({ ...state, ...nextState });
   const roundKey = String(roundNumber);
   const nextRoundStates: Record<string, RoundSnapshot> = { ...state.roundStates, [roundKey]: snapshot };
@@ -236,6 +347,7 @@ export function saveManagerStateForRound(
       roundStates: nextRoundStates,
     },
     scope,
+    managerKey,
   );
 }
 

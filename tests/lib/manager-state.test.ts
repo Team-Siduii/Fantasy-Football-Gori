@@ -145,4 +145,43 @@ describe("manager-state persistence", () => {
     expect(round5After.lineupIds).toEqual(["r5-new-a", "r5-new-b"]);
     expect(round6After.lineupIds).toEqual(["r5-new-a", "r5-new-b"]);
   });
+
+  it("stores team state per account and survives re-login/refresh", async () => {
+    mkdirSync(dirname(testPath), { recursive: true });
+    process.env.MANAGER_STATE_PATH = testPath;
+
+    const mod = await import("../../src/lib/manager-state");
+
+    mod.saveManagerStateForRound(
+      5,
+      {
+        formation: "4-4-2",
+        lineupIds: ["a-1", "a-2"],
+        benchIds: ["a-3"],
+      },
+      "eredivisie",
+      true,
+      "manager-a@example.com",
+    );
+
+    mod.saveManagerStateForRound(
+      5,
+      {
+        formation: "3-5-2",
+        lineupIds: ["b-1", "b-2"],
+        benchIds: ["b-3"],
+      },
+      "eredivisie",
+      true,
+      "manager-b@example.com",
+    );
+
+    const managerAAfterRefresh = mod.readManagerStateForRound(5, "eredivisie", "manager-a@example.com");
+    const managerBAfterRefresh = mod.readManagerStateForRound(5, "eredivisie", "manager-b@example.com");
+
+    expect(managerAAfterRefresh.formation).toBe("4-4-2");
+    expect(managerAAfterRefresh.lineupIds).toEqual(["a-1", "a-2"]);
+    expect(managerBAfterRefresh.formation).toBe("3-5-2");
+    expect(managerBAfterRefresh.lineupIds).toEqual(["b-1", "b-2"]);
+  });
 });

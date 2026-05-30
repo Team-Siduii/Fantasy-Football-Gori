@@ -6,7 +6,7 @@ import {
   saveManagerStateForRound,
   type ManagerStateScope,
 } from "@/lib/manager-state";
-import { isAuthenticatedSession } from "@/lib/auth-session";
+import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
 
 function getScopeFromRequest(request: Request): ManagerStateScope {
   const mode = new URL(request.url).searchParams.get("mode");
@@ -18,21 +18,24 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
 
+  const managerKey = await getAuthenticatedEmail();
   const scope = getScopeFromRequest(request);
   const roundNumberParam = new URL(request.url).searchParams.get("roundNumber");
   const roundNumber = roundNumberParam ? Number(roundNumberParam) : null;
 
   if (roundNumber && Number.isInteger(roundNumber) && roundNumber > 0) {
-    return NextResponse.json({ state: readManagerStateForRound(roundNumber, scope) });
+    return NextResponse.json({ state: readManagerStateForRound(roundNumber, scope, managerKey) });
   }
 
-  return NextResponse.json({ state: readManagerState(scope) });
+  return NextResponse.json({ state: readManagerState(scope, managerKey) });
 }
 
 export async function PUT(request: Request) {
   if (!(await isAuthenticatedSession())) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
+
+  const managerKey = await getAuthenticatedEmail();
 
   let body: {
     formation?: string;
@@ -79,8 +82,9 @@ export async function PUT(request: Request) {
         partialState,
         scope,
         body.propagateToFutureRounds !== false,
+        managerKey,
       )
-    : saveManagerState(partialState, scope);
+    : saveManagerState(partialState, scope, managerKey);
 
   return NextResponse.json({ ok: true, state });
 }
