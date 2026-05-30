@@ -24,10 +24,8 @@ export default function TransfersPage() {
         </section>
 
         <section className="card col-12">
-          <h2>Tradeboard (placeholder)</h2>
-          <p>
-            Volgende implementatie: voorstel aanmaken, accept/reject, intrekken en automatische sluiting bij competitie-start.
-          </p>
+          <h2>Tradeboard</h2>
+          <p>Manager-transfers worden hier getoond zodra er voorstellen actief zijn.</p>
         </section>
       </div>
     </AppShell>
