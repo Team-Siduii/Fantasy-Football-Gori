@@ -558,4 +558,6 @@ Waarom zo:
 - 2026-05-30: My Team bewaart opstelling/wissels nu per speelronde persistent; bij switchen van ronde wordt de bijbehorende snapshot geladen met fallback naar de laatst bekende vorige ronde.
 - 2026-05-30: Wijzigingen (incl. wissels/transfers) die je in een ronde doet, worden automatisch doorgezet naar toekomstige rondes zodat je teamcontext consistent blijft.
 - 2026-05-30: Team-opslag is nu account-gebonden (op basis van ingelogde manager e-mail), zodat opstelling/wissels behouden blijven na refresh, uitloggen en opnieuw inloggen.
+- 2026-05-30: Dataplan toegevoegd voor gratis WK-bronnen (`docs/data-plan-wk-free-sources.md`) met bronprioriteit, mapping, quality flags en fallback/sync-strategie voor score, goals, assists, saves en kaarten.
+- 2026-05-30: Eerste gratis data-adapter toegevoegd: `src/lib/data-sources/openligadb.ts` met normalisatie naar intern match/event schema (HT/FT, goals, comment-based assists/kaarten, quality/completeness flags) + testdekking in `tests/lib/openligadb-adapter.test.ts`.
 - 2026-05-24: Boven basiselftal een compacte design-topbar geplaatst met links `Resterende waarde`, midden `Totaal punten` en rechts de formatie-dropdown; oude stat-tiles onder/naast het veld verwijderd.
