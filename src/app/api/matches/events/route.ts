@@ -2,8 +2,14 @@ import { NextResponse } from "next/server";
 import { mapOpenLigaDbMatchesToNormalized, type OpenLigaDbMatch } from "@/lib/data-sources/openligadb";
 import { mergeNormalizedMatches } from "@/lib/data-sources/match-events-merge";
 import { mapTheSportsDbEventsToNormalized, type TheSportsDbEvent } from "@/lib/data-sources/thesportsdb";
+import { getProfileByEmail } from "@/lib/auth-store";
+import { getAuthenticatedEmail } from "@/lib/auth-session";
 import { enrichMatchesWithWkcoachPoints, fetchWkcoachPointsSnapshot } from "@/lib/data-sources/wkcoach";
-import { getPlayerPointsPriority, shouldUseWkcoachByDefault } from "@/lib/data-sources/wkcoach-policy";
+import {
+  buildWkcoachCoordinatorAlert,
+  getPlayerPointsPriority,
+  shouldUseWkcoachByDefault,
+} from "@/lib/data-sources/wkcoach-policy";
 
 async function fetchOpenLigaDb(leagueShortcut: string, season: number): Promise<OpenLigaDbMatch[]> {
   const url = `https://api.openligadb.de/getmatchdata/${leagueShortcut}/${season}`;
@@ -39,20 +45,28 @@ export async function GET(request: Request) {
   let wkcoachPlayersCount = 0;
   let finalMatches = merged;
 
-  if (includeWkcoach) {
-    const email = process.env.WKCOACH_EMAIL;
-    const password = process.env.WKCOACH_PASSWORD;
+  const wkcoachEmail = process.env.WKCOACH_EMAIL;
+  const wkcoachPassword = process.env.WKCOACH_PASSWORD;
+  const hasWkcoachCredentials = Boolean(wkcoachEmail && wkcoachPassword);
 
-    if (email && password) {
-      const snapshot = await fetchWkcoachPointsSnapshot({ email, password, roundSequence });
-      if (snapshot) {
-        finalMatches = enrichMatchesWithWkcoachPoints(merged, snapshot);
-        wkcoachEnabled = true;
-        wkcoachRoundSequence = snapshot.roundSequence;
-        wkcoachPlayersCount = snapshot.players.length;
-      }
+  if (includeWkcoach && hasWkcoachCredentials) {
+    const snapshot = await fetchWkcoachPointsSnapshot({ email: wkcoachEmail!, password: wkcoachPassword!, roundSequence });
+    if (snapshot) {
+      finalMatches = enrichMatchesWithWkcoachPoints(merged, snapshot);
+      wkcoachEnabled = true;
+      wkcoachRoundSequence = snapshot.roundSequence;
+      wkcoachPlayersCount = snapshot.players.length;
     }
   }
+
+  const authenticatedEmail = await getAuthenticatedEmail();
+  const profile = authenticatedEmail ? getProfileByEmail(authenticatedEmail) : null;
+  const coordinatorAlert = buildWkcoachCoordinatorAlert({
+    email: profile?.email ?? authenticatedEmail,
+    wkcoachRequested: includeWkcoach,
+    wkcoachEnabled,
+    hasCredentials: hasWkcoachCredentials,
+  });
 
   return NextResponse.json({
     count: finalMatches.length,
@@ -69,6 +83,8 @@ export async function GET(request: Request) {
       enabled: wkcoachEnabled,
       roundSequence: wkcoachRoundSequence,
       playersCount: wkcoachPlayersCount,
+      hasCredentials: hasWkcoachCredentials,
+      coordinatorAlert,
     },
     matches: finalMatches,
   });

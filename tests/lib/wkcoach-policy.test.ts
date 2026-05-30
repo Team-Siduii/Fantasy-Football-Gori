@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildWkcoachCoordinatorAlert,
   getPlayerPointsPriority,
+  isLeagueCoordinator,
   shouldUseWkcoachByDefault,
 } from "../../src/lib/data-sources/wkcoach-policy";
 
@@ -15,5 +17,29 @@ describe("wkcoach policy", () => {
 
   it("reports wkcoach as truth source for player points", () => {
     expect(getPlayerPointsPriority()).toBe("wkcoach(primary)>fallback");
+  });
+
+  it("flags only Simon as league coordinator", () => {
+    expect(isLeagueCoordinator("s.j.m.duindam@gmail.com")).toBe(true);
+    expect(isLeagueCoordinator("other@gori.local")).toBe(false);
+  });
+
+  it("returns coordinator-only warning when wkcoach truth pipeline is unavailable", () => {
+    const coordinatorAlert = buildWkcoachCoordinatorAlert({
+      email: "s.j.m.duindam@gmail.com",
+      wkcoachRequested: true,
+      wkcoachEnabled: false,
+      hasCredentials: false,
+    });
+
+    const nonCoordinatorAlert = buildWkcoachCoordinatorAlert({
+      email: "manager@gori.local",
+      wkcoachRequested: true,
+      wkcoachEnabled: false,
+      hasCredentials: false,
+    });
+
+    expect(coordinatorAlert).toContain("WKCoach is primaire waarheid");
+    expect(nonCoordinatorAlert).toBeNull();
   });
 });
