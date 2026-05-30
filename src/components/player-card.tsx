@@ -5,6 +5,7 @@ type PlayerCardProps = {
   club: string;
   name: string;
   pointsLabel: string;
+  scoreBadge?: string | null;
   draggable?: boolean;
   children?: ReactNode;
 } & HTMLAttributes<HTMLElement>;
@@ -14,6 +15,7 @@ export function PlayerCard({
   club,
   name,
   pointsLabel,
+  scoreBadge,
   draggable = false,
   children,
   className,
@@ -21,6 +23,7 @@ export function PlayerCard({
 }: PlayerCardProps) {
   return (
     <article className={`player-card ${draggable ? "draggable" : ""} ${className ?? ""}`.trim()} draggable={draggable} {...rest}>
+      {scoreBadge ? <span className="player-score-badge">{scoreBadge}</span> : null}
       <div className="player-top">
         <span className="player-position">{position}</span>
         <span className="player-club">{club}</span>

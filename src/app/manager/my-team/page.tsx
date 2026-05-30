@@ -1077,6 +1077,7 @@ export default function ManagerMyTeamPage() {
                         club={cardMeta.countryCode}
                         name={cardMeta.displayName}
                         pointsLabel={cardMeta.priceLabel}
+                        scoreBadge={!player.id.startsWith("open-") ? String(player.punten) : null}
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",
                           player.id.startsWith("open-") ? "player-card--open" : "",
@@ -1111,6 +1112,7 @@ export default function ManagerMyTeamPage() {
                   club={cardMeta.countryCode}
                   name={player.naam}
                   pointsLabel={cardMeta.priceLabel}
+                  scoreBadge={!player.id.startsWith("open-") ? String(player.punten) : null}
                   className={[
                     "player-card--bench-row",
                     pendingSellId === player.id ? "player-card--sell" : "",

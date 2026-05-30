@@ -968,6 +968,7 @@ select {
 }
 
 .player-card {
+  position: relative;
   border-radius: 10px;
   border: 1px solid rgba(6, 43, 102, 0.28);
   background: #fff;
@@ -976,6 +977,27 @@ select {
   height: 6rem;
   grid-template-rows: 1.4rem 3rem 1.6rem;
   gap: 0;
+}
+
+.player-score-badge {
+  position: absolute;
+  top: 0.22rem;
+  right: 0.22rem;
+  min-width: 1.32rem;
+  height: 1.32rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ffe24a 0%, #ff9f1a 100%);
+  color: #1c2438;
+  border: 2px solid #ffffff;
+  box-shadow: 0 3px 10px rgba(20, 31, 56, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.24rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1;
+  z-index: 3;
 }
 
 .player-top {
@@ -1177,6 +1199,17 @@ select {
   grid-column: 3;
   font-size: 0.68rem;
   white-space: nowrap;
+}
+
+.player-card--bench-row .player-score-badge {
+  position: static;
+  grid-column: 3;
+  justify-self: end;
+  margin-right: 0.1rem;
+  width: 1.22rem;
+  min-width: 1.22rem;
+  height: 1.22rem;
+  font-size: 0.58rem;
 }
 
 .transfer-controls {

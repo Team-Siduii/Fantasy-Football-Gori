@@ -554,4 +554,5 @@ Waarom zo:
 - 2026-05-25: Gridbreedtes van veld- en wisselslots gelijkgetrokken met vaste responsive slotbreedtes; open slots en gevulde slots blijven daardoor uniform in afmeting.
 - 2026-05-25: Wisselspelers-sectie omgezet van blokkaarten naar regel-layout (lijstregels) met dashed scheidingslijn per slot/speler.
 - 2026-05-30: Demo-voorbeeld voor huidige ronde bijgewerkt: Kylian Mbappé krijgt `12` punten in de afgeleide puntenlogica.
+- 2026-05-30: Puntenscore per speler wordt nu als opvallende ronde badge bovenop spelerskaarten getoond (gele/oranje contrastbadge), inclusief in wisselspelerslijst.
 - 2026-05-24: Boven basiselftal een compacte design-topbar geplaatst met links `Resterende waarde`, midden `Totaal punten` en rechts de formatie-dropdown; oude stat-tiles onder/naast het veld verwijderd.
