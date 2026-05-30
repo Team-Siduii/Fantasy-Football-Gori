@@ -3,6 +3,7 @@ import { mapOpenLigaDbMatchesToNormalized, type OpenLigaDbMatch } from "@/lib/da
 import { mergeNormalizedMatches } from "@/lib/data-sources/match-events-merge";
 import { mapTheSportsDbEventsToNormalized, type TheSportsDbEvent } from "@/lib/data-sources/thesportsdb";
 import { enrichMatchesWithWkcoachPoints, fetchWkcoachPointsSnapshot } from "@/lib/data-sources/wkcoach";
+import { getPlayerPointsPriority, shouldUseWkcoachByDefault } from "@/lib/data-sources/wkcoach-policy";
 
 async function fetchOpenLigaDb(leagueShortcut: string, season: number): Promise<OpenLigaDbMatch[]> {
   const url = `https://api.openligadb.de/getmatchdata/${leagueShortcut}/${season}`;
@@ -27,7 +28,7 @@ export async function GET(request: Request) {
   const sportsDbSeason = url.searchParams.get("sportsDbSeason") ?? "2023-2024";
 
   const roundSequence = Number(url.searchParams.get("roundSeq") ?? "1");
-  const includeWkcoach = (url.searchParams.get("includeWkcoach") ?? "false").toLowerCase() === "true";
+  const includeWkcoach = shouldUseWkcoachByDefault(url.searchParams.get("includeWkcoach"));
 
   const openLigaMatches = mapOpenLigaDbMatchesToNormalized(await fetchOpenLigaDb(leagueShortcut, season));
   const sportsDbMatches = mapTheSportsDbEventsToNormalized(await fetchTheSportsDb(sportsDbLeagueId, sportsDbSeason));
@@ -61,7 +62,7 @@ export async function GET(request: Request) {
       assists: "thesportsdb>openligadb",
       saves: "thesportsdb>openligadb",
       cards: "thesportsdb>openligadb",
-      playerPoints: "wkcoach(optional)",
+      playerPoints: getPlayerPointsPriority(),
     },
     wkcoach: {
       requested: includeWkcoach,
