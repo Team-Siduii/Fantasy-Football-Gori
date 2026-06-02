@@ -201,7 +201,9 @@ export async function fetchFlashFootballMatch(options: FlashFootballFetchOptions
   const response = await fetcher(urls.incidents, {
     headers: {
       Accept: "text/plain, */*",
-      "User-Agent": "Mozilla/5.0 Fantasy-Football-Gori/0.1 (+https://www.flashfootball.com)",
+      Referer: "https://www.flashfootball.com/",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36",
+      "x-fsign": "SW9D1eZo",
     },
     cache: "no-store",
   });
