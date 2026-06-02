@@ -5,9 +5,10 @@ import { mapTheSportsDbEventsToNormalized, type TheSportsDbEvent } from "@/lib/d
 import { getProfileByEmail } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 import { enrichMatchesWithWkcoachPoints, fetchWkcoachPointsSnapshot } from "@/lib/data-sources/wkcoach";
+import { extractFlashFootballEventId, fetchFlashFootballMatch } from "@/lib/data-sources/flashfootball";
+import { buildMatchEventsSourcePriority } from "@/lib/data-sources/match-events-source-priority";
 import {
   buildWkcoachCoordinatorAlert,
-  getPlayerPointsPriority,
   shouldUseWkcoachByDefault,
 } from "@/lib/data-sources/wkcoach-policy";
 
@@ -32,6 +33,8 @@ export async function GET(request: Request) {
   const season = Number(url.searchParams.get("season") ?? "2023");
   const sportsDbLeagueId = url.searchParams.get("sportsDbLeagueId") ?? "4328";
   const sportsDbSeason = url.searchParams.get("sportsDbSeason") ?? "2023-2024";
+  const flashInput = url.searchParams.get("flashEventId") ?? url.searchParams.get("flashMatchUrl");
+  const flashEventId = flashInput ? extractFlashFootballEventId(flashInput) : null;
 
   const roundSequence = Number(url.searchParams.get("roundSeq") ?? "1");
   const includeWkcoach = shouldUseWkcoachByDefault(url.searchParams.get("includeWkcoach"));
@@ -44,6 +47,18 @@ export async function GET(request: Request) {
   let wkcoachRoundSequence: number | null = null;
   let wkcoachPlayersCount = 0;
   let finalMatches = merged;
+  let flashfootballEnabled = false;
+  let flashfootballError: string | null = null;
+
+  if (flashEventId) {
+    try {
+      const flashMatch = await fetchFlashFootballMatch({ eventId: flashEventId });
+      finalMatches = [flashMatch, ...merged];
+      flashfootballEnabled = true;
+    } catch (error) {
+      flashfootballError = error instanceof Error ? error.message : "Flashfootball fetch failed";
+    }
+  }
 
   const wkcoachEmail = process.env.WKCOACH_EMAIL;
   const wkcoachPassword = process.env.WKCOACH_PASSWORD;
@@ -70,13 +85,12 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     count: finalMatches.length,
-    sourcePriority: {
-      score: "openligadb>thesportsdb",
-      goals: "openligadb>thesportsdb",
-      assists: "thesportsdb>openligadb",
-      saves: "thesportsdb>openligadb",
-      cards: "thesportsdb>openligadb",
-      playerPoints: getPlayerPointsPriority(),
+    sourcePriority: buildMatchEventsSourcePriority({ includeFlashfootball: flashfootballEnabled }),
+    flashfootball: {
+      requested: Boolean(flashInput),
+      eventId: flashEventId,
+      enabled: flashfootballEnabled,
+      error: flashfootballError,
     },
     wkcoach: {
       requested: includeWkcoach,

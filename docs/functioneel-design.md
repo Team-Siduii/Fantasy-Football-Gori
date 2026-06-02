@@ -279,6 +279,7 @@ FR-087: Manager Team-pagina focust uitsluitend op eigen teambeheer (opstelling, 
 FR-088: Flashfootball-adapter normaliseert wedstrijdincidenten naar het interne match/event schema, inclusief FT/HT-score, doelpunten, assists en kaarten met speler-id, minuut en teamcontext.
 FR-089: Flashfootball endpoint-URL's zijn eventId-gedreven zodat recente wedstrijden direct via incident-feed (`df_sui_1_<eventId>`) en spelerstatistiek-endpoints (`epmsse`/`epmsd`) te koppelen zijn zonder betaalde live-data API.
 FR-090: In WK mode toont het ronde-wedstrijdenoverzicht per wedstrijd expliciet de poule-indicatie (bij groepsfase `Poule X`, anders `Knock-out`) zodat direct zichtbaar is in welke poule de wedstrijd valt.
+FR-091: `GET /api/matches/events` ondersteunt optionele Flashfootball-verrijking via `flashEventId` of `flashMatchUrl`; bij succesvolle Flashfootball-fetch krijgt Flashfootball topprioriteit voor score/goals/assists/cards, terwijl WKCoach altijd topprioriteit blijft voor spelerpunten.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -357,7 +358,7 @@ Waarom zo:
 - Vercel (deployments)
 - Linear (planning)
 - Optioneel: scraper worker + scheduler
-- Flashfootball/Flashscore-style gratis endpoints als aanvullende WK-wedstrijddatabron voor recente goals, assists, kaarten en scoreverificatie; primaire contractlaag blijft het interne `NormalizedMatch`/`NormalizedMatchEvent` schema.
+- Flashfootball/Flashscore-style gratis endpoints als aanvullende WK-wedstrijddatabron voor recente goals, assists, kaarten en scoreverificatie; primaire contractlaag blijft het interne `NormalizedMatch`/`NormalizedMatchEvent` schema. WKCoach blijft de primaire waarheid voor spelerpunten wanneer credentials beschikbaar zijn.
 
 ## 11. Acceptatiecriteria MVP
 - [ ] Draft kan volledig worden afgerond zonder dubbele spelers in league
@@ -571,3 +572,4 @@ Waarom zo:
 - 2026-05-30: Transfers-pagina opgeschoond: zichtbare placeholder/instructietekst vervangen door neutrale productietekst (`Tradeboard` + statusregel over actieve voorstellen).
 - 2026-05-24: Boven basiselftal een compacte design-topbar geplaatst met links `Resterende waarde`, midden `Totaal punten` en rechts de formatie-dropdown; oude stat-tiles onder/naast het veld verwijderd.
 - 2026-06-02: Flashfootball-adapter toegevoegd (`src/lib/data-sources/flashfootball.ts`) met eventId-URL builder, match-URL eventId extractie, incident-feed parser voor goals/assists/kaarten/score en Vitest-dekking op de live Croatia-Belgium datastructuur.
+- 2026-06-02: Flashfootball optioneel gekoppeld aan `GET /api/matches/events?flashEventId=...`; source priority is nu expliciet: Flashfootball boven OpenLigaDB/TheSportsDB voor wedstrijdevents wanneer gevraagd, maar `playerPoints` blijft `wkcoach(primary)>fallback`.
