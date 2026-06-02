@@ -1,5 +1,5 @@
 export type NormalizedEventType = "goal" | "assist" | "yellow_card" | "red_card" | "goalkeeper_save";
-export type NormalizedSource = "openligadb" | "thesportsdb" | "worldcupjson";
+export type NormalizedSource = "openligadb" | "thesportsdb" | "worldcupjson" | "flashfootball";
 
 export type NormalizedMatchEvent = {
   type: NormalizedEventType;

@@ -276,6 +276,8 @@ FR-084: Elke draft `pick`/`return` synchroniseert direct naar persistente team-r
 FR-085: Draftpagina toont per team een live roster-overzicht (gepickte spelers) op basis van team-roster-state zodat draftresultaat direct visueel te controleren is.
 FR-086: Draftfunctionaliteit is een aparte seizoensstart-modus op `/draft`; de reguliere Manager Team-pagina toont geen draft-overzicht of draft-rostercomponent.
 FR-087: Manager Team-pagina focust uitsluitend op eigen teambeheer (opstelling, bank, transfers en ronde-overzicht) en bevat geen cross-team draftcontext.
+FR-088: Flashfootball-adapter normaliseert wedstrijdincidenten naar het interne match/event schema, inclusief FT/HT-score, doelpunten, assists en kaarten met speler-id, minuut en teamcontext.
+FR-089: Flashfootball endpoint-URL's zijn eventId-gedreven zodat recente wedstrijden direct via incident-feed (`df_sui_1_<eventId>`) en spelerstatistiek-endpoints (`epmsse`/`epmsd`) te koppelen zijn zonder betaalde live-data API.
 FR-090: In WK mode toont het ronde-wedstrijdenoverzicht per wedstrijd expliciet de poule-indicatie (bij groepsfase `Poule X`, anders `Knock-out`) zodat direct zichtbaar is in welke poule de wedstrijd valt.
 
 ## 7. Niet-functionele requirements (NFR)
@@ -355,6 +357,7 @@ Waarom zo:
 - Vercel (deployments)
 - Linear (planning)
 - Optioneel: scraper worker + scheduler
+- Flashfootball/Flashscore-style gratis endpoints als aanvullende WK-wedstrijddatabron voor recente goals, assists, kaarten en scoreverificatie; primaire contractlaag blijft het interne `NormalizedMatch`/`NormalizedMatchEvent` schema.
 
 ## 11. Acceptatiecriteria MVP
 - [ ] Draft kan volledig worden afgerond zonder dubbele spelers in league
@@ -567,3 +570,4 @@ Waarom zo:
 - 2026-05-30: Summary-strip rank is omgezet naar subpoule-rank via nieuwe endpoint `GET /api/manager/subpoule-summary?mode=...`; label toont nu positie binnen eigen subpoule (niet globale league-plek), met teamnaam en berekende punten uit managerstate.
 - 2026-05-30: Transfers-pagina opgeschoond: zichtbare placeholder/instructietekst vervangen door neutrale productietekst (`Tradeboard` + statusregel over actieve voorstellen).
 - 2026-05-24: Boven basiselftal een compacte design-topbar geplaatst met links `Resterende waarde`, midden `Totaal punten` en rechts de formatie-dropdown; oude stat-tiles onder/naast het veld verwijderd.
+- 2026-06-02: Flashfootball-adapter toegevoegd (`src/lib/data-sources/flashfootball.ts`) met eventId-URL builder, match-URL eventId extractie, incident-feed parser voor goals/assists/kaarten/score en Vitest-dekking op de live Croatia-Belgium datastructuur.
