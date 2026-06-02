@@ -98,8 +98,10 @@ Per rol belangrijkste rechten:
 - Geen auto-pick in MVP
 - Draft-engine exposeert API-acties `start`, `pick`, `return` en `current` via `/api/draft` met persistente draft-state
 - Draft-pick is turn-based en atomisch: alleen actieve team aan beurt mag picken; dezelfde speler kan niet 2x gepickt worden
-- Draftpagina (`/draft`) gebruikt deze API direct met startformulier, live beurtindicator, pick-actie en return-actie voor testdrafts
-- Manager Team-pagina toont een live draft team-overzicht (status + teamselectie + gepickte spelers) op basis van `/api/draft` zodat picks automatisch zichtbaar worden zonder handmatige refresh
+- Draftpagina (`/draft`) is een beschermde manager-draftkamer met live beurtindicator, picknummer/ronde, spelerkaarten, zoek/positiefilter, bevestigingsbalk, eigen selectie, alle teamrosters en pickhistorie.
+- Draft is prominent bereikbaar via headerknop `Draft` en de mobiele ondernavigatie zodat managers de draftmodus direct vinden na login.
+- Oefendraftbeheer zit ingeklapt op `/draft`: start/reset draft met standaardvolgorde `Johan Swart, Thomas, Jack, Emiel Zomerdijk`, 15 rondes, en return-actie voor testcorrecties.
+- Accountpagina (`/account`) is prominent bereikbaar als `Naam aanpassen` en bevat managernaam, teamnaam en wachtwoordbeheer; managernaam/teamnaam worden gebruikt voor herkenning in de draftkamer.
 
 ### 4.5 Transfers (kern van MVP)
 - Er is een vrije pool met beschikbare spelers

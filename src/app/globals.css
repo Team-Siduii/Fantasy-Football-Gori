@@ -1540,3 +1540,365 @@ select {
     font-size: 0.8rem;
   }
 }
+
+/* Draft room + account MVP polish */
+.draft-room,
+.account-dashboard {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.draft-room > *,
+.account-dashboard > * {
+  grid-column: 1 / -1;
+}
+
+.draft-hero,
+.account-hero {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 18px;
+  color: #fff;
+  background: linear-gradient(135deg, #073b8f 0%, #1264d8 58%, #f37021 100%);
+  box-shadow: 0 18px 36px rgba(5, 34, 82, 0.22);
+}
+
+.draft-hero.my-turn {
+  background: linear-gradient(135deg, #1d8f3c 0%, #35b95a 55%, #f37021 100%);
+}
+
+.draft-hero h2,
+.account-hero h2 {
+  margin: 0.1rem 0 0.35rem;
+  font-size: clamp(1.45rem, 4vw, 2.4rem);
+}
+
+.draft-hero p,
+.account-hero p {
+  margin: 0;
+  opacity: 0.92;
+}
+
+.draft-eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 0.75rem;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.draft-hero-stats,
+.account-team-badge {
+  min-width: 155px;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.16);
+  text-align: right;
+}
+
+.draft-hero-stats span,
+.account-team-badge span {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.78;
+}
+
+.draft-hero-stats strong,
+.account-team-badge strong {
+  font-size: 1.15rem;
+}
+
+.draft-message {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.section-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.section-title-row h2,
+.section-title-row p {
+  margin-top: 0;
+}
+
+.draft-order-track,
+.draft-team-grid,
+.draft-player-grid,
+.draft-roster-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.draft-order-track {
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+}
+
+.draft-order-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid #d9e1ee;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.draft-order-chip span {
+  width: 1.8rem;
+  height: 1.8rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #dce6f5;
+  color: #0a3d91;
+  font-weight: 900;
+}
+
+.draft-order-chip.active {
+  border-color: #f37021;
+  box-shadow: 0 0 0 3px rgba(243, 112, 33, 0.18);
+}
+
+.draft-order-chip.mine {
+  background: #fff7ef;
+}
+
+.draft-filter-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.draft-filter-row.compact select,
+.draft-filter-row.compact input {
+  width: min(100%, 190px);
+}
+
+.draft-player-grid {
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  max-height: 520px;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.draft-player-card {
+  display: grid;
+  gap: 0.3rem;
+  min-height: 112px;
+  padding: 0.8rem;
+  border: 1px solid #d7deea;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #eef4ff 100%);
+  color: #1c2430;
+  text-align: left;
+  cursor: pointer;
+}
+
+.draft-player-card strong {
+  color: #0a3d91;
+  font-size: 1rem;
+}
+
+.draft-player-card.selected {
+  border-color: #f37021;
+  background: #fff3e8;
+  box-shadow: 0 0 0 3px rgba(243, 112, 33, 0.18);
+}
+
+.draft-player-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.draft-player-meta {
+  color: #6d7788;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.draft-confirm-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border-radius: 16px;
+  background: #0a3d91;
+  color: #fff;
+}
+
+.draft-confirm-bar span {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.draft-confirm-bar button,
+.draft-admin-grid button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  background: #f37021;
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.draft-confirm-bar button:disabled,
+.draft-admin-grid button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.draft-roster-list {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.draft-roster-pill {
+  padding: 0.7rem;
+  border-radius: 14px;
+  border: 1px solid #dbe3ef;
+  background: #f8fafc;
+}
+
+.draft-roster-pill strong,
+.draft-roster-pill span {
+  display: block;
+}
+
+.draft-roster-pill span {
+  color: #6d7788;
+  font-size: 0.82rem;
+}
+
+.draft-team-grid {
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+
+.draft-team-card {
+  min-height: 170px;
+  padding: 0.85rem;
+  border: 1px solid #d7deea;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.draft-team-card.active {
+  border-color: #f37021;
+  background: #fff8f1;
+}
+
+.draft-team-card h3,
+.draft-team-card p {
+  margin-top: 0;
+}
+
+.draft-team-card ul,
+.draft-history-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.draft-admin-details summary {
+  cursor: pointer;
+  font-weight: 900;
+  color: #0a3d91;
+}
+
+.draft-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+  align-items: end;
+}
+
+.draft-history-list {
+  display: grid;
+  gap: 0.45rem;
+  padding-left: 0;
+  list-style: none;
+}
+
+.draft-history-list li {
+  display: grid;
+  grid-template-columns: 56px 1fr 2fr;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.65rem;
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.draft-history-list span {
+  color: #f37021;
+  font-weight: 900;
+}
+
+.draft-history-list em {
+  color: #6d7788;
+  font-style: normal;
+}
+
+.account-card-primary {
+  grid-column: span 7;
+}
+
+.account-dashboard .col-5 {
+  grid-column: span 5;
+}
+
+.account-help-link a {
+  color: #0a3d91;
+  font-weight: 900;
+  text-decoration: underline;
+}
+
+@media (max-width: 820px) {
+  .draft-hero,
+  .account-hero,
+  .draft-confirm-bar,
+  .section-title-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .draft-hero-stats,
+  .account-team-badge {
+    text-align: left;
+  }
+
+  .draft-history-list li {
+    grid-template-columns: 1fr;
+  }
+
+  .account-card-primary,
+  .account-dashboard .col-5 {
+    grid-column: 1 / -1;
+  }
+}
+

@@ -13,17 +13,19 @@ export default function AccountPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState("");
   const [teamName, setTeamName] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
-      const response = await fetch("/api/auth/profile");
+      setLoading(true);
+      const response = await fetch("/api/auth/profile", { cache: "no-store" });
       if (!response.ok) {
         setError("Kon account niet laden.");
+        setLoading(false);
         return;
       }
 
@@ -31,6 +33,7 @@ export default function AccountPage() {
       setProfile(data.profile);
       setName(data.profile.name);
       setTeamName(data.profile.teamName);
+      setLoading(false);
     };
 
     void load();
@@ -55,36 +58,11 @@ export default function AccountPage() {
 
     if (data.profile) {
       setProfile(data.profile);
-    }
-
-    setMessage("Account opgeslagen.");
-  }
-
-  async function onCompleteSetup(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage("");
-    setError("");
-
-    const response = await fetch("/api/auth/complete-setup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ inviteCode, newPassword, teamName }),
-    });
-
-    const data = (await response.json()) as { error?: string; profile?: Profile };
-    if (!response.ok) {
-      setError(data.error ?? "Eerste setup mislukt");
-      return;
-    }
-
-    setInviteCode("");
-    setNewPassword("");
-    if (data.profile) {
-      setProfile(data.profile);
       setName(data.profile.name);
       setTeamName(data.profile.teamName);
     }
-    setMessage("Eerste setup voltooid. Je wachtwoord en teamnaam staan nu vast.");
+
+    setMessage("Naam en teamnaam opgeslagen. De header en draftkamer gebruiken dit direct.");
   }
 
   async function onChangePassword(event: FormEvent<HTMLFormElement>) {
@@ -110,74 +88,65 @@ export default function AccountPage() {
   }
 
   return (
-    <AppShell title="Account" subtitle="Beheer je account, teamnaam en wachtwoord.">
-      <section className="card col-6">
-        <h2>Profiel</h2>
-        <form onSubmit={onSaveProfile} className="auth-form">
-          <label>
-            Naam
-            <input value={name} onChange={(event) => setName(event.target.value)} required />
-          </label>
+    <AppShell title="Naam & teamnaam aanpassen" subtitle="Deze pagina is nu bewust prominent bereikbaar via de header en ondernavigatie.">
+      <div className="account-dashboard">
+        <section className="account-hero card col-12">
+          <div>
+            <p className="draft-eyebrow">Manager profiel</p>
+            <h2>{loading ? "Account laden..." : profile?.name}</h2>
+            <p>{profile?.email}</p>
+          </div>
+          <div className="account-team-badge">
+            <span>Teamnaam</span>
+            <strong>{profile?.teamName ?? "-"}</strong>
+          </div>
+        </section>
 
-          <label>
-            Teamnaam
-            <input value={teamName} onChange={(event) => setTeamName(event.target.value)} required />
-          </label>
+        <section className="card col-7 account-card-primary">
+          <h2>Naam aanpassen</h2>
+          <p>Gebruik hier de managernaam voor de draft en de teamnaam die in de app zichtbaar is.</p>
+          <form onSubmit={onSaveProfile} className="auth-form">
+            <label>
+              Managernaam
+              <input value={name} onChange={(event) => setName(event.target.value)} required />
+            </label>
 
-          <label>
-            Email
-            <input value={profile?.email ?? ""} disabled />
-          </label>
+            <label>
+              Teamnaam
+              <input value={teamName} onChange={(event) => setTeamName(event.target.value)} required />
+            </label>
 
-          <button type="submit">Profiel opslaan</button>
-        </form>
-      </section>
+            <label>
+              Email
+              <input value={profile?.email ?? ""} disabled />
+            </label>
 
-      <section className="card col-6">
-        <h2>Eerste login setup</h2>
-        <p>Alleen nodig als je voor het eerst inlogt met een inlogcode.</p>
-        <form onSubmit={onCompleteSetup} className="auth-form">
-          <label>
-            Inlogcode
-            <input type="password" value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} required />
-          </label>
-          <label>
-            Nieuwe teamnaam
-            <input value={teamName} onChange={(event) => setTeamName(event.target.value)} required />
-          </label>
-          <label>
-            Nieuw wachtwoord
-            <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} required />
-          </label>
-          <button type="submit">Setup afronden</button>
-        </form>
-      </section>
+            <button type="submit" disabled={loading}>Naam & teamnaam opslaan</button>
+          </form>
+        </section>
 
-      <section className="card col-6">
-        <h2>Wachtwoord wijzigen/resetten</h2>
-        <form onSubmit={onChangePassword} className="auth-form">
-          <label>
-            Huidig wachtwoord
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
-              required
-            />
-          </label>
-          <label>
-            Nieuw wachtwoord
-            <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} required />
-          </label>
-          <button type="submit">Wachtwoord wijzigen</button>
-        </form>
-        <p>
-          Wachtwoord kwijt? Gebruik <a href="/forgot-password">wachtwoord vergeten</a>.
-        </p>
+        <section className="card col-5">
+          <h2>Wachtwoord</h2>
+          <p>Voor oefensessies kun je het wachtwoord hier wijzigen. Reset kan ook via “wachtwoord vergeten”.</p>
+          <form onSubmit={onChangePassword} className="auth-form">
+            <label>
+              Huidig wachtwoord
+              <input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required />
+            </label>
+            <label>
+              Nieuw wachtwoord
+              <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} required />
+            </label>
+            <button type="submit">Wachtwoord wijzigen</button>
+          </form>
+          <p className="account-help-link">
+            Wachtwoord kwijt? <a href="/forgot-password">Resetlink maken</a>
+          </p>
+        </section>
 
-        {error ? <p className="error-text">{error}</p> : null}
-        {message ? <p className="success-text">{message}</p> : null}
-      </section>
+        {error ? <p className="error-text draft-message">{error}</p> : null}
+        {message ? <p className="success-text draft-message">{message}</p> : null}
+      </div>
     </AppShell>
   );
 }
