@@ -62,4 +62,33 @@ describe("draft roster to manager team sync", () => {
     expect(johanWkState.lineupIds).toEqual([]);
     expect(johanWkState.benchIds).toEqual([]);
   });
+
+  it("resets existing rosters and manager team state when a new WK draft starts", async () => {
+    const { draft, roster, manager } = await loadModules();
+    draft.resetDraftStateForTests("wk");
+    roster.resetTeamRosterStateForTests("wk");
+    manager.resetManagerStateForTests("wk");
+
+    draft.startDraft({
+      leagueId: "wk-2026-old",
+      teamOrder: ["Johan Swart", "Thomas"],
+      totalRounds: 2,
+      startedBy: "admin-1",
+      scope: "wk",
+    });
+    draft.registerPick({ teamId: "Johan Swart", playerId: "wk-player-1", scope: "wk" });
+
+    draft.startDraft({
+      leagueId: "wk-2026-new",
+      teamOrder: ["Johan Swart", "Thomas"],
+      totalRounds: 2,
+      startedBy: "admin-1",
+      scope: "wk",
+    });
+
+    expect(roster.readTeamRosterState("wk").byTeamId).toEqual({});
+    const johanWkState = manager.readManagerState("wk", JOHAN_EMAIL);
+    expect(johanWkState.lineupIds).toEqual([]);
+    expect(johanWkState.benchIds).toEqual([]);
+  });
 });

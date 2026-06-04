@@ -68,6 +68,10 @@ export function removePlayerFromTeamRoster(teamId: string, playerId: string, sco
   return readTeamRosterState(scope);
 }
 
-export function resetTeamRosterStateForTests(scope: TeamRosterScope = "eredivisie") {
+export function resetTeamRosterState(scope: TeamRosterScope = "eredivisie") {
   saveTeamRosterState({ ...DEFAULT_TEAM_ROSTER_STATE }, scope);
+}
+
+export function resetTeamRosterStateForTests(scope: TeamRosterScope = "eredivisie") {
+  resetTeamRosterState(scope);
 }

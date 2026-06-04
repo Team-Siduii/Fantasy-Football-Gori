@@ -476,7 +476,7 @@ Waarom zo:
 - [x] Optionele deploy-isolatie toegevoegd met aparte env-paden voor state-opslag per mode (`MANAGER_STATE_PATH` en `MANAGER_STATE_WK_PATH`)
 - [x] Instellingenpagina toont debug-sectie met actieve state-opslagpaden voor Eredivisie en WK
 - [x] Manager-state gebruikt op Vercel standaard `/tmp/manager-state*.json` wanneer geen expliciete env-paden zijn gezet, zodat serverless writes niet naar de read-only projectbundel gaan.
-- [x] WK draftpicks worden direct naar de gekoppelde manager-state van de WK Team-pagina gesynchroniseerd; terugzetten van een speler ruimt het teamoverzicht ook op.
+- [x] WK draftpicks worden direct naar de gekoppelde manager-state van de WK Team-pagina gesynchroniseerd; terugzetten van een speler ruimt het teamoverzicht ook op. Een nieuwe/reset oefendraft leegt eerst bestaande draftrosters en gekoppelde teamoverzichten voor de betreffende mode.
 
 ## 13. Besluitenlog
 - 2026-04-16: Repo + Vercel + baseline workflow opgezet.

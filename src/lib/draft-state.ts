@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { buildDraftPickSequence } from "../domain/rules";
 import { syncDraftRosterToManagerTeam } from "./draft-manager-sync";
-import { addPlayerToTeamRoster, removePlayerFromTeamRoster, type TeamRosterScope } from "./team-roster-state";
+import { addPlayerToTeamRoster, removePlayerFromTeamRoster, resetTeamRosterState, type TeamRosterScope } from "./team-roster-state";
 
 export type DraftScope = TeamRosterScope;
 
@@ -137,6 +137,10 @@ export function startDraft(input: {
   const at = input.startedAt ?? new Date().toISOString();
 
   const scope = input.scope ?? "eredivisie";
+  resetTeamRosterState(scope);
+  for (const teamId of input.teamOrder) {
+    syncDraftRosterToManagerTeam({ teamId, playerIds: [], scope });
+  }
 
   return writeDraftState({
     leagueId: input.leagueId,
