@@ -285,6 +285,7 @@ FR-089: Flashfootball endpoint-URL's zijn eventId-gedreven zodat recente wedstri
 FR-090: In WK mode toont het ronde-wedstrijdenoverzicht per wedstrijd expliciet de poule-indicatie (bij groepsfase `Poule X`, anders `Knock-out`) zodat direct zichtbaar is in welke poule de wedstrijd valt.
 FR-091: `GET /api/matches/events` ondersteunt optionele Flashfootball-verrijking via `flashEventId` of `flashMatchUrl`; bij succesvolle Flashfootball-fetch krijgt Flashfootball topprioriteit voor score/goals/assists/cards, terwijl WKCoach altijd topprioriteit blijft voor spelerpunten.
 FR-092: WK mode heeft een eigen draftkamer op `/manager/world-cup/draft` met gescheiden draft-state/team-rosters en dezelfde filters als de transfermarkt: Land, maximale waarde, naamzoekveld en positie.
+FR-093: WK draftpicks synchroniseren automatisch naar de accountgebonden WK Team-pagina van de gekoppelde manager, zodat gekozen spelers direct in hetzelfde teamoverzicht/opstellingsoverzicht zichtbaar zijn als de reguliere Team-pagina; teruggezette picks verdwijnen daar ook weer.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -474,6 +475,7 @@ Waarom zo:
 - [x] WK-rondebetekenis vastgelegd: ronde 1/2/3 mapt op groepswedstrijd 1/2/3 per land
 - [x] Optionele deploy-isolatie toegevoegd met aparte env-paden voor state-opslag per mode (`MANAGER_STATE_PATH` en `MANAGER_STATE_WK_PATH`)
 - [x] Instellingenpagina toont debug-sectie met actieve state-opslagpaden voor Eredivisie en WK
+- [x] WK draftpicks worden direct naar de gekoppelde manager-state van de WK Team-pagina gesynchroniseerd; terugzetten van een speler ruimt het teamoverzicht ook op.
 
 ## 13. Besluitenlog
 - 2026-04-16: Repo + Vercel + baseline workflow opgezet.

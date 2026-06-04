@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { buildDraftPickSequence } from "../domain/rules";
+import { syncDraftRosterToManagerTeam } from "./draft-manager-sync";
 import { addPlayerToTeamRoster, removePlayerFromTeamRoster, type TeamRosterScope } from "./team-roster-state";
 
 export type DraftScope = TeamRosterScope;
@@ -188,7 +189,12 @@ export function registerPick(input: { teamId: string; playerId: string; at?: str
     ],
   };
 
-  addPlayerToTeamRoster(input.teamId, input.playerId, scope);
+  const rosterState = addPlayerToTeamRoster(input.teamId, input.playerId, scope);
+  syncDraftRosterToManagerTeam({
+    teamId: input.teamId,
+    playerIds: rosterState.byTeamId[input.teamId] ?? [],
+    scope,
+  });
 
   return writeDraftState(next, scope);
 }
@@ -229,7 +235,12 @@ export function returnPickedPlayerToPool(input: {
     ],
   };
 
-  removePlayerFromTeamRoster(input.teamId, input.playerId, scope);
+  const rosterState = removePlayerFromTeamRoster(input.teamId, input.playerId, scope);
+  syncDraftRosterToManagerTeam({
+    teamId: input.teamId,
+    playerIds: rosterState.byTeamId[input.teamId] ?? [],
+    scope,
+  });
 
   return writeDraftState(next, scope);
 }

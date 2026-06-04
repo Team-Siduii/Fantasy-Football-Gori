@@ -184,23 +184,18 @@ function buildStateFromSaved(players: EnhancedPlayer[], formation: string, lineu
   const byId = new Map(players.map((player) => [player.id, player]));
   const seen = new Set<string>();
 
-  const preferred: EnhancedPlayer[] = [];
+  const savedPlayers: EnhancedPlayer[] = [];
   for (const id of [...lineupIds, ...benchIds]) {
     const player = byId.get(id);
     if (player && !seen.has(player.id)) {
       seen.add(player.id);
-      preferred.push(player);
+      savedPlayers.push(player);
     }
   }
 
-  for (const player of players) {
-    if (!seen.has(player.id)) {
-      seen.add(player.id);
-      preferred.push(player);
-    }
-  }
-
-  return buildStateForFormation(preferred, formation);
+  const requiredSlotCount = buildFormationSlots(formation).flat().length + BENCH_POSITIONS.length;
+  const vacancyCount = Math.max(0, requiredSlotCount - savedPlayers.length);
+  return buildStateWithVacancies(savedPlayers, formation, vacancyCount) ?? buildStateForFormation(savedPlayers, formation);
 }
 
 function toPersistedIds(state: ZoneState<EnhancedPlayer>) {
