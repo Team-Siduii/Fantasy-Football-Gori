@@ -43,20 +43,29 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
   const router = useRouter();
   const isWkMode = pathname.startsWith("/manager/world-cup");
   const activeNavItems = isWkMode ? wkNavItems : eredivisieNavItems;
-  const [summaryTeamName, setSummaryTeamName] = useState("Mijn Super Team");
-  const [summaryRankLabel, setSummaryRankLabel] = useState("1st (29)");
-  const [summaryPoints, setSummaryPoints] = useState("190");
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [summaryTeamName, setSummaryTeamName] = useState("Team laden…");
+  const [summaryRankLabel, setSummaryRankLabel] = useState("-");
+  const [summaryPoints, setSummaryPoints] = useState("-");
 
   useEffect(() => {
     const mode = isWkMode ? "wk" : "eredivisie";
     const load = async () => {
       const response = await fetch(`/api/manager/subpoule-summary?mode=${mode}`, { cache: "no-store" });
+      if (response.status === 401) {
+        setIsAuthenticated(false);
+        setSummaryTeamName("Niet ingelogd");
+        setSummaryRankLabel("-");
+        setSummaryPoints("-");
+        return;
+      }
+
       if (!response.ok) return;
+
+      setIsAuthenticated(true);
       const data = (await response.json()) as SubpouleSummaryResponse;
 
-      if (data.teamName) {
-        setSummaryTeamName(data.teamName);
-      }
+      setSummaryTeamName(data.teamName ?? "Teamnaam ontbreekt");
 
       if (data.standing) {
         setSummaryRankLabel(`#${data.standing.rank} (${data.standing.totalManagersInSubpoule}) · Poule ${data.standing.subpoule}`);
@@ -83,21 +92,29 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
           </div>
 
           <div className="header-actions">
-            <Link href={isWkMode ? "/manager/world-cup/draft" : "/draft"} className={`header-link ${isActive(pathname, isWkMode ? "/manager/world-cup/draft" : "/draft") ? "active" : ""}`}>
-              Draft
-            </Link>
-            <Link href="/account" className={`header-link ${isActive(pathname, "/account") ? "active" : ""}`}>
-              Naam aanpassen
-            </Link>
+            {isAuthenticated === true ? (
+              <>
+                <Link href={isWkMode ? "/manager/world-cup/draft" : "/draft"} className={`header-link ${isActive(pathname, isWkMode ? "/manager/world-cup/draft" : "/draft") ? "active" : ""}`}>
+                  Draft
+                </Link>
+                <Link href="/account" className={`header-link ${isActive(pathname, "/account") ? "active" : ""}`}>
+                  Naam aanpassen
+                </Link>
+                <Link href="/instellingen" className={`header-link ${isActive(pathname, "/instellingen") ? "active" : ""}`}>
+                  Instellingen
+                </Link>
+                <button onClick={handleLogout} className="logout-button" type="button">
+                  Log out
+                </button>
+              </>
+            ) : isAuthenticated === false ? (
+              <Link href="/login" className="header-link">
+                Log in
+              </Link>
+            ) : null}
             <Link href="/spelregels" className={`header-link ${isActive(pathname, "/spelregels") ? "active" : ""}`}>
               Spelregels
             </Link>
-            <Link href="/instellingen" className={`header-link ${isActive(pathname, "/instellingen") ? "active" : ""}`}>
-              Instellingen
-            </Link>
-            <button onClick={handleLogout} className="logout-button" type="button">
-              Log out
-            </button>
           </div>
         </header>
 
@@ -135,17 +152,19 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
 
         <main className="content">{children}</main>
 
-        <nav className="bottom-nav" aria-label="Hoofdnavigatie">
-          {activeNavItems.map((item) => (
-            <Link key={item.href} href={item.href} className={`bottom-link ${isActive(pathname, item.href) ? "active" : ""}`}>
-              {item.label}
-            </Link>
-          ))}
+        {isAuthenticated === true ? (
+          <nav className="bottom-nav" aria-label="Hoofdnavigatie">
+            {activeNavItems.map((item) => (
+              <Link key={item.href} href={item.href} className={`bottom-link ${isActive(pathname, item.href) ? "active" : ""}`}>
+                {item.label}
+              </Link>
+            ))}
 
-          <Link href="/admin/players" className={`fab-link ${isActive(pathname, "/admin/players") ? "active" : ""}`}>
-            CSV
-          </Link>
-        </nav>
+            <Link href="/admin/players" className={`fab-link ${isActive(pathname, "/admin/players") ? "active" : ""}`}>
+              CSV
+            </Link>
+          </nav>
+        ) : null}
       </div>
     </div>
   );

@@ -253,6 +253,7 @@ FR-058 (fase 2): Competition abstraction v1 ondersteunt parallel zowel `League t
 FR-059 (fase 2): Rollenmodel owner/commissioner/manager forceert permission matrix in API; admin overrides zijn uitsluitend toegestaan met juiste rolrechten.
 FR-060 (fase 2): Admin-UI toont en beheert league-configuratie voor scoring profile, budget-cap per mode, waiver tie-breaker, competition tie policy en role assignments.
 FR-061: Auth-MVP ondersteunt meerdere manager-accounts + admin-account, met inloggen op e-mail en accountgebonden credentials (geen globale test-prefill afhankelijkheid).
+FR-061a: Manager-routes accepteren alleen sessiecookies in het geldige `email:<encoded-email>` formaat; lege/legacy cookies behandelen als niet-ingelogd zodat gebruikers naar `/login` gaan in plaats van een shell met `Log out` zonder account/teamdata te zien.
 FR-062: Manager-UI bevat een globale `Instellingen` navigatieknop; route `/instellingen` toont league-config module en redirectt naar login zonder actieve sessie.
 FR-063: Elk instelveld in de league-config module toont een hover/focus-help (`?`) met korte uitleg van de regel en de impact op competitiegedrag.
 FR-064: Manager-UI bevat een aparte WK 2026 module naast de Eredivisie-competitie met eigen route en navigatie-entry.
@@ -580,3 +581,4 @@ Waarom zo:
 - 2026-06-02: Flashfootball-adapter toegevoegd (`src/lib/data-sources/flashfootball.ts`) met eventId-URL builder, match-URL eventId extractie, incident-feed parser voor goals/assists/kaarten/score en Vitest-dekking op de live Croatia-Belgium datastructuur.
 - 2026-06-02: Flashfootball optioneel gekoppeld aan `GET /api/matches/events?flashEventId=...`; source priority is nu expliciet: Flashfootball boven OpenLigaDB/TheSportsDB voor wedstrijdevents wanneer gevraagd, maar `playerPoints` blijft `wkcoach(primary)>fallback`.
 - 2026-06-04: WK draftkamer toegevoegd op `/manager/world-cup/draft`; Draft-nav in WK mode verwijst nu naar deze route, `/api/draft?mode=wk` gebruikt gescheiden draft/roster-state en de draftspelerpool heeft filters op Land/waarde/naam/positie zoals de transfermarkt.
+- 2026-06-04: Auth-shell gehard: middleware valideert nu het sessiecookie-formaat (`email:<encoded-email>`) en de AppShell toont geen `Log out`/demo-teamdata meer wanneer de summary API `401` teruggeeft.
