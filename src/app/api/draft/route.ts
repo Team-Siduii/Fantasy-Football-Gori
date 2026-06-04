@@ -3,12 +3,19 @@ import { isAuthenticatedSession } from "@/lib/auth-session";
 import { readDraftState, registerPick, returnPickedPlayerToPool, startDraft } from "@/lib/draft-state";
 import { readTeamRosterState } from "@/lib/team-roster-state";
 
-export async function GET() {
+function resolveDraftScope(request: Request) {
+  const url = new URL(request.url);
+  return url.searchParams.get("mode") === "wk" ? "wk" : "eredivisie";
+}
+
+export async function GET(request: Request) {
   if (!(await isAuthenticatedSession())) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
 
-  return NextResponse.json({ draft: readDraftState(), teamRosters: readTeamRosterState().byTeamId });
+  const scope = resolveDraftScope(request);
+
+  return NextResponse.json({ draft: readDraftState(scope), teamRosters: readTeamRosterState(scope).byTeamId });
 }
 
 export async function POST(request: Request) {
@@ -34,6 +41,8 @@ export async function POST(request: Request) {
   }
 
   try {
+    const scope = resolveDraftScope(request);
+
     if (body.action === "start") {
       if (!body.leagueId || !Array.isArray(body.teamOrder) || typeof body.totalRounds !== "number" || !body.startedBy) {
         return NextResponse.json({ error: "Ontbrekende draft-start velden" }, { status: 400 });
@@ -43,16 +52,17 @@ export async function POST(request: Request) {
         teamOrder: body.teamOrder,
         totalRounds: body.totalRounds,
         startedBy: body.startedBy,
+        scope,
       });
-      return NextResponse.json({ ok: true, draft, teamRosters: readTeamRosterState().byTeamId });
+      return NextResponse.json({ ok: true, draft, teamRosters: readTeamRosterState(scope).byTeamId });
     }
 
     if (body.action === "pick") {
       if (!body.teamId || !body.playerId) {
         return NextResponse.json({ error: "teamId en playerId zijn verplicht" }, { status: 400 });
       }
-      const draft = registerPick({ teamId: body.teamId, playerId: body.playerId });
-      return NextResponse.json({ ok: true, draft, teamRosters: readTeamRosterState().byTeamId });
+      const draft = registerPick({ teamId: body.teamId, playerId: body.playerId, scope });
+      return NextResponse.json({ ok: true, draft, teamRosters: readTeamRosterState(scope).byTeamId });
     }
 
     if (body.action === "return") {
@@ -63,8 +73,9 @@ export async function POST(request: Request) {
         teamId: body.teamId,
         playerId: body.playerId,
         reason: body.reason,
+        scope,
       });
-      return NextResponse.json({ ok: true, draft, teamRosters: readTeamRosterState().byTeamId });
+      return NextResponse.json({ ok: true, draft, teamRosters: readTeamRosterState(scope).byTeamId });
     }
 
     return NextResponse.json({ error: "Onbekende action" }, { status: 400 });

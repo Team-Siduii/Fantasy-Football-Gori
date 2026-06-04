@@ -1692,6 +1692,45 @@ select {
   width: min(100%, 190px);
 }
 
+.draft-price-filter {
+  display: grid;
+  gap: 0.25rem;
+  min-width: min(100%, 240px);
+  color: #6d7788;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.draft-price-filter input {
+  width: 100%;
+}
+
+.draft-result-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.75rem;
+  flex-wrap: wrap;
+}
+
+.draft-sort-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.draft-sort-actions button {
+  min-height: 34px;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #d7deea;
+  border-radius: 999px;
+  background: #fff;
+  color: #0a3d91;
+  font-weight: 800;
+}
+
 .draft-player-grid {
   grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
   max-height: 520px;

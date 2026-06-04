@@ -18,7 +18,7 @@ const eredivisieNavItems: NavItem[] = [
 
 const wkNavItems: NavItem[] = [
   { href: "/manager/world-cup", label: "Team" },
-  { href: "/draft", label: "Draft" },
+  { href: "/manager/world-cup/draft", label: "Draft" },
   { href: "/manager/world-cup/transfer-pool", label: "Transfers" },
   { href: "/account", label: "Account" },
 ];
@@ -83,7 +83,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
           </div>
 
           <div className="header-actions">
-            <Link href="/draft" className={`header-link ${isActive(pathname, "/draft") ? "active" : ""}`}>
+            <Link href={isWkMode ? "/manager/world-cup/draft" : "/draft"} className={`header-link ${isActive(pathname, isWkMode ? "/manager/world-cup/draft" : "/draft") ? "active" : ""}`}>
               Draft
             </Link>
             <Link href="/account" className={`header-link ${isActive(pathname, "/account") ? "active" : ""}`}>

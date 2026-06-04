@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-05-25
+Laatste update: 2026-06-04
 
 ## 1. Productvisie
 Doel van de app:
@@ -96,11 +96,12 @@ Per rol belangrijkste rechten:
 - Bij teruggeven aan de vrije pool ontvangen andere managers een notificatie
 - Geen pick timer in MVP
 - Geen auto-pick in MVP
-- Draft-engine exposeert API-acties `start`, `pick`, `return` en `current` via `/api/draft` met persistente draft-state
-- Draft-pick is turn-based en atomisch: alleen actieve team aan beurt mag picken; dezelfde speler kan niet 2x gepickt worden
-- Draftpagina (`/draft`) is een beschermde manager-draftkamer met live beurtindicator, picknummer/ronde, spelerkaarten, zoek/positiefilter, bevestigingsbalk, eigen selectie, alle teamrosters en pickhistorie.
-- Draft is prominent bereikbaar via headerknop `Draft` en de mobiele ondernavigatie zodat managers de draftmodus direct vinden na login.
-- Oefendraftbeheer zit ingeklapt op `/draft`: start/reset draft met standaardvolgorde `Johan Swart, Thomas, Jack, Emiel Zomerdijk`, 15 rondes, en return-actie voor testcorrecties.
+- Draft-engine exposeert API-acties `start`, `pick`, `return` en `current` via `/api/draft` met persistente draft-state; `mode=eredivisie|wk` houdt draft-state en team-rosters per competitie gescheiden.
+- Draft-pick is turn-based en atomisch: alleen actieve team aan beurt mag picken; dezelfde speler kan niet 2x gepickt worden binnen de actieve mode.
+- Eredivisie-draftpagina (`/draft`) is een beschermde manager-draftkamer met live beurtindicator, picknummer/ronde, spelerkaarten, club/waarde/naam/positie-filters, bevestigingsbalk, eigen selectie, alle teamrosters en pickhistorie.
+- WK-draftpagina (`/manager/world-cup/draft`) gebruikt dezelfde draftkamer voor de WK-spelerspool (`/api/players?mode=wk`) met `Land`, waarde, naam en positie als filters.
+- Draft is prominent bereikbaar via headerknop `Draft` en de mobiele ondernavigatie; in WK mode verwijst Draft naar `/manager/world-cup/draft`, in Eredivisie mode naar `/draft`.
+- Oefendraftbeheer zit ingeklapt in de draftkamer: start/reset draft met standaardvolgorde `Johan Swart, Thomas, Jack, Emiel Zomerdijk`, 15 rondes, en return-actie voor testcorrecties.
 - Accountpagina (`/account`) is prominent bereikbaar als `Naam aanpassen` en bevat managernaam, teamnaam en wachtwoordbeheer; managernaam/teamnaam worden gebruikt voor herkenning in de draftkamer.
 
 ### 4.5 Transfers (kern van MVP)
@@ -282,6 +283,7 @@ FR-088: Flashfootball-adapter normaliseert wedstrijdincidenten naar het interne 
 FR-089: Flashfootball endpoint-URL's zijn eventId-gedreven zodat recente wedstrijden direct via incident-feed (`df_sui_1_<eventId>`) en spelerstatistiek-endpoints (`epmsse`/`epmsd`) te koppelen zijn zonder betaalde live-data API.
 FR-090: In WK mode toont het ronde-wedstrijdenoverzicht per wedstrijd expliciet de poule-indicatie (bij groepsfase `Poule X`, anders `Knock-out`) zodat direct zichtbaar is in welke poule de wedstrijd valt.
 FR-091: `GET /api/matches/events` ondersteunt optionele Flashfootball-verrijking via `flashEventId` of `flashMatchUrl`; bij succesvolle Flashfootball-fetch krijgt Flashfootball topprioriteit voor score/goals/assists/cards, terwijl WKCoach altijd topprioriteit blijft voor spelerpunten.
+FR-092: WK mode heeft een eigen draftkamer op `/manager/world-cup/draft` met gescheiden draft-state/team-rosters en dezelfde filters als de transfermarkt: Land, maximale waarde, naamzoekveld en positie.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -433,6 +435,7 @@ Waarom zo:
 - [ ] Spelregelspagina (`/spelregels`) toont mode-switch + dynamische kernregels en impactsamenvatting op basis van actuele instellingen
 - [ ] Instellingen ondersteunt aanvullende vrije regels (titel/beschrijving/impact) en deze verschijnen automatisch op `/spelregels`
 - [ ] Spelregelspagina groepeert regels in vaste hoofdstukken (Transferregels, Budgetregels, Waiverregels, Strafregels/tie policy, Custom) met mode-specifieke inhoud
+- [ ] WK Draft is bereikbaar via `/manager/world-cup/draft`, gebruikt de WK spelerspool, bewaart picks/rosters los van Eredivisie en biedt filters op Land, maximale waarde, naam en positie.
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -465,6 +468,7 @@ Waarom zo:
 - [x] WK 2026 module naast reguliere competitie: aparte route + nav-entry, met deelnemende landenlijst en faseschema op toernooidatums
 - [x] Menu-switch toegevoegd voor managers om direct te wisselen tussen Eredivisie mode en WK mode
 - [x] WK mode uitgelijnd op dezelfde manager-UX als Eredivisie mode (zelfde Team/Transfers/Competities-structuur, aparte WK-routes)
+- [x] WK draft beschikbaar gemaakt als aparte route binnen WK mode met gescheiden state/rosters en filters op land, waarde, naam en positie.
 - [x] WK-speelschema in app wordt gevuld vanuit KPN bronpagina (`/entertainment/sport/wk-voetbal/speelschema`) en bevat 104 wedstrijden met ronde-indeling: speelronde 1-3 (groepsfase), zestiende finales, achtste finales, kwartfinales, halve finales, troostfinale en finale
 - [x] WK-rondebetekenis vastgelegd: ronde 1/2/3 mapt op groepswedstrijd 1/2/3 per land
 - [x] Optionele deploy-isolatie toegevoegd met aparte env-paden voor state-opslag per mode (`MANAGER_STATE_PATH` en `MANAGER_STATE_WK_PATH`)
@@ -575,3 +579,4 @@ Waarom zo:
 - 2026-05-24: Boven basiselftal een compacte design-topbar geplaatst met links `Resterende waarde`, midden `Totaal punten` en rechts de formatie-dropdown; oude stat-tiles onder/naast het veld verwijderd.
 - 2026-06-02: Flashfootball-adapter toegevoegd (`src/lib/data-sources/flashfootball.ts`) met eventId-URL builder, match-URL eventId extractie, incident-feed parser voor goals/assists/kaarten/score en Vitest-dekking op de live Croatia-Belgium datastructuur.
 - 2026-06-02: Flashfootball optioneel gekoppeld aan `GET /api/matches/events?flashEventId=...`; source priority is nu expliciet: Flashfootball boven OpenLigaDB/TheSportsDB voor wedstrijdevents wanneer gevraagd, maar `playerPoints` blijft `wkcoach(primary)>fallback`.
+- 2026-06-04: WK draftkamer toegevoegd op `/manager/world-cup/draft`; Draft-nav in WK mode verwijst nu naar deze route, `/api/draft?mode=wk` gebruikt gescheiden draft/roster-state en de draftspelerpool heeft filters op Land/waarde/naam/positie zoals de transfermarkt.

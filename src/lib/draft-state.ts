@@ -1,7 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { buildDraftPickSequence } from "../domain/rules";
-import { addPlayerToTeamRoster, removePlayerFromTeamRoster } from "./team-roster-state";
+import { addPlayerToTeamRoster, removePlayerFromTeamRoster, type TeamRosterScope } from "./team-roster-state";
+
+export type DraftScope = TeamRosterScope;
 
 export type DraftStatus = "IDLE" | "ACTIVE" | "COMPLETED";
 
@@ -43,18 +45,21 @@ const DEFAULT_DRAFT_STATE: DraftState = {
   events: [],
 };
 
-export function resolveDraftStatePath() {
-  if (process.env.DRAFT_STATE_PATH) {
+export function resolveDraftStatePath(scope: DraftScope = "eredivisie") {
+  if (scope === "wk" && process.env.DRAFT_STATE_WK_PATH) {
+    return process.env.DRAFT_STATE_WK_PATH;
+  }
+  if (scope === "eredivisie" && process.env.DRAFT_STATE_PATH) {
     return process.env.DRAFT_STATE_PATH;
   }
   if (process.env.VERCEL) {
-    return "/tmp/draft-state.json";
+    return scope === "wk" ? "/tmp/draft-state-wk.json" : "/tmp/draft-state.json";
   }
-  return path.join(process.cwd(), "data", "draft-state.json");
+  return path.join(process.cwd(), "data", scope === "wk" ? "draft-state-wk.json" : "draft-state.json");
 }
 
-export function readDraftState(): DraftState {
-  const target = resolveDraftStatePath();
+export function readDraftState(scope: DraftScope = "eredivisie"): DraftState {
+  const target = resolveDraftStatePath(scope);
   if (!existsSync(target)) {
     return { ...DEFAULT_DRAFT_STATE };
   }
@@ -100,8 +105,8 @@ export function readDraftState(): DraftState {
   }
 }
 
-function writeDraftState(next: DraftState): DraftState {
-  const target = resolveDraftStatePath();
+function writeDraftState(next: DraftState, scope: DraftScope = "eredivisie"): DraftState {
+  const target = resolveDraftStatePath(scope);
   mkdirSync(path.dirname(target), { recursive: true });
   writeFileSync(target, JSON.stringify(next, null, 2), "utf-8");
   return next;
@@ -117,6 +122,7 @@ export function startDraft(input: {
   totalRounds: number;
   startedBy: string;
   startedAt?: string;
+  scope?: DraftScope;
 }): DraftState {
   if (!Array.isArray(input.teamOrder) || input.teamOrder.length < 2) {
     throw new Error("teamOrder requires at least 2 teams");
@@ -128,6 +134,8 @@ export function startDraft(input: {
   const totalPicks = input.teamOrder.length * input.totalRounds;
   const pickSequence = buildDraftPickSequence(input.teamOrder, totalPicks);
   const at = input.startedAt ?? new Date().toISOString();
+
+  const scope = input.scope ?? "eredivisie";
 
   return writeDraftState({
     leagueId: input.leagueId,
@@ -148,11 +156,12 @@ export function startDraft(input: {
         },
       },
     ],
-  });
+  }, scope);
 }
 
-export function registerPick(input: { teamId: string; playerId: string; at?: string }): DraftState {
-  const current = readDraftState();
+export function registerPick(input: { teamId: string; playerId: string; at?: string; scope?: DraftScope }): DraftState {
+  const scope = input.scope ?? "eredivisie";
+  const current = readDraftState(scope);
   if (current.status !== "ACTIVE") {
     throw new Error("draft is not active");
   }
@@ -179,9 +188,9 @@ export function registerPick(input: { teamId: string; playerId: string; at?: str
     ],
   };
 
-  addPlayerToTeamRoster(input.teamId, input.playerId);
+  addPlayerToTeamRoster(input.teamId, input.playerId, scope);
 
-  return writeDraftState(next);
+  return writeDraftState(next, scope);
 }
 
 export function returnPickedPlayerToPool(input: {
@@ -189,8 +198,10 @@ export function returnPickedPlayerToPool(input: {
   playerId: string;
   reason: string;
   at?: string;
+  scope?: DraftScope;
 }): DraftState {
-  const current = readDraftState();
+  const scope = input.scope ?? "eredivisie";
+  const current = readDraftState(scope);
   const pickIndex = current.picks.findIndex((pick) => pick.teamId === input.teamId && pick.playerId === input.playerId);
 
   if (pickIndex === -1) {
@@ -218,11 +229,11 @@ export function returnPickedPlayerToPool(input: {
     ],
   };
 
-  removePlayerFromTeamRoster(input.teamId, input.playerId);
+  removePlayerFromTeamRoster(input.teamId, input.playerId, scope);
 
-  return writeDraftState(next);
+  return writeDraftState(next, scope);
 }
 
-export function resetDraftStateForTests() {
-  writeDraftState({ ...DEFAULT_DRAFT_STATE });
+export function resetDraftStateForTests(scope: DraftScope = "eredivisie") {
+  writeDraftState({ ...DEFAULT_DRAFT_STATE }, scope);
 }

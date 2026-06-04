@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 
 type PlayerRecord = {
@@ -39,6 +40,9 @@ type Profile = {
 
 const DEFAULT_TEAMS = "Johan Swart,Thomas,Jack,Emiel Zomerdijk";
 const DEFAULT_ROUNDS = 15;
+type DraftSortField = "naam" | "positie" | "club" | "prijs";
+type DraftSortDirection = "asc" | "desc";
+const POSITION_SORT_ORDER: Record<PlayerRecord["positie"], number> = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
 
 function normalize(value: string) {
   return value.trim().toLowerCase();
@@ -50,6 +54,12 @@ function getPlayerLabel(player?: PlayerRecord) {
 }
 
 export default function DraftPage() {
+  const pathname = usePathname();
+  const isWkMode = pathname.startsWith("/manager/world-cup");
+  const modeParam = isWkMode ? "wk" : "eredivisie";
+  const clubLabel = isWkMode ? "Land" : "Club";
+  const clubsLabel = isWkMode ? "landen" : "clubs";
+  const searchLabel = isWkMode ? "Zoek speler/land" : "Zoek speler/club";
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,30 +69,34 @@ export default function DraftPage() {
   const [players, setPlayers] = useState<PlayerRecord[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  const [leagueId, setLeagueId] = useState("wk-2026");
+  const [leagueId, setLeagueId] = useState(isWkMode ? "wk-2026" : "eredivisie-2025-2026");
   const [teamCsv, setTeamCsv] = useState(DEFAULT_TEAMS);
   const [totalRounds, setTotalRounds] = useState(DEFAULT_ROUNDS);
   const [search, setSearch] = useState("");
   const [positionFilter, setPositionFilter] = useState<"ALL" | PlayerRecord["positie"]>("ALL");
+  const [clubFilter, setClubFilter] = useState("ALL");
+  const [maxPrice, setMaxPrice] = useState(0);
+  const [sortField, setSortField] = useState<DraftSortField>("prijs");
+  const [sortDirection, setSortDirection] = useState<DraftSortDirection>("desc");
   const [pickPlayerId, setPickPlayerId] = useState("");
   const [returnTeamId, setReturnTeamId] = useState("");
   const [returnPlayerId, setReturnPlayerId] = useState("");
 
-  async function loadDraft() {
-    const response = await fetch("/api/draft", { cache: "no-store" });
+  const loadDraft = useCallback(async () => {
+    const response = await fetch(`/api/draft?mode=${modeParam}`, { cache: "no-store" });
     const data = (await response.json()) as { error?: string; draft?: DraftState; teamRosters?: TeamRostersByTeamId };
     if (!response.ok) {
       throw new Error(data.error ?? "Draft laden mislukt");
     }
     setDraft(data.draft ?? null);
     setTeamRosters(data.teamRosters ?? {});
-  }
+  }, [modeParam]);
 
-  async function loadPlayers() {
-    const response = await fetch("/api/players", { cache: "no-store" });
+  const loadPlayers = useCallback(async () => {
+    const response = await fetch(`/api/players?mode=${modeParam}`, { cache: "no-store" });
     const data = (await response.json()) as { players?: PlayerRecord[] };
     setPlayers(Array.isArray(data.players) ? data.players : []);
-  }
+  }, [modeParam]);
 
   async function loadProfile() {
     const response = await fetch("/api/auth/profile", { cache: "no-store" });
@@ -101,13 +115,21 @@ export default function DraftPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadDraft, loadPlayers]);
 
   useEffect(() => {
     void bootstrap();
     const timer = window.setInterval(() => void loadDraft().catch(() => undefined), 6000);
     return () => window.clearInterval(timer);
-  }, [bootstrap]);
+  }, [bootstrap, loadDraft]);
+
+  useEffect(() => {
+    setLeagueId(isWkMode ? "wk-2026" : "eredivisie-2025-2026");
+    setSearch("");
+    setPositionFilter("ALL");
+    setClubFilter("ALL");
+    setPickPlayerId("");
+  }, [isWkMode]);
 
   const parsedTeams = useMemo(
     () =>
@@ -120,6 +142,16 @@ export default function DraftPage() {
 
   const playerById = useMemo(() => new Map(players.map((player) => [player.id, player])), [players]);
   const pickedPlayerIds = useMemo(() => new Set((draft?.picks ?? []).map((pick) => pick.playerId)), [draft?.picks]);
+  const availableClubs = useMemo(() => Array.from(new Set(players.map((player) => player.club))).sort(), [players]);
+  const maxAvailablePrice = useMemo(() => Math.max(0, ...players.map((player) => player.prijs)), [players]);
+
+  useEffect(() => {
+    setMaxPrice((current) => {
+      if (maxAvailablePrice === 0) return 0;
+      if (current <= 0 || current > maxAvailablePrice) return maxAvailablePrice;
+      return current;
+    });
+  }, [maxAvailablePrice]);
 
   const myDraftTeamId = useMemo(() => {
     if (!draft || !profile) return null;
@@ -138,9 +170,39 @@ export default function DraftPage() {
     return players
       .filter((player) => !pickedPlayerIds.has(player.id))
       .filter((player) => positionFilter === "ALL" || player.positie === positionFilter)
+      .filter((player) => clubFilter === "ALL" || player.club === clubFilter)
+      .filter((player) => maxPrice <= 0 || player.prijs <= maxPrice)
       .filter((player) => !q || normalize(`${player.naam} ${player.club} ${player.positie}`).includes(q))
+      .sort((left, right) => {
+        let result = 0;
+        if (sortField === "naam") {
+          result = left.naam.localeCompare(right.naam, "nl", { sensitivity: "base" });
+        } else if (sortField === "club") {
+          result = left.club.localeCompare(right.club, "nl", { sensitivity: "base" });
+        } else if (sortField === "positie") {
+          result = POSITION_SORT_ORDER[left.positie] - POSITION_SORT_ORDER[right.positie];
+        } else {
+          result = left.prijs - right.prijs;
+        }
+        if (result === 0) result = left.naam.localeCompare(right.naam, "nl", { sensitivity: "base" });
+        return sortDirection === "asc" ? result : -result;
+      })
       .slice(0, 80);
-  }, [players, pickedPlayerIds, positionFilter, search]);
+  }, [players, pickedPlayerIds, positionFilter, clubFilter, maxPrice, search, sortField, sortDirection]);
+
+  function toggleSort(field: DraftSortField) {
+    if (sortField === field) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSortField(field);
+    setSortDirection(field === "prijs" ? "desc" : "asc");
+  }
+
+  function sortIndicator(field: DraftSortField) {
+    if (sortField !== field) return "↕";
+    return sortDirection === "asc" ? "↑" : "↓";
+  }
 
   const pickedRows = useMemo(
     () =>
@@ -156,7 +218,7 @@ export default function DraftPage() {
     setError(null);
     setSuccess(null);
     try {
-      const response = await fetch("/api/draft", {
+      const response = await fetch(`/api/draft?mode=${modeParam}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -180,8 +242,12 @@ export default function DraftPage() {
 
   return (
     <AppShell
-      title="Draftkamer"
-      subtitle="Een echte draft-interface voor managers: live beurt, spelerspool, teamrosters en pick-historie."
+      title={isWkMode ? "WK Draftkamer" : "Eredivisie Draftkamer"}
+      subtitle={
+        isWkMode
+          ? "WK draft-interface met eigen spelerspool, land/waarde/naam/positie-filters, live beurt, teamrosters en pick-historie."
+          : "Eredivisie draft-interface met live beurt, spelerspool, teamrosters en pick-historie."
+      }
     >
       <div className="draft-room">
         <section className={`draft-hero ${isMyTurn ? "my-turn" : ""}`}>
@@ -244,14 +310,44 @@ export default function DraftPage() {
               <p>{activeTeamId ? `Deze pick gaat naar ${activeTeamId}.` : "Start eerst een draft."}</p>
             </div>
             <div className="draft-filter-row compact">
-              <select value={positionFilter} onChange={(event) => setPositionFilter(event.target.value as typeof positionFilter)}>
+              <select value={positionFilter} onChange={(event) => setPositionFilter(event.target.value as typeof positionFilter)} aria-label="Filter op positie">
                 <option value="ALL">Alle posities</option>
                 <option value="GK">Keeper</option>
                 <option value="DEF">Verdediger</option>
                 <option value="MID">Middenveld</option>
                 <option value="FWD">Aanvaller</option>
               </select>
-              <input placeholder="Zoek speler of land/club" value={search} onChange={(event) => setSearch(event.target.value)} />
+              <select value={clubFilter} onChange={(event) => setClubFilter(event.target.value)} aria-label={`Filter op ${clubLabel.toLowerCase()}`}>
+                <option value="ALL">Alle {clubsLabel}</option>
+                {availableClubs.map((club) => (
+                  <option key={club} value={club}>
+                    {club}
+                  </option>
+                ))}
+              </select>
+              <input placeholder={searchLabel} value={search} onChange={(event) => setSearch(event.target.value)} aria-label={searchLabel} />
+              <label className="draft-price-filter">
+                Waarde t/m € {maxPrice.toFixed(2)}M
+                <input
+                  type="range"
+                  min={0}
+                  max={maxAvailablePrice || 0}
+                  step={0.1}
+                  value={maxPrice}
+                  onChange={(event) => setMaxPrice(Number(event.target.value))}
+                  aria-label="Filter op maximale transferwaarde"
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="draft-result-row">
+            <p className="muted-note">Resultaten: {filteredPlayers.length} • Toon max. 80 beschikbare spelers</p>
+            <div className="draft-sort-actions" aria-label="Draft sortering">
+              <button type="button" onClick={() => toggleSort("naam")}>Naam {sortIndicator("naam")}</button>
+              <button type="button" onClick={() => toggleSort("positie")}>Positie {sortIndicator("positie")}</button>
+              <button type="button" onClick={() => toggleSort("club")}>{clubLabel} {sortIndicator("club")}</button>
+              <button type="button" onClick={() => toggleSort("prijs")}>Waarde {sortIndicator("prijs")}</button>
             </div>
           </div>
 
