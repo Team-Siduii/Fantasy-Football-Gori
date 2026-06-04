@@ -15,6 +15,7 @@ afterEach(() => {
   }
   delete process.env.MANAGER_STATE_PATH;
   delete process.env.MANAGER_STATE_WK_PATH;
+  delete process.env.VERCEL;
 });
 
 describe("manager-state persistence", () => {
@@ -109,6 +110,17 @@ describe("manager-state persistence", () => {
 
     expect(mod.resolveManagerStatePath("eredivisie")).toBe("/tmp/eredivisie-state.json");
     expect(mod.resolveManagerStatePath("wk")).toBe("/tmp/wk-state.json");
+  });
+
+  it("uses Vercel-safe /tmp paths when no explicit manager-state env path is set", async () => {
+    delete process.env.MANAGER_STATE_PATH;
+    delete process.env.MANAGER_STATE_WK_PATH;
+    process.env.VERCEL = "1";
+
+    const mod = await import("../../src/lib/manager-state");
+
+    expect(mod.resolveManagerStatePath("eredivisie")).toBe("/tmp/manager-state.json");
+    expect(mod.resolveManagerStatePath("wk")).toBe("/tmp/manager-state-wk.json");
   });
 
   it("keeps round lineup persistent and propagates changes to future rounds", async () => {

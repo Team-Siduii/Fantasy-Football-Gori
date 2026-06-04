@@ -95,6 +95,10 @@ export function resolveManagerStatePath(scope: ManagerStateScope = "eredivisie")
     return process.env.MANAGER_STATE_PATH;
   }
 
+  if (process.env.VERCEL) {
+    return scope === "wk" ? "/tmp/manager-state-wk.json" : "/tmp/manager-state.json";
+  }
+
   const suffix = scope === "wk" ? "-wk" : "";
   return path.join(process.cwd(), "data", `manager-state${suffix}.json`);
 }
