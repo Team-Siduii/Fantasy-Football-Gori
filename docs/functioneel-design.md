@@ -286,6 +286,9 @@ FR-090: In WK mode toont het ronde-wedstrijdenoverzicht per wedstrijd expliciet 
 FR-091: `GET /api/matches/events` ondersteunt optionele Flashfootball-verrijking via `flashEventId` of `flashMatchUrl`; bij succesvolle Flashfootball-fetch krijgt Flashfootball topprioriteit voor score/goals/assists/cards, terwijl WKCoach altijd topprioriteit blijft voor spelerpunten.
 FR-092: WK mode heeft een eigen draftkamer op `/manager/world-cup/draft` met gescheiden draft-state/team-rosters en dezelfde filters als de transfermarkt: Land, maximale waarde, naamzoekveld en positie.
 FR-093: WK draftpicks synchroniseren automatisch naar de accountgebonden WK Team-pagina van de gekoppelde manager, zodat gekozen spelers direct in hetzelfde teamoverzicht/opstellingsoverzicht zichtbaar zijn als de reguliere Team-pagina; teruggezette picks verdwijnen daar ook weer.
+FR-094: Admin-config bevat per mode een bewerkbare competitienaam en draft-rondes; de draftkamer gebruikt deze config als standaard voor start/reset oefendraft.
+FR-095: Admin-config toont de bekende manager-deelnemers met status `In afwachting`, `Geaccepteerd` of `Geweigerd`; alleen geaccepteerde deelnemers worden automatisch in de draftvolgorde voor een oefendraft gezet.
+FR-096: Oefendraftbeheer is zichtbaar als vaste kaart in de draftkamer met link naar `/instellingen`, zodat de admin niet hoeft te zoeken in een ingeklapt detailpaneel om een volledige draft te starten.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -368,6 +371,9 @@ Waarom zo:
 
 ## 11. Acceptatiecriteria MVP
 - [ ] Draft kan volledig worden afgerond zonder dubbele spelers in league
+- [ ] Admin kan de competitienaam en draft-rondes per mode opslaan
+- [ ] Admin kan deelnemers accepteren/weigeren en alleen geaccepteerde deelnemers komen automatisch in de draftvolgorde
+- [ ] Oefendraftbeheer is direct zichtbaar in de draftkamer en kan een volledige draft starten/resetten
 - [ ] Draftvolgorde volgt correct patroon A, A, reverse(A) in elke 3-rondes cyclus
 - [ ] Draft sluit alleen af bij exact 15 spelers per team
 - [ ] Directe drop+add transfer werkt stabiel zonder dubbele spelerstoewijzing
@@ -477,6 +483,7 @@ Waarom zo:
 - [x] Instellingenpagina toont debug-sectie met actieve state-opslagpaden voor Eredivisie en WK
 - [x] Manager-state gebruikt op Vercel standaard `/tmp/manager-state*.json` wanneer geen expliciete env-paden zijn gezet, zodat serverless writes niet naar de read-only projectbundel gaan.
 - [x] WK draftpicks worden direct naar de gekoppelde manager-state van de WK Team-pagina gesynchroniseerd; terugzetten van een speler ruimt het teamoverzicht ook op. Een nieuwe/reset oefendraft leegt eerst bestaande draftrosters en gekoppelde teamoverzichten voor de betreffende mode.
+- [x] Admin kan per mode competitienaam, draft-rondes en deelnemersstatus beheren; de zichtbare oefendraftkaart gebruikt alleen geaccepteerde deelnemers als draftvolgorde.
 
 ## 13. Besluitenlog
 - 2026-04-16: Repo + Vercel + baseline workflow opgezet.
@@ -585,3 +592,4 @@ Waarom zo:
 - 2026-06-02: Flashfootball optioneel gekoppeld aan `GET /api/matches/events?flashEventId=...`; source priority is nu expliciet: Flashfootball boven OpenLigaDB/TheSportsDB voor wedstrijdevents wanneer gevraagd, maar `playerPoints` blijft `wkcoach(primary)>fallback`.
 - 2026-06-04: WK draftkamer toegevoegd op `/manager/world-cup/draft`; Draft-nav in WK mode verwijst nu naar deze route, `/api/draft?mode=wk` gebruikt gescheiden draft/roster-state en de draftspelerpool heeft filters op Land/waarde/naam/positie zoals de transfermarkt.
 - 2026-06-04: Auth-shell gehard: middleware valideert nu het sessiecookie-formaat (`email:<encoded-email>`) en de AppShell toont geen `Log out`/demo-teamdata meer wanneer de summary API `401` teruggeeft.
+- 2026-06-04: Admin-config uitgebreid met competitienaam, draft-rondes en deelnemerstatussen; de draftkamer toont oefendraftbeheer nu zichtbaar en start met de geaccepteerde deelnemers uit Instellingen.

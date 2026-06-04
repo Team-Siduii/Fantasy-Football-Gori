@@ -32,6 +32,19 @@ type DraftState = {
 
 type TeamRostersByTeamId = Record<string, string[]>;
 
+type LeagueParticipant = {
+  managerId: string;
+  label: string;
+  email: string;
+  status: "PENDING" | "ACCEPTED" | "REJECTED";
+};
+
+type LeagueAdminConfig = {
+  competition: { name: string };
+  draft: { totalRounds: number };
+  participants: LeagueParticipant[];
+};
+
 type Profile = {
   name: string;
   email: string;
@@ -68,8 +81,9 @@ export default function DraftPage() {
   const [teamRosters, setTeamRosters] = useState<TeamRostersByTeamId>({});
   const [players, setPlayers] = useState<PlayerRecord[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [leagueConfig, setLeagueConfig] = useState<LeagueAdminConfig | null>(null);
 
-  const [leagueId, setLeagueId] = useState(isWkMode ? "wk-2026" : "eredivisie-2025-2026");
+  const [leagueId, setLeagueId] = useState(isWkMode ? "WK 2026" : "Eredivisie 2025/2026");
   const [teamCsv, setTeamCsv] = useState(DEFAULT_TEAMS);
   const [totalRounds, setTotalRounds] = useState(DEFAULT_ROUNDS);
   const [search, setSearch] = useState("");
@@ -105,17 +119,36 @@ export default function DraftPage() {
     setProfile(data.profile ?? null);
   }
 
+  const loadLeagueConfig = useCallback(async () => {
+    const response = await fetch(`/api/admin/league-config?mode=${modeParam}`, { cache: "no-store" });
+    if (!response.ok) return;
+    const data = (await response.json()) as { config?: LeagueAdminConfig };
+    if (!data.config) return;
+
+    const acceptedLabels = data.config.participants
+      .filter((participant) => participant.status === "ACCEPTED")
+      .map((participant) => participant.label)
+      .filter(Boolean);
+
+    setLeagueConfig(data.config);
+    setLeagueId(data.config.competition.name || (isWkMode ? "WK 2026" : "Eredivisie 2025/2026"));
+    setTotalRounds(data.config.draft.totalRounds || DEFAULT_ROUNDS);
+    if (acceptedLabels.length >= 2) {
+      setTeamCsv(acceptedLabels.join(","));
+    }
+  }, [isWkMode, modeParam]);
+
   const bootstrap = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      await Promise.all([loadDraft(), loadPlayers(), loadProfile()]);
+      await Promise.all([loadDraft(), loadPlayers(), loadProfile(), loadLeagueConfig()]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Onbekende fout");
     } finally {
       setLoading(false);
     }
-  }, [loadDraft, loadPlayers]);
+  }, [loadDraft, loadPlayers, loadLeagueConfig]);
 
   useEffect(() => {
     void bootstrap();
@@ -124,12 +157,13 @@ export default function DraftPage() {
   }, [bootstrap, loadDraft]);
 
   useEffect(() => {
-    setLeagueId(isWkMode ? "wk-2026" : "eredivisie-2025-2026");
+    if (leagueConfig) return;
+    setLeagueId(isWkMode ? "WK 2026" : "Eredivisie 2025/2026");
     setSearch("");
     setPositionFilter("ALL");
     setClubFilter("ALL");
     setPickPlayerId("");
-  }, [isWkMode]);
+  }, [isWkMode, leagueConfig]);
 
   const parsedTeams = useMemo(
     () =>
@@ -424,8 +458,16 @@ export default function DraftPage() {
           </div>
         </section>
 
-        <details className="card col-12 draft-admin-details">
-          <summary>Oefendraft beheren</summary>
+        <section className="card col-12 draft-admin-details">
+          <div className="section-title-row">
+            <div>
+              <h2>Oefendraft beheren</h2>
+              <p>
+                Start/reset de draft vanuit de admin-config. Competitienaam, rondes en geaccepteerde deelnemers komen uit Instellingen.
+              </p>
+            </div>
+            <a className="ghost-button" href="/instellingen">Competitie configureren</a>
+          </div>
           <div className="draft-admin-grid">
             <label>
               League ID
@@ -480,7 +522,7 @@ export default function DraftPage() {
               Speler terugzetten
             </button>
           </div>
-        </details>
+        </section>
 
         <section className="card col-12">
           <h2>Pick historie</h2>

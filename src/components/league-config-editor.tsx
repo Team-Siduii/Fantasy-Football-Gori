@@ -11,12 +11,23 @@ type LeagueRuleNote = {
   impact: string;
 };
 
+type LeagueParticipantStatus = "PENDING" | "ACCEPTED" | "REJECTED";
+
+type LeagueParticipant = {
+  managerId: string;
+  label: string;
+  email: string;
+  status: LeagueParticipantStatus;
+};
+
 type LeagueAdminConfig = {
+  competition: { name: string; cupTiePolicy: "PENALTIES" | "HIGHER_SEED"; formats: string[] };
+  draft: { totalRounds: number };
   scoringProfile: { id: string; type: "CLASSIC" | "CUSTOM"; label: string };
   waiver: { enabled: boolean; round: { tieBreaker: "PRIORITY" | "EARLIEST_BID" } };
   budget: { teamValueCapMillions: number };
-  competition: { cupTiePolicy: "PENALTIES" | "HIGHER_SEED"; formats: string[] };
   roles: { ownerId: string; commissionerIds: string[]; managerIds: string[] };
+  participants: LeagueParticipant[];
   customRuleNotes: LeagueRuleNote[];
 };
 
@@ -55,12 +66,19 @@ function cloneConfig(input: LeagueAdminConfig): LeagueAdminConfig {
     scoringProfile: { ...input.scoringProfile },
     waiver: { enabled: input.waiver.enabled, round: { ...input.waiver.round } },
     budget: { teamValueCapMillions: input.budget.teamValueCapMillions },
-    competition: { cupTiePolicy: input.competition.cupTiePolicy, formats: [...input.competition.formats] },
+    competition: { name: input.competition.name ?? "", cupTiePolicy: input.competition.cupTiePolicy, formats: [...input.competition.formats] },
+    draft: { totalRounds: input.draft?.totalRounds ?? 15 },
     roles: {
       ownerId: input.roles.ownerId,
       commissionerIds: [...input.roles.commissionerIds],
       managerIds: [...input.roles.managerIds],
     },
+    participants: (input.participants ?? []).map((participant) => ({
+      managerId: participant.managerId,
+      label: participant.label,
+      email: participant.email,
+      status: participant.status,
+    })),
     customRuleNotes: (input.customRuleNotes ?? []).map((note, index) => ({
       id: note.id || `custom-${index + 1}`,
       title: note.title ?? "",
@@ -146,11 +164,13 @@ export function LeagueConfigEditor() {
         teamValueCapMillions: config.budget.teamValueCapMillions,
       },
       competition: config.competition,
+      draft: config.draft,
       roles: {
         ...config.roles,
         commissionerIds: config.roles.commissionerIds,
         managerIds: config.roles.managerIds,
       },
+      participants: config.participants,
       customRuleNotes: config.customRuleNotes,
     };
 
@@ -215,6 +235,18 @@ export function LeagueConfigEditor() {
     });
   }
 
+  function updateParticipantStatus(managerId: string, status: LeagueParticipantStatus) {
+    if (!config) return;
+    setConfig({
+      ...config,
+      participants: config.participants.map((participant) =>
+        participant.managerId === managerId ? { ...participant, status } : participant,
+      ),
+    });
+  }
+
+  const acceptedParticipants = config?.participants.filter((participant) => participant.status === "ACCEPTED") ?? [];
+
   return (
     <section className="card col-12">
       <div className="settings-editor-head">
@@ -252,6 +284,40 @@ export function LeagueConfigEditor() {
             <section className="card col-6 settings-subcard">
               <h3>Spelregels</h3>
               <div className="grid">
+                <label className="field col-12">
+                  <span className="field-label">Competitienaam</span>
+                  <input
+                    value={config.competition.name}
+                    onChange={(event) =>
+                      setConfig({
+                        ...config,
+                        competition: {
+                          ...config.competition,
+                          name: event.target.value,
+                        },
+                      })
+                    }
+                    placeholder={mode === "wk" ? "WK 2026" : "Eredivisie 2025/2026"}
+                  />
+                </label>
+
+                <label className="field col-12">
+                  <span className="field-label">Draft rondes</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={config.draft.totalRounds}
+                    onChange={(event) => {
+                      const parsed = Number(event.target.value);
+                      setConfig({
+                        ...config,
+                        draft: { totalRounds: Number.isInteger(parsed) && parsed > 0 ? parsed : config.draft.totalRounds },
+                      });
+                    }}
+                  />
+                </label>
+
                 <label className="field col-12">
                   <RuleLabel text="Scoring profiel" helpKey="scoringProfile" />
                   <select
@@ -375,6 +441,36 @@ export function LeagueConfigEditor() {
                     }
                   />
                 </label>
+              </div>
+            </section>
+
+            <section className="card col-12 settings-subcard">
+              <div className="settings-editor-head">
+                <div>
+                  <h3>Deelnemers accepteren/weigeren</h3>
+                  <p className="muted-note">Alleen geaccepteerde deelnemers worden straks automatisch in de draftvolgorde gezet. Geaccepteerd: {acceptedParticipants.length}/{config.participants.length}.</p>
+                </div>
+              </div>
+              <div className="grid" style={{ marginTop: 8 }}>
+                {config.participants.map((participant) => (
+                  <article key={participant.managerId} className="card col-6 settings-subcard">
+                    <div className="section-title-row">
+                      <div>
+                        <h4>{participant.label}</h4>
+                        <p className="muted-note">{participant.email || participant.managerId}</p>
+                      </div>
+                      <select
+                        value={participant.status}
+                        onChange={(event) => updateParticipantStatus(participant.managerId, event.target.value as LeagueParticipantStatus)}
+                        aria-label={`Status voor ${participant.label}`}
+                      >
+                        <option value="PENDING">In afwachting</option>
+                        <option value="ACCEPTED">Accepteren</option>
+                        <option value="REJECTED">Weigeren</option>
+                      </select>
+                    </div>
+                  </article>
+                ))}
               </div>
             </section>
 

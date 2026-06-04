@@ -26,6 +26,46 @@ describe("league admin config", () => {
     expect(wk.budget.teamValueCapMillions).toBe(100);
   });
 
+  it("heeft standaard een competitienaam, draft rondes en accepteerbare manager-deelnemers", () => {
+    const wk = getLeagueAdminConfig("wk");
+
+    expect(wk.competition.name).toBe("WK 2026");
+    expect(wk.draft.totalRounds).toBe(15);
+    expect(wk.participants).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ managerId: "johan-swart", label: "Johan Swart", status: "ACCEPTED" }),
+        expect.objectContaining({ managerId: "thomas-bart", label: "Thomas", status: "ACCEPTED" }),
+      ]),
+    );
+  });
+
+  it("bouwt draft setup alleen uit geaccepteerde deelnemers", () => {
+    const updated = updateLeagueAdminConfig(
+      {
+        competition: {
+          ...getLeagueAdminConfig("wk").competition,
+          name: "WK Familie Poule",
+        },
+        draft: { totalRounds: 12 },
+        participants: [
+          { managerId: "johan-swart", label: "Johan Swart", email: "Johan201@hotmail.com", status: "ACCEPTED" },
+          { managerId: "thomas-bart", label: "Thomas", email: "Thomasbart91@gmail.com", status: "REJECTED" },
+          { managerId: "jack-van-der-reep", label: "Jack", email: "Jackvandereep@hotmail.com", status: "PENDING" },
+          { managerId: "emiel-zomerdijk", label: "Emiel Zomerdijk", email: "emielzomerdijk@gmail.com", status: "ACCEPTED" },
+        ],
+      },
+      "wk",
+    );
+
+    expect(updated.competition.name).toBe("WK Familie Poule");
+    expect(updated.draft.totalRounds).toBe(12);
+    expect(updated.participants.map((participant) => participant.status)).toEqual(["ACCEPTED", "REJECTED", "PENDING", "ACCEPTED"]);
+    expect(updated.participants.filter((participant) => participant.status === "ACCEPTED").map((participant) => participant.label)).toEqual([
+      "Johan Swart",
+      "Emiel Zomerdijk",
+    ]);
+  });
+
   it("kan waiver tiebreaker, budget en roles updaten", () => {
     const current = getLeagueAdminConfig("eredivisie");
 

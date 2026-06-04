@@ -8,10 +8,21 @@ import {
 } from "../domain/waiver-mode";
 import type { LeagueTableTieBreaker, KnockoutTiePolicy } from "../domain/competition-engine";
 import { createDefaultRoleAssignments, type LeagueRoleAssignments } from "../domain/roles-permissions";
+import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
 
 export type LeagueMode = "eredivisie" | "wk";
 
+export type LeagueParticipantStatus = "PENDING" | "ACCEPTED" | "REJECTED";
+
+export type LeagueParticipant = {
+  managerId: string;
+  label: string;
+  email: string;
+  status: LeagueParticipantStatus;
+};
+
 export type LeagueCompetitionConfig = {
+  name: string;
   formats: Array<"LEAGUE_TABLE" | "CUP_KNOCKOUT">;
   leagueTableTieBreakers: LeagueTableTieBreaker[];
   cupTiePolicy: KnockoutTiePolicy;
@@ -35,6 +46,10 @@ export type LeagueAdminConfig = {
   };
   competition: LeagueCompetitionConfig;
   roles: LeagueRoleAssignments;
+  draft: {
+    totalRounds: number;
+  };
+  participants: LeagueParticipant[];
   customRuleNotes: LeagueRuleNote[];
 };
 
@@ -70,6 +85,43 @@ function defaultBudgetCapForMode(mode: LeagueMode): number {
   return mode === "wk" ? 100 : 32;
 }
 
+function defaultCompetitionNameForMode(mode: LeagueMode): string {
+  return mode === "wk" ? "WK 2026" : "Eredivisie 2025/2026";
+}
+
+function defaultParticipants(): LeagueParticipant[] {
+  return AUTH_TEST_ACCOUNT_PRESETS.filter((account) => account.role === "manager").map((account) => ({
+    managerId: account.id,
+    label: account.label,
+    email: account.email,
+    status: "ACCEPTED",
+  }));
+}
+
+function normalizeParticipantStatus(value: unknown): LeagueParticipantStatus {
+  return value === "PENDING" || value === "REJECTED" ? value : "ACCEPTED";
+}
+
+function normalizeParticipants(input: unknown, fallback: LeagueParticipant[]): LeagueParticipant[] {
+  if (!Array.isArray(input)) return fallback;
+
+  return input
+    .map((participant, index) => {
+      const item = participant as Partial<LeagueParticipant>;
+      const managerId = typeof item.managerId === "string" && item.managerId.trim() ? item.managerId.trim() : `manager-${index + 1}`;
+      const fallbackMatch = fallback.find((candidate) => candidate.managerId === managerId);
+      const label = typeof item.label === "string" && item.label.trim() ? item.label.trim() : fallbackMatch?.label ?? managerId;
+      const email = typeof item.email === "string" && item.email.trim() ? item.email.trim() : fallbackMatch?.email ?? "";
+      return {
+        managerId,
+        label,
+        email,
+        status: normalizeParticipantStatus(item.status),
+      };
+    })
+    .filter((participant) => participant.managerId.length > 0 && participant.label.length > 0);
+}
+
 function defaultConfig(mode: LeagueMode): LeagueAdminConfig {
   return {
     scoringProfile: getBackwardCompatibleDefaultProfile(),
@@ -86,11 +138,16 @@ function defaultConfig(mode: LeagueMode): LeagueAdminConfig {
       teamValueCapMillions: defaultBudgetCapForMode(mode),
     },
     competition: {
+      name: defaultCompetitionNameForMode(mode),
       formats: ["LEAGUE_TABLE", "CUP_KNOCKOUT"],
       leagueTableTieBreakers: ["GOAL_DIFFERENCE", "GOALS_FOR", "HEAD_TO_HEAD"],
       cupTiePolicy: "PENALTIES",
     },
     roles: createDefaultRoleAssignments("owner-1", ["manager-1"]),
+    draft: {
+      totalRounds: 15,
+    },
+    participants: defaultParticipants(),
     customRuleNotes: [],
   };
 }
@@ -122,12 +179,23 @@ function normalize(input: Partial<LeagueAdminConfig>, mode: LeagueMode): LeagueA
           : base.budget.teamValueCapMillions,
     },
     competition: {
+      name:
+        typeof input.competition?.name === "string" && input.competition.name.trim().length > 0
+          ? input.competition.name.trim()
+          : base.competition.name,
       formats: input.competition?.formats ?? base.competition.formats,
       leagueTableTieBreakers:
         input.competition?.leagueTableTieBreakers ?? base.competition.leagueTableTieBreakers,
       cupTiePolicy: input.competition?.cupTiePolicy ?? base.competition.cupTiePolicy,
     },
     roles: input.roles ?? base.roles,
+    draft: {
+      totalRounds:
+        typeof input.draft?.totalRounds === "number" && Number.isInteger(input.draft.totalRounds) && input.draft.totalRounds > 0
+          ? input.draft.totalRounds
+          : base.draft.totalRounds,
+    },
+    participants: normalizeParticipants(input.participants, base.participants),
     customRuleNotes: Array.isArray(input.customRuleNotes)
       ? input.customRuleNotes
           .map((note, index) => ({
@@ -197,6 +265,11 @@ export function updateLeagueAdminConfig(next: Partial<LeagueAdminConfig>, modeIn
       commissionerIds: next.roles?.commissionerIds ?? current.roles.commissionerIds,
       managerIds: next.roles?.managerIds ?? current.roles.managerIds,
     },
+    draft: {
+      ...current.draft,
+      ...next.draft,
+    },
+    participants: next.participants ?? current.participants,
     customRuleNotes: next.customRuleNotes ?? current.customRuleNotes,
   }, mode);
 
