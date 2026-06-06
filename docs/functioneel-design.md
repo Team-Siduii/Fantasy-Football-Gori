@@ -101,7 +101,7 @@ Per rol belangrijkste rechten:
 - Draft-teamkoppeling matcht niet alleen vaste presets, maar ook de actuele league-deelnemersconfiguratie (`managerId`, label, email) en runtime managerprofielen (naam/teamnaam/email), zodat aangepaste teamnamen of labels nog steeds aan de juiste manager gekoppeld blijven.
 - Draft-pick is turn-based en atomisch: alleen actieve team aan beurt mag picken; dezelfde speler kan niet 2x gepickt worden binnen de actieve mode.
 - Eredivisie-draftpagina (`/draft`) is een beschermde manager-draftkamer met live beurtindicator, picknummer/ronde, spelerkaarten, club/waarde/naam/positie-filters, bevestigingsbalk, eigen selectie, alle teamrosters en pickhistorie.
-- WK-draftpagina (`/manager/world-cup/draft`) gebruikt dezelfde draftkamer voor de WK-spelerspool (`/api/players?mode=wk`) met `Land`, waarde, naam en positie als filters.
+- WK-draftpagina (`/manager/world-cup/draft`) gebruikt dezelfde draftkamer voor de WK-spelerspool (`/api/players?mode=wk`) met `Land`, waarde, naam en positie als filters. WK-spelerkaarten tonen bij herkende landen een compacte vlagafbeelding linksboven, zodat landherkenning consistent is met de My Team kaartweergave.
 - Draft is bereikbaar via het globale openklapmenu en de mobiele ondernavigatie; in WK mode verwijst Draft naar `/manager/world-cup/draft`, in Eredivisie mode naar `/draft`.
 - De header gebruikt op laptop én mobiel één compacte `Menu`-knop; zonder actieve managersessie toont het menu uitsluitend `Log in`, en na login toont het manageracties zoals Draft, Naam aanpassen, Instellingen, Spelregels, CSV import en Log out zodat acties niet buiten het scherm vallen.
 - Oefendraftbeheer zit ingeklapt in de draftkamer: start/reset draft met standaardvolgorde `Johan Swart, Thomas, Jack, Emiel Zomerdijk`, 15 rondes, en return-actie voor testcorrecties.
@@ -258,8 +258,9 @@ FR-059 (fase 2): Rollenmodel owner/commissioner/manager forceert permission matr
 FR-060 (fase 2): Admin-UI toont en beheert league-configuratie voor scoring profile, budget-cap per mode, waiver tie-breaker, competition tie policy en role assignments.
 FR-061: Auth-MVP ondersteunt meerdere manager-accounts + admin-account, met inloggen op e-mail en accountgebonden credentials (geen globale test-prefill afhankelijkheid).
 FR-061a: Manager-routes accepteren alleen sessiecookies in het geldige `email:<encoded-email>` formaat; lege/legacy cookies behandelen als niet-ingelogd zodat gebruikers naar de publieke homepage (`/`) gaan in plaats van een shell met `Log out` zonder account/teamdata te zien.
-FR-061b: De publieke homepage (`/`) toont expliciet dat er geen actieve managersessie is en bevat duidelijke CTA's naar login en wachtwoordherstel; ingelogde managers worden vanaf `/` automatisch naar `/manager/my-team` gestuurd.
-FR-061c: Alle niet-publieke subpagina's redirecten zonder geldige sessie naar de homepage (`/`) in plaats van direct naar `/login`, zodat de eerste landingsplek altijd de logged-out startpagina is.
+FR-061b: Wijzigingen aan managernaam/teamnaam worden accountgebonden opgeslagen en blijven na een verse auth-state reload/nieuwe login zichtbaar; op Vercel gebruikt de file-backed MVP standaard `/tmp/gori-auth-state.json` om read-only deploy writes te vermijden.
+FR-061c: De publieke homepage (`/`) toont expliciet dat er geen actieve managersessie is en bevat duidelijke CTA's naar login en wachtwoordherstel; ingelogde managers worden vanaf `/` automatisch naar `/manager/my-team` gestuurd.
+FR-061d: Alle niet-publieke subpagina's redirecten zonder geldige sessie naar de homepage (`/`) in plaats van direct naar `/login`, zodat de eerste landingsplek altijd de logged-out startpagina is.
 FR-062: Manager-UI bevat een globale `Instellingen` navigatieknop; route `/instellingen` toont league-config module en redirectt naar de publieke homepage zonder actieve sessie.
 FR-063: Elk instelveld in de league-config module toont een hover/focus-help (`?`) met korte uitleg van de regel en de impact op competitiegedrag.
 FR-064: Manager-UI bevat een aparte WK 2026 module naast de Eredivisie-competitie met eigen route en navigatie-entry.

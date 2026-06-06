@@ -1954,6 +1954,16 @@ select {
   font-size: 1rem;
 }
 
+.draft-country-flag {
+  width: 24px;
+  height: 18px;
+  border-radius: 4px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  box-shadow: 0 0 0 1px rgba(10, 61, 145, 0.12);
+}
+
 .draft-player-card.selected {
   border-color: #f37021;
   background: #fff3e8;

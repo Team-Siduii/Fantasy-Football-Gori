@@ -31,8 +31,20 @@ type PersistedAuthState = {
   resetTokens: ResetTokenRecord[];
 };
 
+export function getAuthStateStoragePath() {
+  if (process.env.AUTH_STATE_PATH) {
+    return process.env.AUTH_STATE_PATH;
+  }
+
+  if (process.env.VERCEL) {
+    return "/tmp/gori-auth-state.json";
+  }
+
+  return path.join(process.cwd(), "data", "auth-state.json");
+}
+
 function getAuthStatePath() {
-  return process.env.AUTH_STATE_PATH || path.join(process.cwd(), "data", "auth-state.json");
+  return getAuthStateStoragePath();
 }
 
 function hashPassword(password: string, salt: string) {
@@ -360,5 +372,9 @@ export function resetAuthStateForTests() {
     unlinkSync(target);
   }
 
+  authState = loadState();
+}
+
+export function reloadAuthStateForTests() {
   authState = loadState();
 }

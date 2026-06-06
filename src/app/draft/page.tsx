@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { getDraftPlayerDisplayMeta } from "@/lib/draft-player-display";
 
 type PlayerRecord = {
   id: string;
@@ -386,19 +387,30 @@ export default function DraftPage() {
           </div>
 
           <div className="draft-player-grid">
-            {filteredPlayers.map((player) => (
-              <button
-                type="button"
-                key={player.id}
-                className={`draft-player-card ${pickPlayerId === player.id ? "selected" : ""}`}
-                onClick={() => setPickPlayerId(player.id)}
-                disabled={draft?.status !== "ACTIVE" || busy}
-              >
-                <span className="draft-player-meta">{player.positie} · {player.club}</span>
-                <strong>{player.naam}</strong>
-                <span>€{player.prijs.toFixed(1)}M</span>
-              </button>
-            ))}
+            {filteredPlayers.map((player) => {
+              const display = getDraftPlayerDisplayMeta(player);
+              return (
+                <button
+                  type="button"
+                  key={player.id}
+                  className={`draft-player-card ${pickPlayerId === player.id ? "selected" : ""}`}
+                  onClick={() => setPickPlayerId(player.id)}
+                  disabled={draft?.status !== "ACTIVE" || busy}
+                >
+                  {display.flagImageUrl ? (
+                    <span
+                      className="draft-country-flag"
+                      role="img"
+                      aria-label={display.flagAlt}
+                      style={{ backgroundImage: `url(${display.flagImageUrl})` }}
+                    />
+                  ) : null}
+                  <span className="draft-player-meta">{display.meta}</span>
+                  <strong>{display.name}</strong>
+                  <span>{display.priceLabel}</span>
+                </button>
+              );
+            })}
           </div>
 
           <div className="draft-confirm-bar">

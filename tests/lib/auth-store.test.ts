@@ -49,6 +49,34 @@ describe("auth-store security", () => {
     expect(store.authenticateManager("Thomasbart91@gmail.com", "ThomasPass456")).toBe(true);
   });
 
+  it("keeps an edited team name after a fresh auth-state reload", async () => {
+    const store = await loadStore();
+
+    expect(store.updateProfileByEmail("Johan201@hotmail.com", { name: "Johan Swart", teamName: "Oranje Kampioenen" })).toMatchObject({
+      teamName: "Oranje Kampioenen",
+    });
+
+    store.reloadAuthStateForTests();
+
+    expect(store.authenticateManager("Johan201@hotmail.com", "WK-JOHAN-2026")).toBe(true);
+    expect(store.getProfileByEmail("Johan201@hotmail.com")?.teamName).toBe("Oranje Kampioenen");
+  });
+
+  it("uses /tmp auth-state storage by default on Vercel serverless", async () => {
+    const previousVercel = process.env.VERCEL;
+    delete process.env.AUTH_STATE_PATH;
+    process.env.VERCEL = "1";
+    const store = await import("../../src/lib/auth-store");
+
+    expect(store.getAuthStateStoragePath()).toBe("/tmp/gori-auth-state.json");
+
+    if (previousVercel === undefined) {
+      delete process.env.VERCEL;
+    } else {
+      process.env.VERCEL = previousVercel;
+    }
+  });
+
   it("resets password via token and invalidates used token", async () => {
     const store = await loadStore();
 
