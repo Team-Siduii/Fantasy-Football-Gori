@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getCountryAbbreviation, getCountryFlag } from "../../src/lib/country-flags";
+import { getCountryAbbreviation, getCountryFlag, getCountryFlagImageUrl } from "../../src/lib/country-flags";
 
 describe("getCountryFlag", () => {
   it("returns a flag for all WK countries", () => {
@@ -74,5 +74,17 @@ describe("getCountryAbbreviation", () => {
 
   it("returns empty for non-country clubs", () => {
     expect(getCountryAbbreviation("Ajax")).toBe("");
+  });
+});
+
+describe("getCountryFlagImageUrl", () => {
+  it("returns stable image URLs for transfer overview flag icons", () => {
+    expect(getCountryFlagImageUrl("Nederland")).toBe("https://flagcdn.com/24x18/nl.png");
+    expect(getCountryFlagImageUrl("Engeland")).toBe("https://flagcdn.com/24x18/gb-eng.png");
+    expect(getCountryFlagImageUrl("Schotland")).toBe("https://flagcdn.com/24x18/gb-sct.png");
+  });
+
+  it("returns empty for non-country clubs", () => {
+    expect(getCountryFlagImageUrl("Ajax")).toBe("");
   });
 });

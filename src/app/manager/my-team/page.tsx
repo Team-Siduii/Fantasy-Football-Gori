@@ -12,7 +12,7 @@ import type { PlayerRecord } from "@/domain/player";
 import { buildMarketPlayers } from "@/domain/transfer-workflow";
 import { getTransferLimitForRound } from "@/domain/rules";
 import { byPriceDesc, enrichPlayers, type EnhancedPlayer } from "@/lib/player-derived";
-import { withCountryFlag } from "@/lib/country-flags";
+import { getCountryFlagImageUrl, withCountryFlag } from "@/lib/country-flags";
 import { getPlayerCardMeta } from "@/lib/player-card-display";
 import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
@@ -82,6 +82,27 @@ function createOpenSlot(position: string): EnhancedPlayer {
     prijs: 0,
     punten: 0,
   };
+}
+
+function TransferPlayerName({ player }: { player: EnhancedPlayer }) {
+  const flagUrl = getCountryFlagImageUrl(player.club);
+
+  return (
+    <span className="transfer-player-name">
+      {flagUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          className="transfer-country-flag"
+          src={flagUrl}
+          alt={`${player.club} vlag`}
+          loading="lazy"
+          width={24}
+          height={18}
+        />
+      ) : null}
+      <span>{player.naam}</span>
+    </span>
+  );
 }
 
 function countOpenSlots(state: ZoneState<EnhancedPlayer>) {
@@ -1347,7 +1368,7 @@ export default function ManagerMyTeamPage() {
               <tbody>
                 {pagedMarket.map((item, index) => (
                   <tr key={item.id} data-testid={`transfer-row-${index}`}>
-                    <td>{withCountryFlag(item.club, item.naam)}</td>
+                    <td><TransferPlayerName player={item} /></td>
                     <td>{item.positie}</td>
                     <td>{item.club}</td>
                     <td>€ {item.prijs.toFixed(2)}M</td>

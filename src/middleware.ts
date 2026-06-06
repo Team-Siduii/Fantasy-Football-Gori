@@ -2,29 +2,22 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME, parseSessionEmail } from "@/lib/auth-session-codec";
 
-function isProtectedPath(pathname: string) {
-  return (
-    pathname.startsWith("/manager") ||
-    pathname === "/draft" ||
-    pathname === "/profile" ||
-    pathname === "/account" ||
-    pathname === "/instellingen" ||
-    pathname === "/spelregels"
-  );
-}
-
 function isAuthPage(pathname: string) {
   return pathname === "/login" || pathname === "/forgot-password" || pathname === "/reset-password";
+}
+
+function isPublicPage(pathname: string) {
+  return pathname === "/" || isAuthPage(pathname);
 }
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAuthenticated = parseSessionEmail(request.cookies.get(AUTH_COOKIE_NAME)?.value) !== null;
 
-  if (isProtectedPath(pathname) && !isAuthenticated) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
+  if (!isPublicPage(pathname) && !isAuthenticated) {
+    const homeUrl = new URL("/", request.url);
+    homeUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(homeUrl);
   }
 
   if (isAuthPage(pathname) && isAuthenticated) {
@@ -36,14 +29,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/manager/:path*",
-    "/draft/:path*",
-    "/profile",
-    "/account",
-    "/instellingen",
-    "/spelregels",
-    "/login",
-    "/forgot-password",
-    "/reset-password",
+    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico)$).*)",
   ],
 };

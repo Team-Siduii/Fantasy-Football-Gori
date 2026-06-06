@@ -51,6 +51,11 @@ const COUNTRY_TO_ISO2: Record<string, string> = {
   Zwitserland: "CH",
 };
 
+const COUNTRY_TO_FLAGCDN_CODE: Record<string, string> = {
+  Engeland: "gb-eng",
+  Schotland: "gb-sct",
+};
+
 function toFlagEmoji(iso2: string) {
   const normalized = iso2.trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(normalized)) {
@@ -74,6 +79,15 @@ export function getCountryFlag(countryOrClub: string) {
   }
 
   return toFlagEmoji(iso2);
+}
+
+export function getCountryFlagImageUrl(countryOrClub: string) {
+  const flagCdnCode = COUNTRY_TO_FLAGCDN_CODE[countryOrClub] ?? getCountryAbbreviation(countryOrClub).toLowerCase();
+  if (!flagCdnCode) {
+    return "";
+  }
+
+  return `https://flagcdn.com/24x18/${flagCdnCode}.png`;
 }
 
 export function withCountryFlag(countryOrClub: string, text: string) {
