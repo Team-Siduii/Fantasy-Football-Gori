@@ -6,7 +6,9 @@ async function loadModules() {
   const draft = await import("../../src/lib/draft-state");
   const roster = await import("../../src/lib/team-roster-state");
   const manager = await import("../../src/lib/manager-state");
-  return { draft, roster, manager };
+  const sync = await import("../../src/lib/draft-manager-sync");
+  const league = await import("../../src/lib/league-admin-config");
+  return { draft, roster, manager, sync, league };
 }
 
 describe("draft roster to manager team sync", () => {
@@ -90,5 +92,61 @@ describe("draft roster to manager team sync", () => {
     const johanWkState = manager.readManagerState("wk", JOHAN_EMAIL);
     expect(johanWkState.lineupIds).toEqual([]);
     expect(johanWkState.benchIds).toEqual([]);
+  });
+
+  it("syncs draft teams from edited league participant labels to the right manager email", async () => {
+    const { draft, roster, manager, league } = await loadModules();
+    draft.resetDraftStateForTests("wk");
+    roster.resetTeamRosterStateForTests("wk");
+    manager.resetManagerStateForTests("wk");
+    league.resetLeagueAdminConfigForTests("wk");
+
+    league.updateLeagueAdminConfig(
+      {
+        participants: [
+          { managerId: "johan-swart", label: "Johan's WK Team", email: "Johan201@hotmail.com", status: "ACCEPTED" },
+          { managerId: "thomas-bart", label: "Thomas", email: "Thomasbart91@gmail.com", status: "ACCEPTED" },
+        ],
+      },
+      "wk",
+    );
+
+    draft.startDraft({
+      leagueId: "wk-2026-custom",
+      teamOrder: ["Johan's WK Team", "Thomas"],
+      totalRounds: 2,
+      startedBy: "admin-1",
+      scope: "wk",
+    });
+
+    draft.registerPick({ teamId: "Johan's WK Team", playerId: "wk-player-1", scope: "wk" });
+
+    const johanWkState = manager.readManagerState("wk", JOHAN_EMAIL);
+    expect(johanWkState.lineupIds).toEqual(["wk-player-1"]);
+    expect(manager.readManagerState("wk", "Thomasbart91@gmail.com").lineupIds).toEqual([]);
+  });
+
+  it("repairs a manager My Team read from the draft roster when manager-state is stale", async () => {
+    const { draft, roster, manager, sync } = await loadModules();
+    draft.resetDraftStateForTests("wk");
+    roster.resetTeamRosterStateForTests("wk");
+    manager.resetManagerStateForTests("wk");
+
+    draft.startDraft({
+      leagueId: "wk-2026",
+      teamOrder: ["Johan Swart", "Thomas"],
+      totalRounds: 2,
+      startedBy: "admin-1",
+      scope: "wk",
+    });
+    draft.registerPick({ teamId: "Johan Swart", playerId: "wk-player-1", scope: "wk" });
+
+    manager.resetManagerStateForTests("wk");
+    expect(manager.readManagerState("wk", JOHAN_EMAIL).lineupIds).toEqual([]);
+
+    const repaired = sync.syncManagerTeamFromDraftRoster({ managerEmail: JOHAN_EMAIL, scope: "wk" });
+
+    expect(repaired?.changed).toBe(true);
+    expect(manager.readManagerState("wk", JOHAN_EMAIL).lineupIds).toEqual(["wk-player-1"]);
   });
 });

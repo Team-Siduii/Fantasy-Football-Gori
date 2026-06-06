@@ -7,6 +7,7 @@ import {
   type ManagerStateScope,
 } from "@/lib/manager-state";
 import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
+import { syncManagerTeamFromDraftRoster } from "@/lib/draft-manager-sync";
 
 function getScopeFromRequest(request: Request): ManagerStateScope {
   const mode = new URL(request.url).searchParams.get("mode");
@@ -20,6 +21,9 @@ export async function GET(request: Request) {
 
   const managerKey = await getAuthenticatedEmail();
   const scope = getScopeFromRequest(request);
+  if (managerKey) {
+    syncManagerTeamFromDraftRoster({ managerEmail: managerKey, scope });
+  }
   const roundNumberParam = new URL(request.url).searchParams.get("roundNumber");
   const roundNumber = roundNumberParam ? Number(roundNumberParam) : null;
 

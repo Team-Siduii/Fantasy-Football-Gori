@@ -196,6 +196,12 @@ export function getProfileByEmail(email: string): ManagerProfile | null {
   return account ? account.profile : null;
 }
 
+export function listManagerProfiles(): ManagerProfile[] {
+  return authState.accounts
+    .filter((account) => account.role === "manager")
+    .map((account) => account.profile);
+}
+
 export function getManagerProfile(): ManagerProfile {
   return (
     authState.accounts.find((account) => account.role === "manager")?.profile ?? {
