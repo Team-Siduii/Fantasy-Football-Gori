@@ -84,33 +84,91 @@ a {
   letter-spacing: 0.02em;
 }
 
-.logout-button {
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: #fff;
-  border-radius: 999px;
-  padding: 0.45rem 0.85rem;
-  font-size: 0.85rem;
-}
-
 .header-actions {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: flex-end;
+  flex: 0 0 auto;
 }
 
-.header-link {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.26);
+.menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.48rem;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.32);
   color: #fff;
   border-radius: 999px;
-  padding: 0.45rem 0.85rem;
-  font-size: 0.85rem;
-  font-weight: 700;
+  padding: 0.52rem 0.88rem;
+  font-size: 0.88rem;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(3, 20, 55, 0.18);
 }
 
-.header-link.active {
+.menu-toggle.active,
+.menu-toggle:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+.header-menu {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  z-index: 60;
+  width: min(84vw, 240px);
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.45rem;
+  border: 1px solid rgba(15, 35, 74, 0.16);
+  border-radius: 16px;
+  background: #ffffff;
+  color: var(--text);
+  box-shadow: 0 18px 38px rgba(1, 18, 47, 0.28);
+}
+
+.header-menu::before {
+  content: "";
+  position: absolute;
+  top: -0.38rem;
+  right: 1.25rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  transform: rotate(45deg);
+  background: #ffffff;
+  border-left: 1px solid rgba(15, 35, 74, 0.12);
+  border-top: 1px solid rgba(15, 35, 74, 0.12);
+}
+
+.header-menu-link {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #253148;
+  padding: 0.68rem 0.72rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-align: left;
+}
+
+.header-menu-link:hover,
+.header-menu-link.active {
+  background: #eef4ff;
+  color: var(--brand);
+}
+
+.header-menu-button {
+  cursor: pointer;
+}
+
+.header-menu-button:hover {
+  background: #fff0e7;
+  color: #b84c0f;
 }
 
 .summary-strip {
@@ -1473,14 +1531,19 @@ select {
   }
 
   .header-actions {
-    width: 100%;
-    justify-content: flex-end;
+    width: auto;
+    margin-left: auto;
   }
 
-  .header-link,
-  .logout-button {
-    padding: 0.4rem 0.7rem;
-    font-size: 0.78rem;
+  .menu-toggle {
+    min-height: 2.55rem;
+    padding: 0.46rem 0.78rem;
+    font-size: 0.82rem;
+  }
+
+  .header-menu {
+    right: 0;
+    width: min(88vw, 260px);
   }
 
   .summary-strip {

@@ -54,7 +54,7 @@ Per rol belangrijkste rechten:
 ### 4.2 League management
 - League aanmaken en spelers uitnodigen
 - Configuratie: teamgrootte, draftvolgorde, transferregels, deadline per ronde
-- League-config module is direct bereikbaar via globale headerknop `Instellingen` in de manager-UI
+- League-config module is direct bereikbaar via het globale openklapmenu (`Menu` → `Instellingen`) in de manager-UI
 - `Instellingen` route is auth-protected en alleen bereikbaar na login
 - Admin stelt aan het begin van seizoen transferregime in:
   - Standaard: 1 transfer per team per speelronde
@@ -100,7 +100,8 @@ Per rol belangrijkste rechten:
 - Draft-pick is turn-based en atomisch: alleen actieve team aan beurt mag picken; dezelfde speler kan niet 2x gepickt worden binnen de actieve mode.
 - Eredivisie-draftpagina (`/draft`) is een beschermde manager-draftkamer met live beurtindicator, picknummer/ronde, spelerkaarten, club/waarde/naam/positie-filters, bevestigingsbalk, eigen selectie, alle teamrosters en pickhistorie.
 - WK-draftpagina (`/manager/world-cup/draft`) gebruikt dezelfde draftkamer voor de WK-spelerspool (`/api/players?mode=wk`) met `Land`, waarde, naam en positie als filters.
-- Draft is prominent bereikbaar via headerknop `Draft` en de mobiele ondernavigatie; in WK mode verwijst Draft naar `/manager/world-cup/draft`, in Eredivisie mode naar `/draft`.
+- Draft is bereikbaar via het globale openklapmenu en de mobiele ondernavigatie; in WK mode verwijst Draft naar `/manager/world-cup/draft`, in Eredivisie mode naar `/draft`.
+- De header gebruikt op laptop én mobiel één compacte `Menu`-knop met openklapopties voor Draft, Naam aanpassen, Instellingen, Spelregels, CSV import en Log out, zodat acties niet buiten het scherm vallen.
 - Oefendraftbeheer zit ingeklapt in de draftkamer: start/reset draft met standaardvolgorde `Johan Swart, Thomas, Jack, Emiel Zomerdijk`, 15 rondes, en return-actie voor testcorrecties.
 - Accountpagina (`/account`) is prominent bereikbaar als `Naam aanpassen` en bevat managernaam, teamnaam en wachtwoordbeheer; managernaam/teamnaam worden gebruikt voor herkenning in de draftkamer.
 
@@ -237,6 +238,7 @@ FR-042: Team-paginaheader (onder titel "Team", boven basiselftal) toont een spee
 FR-043: Basiselftal-veld behoudt bestaande kaarten/interactie maar rendert de expliciet aangeleverde referentie-afbeelding als pitch-achtergrond (`/public/images/pitch-reference.jpg`) zodat de visuele veldstijl 1-op-1 overeenkomt met het goedgekeurde voorbeeld.
 FR-044: Speelrondekaart ondersteunt browsen via links/rechts-knoppen: rechts navigeert naar volgende ronde (programma), links naar vorige ronde met uitslagenweergave.
 FR-045: Manager-UI is responsive op mobiel/tablet: header, kaarten, opstellingsveld en bottom navigation blijven bruikbaar zonder horizontaal scrollen in de standaard flows.
+FR-045a: De manager-header gebruikt op laptop én mobiel één openklapmenu (`Menu`) voor secundaire acties zoals Draft, Naam aanpassen, Instellingen, Spelregels, CSV import en Log out; deze acties mogen niet buiten de viewport vallen.
 FR-046: In mobiele Team-weergave staan de secties in deze volgorde: basiselftal, wisselspelers, daarna statistiektegels.
 FR-047: Transfermarkt ondersteunt kolomsortering op spelernaam, positie (GK, DEF, MID, FWD), club en transferwaarde, met omschakelbare oplopend/aflopend sorteerrichting.
 FR-048: Transfermarkt-filters blijven op mobiel volledig bruikbaar: Positie/Club/Zoek stacken verticaal en elk veld gebruikt full-width.
@@ -415,6 +417,7 @@ Waarom zo:
 - [ ] Basiselftal gebruikt exact de aangeleverde referentie-afbeelding als pitch-achtergrond (`/public/images/pitch-reference.jpg`), met ongewijzigde kaarten/interactie erbovenop
 - [ ] Links/rechts-knoppen browsen speelrondes: rechts toont volgende ronde-programma, links toont vorige ronde met uitslagen
 - [ ] Manager-UI blijft mobiel bruikbaar (telefoon/tablet) met responsive header, opstellingskaarten, statistiektegels en bottom navigation
+- [ ] Headeracties staan op laptop en mobiel in één openklapmenu (`Menu`), inclusief Draft/Naam aanpassen/Instellingen/Spelregels/CSV import/Log out, zonder horizontale overflow
 - [ ] In mobiele Team-weergave staat de volgorde als: basiselftal → wisselspelers → statistiektegels
 - [ ] Transfermarkt-kolommen zijn klikbaar sorteerbaar op speler, positie (GK/DEF/MID/FWD), club en transferwaarde
 - [ ] Transfermarkt-filters op mobiel zijn full-width en verticaal gestapeld (Positie/Club/Zoek zonder overlap of ingedrukte velden)
@@ -426,7 +429,7 @@ Waarom zo:
 - [ ] Rollenmodel owner/commissioner/manager wordt server-side afgedwongen; admin overrides geven 403 zonder juiste permissie
 - [ ] Instellingenpagina toont en beheert league-config voor waiver/scoring/competition/roles
 - [ ] Login toont Test Manager + Test Admin quick-select en prefillt bij keuze direct e-mail + wachtwoord voor beide accounts
-- [ ] Header bevat zichtbare `Instellingen` knop en `/instellingen` is alleen bereikbaar met actieve login (anders redirect naar de publieke homepage `/`)
+- [ ] Header bevat zichtbare `Instellingen` optie in het openklapmenu en `/instellingen` is alleen bereikbaar met actieve login (anders redirect naar de publieke homepage `/`)
 - [ ] Instellingenvelden tonen `?` hover/focus-help met korte uitleg van scoring, waiver tie-breaker, cup tie policy en rol-lijsten
 - [ ] Manager-navigatie bevat een aparte `WK 2026` entry naast `Competities`
 - [ ] WK-module toont 48 deelnemende landen met hoststatus en confederatie
@@ -597,3 +600,4 @@ Waarom zo:
 - 2026-06-06: Publieke logged-out homepage toegevoegd: `/` toont expliciet geen actieve sessie met CTA naar login; alle niet-publieke subpagina's redirecten zonder geldige sessie naar `/` in plaats van direct naar `/login`.
 - 2026-06-04: Admin-config uitgebreid met competitienaam, draft-rondes en deelnemerstatussen; de draftkamer toont oefendraftbeheer nu zichtbaar en start met de geaccepteerde deelnemers uit Instellingen.
 - 2026-06-06: WK-transferoverzicht op desktop/laptop rendert landenvlaggen nu als expliciete 24x18 image-badges vóór de spelersnaam, met emoji/tekst niet langer als enige visuele vlagbron; Engeland/Schotland gebruiken eigen vlagcodes.
+- 2026-06-06: Headeracties samengevoegd in één responsive openklapmenu (`Menu`) op laptop en mobiel, met Draft, Naam aanpassen, Instellingen, Spelregels, CSV import en Log out zodat knoppen niet meer buiten het scherm vallen.
