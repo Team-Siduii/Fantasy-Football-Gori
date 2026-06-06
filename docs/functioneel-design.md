@@ -101,7 +101,7 @@ Per rol belangrijkste rechten:
 - Eredivisie-draftpagina (`/draft`) is een beschermde manager-draftkamer met live beurtindicator, picknummer/ronde, spelerkaarten, club/waarde/naam/positie-filters, bevestigingsbalk, eigen selectie, alle teamrosters en pickhistorie.
 - WK-draftpagina (`/manager/world-cup/draft`) gebruikt dezelfde draftkamer voor de WK-spelerspool (`/api/players?mode=wk`) met `Land`, waarde, naam en positie als filters.
 - Draft is bereikbaar via het globale openklapmenu en de mobiele ondernavigatie; in WK mode verwijst Draft naar `/manager/world-cup/draft`, in Eredivisie mode naar `/draft`.
-- De header gebruikt op laptop én mobiel één compacte `Menu`-knop met openklapopties voor Draft, Naam aanpassen, Instellingen, Spelregels, CSV import en Log out, zodat acties niet buiten het scherm vallen.
+- De header gebruikt op laptop én mobiel één compacte `Menu`-knop; zonder actieve managersessie toont het menu uitsluitend `Log in`, en na login toont het manageracties zoals Draft, Naam aanpassen, Instellingen, Spelregels, CSV import en Log out zodat acties niet buiten het scherm vallen.
 - Oefendraftbeheer zit ingeklapt in de draftkamer: start/reset draft met standaardvolgorde `Johan Swart, Thomas, Jack, Emiel Zomerdijk`, 15 rondes, en return-actie voor testcorrecties.
 - Accountpagina (`/account`) is prominent bereikbaar als `Naam aanpassen` en bevat managernaam, teamnaam en wachtwoordbeheer; managernaam/teamnaam worden gebruikt voor herkenning in de draftkamer.
 
@@ -238,7 +238,7 @@ FR-042: Team-paginaheader (onder titel "Team", boven basiselftal) toont een spee
 FR-043: Basiselftal-veld behoudt bestaande kaarten/interactie maar rendert de expliciet aangeleverde referentie-afbeelding als pitch-achtergrond (`/public/images/pitch-reference.jpg`) zodat de visuele veldstijl 1-op-1 overeenkomt met het goedgekeurde voorbeeld.
 FR-044: Speelrondekaart ondersteunt browsen via links/rechts-knoppen: rechts navigeert naar volgende ronde (programma), links naar vorige ronde met uitslagenweergave.
 FR-045: Manager-UI is responsive op mobiel/tablet: header, kaarten, opstellingsveld en bottom navigation blijven bruikbaar zonder horizontaal scrollen in de standaard flows.
-FR-045a: De manager-header gebruikt op laptop én mobiel één openklapmenu (`Menu`) voor secundaire acties zoals Draft, Naam aanpassen, Instellingen, Spelregels, CSV import en Log out; deze acties mogen niet buiten de viewport vallen.
+FR-045a: De manager-header gebruikt op laptop én mobiel één openklapmenu (`Menu`); zonder actieve managersessie toont dit menu alleen `Log in`, en na login toont het secundaire manageracties zoals Draft, Naam aanpassen, Instellingen, Spelregels, CSV import en Log out. Deze acties mogen niet buiten de viewport vallen.
 FR-046: In mobiele Team-weergave staan de secties in deze volgorde: basiselftal, wisselspelers, daarna statistiektegels.
 FR-047: Transfermarkt ondersteunt kolomsortering op spelernaam, positie (GK, DEF, MID, FWD), club en transferwaarde, met omschakelbare oplopend/aflopend sorteerrichting.
 FR-048: Transfermarkt-filters blijven op mobiel volledig bruikbaar: Positie/Club/Zoek stacken verticaal en elk veld gebruikt full-width.
@@ -417,7 +417,7 @@ Waarom zo:
 - [ ] Basiselftal gebruikt exact de aangeleverde referentie-afbeelding als pitch-achtergrond (`/public/images/pitch-reference.jpg`), met ongewijzigde kaarten/interactie erbovenop
 - [ ] Links/rechts-knoppen browsen speelrondes: rechts toont volgende ronde-programma, links toont vorige ronde met uitslagen
 - [ ] Manager-UI blijft mobiel bruikbaar (telefoon/tablet) met responsive header, opstellingskaarten, statistiektegels en bottom navigation
-- [ ] Headeracties staan op laptop en mobiel in één openklapmenu (`Menu`), inclusief Draft/Naam aanpassen/Instellingen/Spelregels/CSV import/Log out, zonder horizontale overflow
+- [ ] Headeracties staan op laptop en mobiel in één openklapmenu (`Menu`); logged-out toont alleen `Log in`, logged-in toont Draft/Naam aanpassen/Instellingen/Spelregels/CSV import/Log out, zonder horizontale overflow
 - [ ] In mobiele Team-weergave staat de volgorde als: basiselftal → wisselspelers → statistiektegels
 - [ ] Transfermarkt-kolommen zijn klikbaar sorteerbaar op speler, positie (GK/DEF/MID/FWD), club en transferwaarde
 - [ ] Transfermarkt-filters op mobiel zijn full-width en verticaal gestapeld (Positie/Club/Zoek zonder overlap of ingedrukte velden)
@@ -601,3 +601,4 @@ Waarom zo:
 - 2026-06-04: Admin-config uitgebreid met competitienaam, draft-rondes en deelnemerstatussen; de draftkamer toont oefendraftbeheer nu zichtbaar en start met de geaccepteerde deelnemers uit Instellingen.
 - 2026-06-06: WK-transferoverzicht op desktop/laptop rendert landenvlaggen nu als expliciete 24x18 image-badges vóór de spelersnaam, met emoji/tekst niet langer als enige visuele vlagbron; Engeland/Schotland gebruiken eigen vlagcodes.
 - 2026-06-06: Headeracties samengevoegd in één responsive openklapmenu (`Menu`) op laptop en mobiel, met Draft, Naam aanpassen, Instellingen, Spelregels, CSV import en Log out zodat knoppen niet meer buiten het scherm vallen.
+- 2026-06-06: Logged-out header-menu aangescherpt: zonder actieve managersessie toont het menu alleen `Log in`; manager-only opties en `Log out` verschijnen pas na geldige login.

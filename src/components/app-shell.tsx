@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { getHeaderMenuItems } from "@/lib/app-shell-menu";
 
 type NavItem = {
   href: string;
@@ -48,6 +49,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
   const [summaryRankLabel, setSummaryRankLabel] = useState("-");
   const [summaryPoints, setSummaryPoints] = useState("-");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const headerMenuItems = getHeaderMenuItems(isAuthenticated === true, isWkMode);
 
   useEffect(() => {
     const mode = isWkMode ? "wk" : "eredivisie";
@@ -111,36 +113,16 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
 
             {isMenuOpen ? (
               <nav id="app-shell-menu" className="header-menu" aria-label="Snelmenu">
+                {headerMenuItems.map((item) => (
+                  <Link key={item.href} href={item.href} className={`header-menu-link ${isActive(pathname, item.href) ? "active" : ""}`}>
+                    {item.label}
+                  </Link>
+                ))}
+
                 {isAuthenticated === true ? (
-                  <>
-                    <Link href={isWkMode ? "/manager/world-cup/draft" : "/draft"} className={`header-menu-link ${isActive(pathname, isWkMode ? "/manager/world-cup/draft" : "/draft") ? "active" : ""}`}>
-                      Draft
-                    </Link>
-                    <Link href="/account" className={`header-menu-link ${isActive(pathname, "/account") ? "active" : ""}`}>
-                      Naam aanpassen
-                    </Link>
-                    <Link href="/instellingen" className={`header-menu-link ${isActive(pathname, "/instellingen") ? "active" : ""}`}>
-                      Instellingen
-                    </Link>
-                    <Link href="/spelregels" className={`header-menu-link ${isActive(pathname, "/spelregels") ? "active" : ""}`}>
-                      Spelregels
-                    </Link>
-                    <Link href="/admin/players" className={`header-menu-link ${isActive(pathname, "/admin/players") ? "active" : ""}`}>
-                      CSV import
-                    </Link>
-                    <button onClick={handleLogout} className="header-menu-link header-menu-button" type="button">
-                      Log out
-                    </button>
-                  </>
-                ) : isAuthenticated === false ? (
-                  <>
-                    <Link href="/login" className="header-menu-link">
-                      Log in
-                    </Link>
-                    <Link href="/spelregels" className={`header-menu-link ${isActive(pathname, "/spelregels") ? "active" : ""}`}>
-                      Spelregels
-                    </Link>
-                  </>
+                  <button onClick={handleLogout} className="header-menu-link header-menu-button" type="button">
+                    Log out
+                  </button>
                 ) : null}
               </nav>
             ) : null}
