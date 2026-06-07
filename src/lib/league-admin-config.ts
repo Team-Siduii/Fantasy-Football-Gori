@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 import path from "path";
+import { isGoriDatabaseEnabled, readPersistentJson, writePersistentJson } from "./persistent-json-store";
 import { createClassicScoringProfile, getBackwardCompatibleDefaultProfile, type ScoringProfile } from "../domain/scoring-profiles";
 import {
   createWaiverRound,
@@ -237,10 +238,33 @@ export function getLeagueAdminConfig(modeInput?: string): LeagueAdminConfig {
   }
 }
 
+export async function getLeagueAdminConfigPersistent(modeInput?: string): Promise<LeagueAdminConfig> {
+  const mode = normalizeMode(modeInput);
+  const fallback = getLeagueAdminConfig(mode);
+  if (!isGoriDatabaseEnabled()) {
+    return fallback;
+  }
+  const persisted = await readPersistentJson({ store: "league-admin-config", scope: mode }, fallback);
+  const config = normalize(persisted, mode);
+  save(config, mode);
+  return config;
+}
+
 export function updateLeagueAdminConfig(next: Partial<LeagueAdminConfig>, modeInput?: string): LeagueAdminConfig {
   const mode = normalizeMode(modeInput);
   const current = getLeagueAdminConfig(mode);
-  const merged = normalize({
+  const merged = mergeLeagueAdminConfig(current, next, mode);
+
+  save(merged, mode);
+  return merged;
+}
+
+function mergeLeagueAdminConfig(
+  current: LeagueAdminConfig,
+  next: Partial<LeagueAdminConfig>,
+  mode: LeagueMode,
+): LeagueAdminConfig {
+  return normalize({
     ...current,
     ...next,
     waiver: {
@@ -272,8 +296,19 @@ export function updateLeagueAdminConfig(next: Partial<LeagueAdminConfig>, modeIn
     participants: next.participants ?? current.participants,
     customRuleNotes: next.customRuleNotes ?? current.customRuleNotes,
   }, mode);
+}
 
+export async function updateLeagueAdminConfigPersistent(
+  next: Partial<LeagueAdminConfig>,
+  modeInput?: string,
+): Promise<LeagueAdminConfig> {
+  const mode = normalizeMode(modeInput);
+  const current = await getLeagueAdminConfigPersistent(mode);
+  const merged = mergeLeagueAdminConfig(current, next, mode);
   save(merged, mode);
+  if (isGoriDatabaseEnabled()) {
+    await writePersistentJson({ store: "league-admin-config", scope: mode }, merged);
+  }
   return merged;
 }
 

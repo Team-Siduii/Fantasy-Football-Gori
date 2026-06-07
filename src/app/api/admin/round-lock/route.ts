@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthenticatedSession } from "@/lib/auth-session";
-import { readManagerState, setRoundLock } from "@/lib/manager-state";
+import { readManagerStatePersistent, setRoundLockPersistent } from "@/lib/manager-state";
 import { hasLeaguePermission, resolveActorIdFromRequest } from "@/lib/rbac";
 
 export async function GET(request: Request) {
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Geen rechten" }, { status: 403 });
   }
 
-  const state = readManagerState();
+  const state = await readManagerStatePersistent();
   return NextResponse.json({
     roundLocks: state.roundLocks,
     adminActionLog: state.adminActionLog,
@@ -58,7 +58,7 @@ export async function PUT(request: Request) {
   const locked = body.locked as boolean;
   const reason = body.reason.trim();
 
-  const state = setRoundLock({
+  const state = await setRoundLockPersistent({
     roundNumber,
     locked,
     reason,

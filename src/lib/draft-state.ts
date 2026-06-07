@@ -4,8 +4,17 @@ import { buildFormationSlots, getFormationOptions } from "../domain/formation";
 import type { PlayerRecord } from "../domain/player";
 import { buildDraftPickSequence } from "../domain/rules";
 import { calculateSquadCost } from "../domain/team-budget";
-import { syncDraftRosterToManagerTeam } from "./draft-manager-sync";
-import { addPlayerToTeamRoster, removePlayerFromTeamRoster, resetTeamRosterState, type TeamRosterScope } from "./team-roster-state";
+import { syncDraftRosterToManagerTeam, syncDraftRosterToManagerTeamPersistent } from "./draft-manager-sync";
+import {
+  addPlayerToTeamRoster,
+  addPlayerToTeamRosterPersistent,
+  removePlayerFromTeamRoster,
+  removePlayerFromTeamRosterPersistent,
+  resetTeamRosterState,
+  resetTeamRosterStatePersistent,
+  type TeamRosterScope,
+} from "./team-roster-state";
+import { isGoriDatabaseEnabled, readPersistentJson, writePersistentJson } from "./persistent-json-store";
 
 export type DraftScope = TeamRosterScope;
 
@@ -70,43 +79,47 @@ export function readDraftState(scope: DraftScope = "eredivisie"): DraftState {
 
   try {
     const parsed = JSON.parse(readFileSync(target, "utf-8")) as Partial<DraftState>;
-    return {
-      leagueId: typeof parsed.leagueId === "string" ? parsed.leagueId : "default",
-      status: parsed.status === "ACTIVE" || parsed.status === "COMPLETED" ? parsed.status : "IDLE",
-      teamOrder: Array.isArray(parsed.teamOrder) ? parsed.teamOrder.filter((s): s is string => typeof s === "string") : [],
-      totalRounds: typeof parsed.totalRounds === "number" ? parsed.totalRounds : 0,
-      totalPicks: typeof parsed.totalPicks === "number" ? parsed.totalPicks : 0,
-      pickSequence: Array.isArray(parsed.pickSequence)
-        ? parsed.pickSequence.filter((s): s is string => typeof s === "string")
-        : [],
-      picks: Array.isArray(parsed.picks)
-        ? parsed.picks.filter(
-            (p): p is DraftPick =>
-              typeof p === "object" &&
-              p !== null &&
-              typeof (p as DraftPick).pickNumber === "number" &&
-              typeof (p as DraftPick).teamId === "string" &&
-              typeof (p as DraftPick).playerId === "string" &&
-              typeof (p as DraftPick).pickedAt === "string",
-          )
-        : [],
-      currentTurnTeamId: typeof parsed.currentTurnTeamId === "string" ? parsed.currentTurnTeamId : null,
-      events: Array.isArray(parsed.events)
-        ? parsed.events.filter(
-            (e): e is DraftEvent =>
-              typeof e === "object" &&
-              e !== null &&
-              typeof (e as DraftEvent).type === "string" &&
-              typeof (e as DraftEvent).at === "string" &&
-              typeof (e as DraftEvent).actorId === "string" &&
-              typeof (e as DraftEvent).payload === "object" &&
-              (e as DraftEvent).payload !== null,
-          )
-        : [],
-    };
+    return normalizeDraftState(parsed);
   } catch {
     return { ...DEFAULT_DRAFT_STATE };
   }
+}
+
+function normalizeDraftState(parsed: Partial<DraftState>): DraftState {
+  return {
+    leagueId: typeof parsed.leagueId === "string" ? parsed.leagueId : "default",
+    status: parsed.status === "ACTIVE" || parsed.status === "COMPLETED" ? parsed.status : "IDLE",
+    teamOrder: Array.isArray(parsed.teamOrder) ? parsed.teamOrder.filter((s): s is string => typeof s === "string") : [],
+    totalRounds: typeof parsed.totalRounds === "number" ? parsed.totalRounds : 0,
+    totalPicks: typeof parsed.totalPicks === "number" ? parsed.totalPicks : 0,
+    pickSequence: Array.isArray(parsed.pickSequence)
+      ? parsed.pickSequence.filter((s): s is string => typeof s === "string")
+      : [],
+    picks: Array.isArray(parsed.picks)
+      ? parsed.picks.filter(
+          (p): p is DraftPick =>
+            typeof p === "object" &&
+            p !== null &&
+            typeof (p as DraftPick).pickNumber === "number" &&
+            typeof (p as DraftPick).teamId === "string" &&
+            typeof (p as DraftPick).playerId === "string" &&
+            typeof (p as DraftPick).pickedAt === "string",
+        )
+      : [],
+    currentTurnTeamId: typeof parsed.currentTurnTeamId === "string" ? parsed.currentTurnTeamId : null,
+    events: Array.isArray(parsed.events)
+      ? parsed.events.filter(
+          (e): e is DraftEvent =>
+            typeof e === "object" &&
+            e !== null &&
+            typeof (e as DraftEvent).type === "string" &&
+            typeof (e as DraftEvent).at === "string" &&
+            typeof (e as DraftEvent).actorId === "string" &&
+            typeof (e as DraftEvent).payload === "object" &&
+            (e as DraftEvent).payload !== null,
+        )
+      : [],
+  };
 }
 
 function writeDraftState(next: DraftState, scope: DraftScope = "eredivisie"): DraftState {
@@ -116,11 +129,47 @@ function writeDraftState(next: DraftState, scope: DraftScope = "eredivisie"): Dr
   return next;
 }
 
+async function writeDraftStatePersistent(next: DraftState, scope: DraftScope = "eredivisie"): Promise<DraftState> {
+  writeDraftState(next, scope);
+  if (isGoriDatabaseEnabled()) {
+    await writePersistentJson({ store: "draft-state", scope }, next);
+  }
+  return next;
+}
+
+export async function readDraftStatePersistent(scope: DraftScope = "eredivisie"): Promise<DraftState> {
+  const fallback = readDraftState(scope);
+  if (!isGoriDatabaseEnabled()) {
+    return fallback;
+  }
+  const persisted = await readPersistentJson({ store: "draft-state", scope }, fallback);
+  const normalized = normalizeDraftState(persisted);
+  writeDraftState(normalized, scope);
+  return normalized;
+}
+
 function computeCurrentTurnTeamId(pickSequence: string[], picksCount: number): string | null {
   return pickSequence[picksCount] ?? null;
 }
 
 export function startDraft(input: {
+  leagueId: string;
+  teamOrder: string[];
+  totalRounds: number;
+  startedBy: string;
+  startedAt?: string;
+  scope?: DraftScope;
+}): DraftState {
+  const next = buildStartedDraftState(input);
+  const scope = input.scope ?? "eredivisie";
+  resetTeamRosterState(scope);
+  for (const teamId of input.teamOrder) {
+    syncDraftRosterToManagerTeam({ teamId, playerIds: [], scope });
+  }
+  return writeDraftState(next, scope);
+}
+
+function buildStartedDraftState(input: {
   leagueId: string;
   teamOrder: string[];
   totalRounds: number;
@@ -139,13 +188,7 @@ export function startDraft(input: {
   const pickSequence = buildDraftPickSequence(input.teamOrder, totalPicks);
   const at = input.startedAt ?? new Date().toISOString();
 
-  const scope = input.scope ?? "eredivisie";
-  resetTeamRosterState(scope);
-  for (const teamId of input.teamOrder) {
-    syncDraftRosterToManagerTeam({ teamId, playerIds: [], scope });
-  }
-
-  return writeDraftState({
+  return {
     leagueId: input.leagueId,
     status: "ACTIVE",
     teamOrder: [...input.teamOrder],
@@ -164,7 +207,24 @@ export function startDraft(input: {
         },
       },
     ],
-  }, scope);
+  };
+}
+
+export async function startDraftPersistent(input: {
+  leagueId: string;
+  teamOrder: string[];
+  totalRounds: number;
+  startedBy: string;
+  startedAt?: string;
+  scope?: DraftScope;
+}): Promise<DraftState> {
+  const next = buildStartedDraftState(input);
+  const scope = input.scope ?? "eredivisie";
+  await resetTeamRosterStatePersistent(scope);
+  for (const teamId of input.teamOrder) {
+    await syncDraftRosterToManagerTeamPersistent({ teamId, playerIds: [], scope });
+  }
+  return writeDraftStatePersistent(next, scope);
 }
 
 type DraftPickValidationPlayer = Pick<PlayerRecord, "id" | "positie" | "prijs">;
@@ -267,6 +327,30 @@ export function registerPick(input: {
 }): DraftState {
   const scope = input.scope ?? "eredivisie";
   const current = readDraftState(scope);
+  const next = buildRegisteredPickState(current, input);
+
+  const rosterState = addPlayerToTeamRoster(input.teamId, input.playerId, scope);
+  syncDraftRosterToManagerTeam({
+    teamId: input.teamId,
+    playerIds: rosterState.byTeamId[input.teamId] ?? [],
+    scope,
+  });
+
+  return writeDraftState(next, scope);
+}
+
+function buildRegisteredPickState(
+  current: DraftState,
+  input: {
+    teamId: string;
+    playerId: string;
+    at?: string;
+    playerCatalog?: DraftPickValidationPlayer[];
+    budgetCap?: number;
+    formationOptions?: string[];
+    benchComposition?: DraftBenchComposition;
+  },
+): DraftState {
   if (current.status !== "ACTIVE") {
     throw new Error("draft is not active");
   }
@@ -292,7 +376,7 @@ export function registerPick(input: {
   const nextPicks = [...current.picks, { pickNumber, teamId: input.teamId, playerId: input.playerId, pickedAt: at }];
   const status: DraftStatus = nextPicks.length >= current.totalPicks ? "COMPLETED" : "ACTIVE";
 
-  const next: DraftState = {
+  return {
     ...current,
     status,
     picks: nextPicks,
@@ -302,15 +386,30 @@ export function registerPick(input: {
       { type: "PLAYER_PICKED", at, actorId: input.teamId, payload: { pickNumber, playerId: input.playerId } },
     ],
   };
+}
 
-  const rosterState = addPlayerToTeamRoster(input.teamId, input.playerId, scope);
-  syncDraftRosterToManagerTeam({
+export async function registerPickPersistent(input: {
+  teamId: string;
+  playerId: string;
+  at?: string;
+  scope?: DraftScope;
+  playerCatalog?: DraftPickValidationPlayer[];
+  budgetCap?: number;
+  formationOptions?: string[];
+  benchComposition?: DraftBenchComposition;
+}): Promise<DraftState> {
+  const scope = input.scope ?? "eredivisie";
+  const current = await readDraftStatePersistent(scope);
+  const next = buildRegisteredPickState(current, input);
+
+  const rosterState = await addPlayerToTeamRosterPersistent(input.teamId, input.playerId, scope);
+  await syncDraftRosterToManagerTeamPersistent({
     teamId: input.teamId,
     playerIds: rosterState.byTeamId[input.teamId] ?? [],
     scope,
   });
 
-  return writeDraftState(next, scope);
+  return writeDraftStatePersistent(next, scope);
 }
 
 export function returnPickedPlayerToPool(input: {
@@ -322,6 +421,27 @@ export function returnPickedPlayerToPool(input: {
 }): DraftState {
   const scope = input.scope ?? "eredivisie";
   const current = readDraftState(scope);
+  const next = buildReturnedPickState(current, input);
+
+  const rosterState = removePlayerFromTeamRoster(input.teamId, input.playerId, scope);
+  syncDraftRosterToManagerTeam({
+    teamId: input.teamId,
+    playerIds: rosterState.byTeamId[input.teamId] ?? [],
+    scope,
+  });
+
+  return writeDraftState(next, scope);
+}
+
+function buildReturnedPickState(
+  current: DraftState,
+  input: {
+    teamId: string;
+    playerId: string;
+    reason: string;
+    at?: string;
+  },
+): DraftState {
   const pickIndex = current.picks.findIndex((pick) => pick.teamId === input.teamId && pick.playerId === input.playerId);
 
   if (pickIndex === -1) {
@@ -333,7 +453,7 @@ export function returnPickedPlayerToPool(input: {
     .filter((_, idx) => idx !== pickIndex)
     .map((pick, idx) => ({ ...pick, pickNumber: idx + 1 }));
 
-  const next: DraftState = {
+  return {
     ...current,
     status: "ACTIVE",
     picks: nextPicks,
@@ -348,15 +468,27 @@ export function returnPickedPlayerToPool(input: {
       },
     ],
   };
+}
 
-  const rosterState = removePlayerFromTeamRoster(input.teamId, input.playerId, scope);
-  syncDraftRosterToManagerTeam({
+export async function returnPickedPlayerToPoolPersistent(input: {
+  teamId: string;
+  playerId: string;
+  reason: string;
+  at?: string;
+  scope?: DraftScope;
+}): Promise<DraftState> {
+  const scope = input.scope ?? "eredivisie";
+  const current = await readDraftStatePersistent(scope);
+  const next = buildReturnedPickState(current, input);
+
+  const rosterState = await removePlayerFromTeamRosterPersistent(input.teamId, input.playerId, scope);
+  await syncDraftRosterToManagerTeamPersistent({
     teamId: input.teamId,
     playerIds: rosterState.byTeamId[input.teamId] ?? [],
     scope,
   });
 
-  return writeDraftState(next, scope);
+  return writeDraftStatePersistent(next, scope);
 }
 
 export function resetDraftStateForTests(scope: DraftScope = "eredivisie") {

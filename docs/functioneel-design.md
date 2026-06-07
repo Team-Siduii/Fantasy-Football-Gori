@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-06-06
+Laatste update: 2026-06-07
 
 ## 1. Productvisie
 Doel van de app:
@@ -296,6 +296,7 @@ FR-093: WK draftpicks synchroniseren automatisch naar de accountgebonden WK Team
 FR-094: Admin-config bevat per mode een bewerkbare competitienaam en draft-rondes; de draftkamer gebruikt deze config als standaard voor start/reset oefendraft.
 FR-095: Admin-config toont de bekende manager-deelnemers met status `In afwachting`, `Geaccepteerd` of `Geweigerd`; alleen geaccepteerde deelnemers worden automatisch in de draftvolgorde voor een oefendraft gezet.
 FR-096: Oefendraftbeheer is zichtbaar als vaste kaart in de draftkamer met link naar `/instellingen`, zodat de admin niet hoeft te zoeken in een ingeklapt detailpaneel om een volledige draft te starten.
+FR-097: Runtime-state voor Gori Fantasy ondersteunt database-backed opslag via `GORI_DATABASE_URL` (fallback `DATABASE_URL`/`POSTGRES_URL`) met app-namespace `gori_fantasy`; draft-state, team-rosters, manager-state en league-admin-config blijven gescheiden per store, competitie-mode (`eredivisie|wk`) en waar relevant manager-email, zodat RxAruba/andere apps en Gori-modes geen state mengen.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -452,6 +453,7 @@ Waarom zo:
 - [ ] Instellingen ondersteunt aanvullende vrije regels (titel/beschrijving/impact) en deze verschijnen automatisch op `/spelregels`
 - [ ] Spelregelspagina groepeert regels in vaste hoofdstukken (Transferregels, Budgetregels, Waiverregels, Strafregels/tie policy, Custom) met mode-specifieke inhoud
 - [ ] WK Draft is bereikbaar via `/manager/world-cup/draft`, gebruikt de WK spelerspool, bewaart picks/rosters los van Eredivisie en biedt filters op Land, maximale waarde, naam en positie.
+- [ ] Gori runtime-state gebruikt database-backed opslag wanneer `GORI_DATABASE_URL` beschikbaar is, met file fallback voor lokale/testmodus; state-keys bevatten app namespace + store + mode + manager, zodat Eredivisie/WK, managers en andere apps strikt gescheiden blijven.
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -605,3 +607,4 @@ Waarom zo:
 - 2026-06-06: WK-transferoverzicht op desktop/laptop rendert landenvlaggen nu als expliciete 24x18 image-badges vóór de spelersnaam, met emoji/tekst niet langer als enige visuele vlagbron; Engeland/Schotland gebruiken eigen vlagcodes.
 - 2026-06-06: Headeracties samengevoegd in één responsive openklapmenu (`Menu`) op laptop en mobiel, met Draft, Naam aanpassen, Instellingen, Spelregels, CSV import en Log out zodat knoppen niet meer buiten het scherm vallen.
 - 2026-06-06: Logged-out header-menu aangescherpt: zonder actieve managersessie toont het menu alleen `Log in`; manager-only opties en `Log out` verschijnen pas na geldige login.
+- 2026-06-07: Database-backed Gori persistence toegevoegd naar RxAruba-patroon: centrale `persistent-json-store` met `gori_fantasy` namespace, Postgres tabel `gori_fantasy_state`, gescheiden keys per store/mode/manager en async API-routes voor draft, team-rosters, manager-state, league-config en round-locks; file-backed `/tmp`/data fallback blijft beschikbaar.

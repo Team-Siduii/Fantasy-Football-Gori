@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
+import { isGoriDatabaseEnabled, readPersistentJson, writePersistentJson } from "./persistent-json-store";
 
 export type TeamRosterState = {
   byTeamId: Record<string, string[]>;
@@ -48,6 +49,46 @@ export function saveTeamRosterState(next: TeamRosterState, scope: TeamRosterScop
   mkdirSync(path.dirname(target), { recursive: true });
   writeFileSync(target, JSON.stringify(next, null, 2), "utf-8");
   return next;
+}
+
+async function writeTeamRosterStatePersistent(next: TeamRosterState, scope: TeamRosterScope = "eredivisie") {
+  saveTeamRosterState(next, scope);
+  if (isGoriDatabaseEnabled()) {
+    await writePersistentJson({ store: "team-roster-state", scope }, next);
+  }
+  return next;
+}
+
+export async function readTeamRosterStatePersistent(scope: TeamRosterScope = "eredivisie"): Promise<TeamRosterState> {
+  const fallback = readTeamRosterState(scope);
+  if (!isGoriDatabaseEnabled()) {
+    return fallback;
+  }
+  const persisted = await readPersistentJson({ store: "team-roster-state", scope }, fallback);
+  saveTeamRosterState(persisted, scope);
+  return persisted;
+}
+
+export async function addPlayerToTeamRosterPersistent(teamId: string, playerId: string, scope: TeamRosterScope = "eredivisie") {
+  const state = await readTeamRosterStatePersistent(scope);
+  const current = state.byTeamId[teamId] ?? [];
+  if (!current.includes(playerId)) {
+    state.byTeamId[teamId] = [...current, playerId];
+    await writeTeamRosterStatePersistent(state, scope);
+  }
+  return readTeamRosterStatePersistent(scope);
+}
+
+export async function removePlayerFromTeamRosterPersistent(teamId: string, playerId: string, scope: TeamRosterScope = "eredivisie") {
+  const state = await readTeamRosterStatePersistent(scope);
+  const current = state.byTeamId[teamId] ?? [];
+  state.byTeamId[teamId] = current.filter((id) => id !== playerId);
+  await writeTeamRosterStatePersistent(state, scope);
+  return readTeamRosterStatePersistent(scope);
+}
+
+export async function resetTeamRosterStatePersistent(scope: TeamRosterScope = "eredivisie") {
+  await writeTeamRosterStatePersistent({ ...DEFAULT_TEAM_ROSTER_STATE }, scope);
 }
 
 export function addPlayerToTeamRoster(teamId: string, playerId: string, scope: TeamRosterScope = "eredivisie") {

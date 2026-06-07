@@ -3,11 +3,16 @@ import path from "path";
 import { NextResponse } from "next/server";
 import { parsePlayerCsv } from "@/domain/player-csv";
 import { isAuthenticatedSession } from "@/lib/auth-session";
-import { readDraftState, registerPick, returnPickedPlayerToPool, startDraft } from "@/lib/draft-state";
-import { getLeagueAdminConfig } from "@/lib/league-admin-config";
+import {
+  readDraftStatePersistent,
+  registerPickPersistent,
+  returnPickedPlayerToPoolPersistent,
+  startDraftPersistent,
+} from "@/lib/draft-state";
+import { getLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
 import { bootstrapPlayersFromDefaultCsv } from "@/lib/player-bootstrap";
 import { listPlayers } from "@/lib/player-store";
-import { readTeamRosterState } from "@/lib/team-roster-state";
+import { readTeamRosterStatePersistent } from "@/lib/team-roster-state";
 
 function resolveDraftScope(request: Request) {
   const url = new URL(request.url);
@@ -34,8 +39,9 @@ export async function GET(request: Request) {
   }
 
   const scope = resolveDraftScope(request);
+  const [draft, teamRosterState] = await Promise.all([readDraftStatePersistent(scope), readTeamRosterStatePersistent(scope)]);
 
-  return NextResponse.json({ draft: readDraftState(scope), teamRosters: readTeamRosterState(scope).byTeamId });
+  return NextResponse.json({ draft, teamRosters: teamRosterState.byTeamId });
 }
 
 export async function POST(request: Request) {
@@ -67,42 +73,42 @@ export async function POST(request: Request) {
       if (!body.leagueId || !Array.isArray(body.teamOrder) || typeof body.totalRounds !== "number" || !body.startedBy) {
         return NextResponse.json({ error: "Ontbrekende draft-start velden" }, { status: 400 });
       }
-      const draft = startDraft({
+      const draft = await startDraftPersistent({
         leagueId: body.leagueId,
         teamOrder: body.teamOrder,
         totalRounds: body.totalRounds,
         startedBy: body.startedBy,
         scope,
       });
-      return NextResponse.json({ ok: true, draft, teamRosters: readTeamRosterState(scope).byTeamId });
+      return NextResponse.json({ ok: true, draft, teamRosters: (await readTeamRosterStatePersistent(scope)).byTeamId });
     }
 
     if (body.action === "pick") {
       if (!body.teamId || !body.playerId) {
         return NextResponse.json({ error: "teamId en playerId zijn verplicht" }, { status: 400 });
       }
-      const config = getLeagueAdminConfig(scope);
-      const draft = registerPick({
+      const config = await getLeagueAdminConfigPersistent(scope);
+      const draft = await registerPickPersistent({
         teamId: body.teamId,
         playerId: body.playerId,
         scope,
         playerCatalog: await loadDraftPlayerCatalog(scope),
         budgetCap: config.budget.teamValueCapMillions,
       });
-      return NextResponse.json({ ok: true, draft, teamRosters: readTeamRosterState(scope).byTeamId });
+      return NextResponse.json({ ok: true, draft, teamRosters: (await readTeamRosterStatePersistent(scope)).byTeamId });
     }
 
     if (body.action === "return") {
       if (!body.teamId || !body.playerId || !body.reason) {
         return NextResponse.json({ error: "teamId, playerId en reason zijn verplicht" }, { status: 400 });
       }
-      const draft = returnPickedPlayerToPool({
+      const draft = await returnPickedPlayerToPoolPersistent({
         teamId: body.teamId,
         playerId: body.playerId,
         reason: body.reason,
         scope,
       });
-      return NextResponse.json({ ok: true, draft, teamRosters: readTeamRosterState(scope).byTeamId });
+      return NextResponse.json({ ok: true, draft, teamRosters: (await readTeamRosterStatePersistent(scope)).byTeamId });
     }
 
     return NextResponse.json({ error: "Onbekende action" }, { status: 400 });

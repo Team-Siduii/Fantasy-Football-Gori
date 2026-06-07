@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
+import { isGoriDatabaseEnabled, readPersistentJson, writePersistentJson } from "./persistent-json-store";
 
 export type RoundLock = {
   roundNumber: number;
@@ -254,10 +255,18 @@ export function saveManagerState(
   scope: ManagerStateScope = "eredivisie",
   managerKey?: string | null,
 ): ManagerState {
-  const target = resolveManagerStatePath(scope);
-  mkdirSync(path.dirname(target), { recursive: true });
-
   const current = readManagerState(scope);
+  const toWrite = buildNextManagerState(current, nextState, managerKey);
+  writeManagerStateFile(toWrite, scope);
+  const key = normalizeManagerKey(managerKey);
+  return key ? readManagerState(scope, key) : toWrite;
+}
+
+function buildNextManagerState(
+  current: ManagerState,
+  nextState: Partial<ManagerState>,
+  managerKey?: string | null,
+): ManagerState {
   const key = normalizeManagerKey(managerKey);
   const currentPersonal = resolvePersonalState(current, key);
 
@@ -289,8 +298,7 @@ export function saveManagerState(
       : current.adminActionLog,
   };
 
-  // Keep global top-level snapshot in sync for backward compatibility.
-  const toWrite: ManagerState = {
+  return {
     ...merged,
     formation: nextPersonal.formation,
     lineupIds: nextPersonal.lineupIds,
@@ -300,8 +308,40 @@ export function saveManagerState(
     pendingBuyId: nextPersonal.pendingBuyId,
     roundStates: nextPersonal.roundStates,
   };
+}
 
-  writeFileSync(target, JSON.stringify(toWrite, null, 2), "utf-8");
+function writeManagerStateFile(next: ManagerState, scope: ManagerStateScope = "eredivisie") {
+  const target = resolveManagerStatePath(scope);
+  mkdirSync(path.dirname(target), { recursive: true });
+  writeFileSync(target, JSON.stringify(next, null, 2), "utf-8");
+}
+
+export async function readManagerStatePersistent(
+  scope: ManagerStateScope = "eredivisie",
+  managerKey?: string | null,
+): Promise<ManagerState> {
+  const fallback = readManagerState(scope, managerKey);
+  if (!isGoriDatabaseEnabled()) {
+    return fallback;
+  }
+
+  const persisted = await readPersistentJson({ store: "manager-state", scope }, readManagerState(scope));
+  writeManagerStateFile(persisted, scope);
+  return readManagerState(scope, managerKey);
+}
+
+export async function saveManagerStatePersistent(
+  nextState: Partial<ManagerState>,
+  scope: ManagerStateScope = "eredivisie",
+  managerKey?: string | null,
+): Promise<ManagerState> {
+  const current = await readManagerStatePersistent(scope);
+  const toWrite = buildNextManagerState(current, nextState, managerKey);
+  writeManagerStateFile(toWrite, scope);
+  if (isGoriDatabaseEnabled()) {
+    await writePersistentJson({ store: "manager-state", scope }, toWrite);
+  }
+  const key = normalizeManagerKey(managerKey);
   return key ? readManagerState(scope, key) : toWrite;
 }
 
@@ -311,6 +351,10 @@ export function readManagerStateForRound(
   managerKey?: string | null,
 ): RoundSnapshot {
   const state = readManagerState(scope, managerKey);
+  return pickRoundSnapshot(state, roundNumber);
+}
+
+function pickRoundSnapshot(state: ManagerState, roundNumber: number): RoundSnapshot {
   const entries = Object.entries(state.roundStates)
     .map(([key, snapshot]) => ({ round: Number(key), snapshot }))
     .filter((entry) => Number.isInteger(entry.round) && entry.round > 0 && entry.round <= roundNumber)
@@ -323,6 +367,15 @@ export function readManagerStateForRound(
   return toRoundSnapshot(state);
 }
 
+export async function readManagerStateForRoundPersistent(
+  roundNumber: number,
+  scope: ManagerStateScope = "eredivisie",
+  managerKey?: string | null,
+): Promise<RoundSnapshot> {
+  const state = await readManagerStatePersistent(scope, managerKey);
+  return pickRoundSnapshot(state, roundNumber);
+}
+
 export function saveManagerStateForRound(
   roundNumber: number,
   nextState: Partial<ManagerState>,
@@ -332,8 +385,27 @@ export function saveManagerStateForRound(
 ): ManagerState {
   const state = readManagerState(scope, managerKey);
   const snapshot = toRoundSnapshot({ ...state, ...nextState });
+  const nextRoundStates = buildNextRoundStates(state.roundStates, roundNumber, snapshot, propagateToFutureRounds);
+
+  return saveManagerState(
+    {
+      ...nextState,
+      ...snapshot,
+      roundStates: nextRoundStates,
+    },
+    scope,
+    managerKey,
+  );
+}
+
+function buildNextRoundStates(
+  currentRoundStates: Record<string, RoundSnapshot>,
+  roundNumber: number,
+  snapshot: RoundSnapshot,
+  propagateToFutureRounds: boolean,
+) {
   const roundKey = String(roundNumber);
-  const nextRoundStates: Record<string, RoundSnapshot> = { ...state.roundStates, [roundKey]: snapshot };
+  const nextRoundStates: Record<string, RoundSnapshot> = { ...currentRoundStates, [roundKey]: snapshot };
 
   if (propagateToFutureRounds) {
     for (const key of Object.keys(nextRoundStates)) {
@@ -344,7 +416,21 @@ export function saveManagerStateForRound(
     }
   }
 
-  return saveManagerState(
+  return nextRoundStates;
+}
+
+export async function saveManagerStateForRoundPersistent(
+  roundNumber: number,
+  nextState: Partial<ManagerState>,
+  scope: ManagerStateScope = "eredivisie",
+  propagateToFutureRounds = true,
+  managerKey?: string | null,
+): Promise<ManagerState> {
+  const state = await readManagerStatePersistent(scope, managerKey);
+  const snapshot = toRoundSnapshot({ ...state, ...nextState });
+  const nextRoundStates = buildNextRoundStates(state.roundStates, roundNumber, snapshot, propagateToFutureRounds);
+
+  return saveManagerStatePersistent(
     {
       ...nextState,
       ...snapshot,
@@ -360,6 +446,11 @@ export function isRoundLocked(roundNumber: number, scope: ManagerStateScope = "e
   return state.roundLocks.some((lock) => lock.roundNumber === roundNumber && lock.locked);
 }
 
+export async function isRoundLockedPersistent(roundNumber: number, scope: ManagerStateScope = "eredivisie"): Promise<boolean> {
+  const state = await readManagerStatePersistent(scope);
+  return state.roundLocks.some((lock) => lock.roundNumber === roundNumber && lock.locked);
+}
+
 export function setRoundLock(
   input: {
     roundNumber: number;
@@ -371,6 +462,19 @@ export function setRoundLock(
   scope: ManagerStateScope = "eredivisie",
 ): ManagerState {
   const state = readManagerState(scope);
+  return saveRoundLockToState(state, input, scope);
+}
+
+function buildRoundLockPatch(
+  state: ManagerState,
+  input: {
+    roundNumber: number;
+    locked: boolean;
+    reason: string;
+    actorId: string;
+    at?: string;
+  },
+) {
   const now = input.at ?? new Date().toISOString();
 
   const nextLock: RoundLock = {
@@ -397,13 +501,35 @@ export function setRoundLock(
     },
   ];
 
-  return saveManagerState(
-    {
-      roundLocks: nextLocks,
-      adminActionLog: nextLog,
-    },
-    scope,
-  );
+  return { roundLocks: nextLocks, adminActionLog: nextLog };
+}
+
+function saveRoundLockToState(
+  state: ManagerState,
+  input: {
+    roundNumber: number;
+    locked: boolean;
+    reason: string;
+    actorId: string;
+    at?: string;
+  },
+  scope: ManagerStateScope,
+) {
+  return saveManagerState(buildRoundLockPatch(state, input), scope);
+}
+
+export async function setRoundLockPersistent(
+  input: {
+    roundNumber: number;
+    locked: boolean;
+    reason: string;
+    actorId: string;
+    at?: string;
+  },
+  scope: ManagerStateScope = "eredivisie",
+): Promise<ManagerState> {
+  const state = await readManagerStatePersistent(scope);
+  return saveManagerStatePersistent(buildRoundLockPatch(state, input), scope);
 }
 
 export function resetManagerStateForTests(scope: ManagerStateScope = "eredivisie") {

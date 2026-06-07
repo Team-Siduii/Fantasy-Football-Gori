@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import {
-  readManagerState,
-  readManagerStateForRound,
-  saveManagerState,
-  saveManagerStateForRound,
+  readManagerStateForRoundPersistent,
+  readManagerStatePersistent,
+  saveManagerStateForRoundPersistent,
+  saveManagerStatePersistent,
   type ManagerStateScope,
 } from "@/lib/manager-state";
 import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
-import { syncManagerTeamFromDraftRoster } from "@/lib/draft-manager-sync";
+import { syncManagerTeamFromDraftRosterPersistent } from "@/lib/draft-manager-sync";
 
 function getScopeFromRequest(request: Request): ManagerStateScope {
   const mode = new URL(request.url).searchParams.get("mode");
@@ -22,16 +22,16 @@ export async function GET(request: Request) {
   const managerKey = await getAuthenticatedEmail();
   const scope = getScopeFromRequest(request);
   if (managerKey) {
-    syncManagerTeamFromDraftRoster({ managerEmail: managerKey, scope });
+    await syncManagerTeamFromDraftRosterPersistent({ managerEmail: managerKey, scope });
   }
   const roundNumberParam = new URL(request.url).searchParams.get("roundNumber");
   const roundNumber = roundNumberParam ? Number(roundNumberParam) : null;
 
   if (roundNumber && Number.isInteger(roundNumber) && roundNumber > 0) {
-    return NextResponse.json({ state: readManagerStateForRound(roundNumber, scope, managerKey) });
+    return NextResponse.json({ state: await readManagerStateForRoundPersistent(roundNumber, scope, managerKey) });
   }
 
-  return NextResponse.json({ state: readManagerState(scope, managerKey) });
+  return NextResponse.json({ state: await readManagerStatePersistent(scope, managerKey) });
 }
 
 export async function PUT(request: Request) {
@@ -81,14 +81,14 @@ export async function PUT(request: Request) {
   const hasRoundNumber = Number.isInteger(body.roundNumber) && (body.roundNumber as number) > 0;
 
   const state = hasRoundNumber
-    ? saveManagerStateForRound(
+    ? await saveManagerStateForRoundPersistent(
         body.roundNumber as number,
         partialState,
         scope,
         body.propagateToFutureRounds !== false,
         managerKey,
       )
-    : saveManagerState(partialState, scope, managerKey);
+    : await saveManagerStatePersistent(partialState, scope, managerKey);
 
   return NextResponse.json({ ok: true, state });
 }

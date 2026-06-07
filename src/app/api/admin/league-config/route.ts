@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthenticatedSession } from "@/lib/auth-session";
-import { getLeagueAdminConfig, updateLeagueAdminConfig } from "@/lib/league-admin-config";
+import { getLeagueAdminConfigPersistent, updateLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
 import { hasLeaguePermission, resolveActorIdFromRequest } from "@/lib/rbac";
 
 function resolveModeFromRequest(request: Request) {
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   }
 
   const mode = resolveModeFromRequest(request);
-  return NextResponse.json({ config: getLeagueAdminConfig(mode), mode });
+  return NextResponse.json({ config: await getLeagueAdminConfigPersistent(mode), mode });
 }
 
 export async function PUT(request: Request) {
@@ -40,6 +40,6 @@ export async function PUT(request: Request) {
   }
 
   const mode = resolveModeFromRequest(request);
-  const next = updateLeagueAdminConfig(body, mode);
+  const next = await updateLeagueAdminConfigPersistent(body, mode);
   return NextResponse.json({ ok: true, config: next, mode });
 }

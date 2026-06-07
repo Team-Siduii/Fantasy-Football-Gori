@@ -26,6 +26,13 @@ test-results/
 # local runtime state
 data/auth-state.json
 data/manager-state.json
+data/manager-state-wk.json
+data/draft-state.json
+data/draft-state-wk.json
+data/team-roster-state.json
+data/team-roster-state-wk.json
+data/league-admin-config.json
+data/league-admin-config-wk.json
 
 # typescript
 *.tsbuildinfo

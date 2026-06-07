@@ -1,8 +1,14 @@
 import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
 import { listManagerProfiles } from "./auth-store";
 import { getLeagueAdminConfig, type LeagueMode } from "./league-admin-config";
-import { readManagerState, saveManagerState, type ManagerStateScope } from "./manager-state";
-import { readTeamRosterState } from "./team-roster-state";
+import {
+  readManagerState,
+  readManagerStatePersistent,
+  saveManagerState,
+  saveManagerStatePersistent,
+  type ManagerStateScope,
+} from "./manager-state";
+import { readTeamRosterState, readTeamRosterStatePersistent } from "./team-roster-state";
 
 const DEFAULT_FORMATION = "4-3-3";
 const LINEUP_SIZE = 11;
@@ -96,6 +102,27 @@ export function syncDraftRosterToManagerTeam(input: {
   return { managerEmail, state };
 }
 
+export async function syncDraftRosterToManagerTeamPersistent(input: {
+  teamId: string;
+  playerIds: string[];
+  scope: ManagerStateScope;
+  formation?: string;
+}) {
+  const managerEmail = resolveDraftTeamManagerEmail(input.teamId, input.scope);
+  if (!managerEmail) {
+    return null;
+  }
+
+  const current = await readManagerStatePersistent(input.scope, managerEmail);
+  const state = await saveManagerStatePersistent(
+    buildManagerTeamStateWithRoundSnapshots(input.playerIds, current),
+    input.scope,
+    managerEmail,
+  );
+
+  return { managerEmail, state };
+}
+
 export function syncManagerTeamFromDraftRoster(input: { managerEmail: string; scope: ManagerStateScope }) {
   const managerEmail = normalizeEmail(input.managerEmail);
   if (!managerEmail) {
@@ -119,5 +146,31 @@ export function syncManagerTeamFromDraftRoster(input: { managerEmail: string; sc
   }
 
   const state = saveManagerState(next, input.scope, managerEmail);
+  return { managerEmail, state, changed: true };
+}
+
+export async function syncManagerTeamFromDraftRosterPersistent(input: { managerEmail: string; scope: ManagerStateScope }) {
+  const managerEmail = normalizeEmail(input.managerEmail);
+  if (!managerEmail) {
+    return null;
+  }
+
+  const rosters = (await readTeamRosterStatePersistent(input.scope)).byTeamId;
+  const match = Object.entries(rosters).find(([teamId]) => resolveDraftTeamManagerEmail(teamId, input.scope) === managerEmail);
+  if (!match) {
+    return null;
+  }
+
+  const [, playerIds] = match;
+  const current = await readManagerStatePersistent(input.scope, managerEmail);
+  const next = buildManagerTeamStateWithRoundSnapshots(playerIds, current);
+  const currentIds = [...current.lineupIds, ...current.benchIds];
+  const nextIds = [...next.lineupIds, ...next.benchIds];
+
+  if (currentIds.join("\u0000") === nextIds.join("\u0000")) {
+    return { managerEmail, state: current, changed: false };
+  }
+
+  const state = await saveManagerStatePersistent(next, input.scope, managerEmail);
   return { managerEmail, state, changed: true };
 }
