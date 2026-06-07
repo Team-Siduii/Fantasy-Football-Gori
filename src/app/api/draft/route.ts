@@ -1,11 +1,31 @@
+import { readFile } from "fs/promises";
+import path from "path";
 import { NextResponse } from "next/server";
+import { parsePlayerCsv } from "@/domain/player-csv";
 import { isAuthenticatedSession } from "@/lib/auth-session";
 import { readDraftState, registerPick, returnPickedPlayerToPool, startDraft } from "@/lib/draft-state";
+import { getLeagueAdminConfig } from "@/lib/league-admin-config";
+import { bootstrapPlayersFromDefaultCsv } from "@/lib/player-bootstrap";
+import { listPlayers } from "@/lib/player-store";
 import { readTeamRosterState } from "@/lib/team-roster-state";
 
 function resolveDraftScope(request: Request) {
   const url = new URL(request.url);
   return url.searchParams.get("mode") === "wk" ? "wk" : "eredivisie";
+}
+
+async function loadDraftPlayerCatalog(scope: "eredivisie" | "wk") {
+  if (scope === "wk") {
+    try {
+      const csvContent = await readFile(path.join(process.cwd(), "data", "players-wk.csv"), "utf-8");
+      return parsePlayerCsv(csvContent).players;
+    } catch {
+      return [];
+    }
+  }
+
+  await bootstrapPlayersFromDefaultCsv();
+  return listPlayers();
 }
 
 export async function GET(request: Request) {
@@ -61,7 +81,14 @@ export async function POST(request: Request) {
       if (!body.teamId || !body.playerId) {
         return NextResponse.json({ error: "teamId en playerId zijn verplicht" }, { status: 400 });
       }
-      const draft = registerPick({ teamId: body.teamId, playerId: body.playerId, scope });
+      const config = getLeagueAdminConfig(scope);
+      const draft = registerPick({
+        teamId: body.teamId,
+        playerId: body.playerId,
+        scope,
+        playerCatalog: await loadDraftPlayerCatalog(scope),
+        budgetCap: config.budget.teamValueCapMillions,
+      });
       return NextResponse.json({ ok: true, draft, teamRosters: readTeamRosterState(scope).byTeamId });
     }
 

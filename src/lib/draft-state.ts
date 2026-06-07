@@ -1,6 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
+import { buildFormationSlots, getFormationOptions } from "../domain/formation";
+import type { PlayerRecord } from "../domain/player";
 import { buildDraftPickSequence } from "../domain/rules";
+import { calculateSquadCost } from "../domain/team-budget";
 import { syncDraftRosterToManagerTeam } from "./draft-manager-sync";
 import { addPlayerToTeamRoster, removePlayerFromTeamRoster, resetTeamRosterState, type TeamRosterScope } from "./team-roster-state";
 
@@ -164,7 +167,104 @@ export function startDraft(input: {
   }, scope);
 }
 
-export function registerPick(input: { teamId: string; playerId: string; at?: string; scope?: DraftScope }): DraftState {
+type DraftPickValidationPlayer = Pick<PlayerRecord, "id" | "positie" | "prijs">;
+
+type DraftPosition = "GK" | "DEF" | "MID" | "FWD";
+
+type DraftBenchComposition = Record<DraftPosition, number>;
+
+const DEFAULT_DRAFT_BENCH_COMPOSITION: DraftBenchComposition = { GK: 1, DEF: 1, MID: 1, FWD: 1 };
+
+function normalizeDraftPosition(position: string): DraftPosition | null {
+  const normalized = position.trim().toUpperCase();
+  if (["GK", "KEEPER", "GOALKEEPER", "DOELMAN"].includes(normalized)) return "GK";
+  if (["DEF", "VERDEDIGER", "DEFENDER"].includes(normalized)) return "DEF";
+  if (["MID", "MIDDENVELDER", "MIDFIELDER"].includes(normalized)) return "MID";
+  if (["FWD", "AANVALLER", "FORWARD", "ATTACKER"].includes(normalized)) return "FWD";
+  return null;
+}
+
+function buildMaxDraftPositionCounts(
+  formationOptions = getFormationOptions(),
+  benchComposition: DraftBenchComposition = DEFAULT_DRAFT_BENCH_COMPOSITION,
+): DraftBenchComposition {
+  const maxCounts: DraftBenchComposition = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+
+  for (const formation of formationOptions) {
+    const lineupCounts: DraftBenchComposition = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+    for (const row of buildFormationSlots(formation)) {
+      for (const slot of row) {
+        lineupCounts[slot] += 1;
+      }
+    }
+
+    maxCounts.GK = Math.max(maxCounts.GK, lineupCounts.GK + benchComposition.GK);
+    maxCounts.DEF = Math.max(maxCounts.DEF, lineupCounts.DEF + benchComposition.DEF);
+    maxCounts.MID = Math.max(maxCounts.MID, lineupCounts.MID + benchComposition.MID);
+    maxCounts.FWD = Math.max(maxCounts.FWD, lineupCounts.FWD + benchComposition.FWD);
+  }
+
+  return maxCounts;
+}
+
+function validateDraftPickConstraints(input: {
+  current: DraftState;
+  teamId: string;
+  playerId: string;
+  playerCatalog?: DraftPickValidationPlayer[];
+  budgetCap?: number;
+  formationOptions?: string[];
+  benchComposition?: DraftBenchComposition;
+}) {
+  if (!input.playerCatalog) {
+    return;
+  }
+
+  const playersById = new Map(input.playerCatalog.map((player) => [player.id, player]));
+  const selectedPlayerIds = input.current.picks
+    .filter((pick) => pick.teamId === input.teamId)
+    .map((pick) => pick.playerId);
+  const candidatePlayerIds = [...selectedPlayerIds, input.playerId];
+  const candidatePlayers = candidatePlayerIds
+    .map((playerId) => playersById.get(playerId))
+    .filter((player): player is DraftPickValidationPlayer => Boolean(player));
+
+  const pickedPlayer = playersById.get(input.playerId);
+  if (!pickedPlayer) {
+    throw new Error("speler niet gevonden in draftcatalogus");
+  }
+
+  if (typeof input.budgetCap === "number" && calculateSquadCost(candidatePlayers) > input.budgetCap) {
+    throw new Error("maximale transferbudget overschreden");
+  }
+
+  const maxPositionCounts = buildMaxDraftPositionCounts(input.formationOptions, input.benchComposition);
+  const actualPositionCounts: DraftBenchComposition = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+
+  for (const player of candidatePlayers) {
+    const position = normalizeDraftPosition(player.positie);
+    if (position) {
+      actualPositionCounts[position] += 1;
+    }
+  }
+
+  for (const position of Object.keys(actualPositionCounts) as DraftPosition[]) {
+    if (actualPositionCounts[position] > maxPositionCounts[position]) {
+      throw new Error("spelercombinatie past niet binnen de beschikbare formatie-opties");
+    }
+  }
+}
+
+export function registerPick(input: {
+  teamId: string;
+  playerId: string;
+  at?: string;
+  scope?: DraftScope;
+  playerCatalog?: DraftPickValidationPlayer[];
+  budgetCap?: number;
+  formationOptions?: string[];
+  benchComposition?: DraftBenchComposition;
+}): DraftState {
   const scope = input.scope ?? "eredivisie";
   const current = readDraftState(scope);
   if (current.status !== "ACTIVE") {
@@ -176,6 +276,16 @@ export function registerPick(input: { teamId: string; playerId: string; at?: str
   if (current.picks.some((pick) => pick.playerId === input.playerId)) {
     throw new Error("player already picked");
   }
+
+  validateDraftPickConstraints({
+    current,
+    teamId: input.teamId,
+    playerId: input.playerId,
+    playerCatalog: input.playerCatalog,
+    budgetCap: input.budgetCap,
+    formationOptions: input.formationOptions,
+    benchComposition: input.benchComposition,
+  });
 
   const pickNumber = current.picks.length + 1;
   const at = input.at ?? new Date().toISOString();

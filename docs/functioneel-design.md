@@ -90,7 +90,7 @@ Per rol belangrijkste rechten:
   - Ronde 3: omgekeerde volgorde (bijv. 5-4-3-2-1)
 - Daarmee kiest de nummer laatst van vorig jaar in 2 van elke 3 rondes als eerste
 - Draft loopt tot elk team 15 spelers heeft
-- Roster-validatie wordt tijdens draft al afgedwongen (teamopbouw/formatieregels)
+- Roster-validatie wordt tijdens draft al afgedwongen: picks worden geblokkeerd als de teamwaarde boven de mode-specifieke transferbudget-cap komt of als de geselecteerde positiecombinatie niet meer binnen enige toegestane formatie + vaste bankverdeling past.
 - Tijdens draft mag manager intern schuiven tussen basis/bank en formatie (voor zover geldig met al gekozen spelers)
 - Tijdens draft mag manager een eerder gekozen speler teruggeven aan de vrije pool
 - Bij teruggeven aan de vrije pool ontvangen andere managers een notificatie
@@ -203,7 +203,7 @@ FR-005: Drop+add wordt als 1 transactie verwerkt (geen half-voltooide teamstatus
 FR-006: Binnen een league blijft exclusiviteit leidend: geen dubbele spelerstoewijzing over teams.
 FR-007: Volledige audittrail van picks, drops, adds en sync-runs.
 FR-008 (fase 2): deterministische conflictresolutie voor gelijktijdige claims.
-FR-009: Roster-validatie dwingt tijdens draft geldige teamopbouw af; bij draft-einde geldt exact 15 spelers met bankverdeling (1K/1V/1M/1A).
+FR-009: Roster-validatie dwingt tijdens draft geldige teamopbouw af: een manager kan geen pick doen boven het mode-specifieke maximale transferbudget en geen positiecombinatie kiezen die buiten alle toegestane formaties + vaste bankverdeling valt; bij draft-einde geldt exact 15 spelers met bankverdeling (1K/1V/1M/1A).
 FR-010: Basisopstelling bevat exact 1 keeper en een geldige veldformatie uit de toegestane set.
 FR-011: Transferlimiet is standaard 1 per ronde, met precies 3 vooraf ingestelde bonusrondes met limiet 3.
 FR-012: Team kan geen transfer bevestigen die budget overschrijdt.

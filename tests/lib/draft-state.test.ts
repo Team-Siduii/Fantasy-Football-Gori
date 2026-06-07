@@ -132,4 +132,48 @@ describe("draft-state persistence", () => {
     expect(rosterMod.readTeamRosterState("eredivisie").byTeamId.A).toEqual(["eredivisie-player-1"]);
     expect(rosterMod.readTeamRosterState("wk").byTeamId.A).toEqual(["wk-player-1"]);
   });
+
+  it("blocks a draft pick when the team value would exceed the transfer budget", async () => {
+    const mod = await import("../../src/lib/draft-state");
+    const rosterMod = await import("../../src/lib/team-roster-state");
+    mod.resetDraftStateForTests();
+    rosterMod.resetTeamRosterStateForTests();
+
+    const playerCatalog = [
+      { id: "p-1", naam: "Budget Mid", club: "PSV", positie: "MID", prijs: 20 },
+      { id: "p-2", naam: "Too Expensive", club: "AJA", positie: "FWD", prijs: 13 },
+    ];
+
+    mod.startDraft({ leagueId: "league-1", teamOrder: ["A", "B"], totalRounds: 2, startedBy: "admin-1" });
+    mod.registerPick({ teamId: "A", playerId: "p-1", playerCatalog, budgetCap: 32 });
+    mod.registerPick({ teamId: "B", playerId: "other" });
+
+    expect(() => mod.registerPick({ teamId: "A", playerId: "p-2", playerCatalog, budgetCap: 32 })).toThrow(
+      /transferbudget/i,
+    );
+    expect(rosterMod.readTeamRosterState().byTeamId.A).toEqual(["p-1"]);
+  });
+
+  it("blocks a draft pick when the position combination cannot fit any allowed formation", async () => {
+    const mod = await import("../../src/lib/draft-state");
+    const rosterMod = await import("../../src/lib/team-roster-state");
+    mod.resetDraftStateForTests();
+    rosterMod.resetTeamRosterStateForTests();
+
+    const playerCatalog = [
+      { id: "gk-1", naam: "Keeper 1", club: "PSV", positie: "GK", prijs: 1 },
+      { id: "gk-2", naam: "Keeper 2", club: "AJA", positie: "GK", prijs: 1 },
+      { id: "gk-3", naam: "Keeper 3", club: "FEY", positie: "GK", prijs: 1 },
+    ];
+
+    mod.startDraft({ leagueId: "league-1", teamOrder: ["A", "B"], totalRounds: 4, startedBy: "admin-1" });
+    mod.registerPick({ teamId: "A", playerId: "gk-1", playerCatalog });
+    mod.registerPick({ teamId: "B", playerId: "other-1" });
+    mod.registerPick({ teamId: "A", playerId: "gk-2", playerCatalog });
+    mod.registerPick({ teamId: "B", playerId: "other-2" });
+    mod.registerPick({ teamId: "B", playerId: "other-3" });
+
+    expect(() => mod.registerPick({ teamId: "A", playerId: "gk-3", playerCatalog })).toThrow(/formatie/i);
+    expect(rosterMod.readTeamRosterState().byTeamId.A).toEqual(["gk-1", "gk-2"]);
+  });
 });
