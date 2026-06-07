@@ -1,3 +1,5 @@
+import { buildFormationSlots, getFormationOptions } from "../domain/formation";
+import type { PlayerRecord } from "../domain/player";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
 import { listManagerProfiles } from "./auth-store";
 import { getLeagueAdminConfig, type LeagueMode } from "./league-admin-config";
@@ -13,6 +15,9 @@ import { readTeamRosterState, readTeamRosterStatePersistent } from "./team-roste
 const DEFAULT_FORMATION = "4-3-3";
 const LINEUP_SIZE = 11;
 const SQUAD_SIZE = 15;
+
+type DraftPosition = "GK" | "DEF" | "MID" | "FWD";
+type DraftPlayerCatalogEntry = Pick<PlayerRecord, "id" | "positie">;
 
 function normalize(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -60,10 +65,87 @@ export function resolveDraftTeamManagerEmail(teamId: string, scope: ManagerState
   return account?.email.trim().toLowerCase() ?? null;
 }
 
-function buildManagerTeamState(playerIds: string[], formation = DEFAULT_FORMATION) {
+function normalizeDraftPosition(position: string): DraftPosition | null {
+  const normalized = position.trim().toUpperCase();
+  if (["GK", "KEEPER", "GOALKEEPER", "DOELMAN"].includes(normalized)) return "GK";
+  if (["DEF", "VERDEDIGER", "DEFENDER"].includes(normalized)) return "DEF";
+  if (["MID", "MIDDENVELDER", "MIDFIELDER"].includes(normalized)) return "MID";
+  if (["FWD", "AANVALLER", "FORWARD", "ATTACKER"].includes(normalized)) return "FWD";
+  return null;
+}
+
+function buildAutoFormationTeamState(playerIds: string[], playerCatalog: DraftPlayerCatalogEntry[]) {
+  const playersById = new Map(playerCatalog.map((player) => [player.id, player]));
   const uniquePlayerIds = Array.from(
     new Set(playerIds.filter((id) => typeof id === "string" && id.trim().length > 0)),
   ).slice(0, SQUAD_SIZE);
+  const idsByPosition: Record<DraftPosition, string[]> = { GK: [], DEF: [], MID: [], FWD: [] };
+  const unknownIds: string[] = [];
+
+  for (const playerId of uniquePlayerIds) {
+    const position = normalizeDraftPosition(playersById.get(playerId)?.positie ?? "");
+    if (position) {
+      idsByPosition[position].push(playerId);
+    } else {
+      unknownIds.push(playerId);
+    }
+  }
+
+  const options = getFormationOptions();
+  let bestFormation = options[0] ?? DEFAULT_FORMATION;
+  let bestLineupCount = -1;
+
+  for (const formation of options) {
+    const slotCounts: Record<DraftPosition, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+    for (const row of buildFormationSlots(formation)) {
+      for (const slot of row) {
+        slotCounts[slot] += 1;
+      }
+    }
+    const lineupCount = (Object.keys(slotCounts) as DraftPosition[]).reduce(
+      (sum, position) => sum + Math.min(slotCounts[position], idsByPosition[position].length),
+      0,
+    );
+    if (lineupCount > bestLineupCount) {
+      bestFormation = formation;
+      bestLineupCount = lineupCount;
+    }
+  }
+
+  const used = new Set<string>();
+  const lineupIds: string[] = [];
+  for (const position of buildFormationSlots(bestFormation).flat()) {
+    const next = idsByPosition[position].find((id) => !used.has(id));
+    if (next) {
+      used.add(next);
+      lineupIds.push(next);
+    }
+  }
+
+  for (const playerId of unknownIds) {
+    if (lineupIds.length >= LINEUP_SIZE) break;
+    used.add(playerId);
+    lineupIds.push(playerId);
+  }
+
+  const benchIds = uniquePlayerIds.filter((id) => !used.has(id)).slice(0, SQUAD_SIZE - lineupIds.length);
+  return { formation: bestFormation, lineupIds, benchIds };
+}
+
+function buildManagerTeamState(playerIds: string[], formation = DEFAULT_FORMATION, playerCatalog?: DraftPlayerCatalogEntry[]) {
+  const uniquePlayerIds = Array.from(
+    new Set(playerIds.filter((id) => typeof id === "string" && id.trim().length > 0)),
+  ).slice(0, SQUAD_SIZE);
+
+  if (playerCatalog && playerCatalog.length > 0) {
+    const autoFilled = buildAutoFormationTeamState(uniquePlayerIds, playerCatalog);
+    return {
+      ...autoFilled,
+      pendingSellId: null,
+      pendingBuyId: null,
+      pickedTransferId: null,
+    };
+  }
 
   return {
     formation,
@@ -75,8 +157,12 @@ function buildManagerTeamState(playerIds: string[], formation = DEFAULT_FORMATIO
   };
 }
 
-function buildManagerTeamStateWithRoundSnapshots(playerIds: string[], current: ReturnType<typeof readManagerState>) {
-  const next = buildManagerTeamState(playerIds, current.formation || DEFAULT_FORMATION);
+function buildManagerTeamStateWithRoundSnapshots(
+  playerIds: string[],
+  current: ReturnType<typeof readManagerState>,
+  playerCatalog?: DraftPlayerCatalogEntry[],
+) {
+  const next = buildManagerTeamState(playerIds, current.formation || DEFAULT_FORMATION, playerCatalog);
   const roundStates = Object.fromEntries(Object.keys(current.roundStates).map((roundKey) => [roundKey, next]));
 
   return {
@@ -90,6 +176,7 @@ export function syncDraftRosterToManagerTeam(input: {
   playerIds: string[];
   scope: ManagerStateScope;
   formation?: string;
+  playerCatalog?: DraftPlayerCatalogEntry[];
 }) {
   const managerEmail = resolveDraftTeamManagerEmail(input.teamId, input.scope);
   if (!managerEmail) {
@@ -97,7 +184,11 @@ export function syncDraftRosterToManagerTeam(input: {
   }
 
   const current = readManagerState(input.scope, managerEmail);
-  const state = saveManagerState(buildManagerTeamStateWithRoundSnapshots(input.playerIds, current), input.scope, managerEmail);
+  const state = saveManagerState(
+    buildManagerTeamStateWithRoundSnapshots(input.playerIds, current, input.playerCatalog),
+    input.scope,
+    managerEmail,
+  );
 
   return { managerEmail, state };
 }
@@ -107,6 +198,7 @@ export async function syncDraftRosterToManagerTeamPersistent(input: {
   playerIds: string[];
   scope: ManagerStateScope;
   formation?: string;
+  playerCatalog?: DraftPlayerCatalogEntry[];
 }) {
   const managerEmail = resolveDraftTeamManagerEmail(input.teamId, input.scope);
   if (!managerEmail) {
@@ -115,7 +207,7 @@ export async function syncDraftRosterToManagerTeamPersistent(input: {
 
   const current = await readManagerStatePersistent(input.scope, managerEmail);
   const state = await saveManagerStatePersistent(
-    buildManagerTeamStateWithRoundSnapshots(input.playerIds, current),
+    buildManagerTeamStateWithRoundSnapshots(input.playerIds, current, input.playerCatalog),
     input.scope,
     managerEmail,
   );

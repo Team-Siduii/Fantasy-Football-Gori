@@ -183,4 +183,52 @@ describe("draft roster to manager team sync", () => {
     expect(manager.readManagerState("wk", JOHAN_EMAIL).lineupIds).toEqual(["wk-player-1"]);
     expect(manager.readManagerStateForRound(1, "wk", JOHAN_EMAIL).lineupIds).toEqual(["wk-player-1"]);
   });
+
+  it("auto-fills picked players into a viable formation instead of only appending by pick order", async () => {
+    const { draft, roster, manager } = await loadModules();
+    draft.resetDraftStateForTests("wk");
+    roster.resetTeamRosterStateForTests("wk");
+    manager.resetManagerStateForTests("wk");
+
+    const playerCatalog = [
+      { id: "gk-1", naam: "Keeper", club: "Nederland", positie: "GK", prijs: 1 },
+      { id: "def-1", naam: "Def 1", club: "België", positie: "DEF", prijs: 1 },
+      { id: "def-2", naam: "Def 2", club: "Duitsland", positie: "DEF", prijs: 1 },
+      { id: "def-3", naam: "Def 3", club: "Frankrijk", positie: "DEF", prijs: 1 },
+      { id: "mid-1", naam: "Mid 1", club: "Spanje", positie: "MID", prijs: 1 },
+      { id: "mid-2", naam: "Mid 2", club: "Portugal", positie: "MID", prijs: 1 },
+      { id: "mid-3", naam: "Mid 3", club: "Italië", positie: "MID", prijs: 1 },
+      { id: "mid-4", naam: "Mid 4", club: "Kroatië", positie: "MID", prijs: 1 },
+      { id: "mid-5", naam: "Mid 5", club: "Marokko", positie: "MID", prijs: 1 },
+      { id: "fwd-1", naam: "Fwd 1", club: "Argentinië", positie: "FWD", prijs: 1 },
+      { id: "fwd-2", naam: "Fwd 2", club: "Brazilië", positie: "FWD", prijs: 1 },
+    ];
+
+    draft.startDraft({
+      leagueId: "wk-2026",
+      teamOrder: ["Johan Swart", "Thomas"],
+      totalRounds: 11,
+      startedBy: "admin-1",
+      scope: "wk",
+    });
+
+    const johanPicks = ["gk-1", "def-1", "def-2", "def-3", "mid-1", "mid-2", "mid-3", "mid-4", "mid-5", "fwd-1", "fwd-2"];
+    let johanIndex = 0;
+    let otherIndex = 0;
+    while (johanIndex < johanPicks.length) {
+      const turn = draft.readDraftState("wk").currentTurnTeamId!;
+      if (turn === "Johan Swart") {
+        draft.registerPick({ teamId: turn, playerId: johanPicks[johanIndex], scope: "wk", playerCatalog });
+        johanIndex += 1;
+      } else {
+        draft.registerPick({ teamId: turn, playerId: `other-${otherIndex}`, scope: "wk" });
+        otherIndex += 1;
+      }
+    }
+
+    const johanWkState = manager.readManagerState("wk", JOHAN_EMAIL);
+    expect(johanWkState.formation).toBe("3-5-2");
+    expect(johanWkState.lineupIds).toEqual(["gk-1", "def-1", "def-2", "def-3", "mid-1", "mid-2", "mid-3", "mid-4", "mid-5", "fwd-1", "fwd-2"]);
+    expect(johanWkState.benchIds).toEqual([]);
+  });
 });

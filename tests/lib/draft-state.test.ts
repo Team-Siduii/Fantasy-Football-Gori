@@ -176,4 +176,27 @@ describe("draft-state persistence", () => {
     expect(() => mod.registerPick({ teamId: "A", playerId: "gk-3", playerCatalog })).toThrow(/formatie/i);
     expect(rosterMod.readTeamRosterState().byTeamId.A).toEqual(["gk-1", "gk-2"]);
   });
+
+  it("blocks country stacking above two players from the same country", async () => {
+    const mod = await import("../../src/lib/draft-state");
+    const rosterMod = await import("../../src/lib/team-roster-state");
+    mod.resetDraftStateForTests();
+    rosterMod.resetTeamRosterStateForTests();
+
+    const playerCatalog = [
+      { id: "ned-1", naam: "Dutch One", club: "Nederland", positie: "MID", prijs: 1 },
+      { id: "ned-2", naam: "Dutch Two", club: "Nederland", positie: "DEF", prijs: 1 },
+      { id: "ned-3", naam: "Dutch Three", club: "Nederland", positie: "FWD", prijs: 1 },
+    ];
+
+    mod.startDraft({ leagueId: "league-1", teamOrder: ["A", "B"], totalRounds: 4, startedBy: "admin-1" });
+    mod.registerPick({ teamId: "A", playerId: "ned-1", playerCatalog });
+    mod.registerPick({ teamId: "B", playerId: "other-1" });
+    mod.registerPick({ teamId: "A", playerId: "ned-2", playerCatalog });
+    mod.registerPick({ teamId: "B", playerId: "other-2" });
+    mod.registerPick({ teamId: "B", playerId: "other-3" });
+
+    expect(() => mod.registerPick({ teamId: "A", playerId: "ned-3", playerCatalog })).toThrow(/maximaal 2 spelers per land/i);
+    expect(rosterMod.readTeamRosterState().byTeamId.A).toEqual(["ned-1", "ned-2"]);
+  });
 });

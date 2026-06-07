@@ -90,7 +90,8 @@ Per rol belangrijkste rechten:
   - Ronde 3: omgekeerde volgorde (bijv. 5-4-3-2-1)
 - Daarmee kiest de nummer laatst van vorig jaar in 2 van elke 3 rondes als eerste
 - Draft loopt tot elk team 15 spelers heeft
-- Roster-validatie wordt tijdens draft al afgedwongen: picks worden geblokkeerd als de teamwaarde boven de mode-specifieke transferbudget-cap komt of als de geselecteerde positiecombinatie niet meer binnen enige toegestane formatie + vaste bankverdeling past.
+- Roster-validatie wordt tijdens draft al afgedwongen: picks worden geblokkeerd als de teamwaarde boven de mode-specifieke transferbudget-cap komt, als de geselecteerde linie-aantallen niet meer binnen één toegestane formatie + vaste bankverdeling passen, of als een manager boven maximaal 2 spelers uit hetzelfde land komt.
+- Elke geldige draftpick wordt direct in My Team ingevuld; de app kiest automatisch de best passende toegestane formatie op basis van de reeds gekozen spelers en plaatst overige geldige spelers op de bank.
 - Tijdens draft mag manager intern schuiven tussen basis/bank en formatie (voor zover geldig met al gekozen spelers)
 - Tijdens draft mag manager een eerder gekozen speler teruggeven aan de vrije pool
 - Bij teruggeven aan de vrije pool ontvangen andere managers een notificatie
@@ -203,7 +204,7 @@ FR-005: Drop+add wordt als 1 transactie verwerkt (geen half-voltooide teamstatus
 FR-006: Binnen een league blijft exclusiviteit leidend: geen dubbele spelerstoewijzing over teams.
 FR-007: Volledige audittrail van picks, drops, adds en sync-runs.
 FR-008 (fase 2): deterministische conflictresolutie voor gelijktijdige claims.
-FR-009: Roster-validatie dwingt tijdens draft geldige teamopbouw af: een manager kan geen pick doen boven het mode-specifieke maximale transferbudget en geen positiecombinatie kiezen die buiten alle toegestane formaties + vaste bankverdeling valt; bij draft-einde geldt exact 15 spelers met bankverdeling (1K/1V/1M/1A).
+FR-009: Roster-validatie dwingt tijdens draft geldige teamopbouw af: een manager kan geen pick doen boven het mode-specifieke maximale transferbudget, geen linie-aantallen kiezen die buiten één geldige formatie + vaste bankverdeling vallen en maximaal 2 spelers per land selecteren; bij iedere geldige pick wordt My Team direct automatisch gevuld met de best passende formatie en bij draft-einde geldt exact 15 spelers met bankverdeling (1K/1V/1M/1A).
 FR-010: Basisopstelling bevat exact 1 keeper en een geldige veldformatie uit de toegestane set.
 FR-011: Transferlimiet is standaard 1 per ronde, met precies 3 vooraf ingestelde bonusrondes met limiet 3.
 FR-012: Team kan geen transfer bevestigen die budget overschrijdt.
@@ -609,3 +610,4 @@ Waarom zo:
 - 2026-06-06: Logged-out header-menu aangescherpt: zonder actieve managersessie toont het menu alleen `Log in`; manager-only opties en `Log out` verschijnen pas na geldige login.
 - 2026-06-07: Database-backed Gori persistence toegevoegd naar RxAruba-patroon: centrale `persistent-json-store` met `gori_fantasy` namespace, Postgres tabel `gori_fantasy_state`, gescheiden keys per store/mode/manager en async API-routes voor draft, team-rosters, manager-state, league-config en round-locks; file-backed `/tmp`/data fallback blijft beschikbaar.
 - 2026-06-08: Definitieve actieve WKCoach spelerslijst opnieuw ingeladen in `data/players-wk.csv`: 1.244 selecteerbare spelers uit 48 landen; 10 door WKCoach als niet-actief gemarkeerde spelers zijn bewust uitgesloten van de fantasy pool.
+- 2026-06-08: Draft guardrails compleet gemaakt: server-side picks blokkeren nu ook land-stacking boven 2 spelers per land en eisen dat de volledige gekozen linie-mix binnen één toegestane formatie + bank past; geldige picks syncen direct naar My Team met automatische formatiekeuze en lineup/bank-vulling.

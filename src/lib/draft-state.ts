@@ -227,7 +227,7 @@ export async function startDraftPersistent(input: {
   return writeDraftStatePersistent(next, scope);
 }
 
-type DraftPickValidationPlayer = Pick<PlayerRecord, "id" | "positie" | "prijs">;
+type DraftPickValidationPlayer = Pick<PlayerRecord, "id" | "positie" | "prijs" | "club">;
 
 type DraftPosition = "GK" | "DEF" | "MID" | "FWD";
 
@@ -244,27 +244,46 @@ function normalizeDraftPosition(position: string): DraftPosition | null {
   return null;
 }
 
-function buildMaxDraftPositionCounts(
-  formationOptions = getFormationOptions(),
+function buildPositionCountsForFormation(
+  formation: string,
   benchComposition: DraftBenchComposition = DEFAULT_DRAFT_BENCH_COMPOSITION,
 ): DraftBenchComposition {
-  const maxCounts: DraftBenchComposition = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
-
-  for (const formation of formationOptions) {
-    const lineupCounts: DraftBenchComposition = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
-    for (const row of buildFormationSlots(formation)) {
-      for (const slot of row) {
-        lineupCounts[slot] += 1;
-      }
+  const lineupCounts: DraftBenchComposition = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+  for (const row of buildFormationSlots(formation)) {
+    for (const slot of row) {
+      lineupCounts[slot] += 1;
     }
-
-    maxCounts.GK = Math.max(maxCounts.GK, lineupCounts.GK + benchComposition.GK);
-    maxCounts.DEF = Math.max(maxCounts.DEF, lineupCounts.DEF + benchComposition.DEF);
-    maxCounts.MID = Math.max(maxCounts.MID, lineupCounts.MID + benchComposition.MID);
-    maxCounts.FWD = Math.max(maxCounts.FWD, lineupCounts.FWD + benchComposition.FWD);
   }
 
-  return maxCounts;
+  return {
+    GK: lineupCounts.GK + benchComposition.GK,
+    DEF: lineupCounts.DEF + benchComposition.DEF,
+    MID: lineupCounts.MID + benchComposition.MID,
+    FWD: lineupCounts.FWD + benchComposition.FWD,
+  };
+}
+
+function hasViableFormationForCounts(
+  actualPositionCounts: DraftBenchComposition,
+  formationOptions = getFormationOptions(),
+  benchComposition: DraftBenchComposition = DEFAULT_DRAFT_BENCH_COMPOSITION,
+) {
+  return formationOptions.some((formation) => {
+    const maxCounts = buildPositionCountsForFormation(formation, benchComposition);
+    return (Object.keys(actualPositionCounts) as DraftPosition[]).every(
+      (position) => actualPositionCounts[position] <= maxCounts[position],
+    );
+  });
+}
+
+function countPlayersByCountry(players: DraftPickValidationPlayer[]) {
+  const counts = new Map<string, number>();
+  for (const player of players) {
+    const country = player.club.trim().toLowerCase();
+    if (!country) continue;
+    counts.set(country, (counts.get(country) ?? 0) + 1);
+  }
+  return counts;
 }
 
 function validateDraftPickConstraints(input: {
@@ -298,7 +317,12 @@ function validateDraftPickConstraints(input: {
     throw new Error("maximale transferbudget overschreden");
   }
 
-  const maxPositionCounts = buildMaxDraftPositionCounts(input.formationOptions, input.benchComposition);
+  for (const count of countPlayersByCountry(candidatePlayers).values()) {
+    if (count > 2) {
+      throw new Error("maximaal 2 spelers per land toegestaan");
+    }
+  }
+
   const actualPositionCounts: DraftBenchComposition = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
 
   for (const player of candidatePlayers) {
@@ -308,10 +332,8 @@ function validateDraftPickConstraints(input: {
     }
   }
 
-  for (const position of Object.keys(actualPositionCounts) as DraftPosition[]) {
-    if (actualPositionCounts[position] > maxPositionCounts[position]) {
-      throw new Error("spelercombinatie past niet binnen de beschikbare formatie-opties");
-    }
+  if (!hasViableFormationForCounts(actualPositionCounts, input.formationOptions, input.benchComposition)) {
+    throw new Error("spelercombinatie past niet binnen de beschikbare formatie-opties");
   }
 }
 
@@ -334,6 +356,7 @@ export function registerPick(input: {
     teamId: input.teamId,
     playerIds: rosterState.byTeamId[input.teamId] ?? [],
     scope,
+    playerCatalog: input.playerCatalog,
   });
 
   return writeDraftState(next, scope);
@@ -407,6 +430,7 @@ export async function registerPickPersistent(input: {
     teamId: input.teamId,
     playerIds: rosterState.byTeamId[input.teamId] ?? [],
     scope,
+    playerCatalog: input.playerCatalog,
   });
 
   return writeDraftStatePersistent(next, scope);
