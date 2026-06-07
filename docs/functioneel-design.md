@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-06-07
+Laatste update: 2026-06-08
 
 ## 1. Productvisie
 Doel van de app:
@@ -608,3 +608,4 @@ Waarom zo:
 - 2026-06-06: Headeracties samengevoegd in één responsive openklapmenu (`Menu`) op laptop en mobiel, met Draft, Naam aanpassen, Instellingen, Spelregels, CSV import en Log out zodat knoppen niet meer buiten het scherm vallen.
 - 2026-06-06: Logged-out header-menu aangescherpt: zonder actieve managersessie toont het menu alleen `Log in`; manager-only opties en `Log out` verschijnen pas na geldige login.
 - 2026-06-07: Database-backed Gori persistence toegevoegd naar RxAruba-patroon: centrale `persistent-json-store` met `gori_fantasy` namespace, Postgres tabel `gori_fantasy_state`, gescheiden keys per store/mode/manager en async API-routes voor draft, team-rosters, manager-state, league-config en round-locks; file-backed `/tmp`/data fallback blijft beschikbaar.
+- 2026-06-08: Definitieve actieve WKCoach spelerslijst opnieuw ingeladen in `data/players-wk.csv`: 1.244 selecteerbare spelers uit 48 landen; 10 door WKCoach als niet-actief gemarkeerde spelers zijn bewust uitgesloten van de fantasy pool.
