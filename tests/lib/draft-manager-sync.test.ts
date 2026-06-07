@@ -149,4 +149,38 @@ describe("draft roster to manager team sync", () => {
     expect(repaired?.changed).toBe(true);
     expect(manager.readManagerState("wk", JOHAN_EMAIL).lineupIds).toEqual(["wk-player-1"]);
   });
+
+  it("updates round-scoped manager snapshots so draft picks are visible on My Team immediately", async () => {
+    const { draft, roster, manager } = await loadModules();
+    draft.resetDraftStateForTests("wk");
+    roster.resetTeamRosterStateForTests("wk");
+    manager.resetManagerStateForTests("wk");
+
+    manager.saveManagerStateForRound(
+      1,
+      {
+        formation: "4-3-3",
+        lineupIds: ["old-player"],
+        benchIds: [],
+        pickedTransferId: null,
+        pendingSellId: null,
+        pendingBuyId: null,
+      },
+      "wk",
+      true,
+      JOHAN_EMAIL,
+    );
+
+    draft.startDraft({
+      leagueId: "wk-2026",
+      teamOrder: ["Johan Swart", "Thomas"],
+      totalRounds: 2,
+      startedBy: "admin-1",
+      scope: "wk",
+    });
+    draft.registerPick({ teamId: "Johan Swart", playerId: "wk-player-1", scope: "wk" });
+
+    expect(manager.readManagerState("wk", JOHAN_EMAIL).lineupIds).toEqual(["wk-player-1"]);
+    expect(manager.readManagerStateForRound(1, "wk", JOHAN_EMAIL).lineupIds).toEqual(["wk-player-1"]);
+  });
 });

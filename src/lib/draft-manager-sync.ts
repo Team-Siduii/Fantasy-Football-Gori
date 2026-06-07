@@ -69,6 +69,16 @@ function buildManagerTeamState(playerIds: string[], formation = DEFAULT_FORMATIO
   };
 }
 
+function buildManagerTeamStateWithRoundSnapshots(playerIds: string[], current: ReturnType<typeof readManagerState>) {
+  const next = buildManagerTeamState(playerIds, current.formation || DEFAULT_FORMATION);
+  const roundStates = Object.fromEntries(Object.keys(current.roundStates).map((roundKey) => [roundKey, next]));
+
+  return {
+    ...next,
+    roundStates,
+  };
+}
+
 export function syncDraftRosterToManagerTeam(input: {
   teamId: string;
   playerIds: string[];
@@ -80,7 +90,8 @@ export function syncDraftRosterToManagerTeam(input: {
     return null;
   }
 
-  const state = saveManagerState(buildManagerTeamState(input.playerIds, input.formation), input.scope, managerEmail);
+  const current = readManagerState(input.scope, managerEmail);
+  const state = saveManagerState(buildManagerTeamStateWithRoundSnapshots(input.playerIds, current), input.scope, managerEmail);
 
   return { managerEmail, state };
 }
@@ -99,7 +110,7 @@ export function syncManagerTeamFromDraftRoster(input: { managerEmail: string; sc
 
   const [, playerIds] = match;
   const current = readManagerState(input.scope, managerEmail);
-  const next = buildManagerTeamState(playerIds, current.formation || DEFAULT_FORMATION);
+  const next = buildManagerTeamStateWithRoundSnapshots(playerIds, current);
   const currentIds = [...current.lineupIds, ...current.benchIds];
   const nextIds = [...next.lineupIds, ...next.benchIds];
 
