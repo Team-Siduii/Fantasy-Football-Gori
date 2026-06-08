@@ -355,6 +355,19 @@ export default function DraftPage() {
 
         {loading ? <p className="draft-message">Draft laden...</p> : null}
 
+        {!loading && draft?.status !== "ACTIVE" && draft?.status !== "COMPLETED" ? (
+          <section className="card col-12" style={{ textAlign: "center", padding: "2rem" }}>
+            <h2 style={{ marginBottom: "0.5rem", color: "var(--muted)" }}>
+              {isWkMode ? "🌍 Geen actieve WK-draft" : "⚽ Geen actieve Eredivisie-draft"}
+            </h2>
+            <p style={{ color: "var(--muted)", maxWidth: 480, margin: "0 auto" }}>
+              {isAdmin
+                ? "Start een oefendraft via de admin-controls hieronder om te beginnen."
+                : "De league-admin moet eerst een draft starten. Je kunt alvast de spelerslijst bekijken."}
+            </p>
+          </section>
+        ) : null}
+
         <section className="card col-12 draft-order-card">
           <div className="section-title-row">
             <div>

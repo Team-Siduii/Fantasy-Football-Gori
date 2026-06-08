@@ -29,6 +29,27 @@ function isActive(pathname: string, href: string) {
   return href !== "/" && pathname.startsWith(`${href}/`);
 }
 
+const MODE_SWITCH_MAP: Record<string, string> = {
+  "/draft": "/manager/world-cup/draft",
+  "/manager/my-team": "/manager/world-cup",
+  "/manager/transfer-pool": "/manager/world-cup/transfer-pool",
+  "/manager/league": "/manager/world-cup/league",
+  "/account": "/account",
+  "/instellingen": "/instellingen",
+  "/spelregels": "/spelregels",
+  "/manager/world-cup/draft": "/draft",
+  "/manager/world-cup": "/manager/my-team",
+  "/manager/world-cup/transfer-pool": "/manager/transfer-pool",
+  "/manager/world-cup/league": "/manager/league",
+};
+
+function switchModePath(currentPath: string): string {
+  if (MODE_SWITCH_MAP[currentPath]) return MODE_SWITCH_MAP[currentPath];
+  // Fallback: if on a WK page, go to Eredivisie team; otherwise go to WK team
+  if (currentPath.startsWith("/manager/world-cup")) return "/manager/my-team";
+  return "/manager/world-cup";
+}
+
 type SubpouleSummaryResponse = {
   teamName?: string;
   standing?: {
@@ -147,10 +168,10 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
         <section className="mode-switch" aria-label="Spelmodus wissel">
           <span className="mode-switch-label">Mode</span>
           <div className="mode-switch-buttons">
-            <Link href="/manager/my-team" className={`mode-switch-button ${!isWkMode ? "active" : ""}`}>
+            <Link href={isWkMode ? switchModePath(pathname) : pathname} className={`mode-switch-button ${!isWkMode ? "active" : ""}`}>
               Eredivisie
             </Link>
-            <Link href="/manager/world-cup" className={`mode-switch-button ${isWkMode ? "active" : ""}`}>
+            <Link href={isWkMode ? pathname : switchModePath(pathname)} className={`mode-switch-button ${isWkMode ? "active" : ""}`}>
               WK 2026
             </Link>
           </div>
