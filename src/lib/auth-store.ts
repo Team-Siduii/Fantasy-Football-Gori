@@ -136,6 +136,19 @@ function loadState(): PersistedAuthState {
     if (Array.isArray(parsed.accounts)) {
       const validAccounts = parsed.accounts.filter(isAuthAccount);
       if (validAccounts.length > 0) {
+        // Merge in new accounts from presets that don't exist yet on disk
+        const existingIds = new Set(validAccounts.map((a) => a.id));
+        const existingEmails = new Set(validAccounts.map((a) => a.profile.email.toLowerCase()));
+        let changed = false;
+        for (const preset of AUTH_TEST_ACCOUNT_PRESETS) {
+          if (!existingIds.has(preset.id) && !existingEmails.has(preset.email.toLowerCase())) {
+            validAccounts.push(createDefaultAccountFromPreset(preset));
+            changed = true;
+          }
+        }
+        if (changed) {
+          saveState({ accounts: validAccounts, resetTokens: normalizeResetTokens(parsed.resetTokens) });
+        }
         return {
           accounts: validAccounts,
           resetTokens: normalizeResetTokens(parsed.resetTokens),
@@ -378,7 +391,18 @@ export async function ensureAuthStateFromDb(): Promise<void> {
     { store: "auth-state", scope: "global" },
     authState,
   );
+  // Merge in new accounts from presets that don't exist yet in DB
+  const existingIds = new Set(persisted.accounts.map((a) => a.id));
+  const existingEmails = new Set(persisted.accounts.map((a) => a.profile.email.toLowerCase()));
+  let changed = false;
+  for (const preset of AUTH_TEST_ACCOUNT_PRESETS) {
+    if (!existingIds.has(preset.id) && !existingEmails.has(preset.email.toLowerCase())) {
+      persisted.accounts.push(createDefaultAccountFromPreset(preset));
+      changed = true;
+    }
+  }
   authState = persisted;
+  if (changed) await flushAuthStateToDb();
 }
 
 export async function flushAuthStateToDb(): Promise<void> {
