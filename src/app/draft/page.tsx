@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { getDraftPlayerDisplayMeta } from "@/lib/draft-player-display";
+import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
 
 type PlayerRecord = {
   id: string;
@@ -95,6 +96,7 @@ export default function DraftPage() {
   const [pickPlayerId, setPickPlayerId] = useState("");
   const [returnTeamId, setReturnTeamId] = useState("");
   const [returnPlayerId, setReturnPlayerId] = useState("");
+  const [formation, setFormation] = useState("4-3-3");
 
   const loadDraft = useCallback(async () => {
     const response = await fetch(`/api/draft?mode=${modeParam}`, { cache: "no-store" });
@@ -202,6 +204,22 @@ export default function DraftPage() {
   const isMyTurn = Boolean(myDraftTeamId && draft?.currentTurnTeamId === myDraftTeamId);
   const pickNumber = (draft?.picks.length ?? 0) + 1;
   const currentRound = draft && draft.teamOrder.length > 0 ? Math.ceil(pickNumber / draft.teamOrder.length) : 0;
+
+  const formationSlots = useMemo(() => {
+    const slots = buildFormationSlots(formation);
+    const byPos: Record<string, PlayerRecord[]> = { GK: [], DEF: [], MID: [], FWD: [] };
+    for (const pid of myRoster) {
+      const player = playerById.get(pid);
+      if (player) byPos[player.positie].push(player);
+    }
+    const remaining = { ...byPos };
+    return slots.map((row) =>
+      row.map((pos) => {
+        const pool = remaining[pos] ?? [];
+        return pool.length > 0 ? pool.shift()! : null;
+      }),
+    );
+  }, [formation, myRoster, playerById]);
 
   const filteredPlayers = useMemo(() => {
     const q = normalize(search);
@@ -389,6 +407,42 @@ export default function DraftPage() {
               <button type="button" onClick={() => toggleSort("prijs")}>Waarde {sortIndicator("prijs")}</button>
             </div>
           </div>
+
+          {myDraftTeamId ? (
+            <div style={{ marginBottom: 12 }}>
+              <div className="formation-header">
+                <strong style={{ fontSize: "0.9rem" }}>{myDraftTeamId} · {myRoster.length} spelers</strong>
+                <select className="formation-select" value={formation} onChange={(e) => setFormation(e.target.value)} aria-label="Formatie">
+                  {getFormationOptions().map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="pitch" style={{ gap: "0.3rem", padding: "0.35rem" }}>
+                {formationSlots.map((row, ri) => (
+                  <div key={ri} className="pitch-row" data-size={row.length}>
+                    {row.map((player, ci) => (
+                      <div
+                        key={ci}
+                        className={`player-card ${!player ? "player-card--open" : ""}`}
+                        style={{ height: "3.8rem", gridTemplateRows: "0.9rem 2rem 0.9rem" }}
+                      >
+                        <span className="player-top" style={{ fontSize: "0.6rem", padding: "0 0.3rem" }}>
+                          {player ? player.positie : row.length === 1 ? "GK" : ri === 1 ? "DEF" : ri === 2 ? "MID" : "FWD"}
+                        </span>
+                        <strong className="player-name" style={{ fontSize: "0.7rem", padding: "0 0.3rem", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {player ? player.naam : "Open"}
+                        </strong>
+                        <span className="player-points" style={{ fontSize: "0.6rem", padding: "0 0.3rem" }}>
+                          {player ? player.club : "—"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="draft-player-grid">
             {filteredPlayers.map((player) => {
