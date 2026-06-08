@@ -71,6 +71,16 @@ export const AUTH_TEST_ACCOUNT_PRESETS: AuthTestAccountPreset[] = [
     inviteCode: "WK-SIM-ADMIN-2026",
   },
   {
+    id: "ice-eckmund",
+    label: "Ice Eckmund",
+    role: "manager",
+    name: "Ice Eckmund",
+    email: "ice.eckmund@gmail.com",
+    teamName: "Kies teamnaam",
+    password: "unused-after-setup",
+    inviteCode: "WK-ICE-2026",
+  },
+  {
     id: "admin",
     label: "Test Admin",
     role: "admin",
