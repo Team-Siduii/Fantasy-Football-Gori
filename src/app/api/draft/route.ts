@@ -2,7 +2,8 @@ import { readFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
 import { parsePlayerCsv } from "@/domain/player-csv";
-import { isAuthenticatedSession } from "@/lib/auth-session";
+import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
+import { resolveDraftTeamManagerEmail } from "@/lib/draft-manager-sync";
 import {
   readDraftStatePersistent,
   registerPickPersistent,
@@ -88,6 +89,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "teamId en playerId zijn verplicht" }, { status: 400 });
       }
       const config = await getLeagueAdminConfigPersistent(scope);
+      if (config.draft.mode === "manager") {
+        const email = await getAuthenticatedEmail();
+        if (!email) {
+          return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
+        }
+        const teamManagerEmail = resolveDraftTeamManagerEmail(body.teamId, scope);
+        if (!teamManagerEmail || teamManagerEmail !== email) {
+          return NextResponse.json({ error: "Je kunt alleen spelers kiezen voor je eigen team" }, { status: 403 });
+        }
+      }
       const draft = await registerPickPersistent({
         teamId: body.teamId,
         playerId: body.playerId,
