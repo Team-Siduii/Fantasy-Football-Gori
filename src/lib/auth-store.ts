@@ -159,6 +159,11 @@ function findAccountByEmail(email: string): AuthAccount | undefined {
   return authState.accounts.find((account) => account.profile.email.toLowerCase() === email.toLowerCase());
 }
 
+export function isAdminEmail(email: string): boolean {
+  const account = findAccountByEmail(email);
+  return account?.role === "admin";
+}
+
 function comparePassword(password: string, account: AuthAccount) {
   const candidate = Buffer.from(hashPassword(password, account.passwordSalt), "hex");
   const expected = Buffer.from(account.passwordHash, "hex");

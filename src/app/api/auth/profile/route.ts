@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ensureAuthStateFromDb, flushAuthStateToDb, getProfileByEmail, updateProfileByEmail } from "@/lib/auth-store";
+import { ensureAuthStateFromDb, flushAuthStateToDb, getProfileByEmail, isAdminEmail, updateProfileByEmail } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 
 export async function GET() {
@@ -14,7 +14,7 @@ export async function GET() {
     return NextResponse.json({ error: "Account niet gevonden" }, { status: 404 });
   }
 
-  return NextResponse.json({ profile });
+  return NextResponse.json({ profile, role: isAdminEmail(email) ? "admin" : "manager" });
 }
 
 export async function PUT(request: Request) {

@@ -52,6 +52,7 @@ type Profile = {
   name: string;
   email: string;
   teamName: string;
+  role?: "admin" | "manager";
 };
 
 const DEFAULT_ROUNDS = 15;
@@ -118,8 +119,8 @@ export default function DraftPage() {
   async function loadProfile() {
     const response = await fetch("/api/auth/profile", { cache: "no-store" });
     if (!response.ok) return;
-    const data = (await response.json()) as { profile?: Profile };
-    setProfile(data.profile ?? null);
+    const data = (await response.json()) as { profile?: Profile; role?: "admin" | "manager" };
+    setProfile(data.profile ? { ...data.profile, role: data.role } : null);
   }
 
   const loadLeagueConfig = useCallback(async () => {
@@ -306,7 +307,12 @@ export default function DraftPage() {
 
   const canPick = draft?.status === "ACTIVE" && Boolean(activeTeamId && pickPlayerId) && !busy;
   const isManagerMode = leagueConfig?.draft?.mode === "manager";
-  const canPickInMode = isManagerMode ? (canPick && isMyTurn) : canPick;
+  const isAdmin = profile?.role === "admin";
+  // In admin mode: only admins can pick (for any team)
+  // In manager mode: only the team's manager can pick (for their own team)
+  const canPickInMode = isManagerMode
+    ? (canPick && isMyTurn)
+    : (canPick && isAdmin);
 
   return (
     <AppShell
@@ -547,7 +553,7 @@ export default function DraftPage() {
           </div>
         </section>
 
-        {!isManagerMode ? (
+        {!isManagerMode && isAdmin ? (
         <section className="card col-12 draft-admin-details">
           <div className="section-title-row">
             <div>

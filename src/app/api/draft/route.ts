@@ -3,6 +3,7 @@ import path from "path";
 import { NextResponse } from "next/server";
 import { parsePlayerCsv } from "@/domain/player-csv";
 import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
+import { isAdminEmail } from "@/lib/auth-store";
 import { resolveDraftTeamManagerEmail } from "@/lib/draft-manager-sync";
 import {
   readDraftStatePersistent,
@@ -74,6 +75,10 @@ export async function POST(request: Request) {
       if (!body.leagueId || !Array.isArray(body.teamOrder) || typeof body.totalRounds !== "number" || !body.startedBy) {
         return NextResponse.json({ error: "Ontbrekende draft-start velden" }, { status: 400 });
       }
+      const email = await getAuthenticatedEmail();
+      if (!email || !isAdminEmail(email)) {
+        return NextResponse.json({ error: "Alleen admins kunnen een draft starten" }, { status: 403 });
+      }
       const draft = await startDraftPersistent({
         leagueId: body.leagueId,
         teamOrder: body.teamOrder,
@@ -89,14 +94,19 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "teamId en playerId zijn verplicht" }, { status: 400 });
       }
       const config = await getLeagueAdminConfigPersistent(scope);
+      const email = await getAuthenticatedEmail();
+      if (!email) {
+        return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
+      }
       if (config.draft.mode === "manager") {
-        const email = await getAuthenticatedEmail();
-        if (!email) {
-          return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
-        }
         const teamManagerEmail = resolveDraftTeamManagerEmail(body.teamId, scope);
         if (!teamManagerEmail || teamManagerEmail !== email) {
           return NextResponse.json({ error: "Je kunt alleen spelers kiezen voor je eigen team" }, { status: 403 });
+        }
+      } else {
+        // Admin mode: only admin users can draft
+        if (!isAdminEmail(email)) {
+          return NextResponse.json({ error: "Alleen admins kunnen draften in deze modus" }, { status: 403 });
         }
       }
       const draft = await registerPickPersistent({
@@ -112,6 +122,10 @@ export async function POST(request: Request) {
     if (body.action === "return") {
       if (!body.teamId || !body.playerId || !body.reason) {
         return NextResponse.json({ error: "teamId, playerId en reason zijn verplicht" }, { status: 400 });
+      }
+      const email = await getAuthenticatedEmail();
+      if (!email || !isAdminEmail(email)) {
+        return NextResponse.json({ error: "Alleen admins kunnen spelers terugzetten" }, { status: 403 });
       }
       const draft = await returnPickedPlayerToPoolPersistent({
         teamId: body.teamId,
