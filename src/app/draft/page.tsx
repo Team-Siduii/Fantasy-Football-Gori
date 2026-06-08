@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { getDraftPlayerDisplayMeta } from "@/lib/draft-player-display";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
+import { PlayerCard } from "@/components/player-card";
 
 type PlayerRecord = {
   id: string;
@@ -196,8 +197,17 @@ export default function DraftPage() {
   const myDraftTeamId = useMemo(() => {
     if (!draft || !profile) return null;
     const candidates = [profile.name, profile.teamName, profile.email].map(normalize);
-    return draft.teamOrder.find((team) => candidates.includes(normalize(team))) ?? null;
-  }, [draft, profile]);
+    const directMatch = draft.teamOrder.find((team) => candidates.includes(normalize(team)));
+    if (directMatch) return directMatch;
+    // Match via participant email — find the participant with matching email, return their managerId if in teamOrder
+    const participant = acceptedParticipants.find(
+      (p) => normalize(p.email) === normalize(profile.email),
+    );
+    if (participant && draft.teamOrder.includes(participant.managerId)) {
+      return participant.managerId;
+    }
+    return null;
+  }, [draft, profile, acceptedParticipants]);
 
   const activeTeamId = draft?.currentTurnTeamId ?? "";
   const myRoster = myDraftTeamId ? (teamRosters[myDraftTeamId] ?? []) : [];
@@ -418,26 +428,33 @@ export default function DraftPage() {
                   ))}
                 </select>
               </div>
-              <div className="pitch" style={{ gap: "0.3rem", padding: "0.35rem" }}>
+              <div className="pitch">
                 {formationSlots.map((row, ri) => (
                   <div key={ri} className="pitch-row" data-size={row.length}>
-                    {row.map((player, ci) => (
-                      <div
-                        key={ci}
-                        className={`player-card ${!player ? "player-card--open" : ""}`}
-                        style={{ height: "3.8rem", gridTemplateRows: "0.9rem 2rem 0.9rem" }}
-                      >
-                        <span className="player-top" style={{ fontSize: "0.6rem", padding: "0 0.3rem" }}>
-                          {player ? player.positie : row.length === 1 ? "GK" : ri === 1 ? "DEF" : ri === 2 ? "MID" : "FWD"}
-                        </span>
-                        <strong className="player-name" style={{ fontSize: "0.7rem", padding: "0 0.3rem", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {player ? player.naam : "Open"}
-                        </strong>
-                        <span className="player-points" style={{ fontSize: "0.6rem", padding: "0 0.3rem" }}>
-                          {player ? player.club : "—"}
-                        </span>
-                      </div>
-                    ))}
+                    {row.map((player, ci) => {
+                      if (player) {
+                        return (
+                          <PlayerCard
+                            key={player.id}
+                            position={player.positie}
+                            club={player.club}
+                            name={player.naam}
+                            pointsLabel={`€${player.prijs.toFixed(1)}M`}
+                          />
+                        );
+                      }
+                      const posLabel = row.length === 1 ? "GK" : ri === 1 ? "DEF" : ri === 2 ? "MID" : "FWD";
+                      return (
+                        <PlayerCard
+                          key={`open-${ri}-${ci}`}
+                          position={posLabel}
+                          club="—"
+                          name="Open"
+                          pointsLabel="—"
+                          className="player-card--open"
+                        />
+                      );
+                    })}
                   </div>
                 ))}
               </div>
