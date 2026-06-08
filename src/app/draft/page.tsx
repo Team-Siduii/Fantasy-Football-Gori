@@ -319,8 +319,6 @@ export default function DraftPage() {
           </div>
         </section>
 
-        {error ? <p className="error-text draft-message">{error}</p> : null}
-        {success ? <p className="success-text draft-message">{success}</p> : null}
         {loading ? <p className="draft-message">Draft laden...</p> : null}
 
         <section className="card col-12 draft-order-card">
@@ -432,6 +430,8 @@ export default function DraftPage() {
               Bevestig pick voor {activeTeamId || "team"}
             </button>
           </div>
+          {error ? <p className="error-text" style={{ marginTop: 8, textAlign: "center" }}>{error}</p> : null}
+          {success ? <p className="success-text" style={{ marginTop: 8, textAlign: "center" }}>{success}</p> : null}
         </section>
 
         <section className="card col-12">
