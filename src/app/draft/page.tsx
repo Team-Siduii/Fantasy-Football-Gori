@@ -42,7 +42,7 @@ type LeagueParticipant = {
 
 type LeagueAdminConfig = {
   competition: { name: string };
-  draft: { totalRounds: number };
+  draft: { totalRounds: number; mode?: "admin" | "manager" };
   participants: LeagueParticipant[];
 };
 
@@ -274,6 +274,8 @@ export default function DraftPage() {
   }
 
   const canPick = draft?.status === "ACTIVE" && Boolean(activeTeamId && pickPlayerId) && !busy;
+  const isManagerMode = leagueConfig?.draft?.mode === "manager";
+  const canPickInMode = isManagerMode ? (canPick && isMyTurn) : canPick;
 
   return (
     <AppShell
@@ -302,6 +304,7 @@ export default function DraftPage() {
                   ? `Jij draft als ${myDraftTeamId}. Wacht tot jouw beurt groen/oranje oplicht.`
                   : "Je bent ingelogd, maar je naam/teamnaam staat nog niet in de draftvolgorde."}
             </p>
+            {isManagerMode ? <p className="draft-eyebrow" style={{ marginTop: 4 }}>🔒 Manager modus — jij kiest alleen voor je eigen team</p> : null}
           </div>
           <div className="draft-hero-stats">
             <span>Status</span>
@@ -420,7 +423,7 @@ export default function DraftPage() {
             </div>
             <button
               type="button"
-              disabled={!canPick}
+              disabled={!canPickInMode}
               onClick={() => void postDraftAction({ action: "pick", teamId: activeTeamId, playerId: pickPlayerId }, "Pick opgeslagen")}
             >
               Bevestig pick voor {activeTeamId || "team"}
@@ -470,6 +473,7 @@ export default function DraftPage() {
           </div>
         </section>
 
+        {!isManagerMode ? (
         <section className="card col-12 draft-admin-details">
           <div className="section-title-row">
             <div>
@@ -535,6 +539,7 @@ export default function DraftPage() {
             </button>
           </div>
         </section>
+        ) : null}
 
         <section className="card col-12">
           <h2>Pick historie</h2>
