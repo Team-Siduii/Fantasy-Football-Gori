@@ -13,6 +13,8 @@ import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
 
 export type LeagueMode = "eredivisie" | "wk";
 
+export type DraftMode = "admin" | "manager";
+
 export type LeagueParticipantStatus = "PENDING" | "ACCEPTED" | "REJECTED";
 
 export type LeagueParticipant = {
@@ -49,6 +51,7 @@ export type LeagueAdminConfig = {
   roles: LeagueRoleAssignments;
   draft: {
     totalRounds: number;
+    mode: DraftMode;
   };
   participants: LeagueParticipant[];
   customRuleNotes: LeagueRuleNote[];
@@ -147,6 +150,7 @@ function defaultConfig(mode: LeagueMode): LeagueAdminConfig {
     roles: createDefaultRoleAssignments("owner-1", ["manager-1"]),
     draft: {
       totalRounds: 15,
+      mode: "admin" as DraftMode,
     },
     participants: defaultParticipants(),
     customRuleNotes: [],
@@ -195,6 +199,7 @@ function normalize(input: Partial<LeagueAdminConfig>, mode: LeagueMode): LeagueA
         typeof input.draft?.totalRounds === "number" && Number.isInteger(input.draft.totalRounds) && input.draft.totalRounds > 0
           ? input.draft.totalRounds
           : base.draft.totalRounds,
+      mode: input.draft?.mode === "manager" ? "manager" : base.draft.mode,
     },
     participants: normalizeParticipants(input.participants, base.participants),
     customRuleNotes: Array.isArray(input.customRuleNotes)

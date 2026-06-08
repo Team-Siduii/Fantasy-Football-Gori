@@ -46,7 +46,7 @@ describe("league admin config", () => {
           ...getLeagueAdminConfig("wk").competition,
           name: "WK Familie Poule",
         },
-        draft: { totalRounds: 12 },
+        draft: { totalRounds: 12, mode: "admin" },
         participants: [
           { managerId: "johan-swart", label: "Johan Swart", email: "Johan201@hotmail.com", status: "ACCEPTED" },
           { managerId: "thomas-bart", label: "Thomas", email: "Thomasbart91@gmail.com", status: "REJECTED" },
