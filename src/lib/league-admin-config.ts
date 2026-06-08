@@ -94,11 +94,11 @@ function defaultCompetitionNameForMode(mode: LeagueMode): string {
 }
 
 function defaultParticipants(): LeagueParticipant[] {
-  return AUTH_TEST_ACCOUNT_PRESETS.filter((account) => account.role === "manager").map((account) => ({
+  return AUTH_TEST_ACCOUNT_PRESETS.map((account) => ({
     managerId: account.id,
     label: account.label,
     email: account.email,
-    status: "ACCEPTED",
+    status: "ACCEPTED" as LeagueParticipantStatus,
   }));
 }
 
@@ -109,7 +109,7 @@ function normalizeParticipantStatus(value: unknown): LeagueParticipantStatus {
 function normalizeParticipants(input: unknown, fallback: LeagueParticipant[]): LeagueParticipant[] {
   if (!Array.isArray(input)) return fallback;
 
-  return input
+  const parsed = input
     .map((participant, index) => {
       const item = participant as Partial<LeagueParticipant>;
       const managerId = typeof item.managerId === "string" && item.managerId.trim() ? item.managerId.trim() : `manager-${index + 1}`;
@@ -124,6 +124,16 @@ function normalizeParticipants(input: unknown, fallback: LeagueParticipant[]): L
       };
     })
     .filter((participant) => participant.managerId.length > 0 && participant.label.length > 0);
+
+  // Merge in any new default participants that don't exist yet
+  const existingIds = new Set(parsed.map((p) => p.managerId));
+  for (const def of fallback) {
+    if (!existingIds.has(def.managerId)) {
+      parsed.push({ ...def, status: "ACCEPTED" as LeagueParticipantStatus });
+    }
+  }
+
+  return parsed;
 }
 
 function defaultConfig(mode: LeagueMode): LeagueAdminConfig {
