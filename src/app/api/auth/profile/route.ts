@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getProfileByEmail, updateProfileByEmail } from "@/lib/auth-store";
+import { ensureAuthStateFromDb, flushAuthStateToDb, getProfileByEmail, updateProfileByEmail } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 
 export async function GET() {
@@ -8,6 +8,7 @@ export async function GET() {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
 
+  await ensureAuthStateFromDb();
   const profile = getProfileByEmail(email);
   if (!profile) {
     return NextResponse.json({ error: "Account niet gevonden" }, { status: 404 });
@@ -28,10 +29,12 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Naam en teamnaam zijn verplicht." }, { status: 400 });
   }
 
+  await ensureAuthStateFromDb();
   const profile = updateProfileByEmail(email, {
     name: body.name.trim(),
     teamName: body.teamName.trim(),
   });
+  await flushAuthStateToDb();
 
   if (!profile) {
     return NextResponse.json({ error: "Account niet gevonden" }, { status: 404 });

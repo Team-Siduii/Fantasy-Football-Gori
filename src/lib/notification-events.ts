@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import crypto from "crypto";
+import { isGoriDatabaseEnabled, readPersistentJson, writePersistentJson } from "./persistent-json-store";
 
 export type NotificationEventType =
   | "TRANSFER_WINDOW_OPENED"
@@ -112,4 +113,31 @@ export function readNotificationEvents(filters?: {
 
     return true;
   });
+}
+
+export async function recordNotificationEventPersistent(input: NotificationEventInput): Promise<NotificationEvent> {
+  const event = recordNotificationEvent(input);
+  if (isGoriDatabaseEnabled()) {
+    const all = readRawEvents();
+    await writePersistentJson({ store: "notification-events", scope: "global" }, all);
+  }
+  return event;
+}
+
+export async function readNotificationEventsPersistent(filters?: {
+  managerId?: string;
+  leagueId?: string;
+  types?: NotificationEventType[];
+  since?: string;
+}): Promise<NotificationEvent[]> {
+  if (isGoriDatabaseEnabled()) {
+    const fromDb = await readPersistentJson<NotificationEvent[]>(
+      { store: "notification-events", scope: "global" },
+      [],
+    );
+    if (fromDb.length > 0) {
+      saveRawEvents(fromDb);
+    }
+  }
+  return readNotificationEvents(filters);
 }

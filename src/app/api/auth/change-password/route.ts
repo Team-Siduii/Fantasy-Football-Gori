@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { changePassword } from "@/lib/auth-store";
+import { changePassword, ensureAuthStateFromDb, flushAuthStateToDb } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 
 export async function POST(request: Request) {
@@ -17,7 +17,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nieuw wachtwoord moet minimaal 8 tekens hebben." }, { status: 400 });
   }
 
+  await ensureAuthStateFromDb();
   const ok = changePassword(email, body.currentPassword, body.newPassword);
+  await flushAuthStateToDb();
+
   if (!ok) {
     return NextResponse.json({ error: "Huidig wachtwoord is onjuist." }, { status: 400 });
   }

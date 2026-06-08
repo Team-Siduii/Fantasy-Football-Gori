@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authenticateManagerWithStatus } from "@/lib/auth-store";
+import { authenticateManagerWithStatus, ensureAuthStateFromDb } from "@/lib/auth-store";
 import { AUTH_COOKIE_NAME, getSessionCookieValue } from "@/lib/auth-session";
 
 export async function POST(request: Request) {
@@ -9,6 +9,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Email en wachtwoord/inlogcode zijn verplicht." }, { status: 400 });
   }
 
+  await ensureAuthStateFromDb();
   const status = authenticateManagerWithStatus(body.email, body.password);
   if (!status.ok) {
     return NextResponse.json({ error: "Ongeldige login." }, { status: 401 });

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getProfileByEmail } from "@/lib/auth-store";
+import { ensureAuthStateFromDb, getProfileByEmail } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 
 export async function GET() {
@@ -9,6 +9,7 @@ export async function GET() {
     return NextResponse.json({ authenticated: false });
   }
 
+  await ensureAuthStateFromDb();
   const profile = getProfileByEmail(email);
   if (!profile) {
     return NextResponse.json({ authenticated: false });

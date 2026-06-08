@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createPasswordResetToken, getPasswordResetLink, getProfileByEmail } from "@/lib/auth-store";
+import { createPasswordResetToken, ensureAuthStateFromDb, flushAuthStateToDb, getPasswordResetLink, getProfileByEmail } from "@/lib/auth-store";
 import { sendPasswordResetEmail } from "@/lib/mailer";
 
 export async function POST(request: Request) {
@@ -9,7 +9,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Email is verplicht." }, { status: 400 });
   }
 
+  await ensureAuthStateFromDb();
   const token = createPasswordResetToken(body.email);
+  await flushAuthStateToDb();
   const relativeLink = token ? getPasswordResetLink(token) : null;
   const origin = new URL(request.url).origin;
   const resetLink = relativeLink ? `${origin}${relativeLink}` : null;

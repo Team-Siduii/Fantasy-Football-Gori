@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { completeInitialSetup, getProfileByEmail } from "@/lib/auth-store";
+import { completeInitialSetup, ensureAuthStateFromDb, flushAuthStateToDb, getProfileByEmail } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 
 export async function POST(request: Request) {
@@ -17,10 +17,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nieuw wachtwoord moet minimaal 8 tekens hebben." }, { status: 400 });
   }
 
+  await ensureAuthStateFromDb();
   const ok = completeInitialSetup(email, body.inviteCode, body.newPassword, body.teamName);
   if (!ok) {
     return NextResponse.json({ error: "Setup mislukt. Controleer je inlogcode." }, { status: 400 });
   }
+  await flushAuthStateToDb();
 
   const profile = getProfileByEmail(email);
   return NextResponse.json({ ok: true, profile });

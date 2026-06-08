@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { consumePasswordResetToken } from "@/lib/auth-store";
+import { consumePasswordResetToken, ensureAuthStateFromDb, flushAuthStateToDb } from "@/lib/auth-store";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as { token?: string; newPassword?: string };
@@ -12,7 +12,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nieuw wachtwoord moet minimaal 8 tekens hebben." }, { status: 400 });
   }
 
+  await ensureAuthStateFromDb();
   const updated = consumePasswordResetToken(body.token, body.newPassword);
+  await flushAuthStateToDb();
+
   if (!updated) {
     return NextResponse.json({ error: "Ongeldige of verlopen reset token." }, { status: 400 });
   }

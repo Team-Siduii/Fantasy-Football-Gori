@@ -2,6 +2,7 @@ import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 import path from "path";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
+import { isGoriDatabaseEnabled, readPersistentJson, writePersistentJson } from "./persistent-json-store";
 
 export type ManagerProfile = {
   name: string;
@@ -364,6 +365,20 @@ export function consumePasswordResetToken(token: string, newPassword: string): b
 
 export function getPasswordResetLink(token: string): string {
   return `/reset-password?token=${encodeURIComponent(token)}`;
+}
+
+export async function ensureAuthStateFromDb(): Promise<void> {
+  if (!isGoriDatabaseEnabled()) return;
+  const persisted = await readPersistentJson<PersistedAuthState>(
+    { store: "auth-state", scope: "global" },
+    authState,
+  );
+  authState = persisted;
+}
+
+export async function flushAuthStateToDb(): Promise<void> {
+  if (!isGoriDatabaseEnabled()) return;
+  await writePersistentJson({ store: "auth-state", scope: "global" }, authState);
 }
 
 export function resetAuthStateForTests() {

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { isAuthenticatedSession } from "@/lib/auth-session";
 import {
-  readNotificationEvents,
-  recordNotificationEvent,
+  readNotificationEventsPersistent,
+  recordNotificationEventPersistent,
   type NotificationEventType,
 } from "@/lib/notification-events";
 
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   const leagueId = url.searchParams.get("leagueId") ?? undefined;
   const type = url.searchParams.get("type") ?? undefined;
 
-  const events = readNotificationEvents({
+  const events = await readNotificationEventsPersistent({
     managerId,
     leagueId,
     types: type && ALLOWED_TYPES.includes(type as NotificationEventType) ? [type as NotificationEventType] : undefined,
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "leagueId en managerId zijn verplicht" }, { status: 400 });
   }
 
-  const event = recordNotificationEvent({
+  const event = await recordNotificationEventPersistent({
     type: body.type,
     leagueId: body.leagueId,
     managerId: body.managerId,
