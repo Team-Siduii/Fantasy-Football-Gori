@@ -125,15 +125,33 @@ function normalizeParticipants(input: unknown, fallback: LeagueParticipant[]): L
     })
     .filter((participant) => participant.managerId.length > 0 && participant.label.length > 0);
 
-  // Merge in any new default participants that don't exist yet
-  const existingIds = new Set(parsed.map((p) => p.managerId));
+  // Deduplicate existing entries by email (keep first)
+  const seenEmails = new Map<string, number>();
+  const deduped: typeof parsed = [];
+  for (const p of parsed) {
+    const email = p.email.toLowerCase();
+    if (email && seenEmails.has(email)) continue; // skip duplicate
+    seenEmails.set(email, deduped.length);
+    deduped.push(p);
+  }
+
+  // Merge in new defaults
+  const existingIds = new Set(deduped.map((p) => p.managerId));
   for (const def of fallback) {
+    const defEmail = def.email.toLowerCase();
+    const existingIdx = seenEmails.get(defEmail);
+    if (existingIdx !== undefined) {
+      deduped[existingIdx] = { ...def, status: deduped[existingIdx].status };
+      existingIds.add(def.managerId);
+      continue;
+    }
     if (!existingIds.has(def.managerId)) {
-      parsed.push({ ...def, status: "ACCEPTED" as LeagueParticipantStatus });
+      deduped.push({ ...def, status: "ACCEPTED" as LeagueParticipantStatus });
+      if (defEmail) seenEmails.set(defEmail, deduped.length - 1);
     }
   }
 
-  return parsed;
+  return deduped;
 }
 
 function defaultConfig(mode: LeagueMode): LeagueAdminConfig {
