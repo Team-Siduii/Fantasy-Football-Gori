@@ -52,7 +52,6 @@ type Profile = {
   teamName: string;
 };
 
-const DEFAULT_TEAMS = "Johan Swart,Thomas,Jack,Emiel Zomerdijk";
 const DEFAULT_ROUNDS = 15;
 type DraftSortField = "naam" | "positie" | "club" | "prijs";
 type DraftSortDirection = "asc" | "desc";
@@ -85,7 +84,7 @@ export default function DraftPage() {
   const [leagueConfig, setLeagueConfig] = useState<LeagueAdminConfig | null>(null);
 
   const [leagueId, setLeagueId] = useState(isWkMode ? "WK 2026" : "Eredivisie 2025/2026");
-  const [teamCsv, setTeamCsv] = useState(DEFAULT_TEAMS);
+  const [teamOrderSlots, setTeamOrderSlots] = useState<string[]>([]);
   const [totalRounds, setTotalRounds] = useState(DEFAULT_ROUNDS);
   const [search, setSearch] = useState("");
   const [positionFilter, setPositionFilter] = useState<"ALL" | PlayerRecord["positie"]>("ALL");
@@ -126,16 +125,14 @@ export default function DraftPage() {
     const data = (await response.json()) as { config?: LeagueAdminConfig };
     if (!data.config) return;
 
-    const acceptedLabels = data.config.participants
-      .filter((participant) => participant.status === "ACCEPTED")
-      .map((participant) => participant.label)
-      .filter(Boolean);
+    const acceptedParticipants = data.config.participants
+      .filter((participant) => participant.status === "ACCEPTED");
 
     setLeagueConfig(data.config);
     setLeagueId(data.config.competition.name || (isWkMode ? "WK 2026" : "Eredivisie 2025/2026"));
     setTotalRounds(data.config.draft.totalRounds || DEFAULT_ROUNDS);
-    if (acceptedLabels.length >= 2) {
-      setTeamCsv(acceptedLabels.join(","));
+    if (acceptedParticipants.length >= 2 && teamOrderSlots.length === 0) {
+      setTeamOrderSlots(acceptedParticipants.map((p) => p.managerId));
     }
   }, [isWkMode, modeParam]);
 
@@ -166,13 +163,19 @@ export default function DraftPage() {
     setPickPlayerId("");
   }, [isWkMode, leagueConfig]);
 
-  const parsedTeams = useMemo(
-    () =>
-      teamCsv
-        .split(",")
-        .map((value) => value.trim())
-        .filter((value) => value.length > 0),
-    [teamCsv],
+  const acceptedParticipants = useMemo(
+    () => (leagueConfig?.participants ?? []).filter((p) => p.status === "ACCEPTED"),
+    [leagueConfig?.participants],
+  );
+
+  const participantById = useMemo(
+    () => new Map(acceptedParticipants.map((p) => [p.managerId, p])),
+    [acceptedParticipants],
+  );
+
+  const teamOrderLabels = useMemo(
+    () => teamOrderSlots.map((id) => participantById.get(id)?.label ?? id).filter(Boolean),
+    [teamOrderSlots, participantById],
   );
 
   const playerById = useMemo(() => new Map(players.map((player) => [player.id, player])), [players]);
@@ -279,7 +282,7 @@ export default function DraftPage() {
 
   return (
     <AppShell
-      title={isWkMode ? "WK Draftkamer" : "Eredivisie Draftkamer"}
+      title={leagueConfig?.competition.name || (isWkMode ? "WK Draftkamer" : "Eredivisie Draftkamer")}
       subtitle={
         isWkMode
           ? "WK draft-interface met eigen spelerspool, land/waarde/naam/positie-filters, live beurt, teamrosters en pick-historie."
@@ -489,20 +492,62 @@ export default function DraftPage() {
               League ID
               <input value={leagueId} onChange={(event) => setLeagueId(event.target.value)} disabled={busy} />
             </label>
-            <label>
-              Teams in volgorde
-              <input value={teamCsv} onChange={(event) => setTeamCsv(event.target.value)} disabled={busy} />
-            </label>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={{ marginBottom: 8, display: "block", fontWeight: 600 }}>Teams in volgorde</label>
+              {teamOrderSlots.map((managerId, index) => {
+                const available = acceptedParticipants.filter(
+                  (p) => !teamOrderSlots.includes(p.managerId) || p.managerId === managerId,
+                );
+                return (
+                  <div key={index} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
+                    <span style={{ minWidth: 24, color: "#666", fontSize: 13 }}>{index + 1}.</span>
+                    <select
+                      value={managerId}
+                      onChange={(event) => {
+                        const next = [...teamOrderSlots];
+                        next[index] = event.target.value;
+                        setTeamOrderSlots(next);
+                      }}
+                      disabled={busy}
+                      style={{ flex: 1 }}
+                    >
+                      <option value="">— Kies manager —</option>
+                      {available.map((p) => (
+                        <option key={p.managerId} value={p.managerId}>
+                          {p.label} ({p.email})
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setTeamOrderSlots(teamOrderSlots.filter((_, i) => i !== index))}
+                      disabled={busy || teamOrderSlots.length <= 2}
+                      style={{ padding: "4px 8px", fontSize: 12 }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => setTeamOrderSlots([...teamOrderSlots, ""])}
+                disabled={busy || teamOrderSlots.length >= acceptedParticipants.length}
+                style={{ marginTop: 4, padding: "4px 12px", fontSize: 12 }}
+              >
+                + Voeg positie toe
+              </button>
+            </div>
             <label>
               Rondes
               <input type="number" min={1} value={totalRounds} onChange={(event) => setTotalRounds(Number(event.target.value || 1))} disabled={busy} />
             </label>
             <button
               type="button"
-              disabled={busy || parsedTeams.length < 2 || totalRounds < 1}
+              disabled={busy || teamOrderSlots.filter(Boolean).length < 2 || totalRounds < 1}
               onClick={() =>
                 void postDraftAction(
-                  { action: "start", leagueId, teamOrder: parsedTeams, totalRounds, startedBy: profile?.email ?? "draft-ui" },
+                  { action: "start", leagueId, teamOrder: teamOrderLabels, totalRounds, startedBy: profile?.email ?? "draft-ui" },
                   "Oefendraft gestart",
                 )
               }
