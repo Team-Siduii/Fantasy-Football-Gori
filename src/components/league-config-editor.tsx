@@ -22,7 +22,7 @@ type LeagueParticipant = {
 
 type LeagueAdminConfig = {
   competition: { name: string; cupTiePolicy: "PENALTIES" | "HIGHER_SEED"; formats: string[] };
-  draft: { totalRounds: number };
+  draft: { totalRounds: number; mode: "admin" | "manager" };
   scoringProfile: { id: string; type: "CLASSIC" | "CUSTOM"; label: string };
   waiver: { enabled: boolean; round: { tieBreaker: "PRIORITY" | "EARLIEST_BID" } };
   budget: { teamValueCapMillions: number };
@@ -67,7 +67,7 @@ function cloneConfig(input: LeagueAdminConfig): LeagueAdminConfig {
     waiver: { enabled: input.waiver.enabled, round: { ...input.waiver.round } },
     budget: { teamValueCapMillions: input.budget.teamValueCapMillions },
     competition: { name: input.competition.name ?? "", cupTiePolicy: input.competition.cupTiePolicy, formats: [...input.competition.formats] },
-    draft: { totalRounds: input.draft?.totalRounds ?? 15 },
+    draft: { totalRounds: input.draft?.totalRounds ?? 15, mode: input.draft?.mode ?? "admin" },
     roles: {
       ownerId: input.roles.ownerId,
       commissionerIds: [...input.roles.commissionerIds],
@@ -312,10 +312,31 @@ export function LeagueConfigEditor() {
                       const parsed = Number(event.target.value);
                       setConfig({
                         ...config,
-                        draft: { totalRounds: Number.isInteger(parsed) && parsed > 0 ? parsed : config.draft.totalRounds },
+                        draft: { ...config.draft, totalRounds: Number.isInteger(parsed) && parsed > 0 ? parsed : config.draft.totalRounds },
                       });
                     }}
                   />
+                </label>
+
+                <label className="field col-12">
+                  <span className="field-label">Draft modus</span>
+                  <select
+                    value={config.draft.mode}
+                    onChange={(event) =>
+                      setConfig({
+                        ...config,
+                        draft: { ...config.draft, mode: event.target.value as "admin" | "manager" },
+                      })
+                    }
+                  >
+                    <option value="admin">Admin (beheerder kiest voor iedereen)</option>
+                    <option value="manager">Manager (iedereen kiest zelf)</option>
+                  </select>
+                  <span className="field-hint">
+                    {config.draft.mode === "manager"
+                      ? "Elke manager kiest spelers vanuit zijn eigen account. Alleen jouw beurt is actief."
+                      : "De beheerder voert alle picks uit via het draft-scherm."}
+                  </span>
                 </label>
 
                 <label className="field col-12">
