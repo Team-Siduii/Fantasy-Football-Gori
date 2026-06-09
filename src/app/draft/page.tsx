@@ -583,6 +583,17 @@ export default function DraftPage() {
             <div>
               <h2>Mijn selectie</h2>
               <p>{myDraftTeamId ? `${myDraftTeamId} heeft ${myRoster.length} spelers.` : "Koppel je naam via Account of gebruik een teamnaam uit de draftvolgorde."}</p>
+              {myDraftTeamId ? (
+                <p className="muted-note" style={{ marginTop: 4 }}>
+                  Budget: €
+                  {myRoster.reduce((sum, pid) => sum + (playerById.get(pid)?.prijs ?? 0), 0).toFixed(1)}M
+                  gebruikt
+                  {" · "}
+                  €
+                  {Math.max(0, (leagueConfig?.budget?.teamValueCapMillions ?? 100) - myRoster.reduce((sum, pid) => sum + (playerById.get(pid)?.prijs ?? 0), 0)).toFixed(1)}M
+                  over
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="draft-roster-list">
