@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { parsePlayerCsv } from "@/domain/player-csv";
 import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
 import { isAdminEmail } from "@/lib/auth-store";
-import { resolveDraftTeamManagerEmail } from "@/lib/draft-manager-sync";
+import { resolveDraftTeamManagerEmail, resolveDraftTeamManagerEmailPersistent } from "@/lib/draft-manager-sync";
 import {
   readDraftStatePersistent,
   registerPickPersistent,
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
       }
       if (config.draft.mode === "manager") {
-        const teamManagerEmail = resolveDraftTeamManagerEmail(body.teamId, scope);
+        const teamManagerEmail = await resolveDraftTeamManagerEmailPersistent(body.teamId, scope);
         if (!teamManagerEmail || teamManagerEmail !== email) {
           return NextResponse.json({ error: "Je kunt alleen spelers kiezen voor je eigen team" }, { status: 403 });
         }

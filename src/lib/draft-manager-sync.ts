@@ -2,7 +2,7 @@ import { buildFormationSlots, getFormationOptions } from "../domain/formation";
 import type { PlayerRecord } from "../domain/player";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
 import { listManagerProfiles } from "./auth-store";
-import { getLeagueAdminConfig, type LeagueMode } from "./league-admin-config";
+import { getLeagueAdminConfig, getLeagueAdminConfigPersistent, type LeagueMode } from "./league-admin-config";
 import {
   readManagerState,
   readManagerStatePersistent,
@@ -43,6 +43,38 @@ export function resolveDraftTeamManagerEmail(teamId: string, scope: ManagerState
   }
 
   const config = getLeagueAdminConfig(scope as LeagueMode);
+  const participant = config.participants.find((candidate) =>
+    valuesMatch(teamId, [candidate.label, candidate.managerId, candidate.email]),
+  );
+  if (participant?.email) {
+    return normalizeEmail(participant.email);
+  }
+
+  const runtimeProfile = listManagerProfiles().find((profile) =>
+    valuesMatch(teamId, [profile.name, profile.teamName, profile.email]),
+  );
+  if (runtimeProfile?.email) {
+    return normalizeEmail(runtimeProfile.email);
+  }
+
+  const account = AUTH_TEST_ACCOUNT_PRESETS.find((preset) => {
+    const candidates = [preset.id, preset.label, preset.name, preset.teamName, preset.email];
+    return valuesMatch(teamId, candidates);
+  });
+
+  return account?.email.trim().toLowerCase() ?? null;
+}
+
+export async function resolveDraftTeamManagerEmailPersistent(
+  teamId: string,
+  scope: ManagerStateScope = "eredivisie",
+): Promise<string | null> {
+  const target = normalize(teamId);
+  if (!target) {
+    return null;
+  }
+
+  const config = await getLeagueAdminConfigPersistent(scope as LeagueMode);
   const participant = config.participants.find((candidate) =>
     valuesMatch(teamId, [candidate.label, candidate.managerId, candidate.email]),
   );
