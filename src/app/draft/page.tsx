@@ -45,6 +45,7 @@ type LeagueParticipant = {
 type LeagueAdminConfig = {
   competition: { name: string };
   draft: { totalRounds: number; mode?: "admin" | "manager" };
+  budget?: { teamValueCapMillions: number };
   participants: LeagueParticipant[];
 };
 
