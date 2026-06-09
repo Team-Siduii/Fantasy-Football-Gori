@@ -1936,6 +1936,44 @@ select {
   padding-right: 0.25rem;
 }
 
+.draft-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  flex-wrap: wrap;
+}
+
+.draft-pagination button {
+  min-height: 34px;
+  min-width: 34px;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #d7deea;
+  border-radius: 999px;
+  background: #fff;
+  color: #0a3d91;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.draft-pagination button.active {
+  background: #0a3d91;
+  color: #fff;
+  border-color: #0a3d91;
+}
+
+.draft-pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.draft-pagination span {
+  display: flex;
+  gap: 0.3rem;
+}
+
 .draft-player-card {
   display: grid;
   gap: 0.3rem;

@@ -99,6 +99,8 @@ export default function DraftPage() {
   const [returnTeamId, setReturnTeamId] = useState("");
   const [returnPlayerId, setReturnPlayerId] = useState("");
   const [formation, setFormation] = useState("4-3-3");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 24;
 
   const loadDraft = useCallback(async () => {
     const response = await fetch(`/api/draft?mode=${modeParam}`, { cache: "no-store" });
@@ -166,6 +168,11 @@ export default function DraftPage() {
     setClubFilter("ALL");
     setPickPlayerId("");
   }, [isWkMode, leagueConfig]);
+
+  // Reset paginering bij filter- of sortwijzigingen
+  useEffect(() => {
+    setPage(1);
+  }, [search, positionFilter, clubFilter, maxPrice, sortField, sortDirection]);
 
   const acceptedParticipants = useMemo(
     () => (leagueConfig?.participants ?? []).filter((p) => p.status === "ACCEPTED"),
@@ -255,9 +262,17 @@ export default function DraftPage() {
         }
         if (result === 0) result = left.naam.localeCompare(right.naam, "nl", { sensitivity: "base" });
         return sortDirection === "asc" ? result : -result;
-      })
-      .slice(0, 80);
+      });
   }, [players, pickedPlayerIds, positionFilter, clubFilter, maxPrice, search, sortField, sortDirection]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPlayers.length / PAGE_SIZE));
+  const paginatedPlayers = useMemo(
+    () => filteredPlayers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredPlayers, page],
+  );
+
+  // Reset page bij filterwijzigingen
+  const safePage = Math.min(page, totalPages);
 
   function toggleSort(field: DraftSortField) {
     if (sortField === field) {
@@ -430,7 +445,7 @@ export default function DraftPage() {
           </div>
 
           <div className="draft-result-row">
-            <p className="muted-note">Resultaten: {filteredPlayers.length} • Toon max. 80 beschikbare spelers</p>
+            <p className="muted-note">Resultaten: {filteredPlayers.length} • Pagina {safePage}/{totalPages} ({paginatedPlayers.length} getoond)</p>
             <div className="draft-sort-actions" aria-label="Draft sortering">
               <button type="button" onClick={() => toggleSort("naam")}>Naam {sortIndicator("naam")}</button>
               <button type="button" onClick={() => toggleSort("positie")}>Positie {sortIndicator("positie")}</button>
@@ -483,7 +498,7 @@ export default function DraftPage() {
           ) : null}
 
           <div className="draft-player-grid">
-            {filteredPlayers.map((player) => {
+            {paginatedPlayers.map((player) => {
               const display = getDraftPlayerDisplayMeta(player);
               return (
                 <button
@@ -508,6 +523,43 @@ export default function DraftPage() {
               );
             })}
           </div>
+
+          {totalPages > 1 ? (
+            <div className="draft-pagination">
+              <button
+                type="button"
+                disabled={page <= 1 || busy}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                ← Vorige
+              </button>
+              <span>
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+                  const pageNum = start + i;
+                  if (pageNum > totalPages) return null;
+                  return (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      className={pageNum === page ? "active" : ""}
+                      disabled={busy}
+                      onClick={() => setPage(pageNum)}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </span>
+              <button
+                type="button"
+                disabled={page >= totalPages || busy}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Volgende →
+              </button>
+            </div>
+          ) : null}
 
           <div className="draft-confirm-bar">
             <div>
