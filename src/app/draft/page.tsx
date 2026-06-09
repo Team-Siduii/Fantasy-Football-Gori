@@ -200,12 +200,14 @@ export default function DraftPage() {
     const candidates = [profile.name, profile.teamName, profile.email].map(normalize);
     const directMatch = draft.teamOrder.find((team) => candidates.includes(normalize(team)));
     if (directMatch) return directMatch;
-    // Match via participant email — find the participant with matching email, return their managerId if in teamOrder
+    // Match via participant email — find the participant with matching email,
+    // then check both label and managerId (teamOrder can contain either)
     const participant = acceptedParticipants.find(
       (p) => normalize(p.email) === normalize(profile.email),
     );
-    if (participant && draft.teamOrder.includes(participant.managerId)) {
-      return participant.managerId;
+    if (participant) {
+      if (draft.teamOrder.includes(participant.label)) return participant.label;
+      if (draft.teamOrder.includes(participant.managerId)) return participant.managerId;
     }
     return null;
   }, [draft, profile, acceptedParticipants]);
