@@ -568,7 +568,7 @@ export default function DraftPage() {
           </div>
         </section>
 
-        {!isManagerMode && isAdmin ? (
+        {isAdmin ? (
         <section className="card col-12 draft-admin-details">
           <div className="section-title-row">
             <div>
