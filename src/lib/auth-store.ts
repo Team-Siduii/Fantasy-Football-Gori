@@ -53,7 +53,12 @@ function hashPassword(password: string, salt: string) {
 }
 
 function createDefaultAccountFromPreset(preset: (typeof AUTH_TEST_ACCOUNT_PRESETS)[number]): AuthAccount {
-  const salt = randomBytes(16).toString("hex");
+  // Gebruik deterministische salt voor mustSetup accounts zodat de inviteCode
+  // altijd werkt, zelfs na Vercel cold starts (waarbij /tmp/ verloren gaat).
+  // Accounts zonder inviteCode (reguliere wachtwoord-accounts) gebruiken random salt.
+  const salt = preset.inviteCode
+    ? scryptSync(`gori:${preset.email}:${preset.inviteCode}`, "gori-draft-auth-salt-v1", 16).toString("hex")
+    : randomBytes(16).toString("hex");
   const initialSecret = preset.inviteCode ?? preset.password;
 
   return {
@@ -137,6 +142,7 @@ function loadState(): PersistedAuthState {
       const validAccounts = parsed.accounts.filter(isAuthAccount);
       if (validAccounts.length > 0) {
         // Merge in new accounts from presets that don't exist yet on disk
+        // Also repair mustSetup accounts that still have an old random salt
         const existingIds = new Set(validAccounts.map((a) => a.id));
         const existingEmails = new Set(validAccounts.map((a) => a.profile.email.toLowerCase()));
         let changed = false;
@@ -144,6 +150,25 @@ function loadState(): PersistedAuthState {
           if (!existingIds.has(preset.id) && !existingEmails.has(preset.email.toLowerCase())) {
             validAccounts.push(createDefaultAccountFromPreset(preset));
             changed = true;
+          } else if (preset.inviteCode) {
+            // Repareer mustSetup accounts: vervang oude random salt/hash met deterministische variant
+            const idx = validAccounts.findIndex(
+              (a) => a.id === preset.id || a.profile.email.toLowerCase() === preset.email.toLowerCase(),
+            );
+            if (idx !== -1) {
+              const repaired = createDefaultAccountFromPreset(preset);
+              if (
+                validAccounts[idx].passwordSalt !== repaired.passwordSalt ||
+                validAccounts[idx].passwordHash !== repaired.passwordHash
+              ) {
+                validAccounts[idx] = {
+                  ...validAccounts[idx],
+                  passwordSalt: repaired.passwordSalt,
+                  passwordHash: repaired.passwordHash,
+                };
+                changed = true;
+              }
+            }
           }
         }
         if (changed) {
@@ -392,6 +417,7 @@ export async function ensureAuthStateFromDb(): Promise<void> {
     authState,
   );
   // Merge in new accounts from presets that don't exist yet in DB
+  // Also repair mustSetup accounts that still have an old random salt
   const existingIds = new Set(persisted.accounts.map((a) => a.id));
   const existingEmails = new Set(persisted.accounts.map((a) => a.profile.email.toLowerCase()));
   let changed = false;
@@ -399,6 +425,25 @@ export async function ensureAuthStateFromDb(): Promise<void> {
     if (!existingIds.has(preset.id) && !existingEmails.has(preset.email.toLowerCase())) {
       persisted.accounts.push(createDefaultAccountFromPreset(preset));
       changed = true;
+    } else if (preset.inviteCode) {
+      // Repareer mustSetup accounts: vervang oude random salt/hash met deterministische variant
+      const idx = persisted.accounts.findIndex(
+        (a) => a.id === preset.id || a.profile.email.toLowerCase() === preset.email.toLowerCase(),
+      );
+      if (idx !== -1) {
+        const repaired = createDefaultAccountFromPreset(preset);
+        if (
+          persisted.accounts[idx].passwordSalt !== repaired.passwordSalt ||
+          persisted.accounts[idx].passwordHash !== repaired.passwordHash
+        ) {
+          persisted.accounts[idx] = {
+            ...persisted.accounts[idx],
+            passwordSalt: repaired.passwordSalt,
+            passwordHash: repaired.passwordHash,
+          };
+          changed = true;
+        }
+      }
     }
   }
   authState = persisted;
