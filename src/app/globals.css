@@ -2106,6 +2106,31 @@ select {
   padding-left: 1.1rem;
 }
 
+.draft-team-lineup,
+.draft-team-bench {
+  margin-bottom: 0.5rem;
+}
+
+.draft-team-subheader {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6d7788;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+}
+
+.draft-team-lineup ul,
+.draft-team-bench ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.draft-team-bench .draft-team-subheader {
+  color: #a0a8b4;
+}
+
 .draft-admin-details summary {
   cursor: pointer;
   font-weight: 900;

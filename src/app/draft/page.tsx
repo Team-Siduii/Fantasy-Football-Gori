@@ -70,6 +70,49 @@ function getPlayerLabel(player?: PlayerRecord) {
   return `${player.naam} · ${player.positie} · ${player.club} · €${player.prijs.toFixed(1)}M`;
 }
 
+function computeTeamAutoLineup(
+  playerIds: string[],
+  playerCatalog: PlayerRecord[],
+): { formation: string; lineup: string[]; bench: string[] } {
+  const playersById = new Map(playerCatalog.map((p) => [p.id, p]));
+  const byPos: Record<string, string[]> = { GK: [], DEF: [], MID: [], FWD: [] };
+  for (const pid of playerIds) {
+    const pos = playersById.get(pid)?.positie;
+    if (pos && byPos[pos]) byPos[pos].push(pid);
+  }
+
+  const options = getFormationOptions();
+  let bestFormation = options[0];
+  let bestFit = -1;
+
+  for (const formation of options) {
+    const slotCounts: Record<string, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+    for (const slot of buildFormationSlots(formation).flat()) {
+      slotCounts[slot] += 1;
+    }
+    const fit = Object.keys(slotCounts).reduce(
+      (sum, pos) => sum + Math.min(slotCounts[pos], (byPos[pos]?.length ?? 0)),
+      0,
+    );
+    if (fit > bestFit) {
+      bestFormation = formation;
+      bestFit = fit;
+    }
+  }
+
+  const used = new Set<string>();
+  const lineup: string[] = [];
+  for (const position of buildFormationSlots(bestFormation).flat()) {
+    const next = byPos[position]?.find((id) => !used.has(id));
+    if (next) {
+      used.add(next);
+      lineup.push(next);
+    }
+  }
+  const bench = playerIds.filter((id) => !used.has(id));
+  return { formation: bestFormation, lineup, bench };
+}
+
 export default function DraftPage() {
   const pathname = usePathname();
   const isWkMode = pathname.startsWith("/manager/world-cup");
@@ -241,6 +284,14 @@ export default function DraftPage() {
       }),
     );
   }, [formation, myRoster, playerById]);
+
+  const teamAutoLineups = useMemo(() => {
+    const result: Record<string, { formation: string; lineup: string[]; bench: string[] }> = {};
+    for (const [teamId, roster] of Object.entries(teamRosters)) {
+      result[teamId] = computeTeamAutoLineup(roster, players);
+    }
+    return result;
+  }, [teamRosters, players]);
 
   const filteredPlayers = useMemo(() => {
     const q = normalize(search);
@@ -616,16 +667,36 @@ export default function DraftPage() {
           <div className="draft-team-grid">
             {(draft?.teamOrder ?? []).map((teamId) => {
               const roster = teamRosters[teamId] ?? [];
+              const autoLineup = teamAutoLineups[teamId];
+              const lineup = autoLineup?.lineup ?? roster.slice(0, 11);
+              const bench = autoLineup?.bench ?? roster.slice(11);
+              const formation = autoLineup?.formation ?? "";
               return (
                 <article key={teamId} className={`draft-team-card ${teamId === activeTeamId ? "active" : ""}`}>
                   <h3>{teamId}</h3>
-                  <p>{roster.length} spelers</p>
-                  <ul>
-                    {roster.map((playerId) => {
-                      const player = playerById.get(playerId);
-                      return <li key={`${teamId}-${playerId}`}>{player?.naam ?? playerId}</li>;
-                    })}
-                  </ul>
+                  <p>{roster.length} spelers{formation ? ` · ${formation}` : ""}</p>
+                  {lineup.length > 0 ? (
+                    <div className="draft-team-lineup">
+                      <span className="draft-team-subheader">Basis ({lineup.length})</span>
+                      <ul>
+                        {lineup.map((playerId) => {
+                          const player = playerById.get(playerId);
+                          return <li key={`${teamId}-${playerId}`}>{player?.naam ?? playerId}</li>;
+                        })}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {bench.length > 0 ? (
+                    <div className="draft-team-bench">
+                      <span className="draft-team-subheader">Bank ({bench.length})</span>
+                      <ul>
+                        {bench.map((playerId) => {
+                          const player = playerById.get(playerId);
+                          return <li key={`${teamId}-${playerId}`}>{player?.naam ?? playerId}</li>;
+                        })}
+                      </ul>
+                    </div>
+                  ) : null}
                 </article>
               );
             })}
