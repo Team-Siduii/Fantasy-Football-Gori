@@ -61,6 +61,7 @@ const DEFAULT_ROUNDS = 15;
 type DraftSortField = "naam" | "positie" | "club" | "prijs";
 type DraftSortDirection = "asc" | "desc";
 const POSITION_SORT_ORDER: Record<PlayerRecord["positie"], number> = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
+const MAX_QUEUE_SIZE = 7;
 
 function normalize(value: string) {
   return value.trim().toLowerCase();
@@ -141,7 +142,7 @@ export default function DraftPage() {
   const [sortField, setSortField] = useState<DraftSortField>("prijs");
   const [sortDirection, setSortDirection] = useState<DraftSortDirection>("desc");
   const [pickPlayerId, setPickPlayerId] = useState("");
-  const [prePickPlayerId, setPrePickPlayerId] = useState("");
+  const [prePickQueue, setPrePickQueue] = useState<string[]>([]);
   const wasMyTurnRef = useRef(false);
   const autoPickFiredRef = useRef(false);
   const [returnTeamId, setReturnTeamId] = useState("");
@@ -265,8 +266,6 @@ export default function DraftPage() {
     const candidates = [profile.name, profile.teamName, profile.email].map(normalize);
     const directMatch = draft.teamOrder.find((team) => candidates.includes(normalize(team)));
     if (directMatch) return directMatch;
-    // Match via participant email — find the participant with matching email,
-    // then check both label and managerId (teamOrder can contain either)
     const participant = acceptedParticipants.find(
       (p) => normalize(p.email) === normalize(profile.email),
     );
@@ -283,30 +282,49 @@ export default function DraftPage() {
   const pickNumber = (draft?.picks.length ?? 0) + 1;
   const currentRound = draft && draft.teamOrder.length > 0 ? Math.ceil(pickNumber / draft.teamOrder.length) : 0;
 
-  // Auto-pick pre-selectie wanneer beurt wisselt naar mij
+  // Auto-pick: itereer door queue, skip onbeschikbare spelers
   useEffect(() => {
     const wasMyTurn = wasMyTurnRef.current;
     wasMyTurnRef.current = isMyTurn;
 
     if (!isMyTurn || wasMyTurn || autoPickFiredRef.current) return;
-    if (!prePickPlayerId || !myDraftTeamId) return;
+    if (prePickQueue.length === 0 || !myDraftTeamId) return;
 
-    const prePickPlayer = playerById.get(prePickPlayerId);
-    if (!prePickPlayer || pickedPlayerIds.has(prePickPlayerId)) {
-      setPrePickPlayerId("");
-      setError(`${prePickPlayer?.naam ?? prePickPlayerId} is niet meer beschikbaar. Kies een andere speler.`);
-      return;
+    // Zoek de eerste beschikbare speler in de queue
+    let picked = false;
+    const newQueue = [...prePickQueue];
+    
+    while (newQueue.length > 0 && !picked) {
+      const nextId = newQueue[0];
+      const player = playerById.get(nextId);
+      
+      if (player && !pickedPlayerIds.has(nextId)) {
+        // Speler is beschikbaar — auto-pick!
+        autoPickFiredRef.current = true;
+        newQueue.shift();
+        setPrePickQueue(newQueue);
+        void postDraftAction(
+          { action: "pick", teamId: myDraftTeamId, playerId: nextId },
+          `Auto-pick: ${player.naam}`,
+        ).then(() => {
+          autoPickFiredRef.current = false;
+        });
+        picked = true;
+        break;
+      }
+      
+      // Speler niet beschikbaar — verwijder uit queue en probeer volgende
+      newQueue.shift();
     }
+    
+    if (!picked) {
+      // Queue leeg of alles onbeschikbaar
+      setPrePickQueue([]);
+      setError("Geen van je pre-selecties is nog beschikbaar. Kies een nieuwe speler.");
+    }
+  }, [isMyTurn, prePickQueue, myDraftTeamId, playerById, pickedPlayerIds]);
 
-    autoPickFiredRef.current = true;
-    void postDraftAction(
-      { action: "pick", teamId: myDraftTeamId, playerId: prePickPlayerId },
-      `Auto-pick: ${prePickPlayer.naam}`,
-    ).then(() => {
-      setPrePickPlayerId("");
-      autoPickFiredRef.current = false;
-    });
-  }, [isMyTurn, prePickPlayerId, myDraftTeamId, playerById, pickedPlayerIds]);
+  const queueSet = useMemo(() => new Set(prePickQueue), [prePickQueue]);
 
   const formationSlots = useMemo(() => {
     const slots = buildFormationSlots(formation);
@@ -362,7 +380,6 @@ export default function DraftPage() {
     [filteredPlayers, page],
   );
 
-  // Reset page bij filterwijzigingen
   const safePage = Math.min(page, totalPages);
 
   function toggleSort(field: DraftSortField) {
@@ -377,6 +394,18 @@ export default function DraftPage() {
   function sortIndicator(field: DraftSortField) {
     if (sortField !== field) return "↕";
     return sortDirection === "asc" ? "↑" : "↓";
+  }
+
+  function addToPrePickQueue(playerId: string) {
+    setPrePickQueue((prev) => {
+      if (prev.includes(playerId)) return prev; // geen dubbele
+      if (prev.length >= MAX_QUEUE_SIZE) return prev; // max 7
+      return [...prev, playerId];
+    });
+  }
+
+  function removeFromPrePickQueue(index: number) {
+    setPrePickQueue((prev) => prev.filter((_, i) => i !== index));
   }
 
   const pickedRows = useMemo(
@@ -417,8 +446,6 @@ export default function DraftPage() {
   const canPick = draft?.status === "ACTIVE" && Boolean(activeTeamId && pickPlayerId) && !busy;
   const isManagerMode = leagueConfig?.draft?.mode === "manager";
   const isAdmin = profile?.role === "admin";
-  // In admin mode: only admins can pick (for any team)
-  // In manager mode: only the team's manager can pick (for their own team)
   const canPickInMode = isManagerMode
     ? (canPick && isMyTurn)
     : (canPick && isAdmin);
@@ -592,18 +619,22 @@ export default function DraftPage() {
           <div className="draft-player-grid">
             {paginatedPlayers.map((player) => {
               const display = getDraftPlayerDisplayMeta(player);
+              const queueIndex = prePickQueue.indexOf(player.id);
+              const isInQueue = queueIndex >= 0;
               return (
                 <button
                   type="button"
                   key={player.id}
-                  className={`draft-player-card ${pickPlayerId === player.id ? "selected" : ""} ${prePickPlayerId === player.id ? "pre-selected" : ""}`}
+                  className={`draft-player-card ${pickPlayerId === player.id ? "selected" : ""} ${isInQueue ? "pre-selected" : ""}`}
                   onClick={() => {
                     if (isMyTurn) {
                       setPickPlayerId(player.id);
-                      setPrePickPlayerId("");
                     } else if (myDraftTeamId) {
-                      setPrePickPlayerId(player.id);
-                      setPickPlayerId("");
+                      if (isInQueue) {
+                        removeFromPrePickQueue(queueIndex);
+                      } else {
+                        addToPrePickQueue(player.id);
+                      }
                     }
                   }}
                   disabled={draft?.status !== "ACTIVE" || busy}
@@ -617,7 +648,9 @@ export default function DraftPage() {
                     />
                   ) : null}
                   <span className="draft-player-meta">{display.meta}</span>
-                  <strong>{display.name}</strong>
+                  <strong>
+                    {isInQueue ? `#${queueIndex + 1} ` : ""}{display.name}
+                  </strong>
                   <span>{display.priceLabel}</span>
                 </button>
               );
@@ -664,24 +697,34 @@ export default function DraftPage() {
           {myDraftTeamId && !isMyTurn ? (
             <div className="draft-confirm-bar draft-pre-pick-bar">
               <div>
-                <span>Pre-selectie voor {myDraftTeamId}</span>
-                {prePickPlayerId ? (
-                  <>
-                    <strong>{getPlayerLabel(playerById.get(prePickPlayerId))}</strong>
-                    <span className="muted-note" style={{ fontSize: "0.8rem" }}>
-                      Wordt automatisch gekozen zodra jij aan de beurt bent.
-                      <button
-                        type="button"
-                        onClick={() => setPrePickPlayerId("")}
-                        style={{ marginLeft: 8, fontSize: "0.78rem", padding: "2px 8px" }}
-                      >
-                        Annuleren
-                      </button>
-                    </span>
-                  </>
+                <span>Pre-selectie voor {myDraftTeamId} ({prePickQueue.length}/{MAX_QUEUE_SIZE})</span>
+                {prePickQueue.length > 0 ? (
+                  <ol className="draft-pre-pick-queue">
+                    {prePickQueue.map((playerId, index) => {
+                      const player = playerById.get(playerId);
+                      const isStillAvailable = player && !pickedPlayerIds.has(playerId);
+                      return (
+                        <li key={playerId} className={!isStillAvailable ? "unavailable" : ""}>
+                          <span className="queue-index">#{index + 1}</span>
+                          <span className="queue-name">
+                            {player ? `${player.naam} · ${player.positie} · €${player.prijs.toFixed(1)}M` : playerId}
+                            {!isStillAvailable ? " (niet meer beschikbaar)" : ""}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeFromPrePickQueue(index)}
+                            className="queue-remove"
+                            title="Verwijder uit pre-selectie"
+                          >
+                            ✕
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ol>
                 ) : (
                   <span className="muted-note" style={{ fontSize: "0.8rem" }}>
-                    Klik op een speler om hem vast te zetten voor je volgende beurt.
+                    Klik op een speler om hem aan je pre-selectie toe te voegen. Max {MAX_QUEUE_SIZE} spelers.
                   </span>
                 )}
               </div>
