@@ -6,6 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { getDraftPlayerDisplayMeta } from "@/lib/draft-player-display";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
 import { PlayerCard } from "@/components/player-card";
+import { getTransferBudgetCapMillions } from "@/domain/team-budget";
 
 type PlayerRecord = {
   id: string;
@@ -740,10 +741,16 @@ export default function DraftPage() {
               const lineup = autoLineup?.lineup ?? roster.slice(0, 11);
               const bench = autoLineup?.bench ?? roster.slice(11);
               const formation = autoLineup?.formation ?? "";
+              const spent = roster.reduce((sum, pid) => sum + (playerById.get(pid)?.prijs ?? 0), 0);
+              const budgetCap = leagueConfig?.budget?.teamValueCapMillions ?? getTransferBudgetCapMillions(isWkMode ? "wk" : "eredivisie");
+              const remaining = Math.max(0, budgetCap - spent);
               return (
                 <article key={teamId} className={`draft-team-card ${teamId === activeTeamId ? "active" : ""}`}>
                   <h3>{teamId}</h3>
                   <p>{roster.length} spelers{formation ? ` · ${formation}` : ""}</p>
+                  <p className="draft-team-budget">
+                    €{spent.toFixed(1)}M gebruikt · €{remaining.toFixed(1)}M over
+                  </p>
                   {lineup.length > 0 ? (
                     <div className="draft-team-lineup">
                       <span className="draft-team-subheader">Basis ({lineup.length})</span>

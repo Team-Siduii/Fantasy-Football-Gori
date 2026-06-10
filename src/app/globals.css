@@ -2122,6 +2122,12 @@ select {
   margin-top: 0;
 }
 
+.draft-team-budget {
+  font-size: 0.82rem;
+  color: #6d7788;
+  margin-bottom: 0.5rem;
+}
+
 .draft-team-card ul,
 .draft-history-list {
   margin: 0;
