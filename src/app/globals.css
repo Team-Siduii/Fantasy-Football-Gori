@@ -2084,7 +2084,6 @@ select {
 }
 
 .draft-team-card {
-  min-height: 170px;
   padding: 0.85rem;
   border: 1px solid #d7deea;
   border-radius: 16px;

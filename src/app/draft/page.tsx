@@ -621,7 +621,7 @@ export default function DraftPage() {
                   <h3>{teamId}</h3>
                   <p>{roster.length} spelers</p>
                   <ul>
-                    {roster.slice(0, 8).map((playerId) => {
+                    {roster.map((playerId) => {
                       const player = playerById.get(playerId);
                       return <li key={`${teamId}-${playerId}`}>{player?.naam ?? playerId}</li>;
                     })}
