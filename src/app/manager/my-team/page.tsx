@@ -115,10 +115,6 @@ function buildStateWithVacancies(
   vacancyCount: number,
 ): ZoneState<EnhancedPlayer> | null {
   const requiredLineup = buildFormationSlots(formation).flat();
-  const totalSlots = requiredLineup.length + BENCH_POSITIONS.length;
-  if (players.length + vacancyCount < totalSlots) {
-    return null;
-  }
 
   const byPosition = new Map<Position, EnhancedPlayer[]>([
     ["GK", []],
@@ -135,6 +131,23 @@ function buildStateWithVacancies(
     byPosition.get(position)?.push(player);
   }
 
+  // Vooraf checken: per positie moet totaal benodigd (basis + bank) ≤ beschikbaar + open slots
+  const requiredCounts: Record<string, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+  for (const pos of requiredLineup) requiredCounts[pos] += 1;
+  for (const pos of BENCH_POSITIONS) requiredCounts[pos] += 1;
+
+  let totalDeficit = 0;
+  for (const pos of ["GK", "DEF", "MID", "FWD"] as Position[]) {
+    const available = (byPosition.get(pos)?.length ?? 0);
+    const deficit = Math.max(0, (requiredCounts[pos] ?? 0) - available);
+    totalDeficit += deficit;
+  }
+
+  if (totalDeficit > vacancyCount) {
+    return null;
+  }
+
+  // Vul basisopstelling positiegewijs
   let remainingVacancies = vacancyCount;
 
   const takePlayerForPosition = (position: Position) => {
@@ -158,25 +171,17 @@ function buildStateWithVacancies(
     lineup.push(next);
   }
 
-  // Bench: vul eerst met overgebleven spelers (ongeacht positie), dan met open slots
-  const remainingPlayers: EnhancedPlayer[] = [];
-  for (const list of byPosition.values()) {
-    remainingPlayers.push(...list);
-  }
-
+  // Vul bank positiegewijs
   const bench: EnhancedPlayer[] = [];
-  for (let i = 0; i < BENCH_POSITIONS.length; i++) {
-    if (remainingPlayers.length > 0) {
-      bench.push(remainingPlayers.shift()!);
-    } else if (remainingVacancies > 0) {
-      remainingVacancies -= 1;
-      bench.push(createOpenSlot(BENCH_POSITIONS[i]));
-    } else {
+  for (const position of BENCH_POSITIONS) {
+    const next = takePlayerForPosition(position);
+    if (!next) {
       return null;
     }
+    bench.push(next);
   }
 
-  const hasUnplacedPlayers = remainingPlayers.length > 0;
+  const hasUnplacedPlayers = [...byPosition.values()].some((list) => list.length > 0);
   if (hasUnplacedPlayers || remainingVacancies !== 0) {
     return null;
   }
@@ -973,8 +978,13 @@ export default function ManagerMyTeamPage() {
       return;
     }
 
+    const rebuilt = buildStateWithVacancies(nonOpen.length > 0 ? nonOpen : allPlayers, nextFormation, 0);
+    if (!rebuilt) {
+      setTransferMessage("je kunt niet in deze formatie spelen met deze spelers");
+      return;
+    }
     setFormation(nextFormation);
-    setState(buildStateForFormation(nonOpen.length > 0 ? nonOpen : allPlayers, nextFormation));
+    setState(rebuilt);
   }
 
   function onDragStart(zone: ZoneName, index: number) {
