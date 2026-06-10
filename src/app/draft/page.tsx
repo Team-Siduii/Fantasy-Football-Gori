@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { getDraftPlayerDisplayMeta } from "@/lib/draft-player-display";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
@@ -149,6 +149,7 @@ export default function DraftPage() {
   const [formation, setFormation] = useState("4-3-3");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 24;
+  const router = useRouter();
 
   const loadDraft = useCallback(async () => {
     const response = await fetch(`/api/draft?mode=${modeParam}&_t=${Date.now()}`, { cache: "no-store" });
@@ -402,6 +403,7 @@ export default function DraftPage() {
       setTeamRosters(data.teamRosters ?? {});
       setPickPlayerId("");
       setSuccess(okMessage);
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Onbekende fout");
     } finally {
