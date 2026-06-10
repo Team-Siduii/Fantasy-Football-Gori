@@ -655,21 +655,29 @@ export default function DraftPage() {
             </div>
           ) : null}
 
-          {prePickPlayerId && !isMyTurn && myDraftTeamId ? (
+          {myDraftTeamId && !isMyTurn ? (
             <div className="draft-confirm-bar draft-pre-pick-bar">
               <div>
                 <span>Pre-selectie voor {myDraftTeamId}</span>
-                <strong>{getPlayerLabel(playerById.get(prePickPlayerId))}</strong>
-                <span className="muted-note" style={{ fontSize: "0.8rem" }}>
-                  Wordt automatisch gekozen zodra jij aan de beurt bent.
-                  <button
-                    type="button"
-                    onClick={() => setPrePickPlayerId("")}
-                    style={{ marginLeft: 8, fontSize: "0.78rem", padding: "2px 8px" }}
-                  >
-                    Annuleren
-                  </button>
-                </span>
+                {prePickPlayerId ? (
+                  <>
+                    <strong>{getPlayerLabel(playerById.get(prePickPlayerId))}</strong>
+                    <span className="muted-note" style={{ fontSize: "0.8rem" }}>
+                      Wordt automatisch gekozen zodra jij aan de beurt bent.
+                      <button
+                        type="button"
+                        onClick={() => setPrePickPlayerId("")}
+                        style={{ marginLeft: 8, fontSize: "0.78rem", padding: "2px 8px" }}
+                      >
+                        Annuleren
+                      </button>
+                    </span>
+                  </>
+                ) : (
+                  <span className="muted-note" style={{ fontSize: "0.8rem" }}>
+                    Klik op een speler om hem vast te zetten voor je volgende beurt.
+                  </span>
+                )}
               </div>
             </div>
           ) : null}
