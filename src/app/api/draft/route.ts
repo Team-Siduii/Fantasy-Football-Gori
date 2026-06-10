@@ -43,7 +43,16 @@ export async function GET(request: Request) {
   const scope = resolveDraftScope(request);
   const [draft, teamRosterState] = await Promise.all([readDraftStatePersistent(scope), readTeamRosterStatePersistent(scope)]);
 
-  return NextResponse.json({ draft, teamRosters: teamRosterState.byTeamId });
+  return NextResponse.json(
+    { draft, teamRosters: teamRosterState.byTeamId },
+    {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      },
+    },
+  );
 }
 
 export async function POST(request: Request) {

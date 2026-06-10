@@ -9,6 +9,12 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const mode = (url.searchParams.get("mode") ?? "eredivisie").toLowerCase();
 
+  const headers: Record<string, string> = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+  };
+
   if (mode === "wk") {
     const wkCsvPath = path.join(process.cwd(), "data", "players-wk.csv");
 
@@ -16,12 +22,9 @@ export async function GET(request: Request) {
       const csvContent = await readFile(wkCsvPath, "utf-8");
       const { players } = parsePlayerCsv(csvContent);
 
-      return NextResponse.json({
-        count: players.length,
-        players,
-      });
+      return NextResponse.json({ count: players.length, players }, { headers });
     } catch {
-      return NextResponse.json({ count: 0, players: [] });
+      return NextResponse.json({ count: 0, players: [] }, { headers });
     }
   }
 
@@ -30,5 +33,5 @@ export async function GET(request: Request) {
   return NextResponse.json({
     count: listPlayers().length,
     players: listPlayers(),
-  });
+  }, { headers });
 }

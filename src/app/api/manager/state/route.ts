@@ -28,10 +28,10 @@ export async function GET(request: Request) {
   const roundNumber = roundNumberParam ? Number(roundNumberParam) : null;
 
   if (roundNumber && Number.isInteger(roundNumber) && roundNumber > 0) {
-    return NextResponse.json({ state: await readManagerStateForRoundPersistent(roundNumber, scope, managerKey) });
+    return NextResponse.json({ state: await readManagerStateForRoundPersistent(roundNumber, scope, managerKey) }, { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } });
   }
 
-  return NextResponse.json({ state: await readManagerStatePersistent(scope, managerKey) });
+  return NextResponse.json({ state: await readManagerStatePersistent(scope, managerKey) }, { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } });
 }
 
 export async function PUT(request: Request) {
