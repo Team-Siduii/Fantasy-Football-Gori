@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { getDraftPlayerDisplayMeta } from "@/lib/draft-player-display";
@@ -140,6 +140,9 @@ export default function DraftPage() {
   const [sortField, setSortField] = useState<DraftSortField>("prijs");
   const [sortDirection, setSortDirection] = useState<DraftSortDirection>("desc");
   const [pickPlayerId, setPickPlayerId] = useState("");
+  const [prePickPlayerId, setPrePickPlayerId] = useState("");
+  const wasMyTurnRef = useRef(false);
+  const autoPickFiredRef = useRef(false);
   const [returnTeamId, setReturnTeamId] = useState("");
   const [returnPlayerId, setReturnPlayerId] = useState("");
   const [formation, setFormation] = useState("4-3-3");
@@ -218,6 +221,12 @@ export default function DraftPage() {
     setPage(1);
   }, [search, positionFilter, clubFilter, maxPrice, sortField, sortDirection]);
 
+  // Reset auto-pick ref bij mode switch
+  useEffect(() => {
+    autoPickFiredRef.current = false;
+    wasMyTurnRef.current = false;
+  }, [isWkMode]);
+
   const acceptedParticipants = useMemo(
     () => (leagueConfig?.participants ?? []).filter((p) => p.status === "ACCEPTED"),
     [leagueConfig?.participants],
@@ -268,6 +277,31 @@ export default function DraftPage() {
   const isMyTurn = Boolean(myDraftTeamId && draft?.currentTurnTeamId === myDraftTeamId);
   const pickNumber = (draft?.picks.length ?? 0) + 1;
   const currentRound = draft && draft.teamOrder.length > 0 ? Math.ceil(pickNumber / draft.teamOrder.length) : 0;
+
+  // Auto-pick pre-selectie wanneer beurt wisselt naar mij
+  useEffect(() => {
+    const wasMyTurn = wasMyTurnRef.current;
+    wasMyTurnRef.current = isMyTurn;
+
+    if (!isMyTurn || wasMyTurn || autoPickFiredRef.current) return;
+    if (!prePickPlayerId || !myDraftTeamId) return;
+
+    const prePickPlayer = playerById.get(prePickPlayerId);
+    if (!prePickPlayer || pickedPlayerIds.has(prePickPlayerId)) {
+      setPrePickPlayerId("");
+      setError(`${prePickPlayer?.naam ?? prePickPlayerId} is niet meer beschikbaar. Kies een andere speler.`);
+      return;
+    }
+
+    autoPickFiredRef.current = true;
+    void postDraftAction(
+      { action: "pick", teamId: myDraftTeamId, playerId: prePickPlayerId },
+      `Auto-pick: ${prePickPlayer.naam}`,
+    ).then(() => {
+      setPrePickPlayerId("");
+      autoPickFiredRef.current = false;
+    });
+  }, [isMyTurn, prePickPlayerId, myDraftTeamId, playerById, pickedPlayerIds]);
 
   const formationSlots = useMemo(() => {
     const slots = buildFormationSlots(formation);
@@ -556,8 +590,16 @@ export default function DraftPage() {
                 <button
                   type="button"
                   key={player.id}
-                  className={`draft-player-card ${pickPlayerId === player.id ? "selected" : ""}`}
-                  onClick={() => setPickPlayerId(player.id)}
+                  className={`draft-player-card ${pickPlayerId === player.id ? "selected" : ""} ${prePickPlayerId === player.id ? "pre-selected" : ""}`}
+                  onClick={() => {
+                    if (isMyTurn) {
+                      setPickPlayerId(player.id);
+                      setPrePickPlayerId("");
+                    } else if (myDraftTeamId) {
+                      setPrePickPlayerId(player.id);
+                      setPickPlayerId("");
+                    }
+                  }}
                   disabled={draft?.status !== "ACTIVE" || busy}
                 >
                   {display.flagImageUrl ? (
@@ -610,6 +652,25 @@ export default function DraftPage() {
               >
                 Volgende →
               </button>
+            </div>
+          ) : null}
+
+          {prePickPlayerId && !isMyTurn && myDraftTeamId ? (
+            <div className="draft-confirm-bar draft-pre-pick-bar">
+              <div>
+                <span>Pre-selectie voor {myDraftTeamId}</span>
+                <strong>{getPlayerLabel(playerById.get(prePickPlayerId))}</strong>
+                <span className="muted-note" style={{ fontSize: "0.8rem" }}>
+                  Wordt automatisch gekozen zodra jij aan de beurt bent.
+                  <button
+                    type="button"
+                    onClick={() => setPrePickPlayerId("")}
+                    style={{ marginLeft: 8, fontSize: "0.78rem", padding: "2px 8px" }}
+                  >
+                    Annuleren
+                  </button>
+                </span>
+              </div>
             </div>
           ) : null}
 
