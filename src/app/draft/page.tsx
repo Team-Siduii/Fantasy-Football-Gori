@@ -205,9 +205,12 @@ export default function DraftPage() {
 
   useEffect(() => {
     void bootstrap();
-    const timer = window.setInterval(() => void loadDraft().catch(() => undefined), 6000);
+    const timer = window.setInterval(() => {
+      void loadDraft().catch(() => undefined);
+      void loadPlayers().catch(() => undefined);
+    }, 6000);
     return () => window.clearInterval(timer);
-  }, [bootstrap, loadDraft]);
+  }, [bootstrap, loadDraft, loadPlayers]);
 
   useEffect(() => {
     if (leagueConfig) return;
