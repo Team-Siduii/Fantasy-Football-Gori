@@ -150,7 +150,7 @@ export default function DraftPage() {
   const PAGE_SIZE = 24;
 
   const loadDraft = useCallback(async () => {
-    const response = await fetch(`/api/draft?mode=${modeParam}`, { cache: "no-store" });
+    const response = await fetch(`/api/draft?mode=${modeParam}&_t=${Date.now()}`, { cache: "no-store" });
     const data = (await response.json()) as { error?: string; draft?: DraftState; teamRosters?: TeamRostersByTeamId };
     if (!response.ok) {
       throw new Error(data.error ?? "Draft laden mislukt");
@@ -160,7 +160,7 @@ export default function DraftPage() {
   }, [modeParam]);
 
   const loadPlayers = useCallback(async () => {
-    const response = await fetch(`/api/players?mode=${modeParam}`, { cache: "no-store" });
+    const response = await fetch(`/api/players?mode=${modeParam}&_t=${Date.now()}`, { cache: "no-store" });
     const data = (await response.json()) as { players?: PlayerRecord[] };
     setPlayers(Array.isArray(data.players) ? data.players : []);
   }, [modeParam]);
