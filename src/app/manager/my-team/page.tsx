@@ -115,6 +115,11 @@ function buildStateWithVacancies(
   vacancyCount: number,
 ): ZoneState<EnhancedPlayer> | null {
   const requiredLineup = buildFormationSlots(formation).flat();
+  const totalSlots = requiredLineup.length + BENCH_POSITIONS.length;
+  if (players.length + vacancyCount < totalSlots) {
+    return null;
+  }
+
   const byPosition = new Map<Position, EnhancedPlayer[]>([
     ["GK", []],
     ["DEF", []],
@@ -127,7 +132,6 @@ function buildStateWithVacancies(
     if (!byPosition.has(position)) {
       continue;
     }
-
     byPosition.get(position)?.push(player);
   }
 
@@ -139,11 +143,9 @@ function buildStateWithVacancies(
       if (remainingVacancies <= 0) {
         return null;
       }
-
       remainingVacancies -= 1;
       return createOpenSlot(position);
     }
-
     return list.shift() ?? null;
   };
 
@@ -153,21 +155,28 @@ function buildStateWithVacancies(
     if (!next) {
       return null;
     }
-
     lineup.push(next);
   }
 
-  const bench: EnhancedPlayer[] = [];
-  for (const position of BENCH_POSITIONS) {
-    const next = takePlayerForPosition(position);
-    if (!next) {
-      return null;
-    }
-
-    bench.push(next);
+  // Bench: vul eerst met overgebleven spelers (ongeacht positie), dan met open slots
+  const remainingPlayers: EnhancedPlayer[] = [];
+  for (const list of byPosition.values()) {
+    remainingPlayers.push(...list);
   }
 
-  const hasUnplacedPlayers = [...byPosition.values()].some((list) => list.length > 0);
+  const bench: EnhancedPlayer[] = [];
+  for (let i = 0; i < BENCH_POSITIONS.length; i++) {
+    if (remainingPlayers.length > 0) {
+      bench.push(remainingPlayers.shift()!);
+    } else if (remainingVacancies > 0) {
+      remainingVacancies -= 1;
+      bench.push(createOpenSlot(BENCH_POSITIONS[i]));
+    } else {
+      return null;
+    }
+  }
+
+  const hasUnplacedPlayers = remainingPlayers.length > 0;
   if (hasUnplacedPlayers || remainingVacancies !== 0) {
     return null;
   }
