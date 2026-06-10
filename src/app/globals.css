@@ -2071,8 +2071,7 @@ select {
 }
 
 .draft-pre-pick-bar {
-  position: sticky;
-  bottom: 0;
+  position: static;
   margin-bottom: 0.5rem;
   background: #065f46;
 }
