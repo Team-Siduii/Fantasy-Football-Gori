@@ -30,6 +30,10 @@ function getEventsPath() {
     return process.env.NOTIFICATION_EVENTS_PATH;
   }
 
+  if (process.env.VERCEL) {
+    return "/tmp/notification-events.json";
+  }
+
   return path.join(process.cwd(), "data", "notification-events.json");
 }
 

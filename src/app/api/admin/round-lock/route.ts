@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   }
 
   const actorId = resolveActorIdFromRequest(request);
-  if (!hasLeaguePermission(actorId, "MANAGE_ROUNDS")) {
+  if (!(await hasLeaguePermission(actorId, "MANAGE_ROUNDS"))) {
     return NextResponse.json({ error: "Geen rechten" }, { status: 403 });
   }
 
@@ -26,7 +26,7 @@ export async function PUT(request: Request) {
   }
 
   const actorId = resolveActorIdFromRequest(request);
-  if (!hasLeaguePermission(actorId, "ADMIN_OVERRIDE")) {
+  if (!(await hasLeaguePermission(actorId, "ADMIN_OVERRIDE"))) {
     return NextResponse.json({ error: "Geen rechten" }, { status: 403 });
   }
 

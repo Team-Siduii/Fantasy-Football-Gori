@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
-import { getLeagueAdminConfig } from "@/lib/league-admin-config";
+import { getLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
 
 type PageProps = {
   searchParams?: Promise<{ mode?: string }>;
@@ -13,7 +13,7 @@ function resolveMode(input?: string): "eredivisie" | "wk" {
 export default async function SpelregelsPage({ searchParams }: PageProps) {
   const params = searchParams ? await searchParams : undefined;
   const mode = resolveMode(params?.mode);
-  const config = getLeagueAdminConfig(mode);
+  const config = await getLeagueAdminConfigPersistent(mode);
 
   const modeLabel = mode === "wk" ? "WK" : "Eredivisie";
   const transferLimit = 1;
