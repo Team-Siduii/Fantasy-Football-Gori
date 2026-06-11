@@ -23,7 +23,9 @@ export function middleware(request: NextRequest) {
   }
 
   if (isAuthPage(pathname) && isAuthenticated) {
-    const response = NextResponse.redirect(new URL("/manager/my-team", request.url));
+    // Stuur WK-managers naar de WK-pagina — de home page routeert dan
+    // via resolvePreferredManagerRoute naar de juiste modus.
+    const response = NextResponse.redirect(new URL("/", request.url));
     response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
     return response;
   }
