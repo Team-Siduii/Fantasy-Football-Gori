@@ -38,16 +38,17 @@ export async function savePlayerPoints(
     );
   }
 
-  // Also save as JSON file for local dev fallback
-  const fs = await import("fs/promises");
-  const path = await import("path");
-  const filePath = path.join(
-    process.cwd(),
-    "data",
-    `player-points-${scope}.json`,
-  );
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(snapshot, null, 2), "utf-8");
+  // Also save as JSON file for local dev fallback (uses /tmp on Vercel)
+  try {
+    const fs = await import("fs/promises");
+    const path = await import("path");
+    const baseDir = process.env.VERCEL ? "/tmp" : path.join(process.cwd(), "data");
+    const filePath = path.join(baseDir, `player-points-${scope}.json`);
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, JSON.stringify(snapshot, null, 2), "utf-8");
+  } catch {
+    // Non-critical: DB is the primary store, file is just a fallback
+  }
 
   return snapshot;
 }
@@ -69,11 +70,8 @@ export async function loadPlayerPoints(
   try {
     const fs = await import("fs/promises");
     const path = await import("path");
-    const filePath = path.join(
-      process.cwd(),
-      "data",
-      `player-points-${scope}.json`,
-    );
+    const baseDir = process.env.VERCEL ? "/tmp" : path.join(process.cwd(), "data");
+    const filePath = path.join(baseDir, `player-points-${scope}.json`);
     const content = await fs.readFile(filePath, "utf-8");
     const parsed = JSON.parse(content) as PlayerPointsSnapshot;
     if (parsed.players && parsed.players.length > 0) {
