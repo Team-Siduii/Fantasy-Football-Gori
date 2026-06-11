@@ -136,7 +136,7 @@ export default function ViewTeamPageContent() {
           <h2>Opstelling · {data.formation}</h2>
           <div className="pitch" style={{ maxWidth: 480, margin: "0 auto" }}>
             {pitchRows.map((row, rowIndex) => (
-            <div key={rowIndex} className="pitch-row">
+            <div key={rowIndex} className="pitch-row" data-size={row.length}>
               {row.map((slot, slotIndex) => {
                 const player = slot.player;
                 const flagUrl = player ? getCountryFlagImageUrl(player.club) : null;
