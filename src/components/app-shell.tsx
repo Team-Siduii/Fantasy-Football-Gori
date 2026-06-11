@@ -66,6 +66,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
   const isWkMode = pathname.startsWith("/manager/world-cup");
   const activeNavItems = isWkMode ? wkNavItems : eredivisieNavItems;
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [summaryTeamName, setSummaryTeamName] = useState("Team laden…");
   const [summaryRankLabel, setSummaryRankLabel] = useState("-");
   const [summaryPoints, setSummaryPoints] = useState("-");
@@ -78,15 +79,15 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
       const response = await fetch(`/api/manager/subpoule-summary?mode=${mode}`, { cache: "no-store" });
       if (response.status === 401) {
         setIsAuthenticated(false);
-        setSummaryTeamName("Niet ingelogd");
-        setSummaryRankLabel("-");
-        setSummaryPoints("-");
+        setAuthChecked(true);
+        router.push("/login");
         return;
       }
 
       if (!response.ok) return;
 
       setIsAuthenticated(true);
+      setAuthChecked(true);
       const data = (await response.json()) as SubpouleSummaryResponse;
 
       setSummaryTeamName(data.teamName ?? "Teamnaam ontbreekt");
@@ -182,21 +183,29 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
           {typeof subtitle === "string" ? <p>{subtitle}</p> : subtitle}
         </header>
 
-        <main className="content">{children}</main>
+        {authChecked ? (
+          <>
+            <main className="content">{children}</main>
 
-        {isAuthenticated === true ? (
-          <nav className="bottom-nav" aria-label="Hoofdnavigatie">
-            {activeNavItems.map((item) => (
-              <Link key={item.href} href={item.href} className={`bottom-link ${isActive(pathname, item.href) ? "active" : ""}`}>
-                {item.label}
-              </Link>
-            ))}
+            {isAuthenticated === true ? (
+              <nav className="bottom-nav" aria-label="Hoofdnavigatie">
+                {activeNavItems.map((item) => (
+                  <Link key={item.href} href={item.href} className={`bottom-link ${isActive(pathname, item.href) ? "active" : ""}`}>
+                    {item.label}
+                  </Link>
+                ))}
 
-            <Link href="/admin/players" className={`fab-link ${isActive(pathname, "/admin/players") ? "active" : ""}`}>
-              CSV
-            </Link>
-          </nav>
-        ) : null}
+                <Link href="/admin/players" className={`fab-link ${isActive(pathname, "/admin/players") ? "active" : ""}`}>
+                  CSV
+                </Link>
+              </nav>
+            ) : null}
+          </>
+        ) : (
+          <main className="content">
+            <p style={{ textAlign: "center", padding: "2rem", color: "var(--brand)" }}>Controleren login…</p>
+          </main>
+        )}
       </div>
     </div>
   );

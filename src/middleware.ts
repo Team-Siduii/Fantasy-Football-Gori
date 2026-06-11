@@ -15,16 +15,25 @@ export function middleware(request: NextRequest) {
   const isAuthenticated = parseSessionEmail(request.cookies.get(AUTH_COOKIE_NAME)?.value) !== null;
 
   if (!isPublicPage(pathname) && !isAuthenticated) {
-    const homeUrl = new URL("/", request.url);
-    homeUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(homeUrl);
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", pathname);
+    const response = NextResponse.redirect(loginUrl);
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    return response;
   }
 
   if (isAuthPage(pathname) && isAuthenticated) {
-    return NextResponse.redirect(new URL("/manager/my-team", request.url));
+    const response = NextResponse.redirect(new URL("/manager/my-team", request.url));
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    return response;
   }
 
-  return NextResponse.next();
+  // Protected pages: never cache
+  const response = NextResponse.next();
+  if (!isPublicPage(pathname)) {
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+  }
+  return response;
 }
 
 export const config = {
