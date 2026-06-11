@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { parsePlayerCsv } from "@/domain/player-csv";
 import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
 import { isAdminEmail } from "@/lib/auth-store";
-import { resolveDraftTeamManagerEmail, resolveDraftTeamManagerEmailPersistent } from "@/lib/draft-manager-sync";
+import { resolveDraftTeamManagerEmailPersistent } from "@/lib/draft-manager-sync";
 import {
   readDraftStatePersistent,
   registerPickPersistent,

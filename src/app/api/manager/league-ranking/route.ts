@@ -2,7 +2,6 @@ import { readFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
 import { parsePlayerCsv } from "@/domain/player-csv";
-import { getTransferBudgetCapMillions } from "@/domain/team-budget";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "@/lib/auth-test-accounts";
 import { ensureAuthStateFromDb, getProfileByEmail } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";

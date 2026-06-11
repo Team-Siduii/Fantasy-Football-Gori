@@ -5,7 +5,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { buildFormationSlots } from "@/domain/formation";
-import { buildPitchRows } from "@/domain/pitch-layout";
 import { getCountryFlagImageUrl } from "@/lib/country-flags";
 
 type Position = "GK" | "DEF" | "MID" | "FWD";
@@ -105,8 +104,12 @@ export default function ViewTeamPageContent() {
   }
 
   const formationSlots = buildFormationSlots(data.formation);
-  const pitchRows = buildPitchRows(formationSlots).map((row) =>
-    row.map((slot: { position: string; playerId: string }) => slot),
+  const playerIndex = [...data.lineup];
+  const pitchRows = formationSlots.map((row) =>
+    row.map((slot) => {
+      const player = playerIndex.shift() ?? null;
+      return { position: slot, player };
+    }),
   );
   const lineupById = new Map(data.lineup.map((p) => [p.id, p]));
   const sortedBench = sortByPosition(data.bench);
@@ -133,10 +136,10 @@ export default function ViewTeamPageContent() {
           <h2>Opstelling · {data.formation}</h2>
           <div className="pitch" style={{ maxWidth: 480, margin: "0 auto" }}>
             {pitchRows.map((row, rowIndex) => (
-              <div key={rowIndex} className="pitch-row">
-                {row.map((slot, slotIndex) => {
-                  const player = lineupById.get(slot.playerId);
-                  const flagUrl = player ? getCountryFlagImageUrl(player.club, "wk") : null;
+            <div key={rowIndex} className="pitch-row">
+              {row.map((slot, slotIndex) => {
+                const player = slot.player;
+                const flagUrl = player ? getCountryFlagImageUrl(player.club) : null;
                   return (
                     <div key={slotIndex} className="pitch-slot readonly-slot">
                       <div className="slot-pos">{slot.position}</div>
@@ -170,7 +173,7 @@ export default function ViewTeamPageContent() {
           ) : (
             <ul style={{ listStyle: "none", padding: 0 }}>
               {sortedBench.map((player) => {
-                const flagUrl = getCountryFlagImageUrl(player.club, "wk");
+                const flagUrl = getCountryFlagImageUrl(player.club);
                 return (
                   <li key={player.id} className="bench-player-row">
                     <span className="bench-pos-badge">{player.positie}</span>
