@@ -232,7 +232,7 @@ export async function syncDraftRosterToManagerTeamPersistent(input: {
   formation?: string;
   playerCatalog?: DraftPlayerCatalogEntry[];
 }) {
-  const managerEmail = resolveDraftTeamManagerEmail(input.teamId, input.scope);
+  const managerEmail = await resolveDraftTeamManagerEmailPersistent(input.teamId, input.scope);
   if (!managerEmail) {
     return null;
   }
@@ -280,7 +280,15 @@ export async function syncManagerTeamFromDraftRosterPersistent(input: { managerE
   }
 
   const rosters = (await readTeamRosterStatePersistent(input.scope)).byTeamId;
-  const match = Object.entries(rosters).find(([teamId]) => resolveDraftTeamManagerEmail(teamId, input.scope) === managerEmail);
+  // Resolve alle team IDs naar manager emails via de persistente config
+  const teamEmailEntries = await Promise.all(
+    Object.keys(rosters).map(async (teamId) => ({
+      teamId,
+      email: await resolveDraftTeamManagerEmailPersistent(teamId, input.scope),
+    })),
+  );
+  const teamEmailMap = new Map(teamEmailEntries.filter((e) => e.email).map((e) => [e.teamId, e.email!]));
+  const match = Object.entries(rosters).find(([teamId]) => teamEmailMap.get(teamId) === managerEmail);
   if (!match) {
     return null;
   }
