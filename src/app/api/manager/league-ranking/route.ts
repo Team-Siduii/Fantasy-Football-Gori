@@ -7,6 +7,7 @@ import { ensureAuthStateFromDb, getProfileByEmail } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 import { getLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
 import { readManagerStatePersistent, type ManagerStateScope } from "@/lib/manager-state";
+import { syncManagerTeamFromDraftRosterPersistent } from "@/lib/draft-manager-sync";
 import { loadPlayerPoints } from "@/lib/player-points-store";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
 
@@ -112,6 +113,9 @@ export async function GET(request: Request) {
   const ranking: RankingEntry[] = [];
 
   for (const managerEmail of managerEmails) {
+    // Forceer sync van draft roster naar manager state
+    await syncManagerTeamFromDraftRosterPersistent({ managerEmail, scope });
+
     const profile = getProfileByEmail(managerEmail);
     const teamName = profile?.teamName ?? "Onbekend team";
 
