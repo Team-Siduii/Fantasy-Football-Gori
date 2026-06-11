@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PlayerCard } from "@/components/player-card";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
-import { reorderAcrossZones, findSwapPartner, type ZoneName, type ZoneState } from "@/domain/lineup-state";
+import { reorderAcrossZones, type ZoneName, type ZoneState } from "@/domain/lineup-state";
 import { buildPitchRows } from "@/domain/pitch-layout";
 import { calculateRemainingBudget, getTransferBudgetCapMillions, isWithinBudget } from "@/domain/team-budget";
 import type { PlayerRecord } from "@/domain/player";
@@ -537,6 +537,8 @@ export default function ManagerMyTeamPage() {
   const [pendingBuyId, setPendingBuyId] = useState<string | null>(null);
   const [transferMessage, setTransferMessage] = useState("");
 
+  const [pendingSwap, setPendingSwap] = useState<{ zone: ZoneName; index: number; playerId: string } | null>(null);
+
   const [search, setSearch] = useState("");
   const [selectedPosition, setSelectedPosition] = useState("ALL");
   const [selectedClub, setSelectedClub] = useState("ALL");
@@ -1020,17 +1022,50 @@ export default function ManagerMyTeamPage() {
   }
 
   function handleSwapClick(zone: ZoneName, index: number) {
-    setState((prev) => {
-      const partnerIndex = findSwapPartner(prev, zone, index, (player) => player.positie);
-      if (partnerIndex < 0) return prev;
+    const clickedPlayer = state[zone][index];
+    if (!clickedPlayer || clickedPlayer.id.startsWith("open-")) return;
 
-      const targetZone: ZoneName = zone === "lineup" ? "bench" : "lineup";
-      return reorderAcrossZones(
-        prev,
-        { sourceZone: zone, sourceIndex: index, targetZone, targetIndex: partnerIndex },
-        { enforceLineupPosition: true, getPosition: (player) => player.positie },
+    // If same player clicked again → deselect
+    if (pendingSwap && pendingSwap.playerId === clickedPlayer.id) {
+      setPendingSwap(null);
+      return;
+    }
+
+    // If a player is already selected for swap
+    if (pendingSwap) {
+      const pendingPlayer = state[pendingSwap.zone][pendingSwap.index];
+      if (!pendingPlayer) {
+        setPendingSwap(null);
+        return;
+      }
+
+      // Must be opposite zones and same position
+      if (pendingSwap.zone === zone) {
+        // Same zone — switch selection to this player
+        setPendingSwap({ zone, index, playerId: clickedPlayer.id });
+        return;
+      }
+
+      if (pendingPlayer.positie !== clickedPlayer.positie) {
+        // Different position — not allowed, show briefly then clear
+        setPendingSwap(null);
+        return;
+      }
+
+      // Execute the swap
+      setState((prev) =>
+        reorderAcrossZones(
+          prev,
+          { sourceZone: pendingSwap.zone, sourceIndex: pendingSwap.index, targetZone: zone, targetIndex: index },
+          { enforceLineupPosition: true, getPosition: (player) => player.positie },
+        ),
       );
-    });
+      setPendingSwap(null);
+      return;
+    }
+
+    // No pending swap — select this player
+    setPendingSwap({ zone, index, playerId: clickedPlayer.id });
   }
 
   function handleSellSelection(playerId: string) {
@@ -1187,6 +1222,7 @@ export default function ManagerMyTeamPage() {
                         scoreBadge={!player.id.startsWith("open-") ? String(player.punten) : null}
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",
+                          pendingSwap?.playerId === player.id ? "player-card--swap-selected" : "",
                           player.id.startsWith("open-") ? "player-card--open" : "",
                         ]
                           .filter(Boolean)
@@ -1235,6 +1271,7 @@ export default function ManagerMyTeamPage() {
                   className={[
                     "player-card--bench-row",
                     pendingSellId === player.id ? "player-card--sell" : "",
+                    pendingSwap?.playerId === player.id ? "player-card--swap-selected" : "",
                     player.id.startsWith("open-") ? "player-card--open" : "",
                   ]
                     .filter(Boolean)

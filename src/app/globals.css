@@ -1339,6 +1339,17 @@ select {
   box-shadow: 0 0 0 2px rgba(217, 64, 64, 0.2);
 }
 
+.player-card--swap-selected {
+  outline: 2px solid #5b8cff;
+  box-shadow: 0 0 0 3px rgba(91, 140, 255, 0.25);
+  animation: swap-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes swap-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(91, 140, 255, 0.25); }
+  50% { box-shadow: 0 0 0 5px rgba(91, 140, 255, 0.4); }
+}
+
 .player-card--open {
   background: rgba(229, 233, 242, 0.58);
   border-style: dashed;
@@ -1441,7 +1452,7 @@ select {
   position: static;
   grid-column: 4;
   justify-self: end;
-  margin-right: 0.2rem;
+  margin-right: 0.6rem;
   width: 1.15rem;
   height: 1.15rem;
   font-size: 0.8rem;
