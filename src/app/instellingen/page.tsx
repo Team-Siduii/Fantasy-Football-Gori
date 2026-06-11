@@ -2,6 +2,7 @@ import { AppShell } from "@/components/app-shell";
 import { LeagueConfigEditor } from "@/components/league-config-editor";
 import { resolveLeagueAdminConfigPath } from "@/lib/league-admin-config";
 import { resolveManagerStatePath } from "@/lib/manager-state";
+import Link from "next/link";
 
 export default function InstellingenPage() {
   const eredivisieStatePath = resolveManagerStatePath("eredivisie");
@@ -33,6 +34,12 @@ export default function InstellingenPage() {
         <section className="card col-4">
           <h2>Belangrijk</h2>
           <p className="muted-note">Instellingen zijn volledig gescheiden tussen WK en Eredivisie. Wijzigingen in WK hebben geen effect op Eredivisie en andersom.</p>
+        </section>
+
+        <section className="card col-4">
+          <h2>Profiel</h2>
+          <p>Pas je managernaam, teamnaam of wachtwoord aan.</p>
+          <p><Link href="/account" style={{ fontWeight: 600, color: "var(--brand)" }}>Profiel aanpassen →</Link></p>
         </section>
 
         <LeagueConfigEditor />

@@ -11,17 +11,17 @@ type NavItem = {
 };
 
 const eredivisieNavItems: NavItem[] = [
-  { href: "/manager/my-team", label: "Team" },
+  { href: "/manager/my-team", label: "Mijn team" },
   { href: "/draft", label: "Draft" },
   { href: "/manager/transfer-pool", label: "Transfers" },
-  { href: "/account", label: "Account" },
+  { href: "/instellingen", label: "Instellingen" },
 ];
 
 const wkNavItems: NavItem[] = [
-  { href: "/manager/world-cup", label: "Team" },
+  { href: "/manager/world-cup", label: "Mijn team" },
   { href: "/manager/world-cup/draft", label: "Draft" },
   { href: "/manager/world-cup/transfer-pool", label: "Transfers" },
-  { href: "/account", label: "Account" },
+  { href: "/instellingen", label: "Instellingen" },
 ];
 
 function isActive(pathname: string, href: string) {
