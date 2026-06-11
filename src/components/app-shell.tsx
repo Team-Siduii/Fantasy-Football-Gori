@@ -52,6 +52,7 @@ function switchModePath(currentPath: string): string {
 
 type SubpouleSummaryResponse = {
   teamName?: string;
+  leagueName?: string;
   standing?: {
     subpoule: string;
     rank: number;
@@ -68,6 +69,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [summaryTeamName, setSummaryTeamName] = useState("Team laden…");
+  const [summaryLeagueName, setSummaryLeagueName] = useState("");
   const [summaryRankLabel, setSummaryRankLabel] = useState("-");
   const [summaryPoints, setSummaryPoints] = useState("-");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -91,6 +93,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
       const data = (await response.json()) as SubpouleSummaryResponse;
 
       setSummaryTeamName(data.teamName ?? "Teamnaam ontbreekt");
+      setSummaryLeagueName(data.leagueName ?? "");
 
       if (data.standing) {
         setSummaryRankLabel(`#${data.standing.rank} (${data.standing.totalManagersInSubpoule}) · Poule ${data.standing.subpoule}`);
@@ -118,7 +121,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
         <header className="top-header">
           <div className="brand-wrap">
             <p className="brand-eyebrow">{isWkMode ? "world cup" : "eredivisie"}</p>
-            <h1>{isWkMode ? "FANTASY WK" : "FANTASY EREDIVISIE"}</h1>
+            <h1>{summaryLeagueName || (isWkMode ? "FANTASY WK" : "FANTASY EREDIVISIE")}</h1>
           </div>
 
           <div className="header-actions">

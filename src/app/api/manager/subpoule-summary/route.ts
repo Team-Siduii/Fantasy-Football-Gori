@@ -6,6 +6,7 @@ import { derivePlayerPoints } from "@/lib/player-derived";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "@/lib/auth-test-accounts";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 import { ensureAuthStateFromDb, getProfileByEmail } from "@/lib/auth-store";
+import { getLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
 import { readManagerStatePersistent, type ManagerStateScope } from "@/lib/manager-state";
 import { bootstrapPlayersFromDefaultCsv } from "@/lib/player-bootstrap";
 import { listPlayers } from "@/lib/player-store";
@@ -73,10 +74,12 @@ export async function GET(request: Request) {
   });
 
   const profile = getProfileByEmail(email);
+  const leagueConfig = await getLeagueAdminConfigPersistent(scope);
 
   return NextResponse.json({
     mode: scope,
     teamName: profile?.teamName ?? "Mijn Super Team",
+    leagueName: leagueConfig.competition.name,
     standing,
   });
 }
