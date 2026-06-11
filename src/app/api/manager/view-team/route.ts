@@ -15,6 +15,7 @@ const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "thomasbart91@gmail.com": "A",
   "jackvandereep@hotmail.com": "A",
   "emielzomerdijk@gmail.com": "A",
+  "ice.eckmund@gmail.com": "A",
 };
 
 function normalizePlayerName(name: string): string {
