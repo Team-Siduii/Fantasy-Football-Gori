@@ -230,6 +230,32 @@ export function getAuthAccountByEmail(email: string): AuthAccountSummary | null 
   };
 }
 
+export function getAuthAccountById(id: string): AuthAccountSummary | null {
+  const normalized = id.trim().toLowerCase();
+  const account = authState.accounts.find((candidate) => candidate.id.trim().toLowerCase() === normalized);
+  if (!account) {
+    return null;
+  }
+
+  return {
+    id: account.id,
+    role: account.role,
+    profile: account.profile,
+    mustSetup: account.mustSetup,
+  };
+}
+
+export function listManagerAccounts(): AuthAccountSummary[] {
+  return authState.accounts
+    .filter((account) => account.role === "manager")
+    .map((account) => ({
+      id: account.id,
+      role: account.role,
+      profile: account.profile,
+      mustSetup: account.mustSetup,
+    }));
+}
+
 export function listManagerProfiles(): ManagerProfile[] {
   return authState.accounts
     .filter((account) => account.role === "manager")

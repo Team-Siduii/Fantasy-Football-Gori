@@ -3,18 +3,33 @@ import { dirname } from "path";
 import { afterEach, describe, expect, it } from "vitest";
 
 const testPath = "/tmp/ffg-manager-state-tests/manager-state.json";
+const wkTestPath = "/tmp/ffg-manager-state-tests/manager-state-wk.json";
+const authTestPath = "/tmp/ffg-manager-state-tests/auth-state.json";
+const leagueTestPath = "/tmp/ffg-manager-state-tests/league-admin-config.json";
+const leagueWkTestPath = "/tmp/ffg-manager-state-tests/league-admin-config-wk.json";
 
-afterEach(() => {
+afterEach(async () => {
   process.env.MANAGER_STATE_PATH = testPath;
-  process.env.MANAGER_STATE_WK_PATH = "/tmp/ffg-manager-state-tests/manager-state-wk.json";
-  if (existsSync(testPath)) {
-    unlinkSync(testPath);
+  process.env.MANAGER_STATE_WK_PATH = wkTestPath;
+  process.env.AUTH_STATE_PATH = authTestPath;
+  process.env.LEAGUE_ADMIN_CONFIG_PATH = leagueTestPath;
+  process.env.LEAGUE_ADMIN_CONFIG_WK_PATH = leagueWkTestPath;
+  for (const target of [testPath, wkTestPath, authTestPath, leagueTestPath, leagueWkTestPath]) {
+    if (existsSync(target)) {
+      unlinkSync(target);
+    }
   }
-  if (existsSync(process.env.MANAGER_STATE_WK_PATH)) {
-    unlinkSync(process.env.MANAGER_STATE_WK_PATH);
+  try {
+    const auth = await import("../../src/lib/auth-store");
+    auth.resetAuthStateForTests();
+  } catch {
+    // ignore cleanup import issues during isolated test teardown
   }
   delete process.env.MANAGER_STATE_PATH;
   delete process.env.MANAGER_STATE_WK_PATH;
+  delete process.env.AUTH_STATE_PATH;
+  delete process.env.LEAGUE_ADMIN_CONFIG_PATH;
+  delete process.env.LEAGUE_ADMIN_CONFIG_WK_PATH;
   delete process.env.VERCEL;
 });
 
@@ -158,42 +173,108 @@ describe("manager-state persistence", () => {
     expect(round6After.lineupIds).toEqual(["r5-new-a", "r5-new-b"]);
   });
 
-  it("stores team state per account and survives re-login/refresh", async () => {
+  it("stores canonical manager state under managerId while remaining readable by email", async () => {
     mkdirSync(dirname(testPath), { recursive: true });
     process.env.MANAGER_STATE_PATH = testPath;
+    process.env.AUTH_STATE_PATH = authTestPath;
+    process.env.LEAGUE_ADMIN_CONFIG_PATH = leagueTestPath;
+    process.env.LEAGUE_ADMIN_CONFIG_WK_PATH = leagueWkTestPath;
 
+    const auth = await import("../../src/lib/auth-store");
+    auth.resetAuthStateForTests();
     const mod = await import("../../src/lib/manager-state");
 
     mod.saveManagerStateForRound(
       5,
       {
         formation: "4-4-2",
-        lineupIds: ["a-1", "a-2"],
-        benchIds: ["a-3"],
+        lineupIds: ["th-1", "th-2"],
+        benchIds: ["th-3"],
       },
       "eredivisie",
       true,
-      "manager-a@example.com",
+      "Thomasbart91@gmail.com",
     );
+
+    const raw = JSON.parse((await import("fs")).readFileSync(testPath, "utf-8")) as {
+      managerStates?: Record<string, unknown>;
+    };
+
+    expect(Object.keys(raw.managerStates ?? {})).toContain("thomas-bart");
+    expect(Object.keys(raw.managerStates ?? {})).not.toContain("thomasbart91@gmail.com");
+    expect(mod.readManagerStateForRound(5, "eredivisie", "Thomasbart91@gmail.com").lineupIds).toEqual(["th-1", "th-2"]);
+    expect(mod.readManagerStateForRound(5, "eredivisie", "thomas-bart").lineupIds).toEqual(["th-1", "th-2"]);
+  });
+
+  it("migrates a legacy email-keyed manager state record to managerId on save", async () => {
+    mkdirSync(dirname(testPath), { recursive: true });
+    process.env.MANAGER_STATE_PATH = testPath;
+    process.env.AUTH_STATE_PATH = authTestPath;
+    process.env.LEAGUE_ADMIN_CONFIG_PATH = leagueTestPath;
+    process.env.LEAGUE_ADMIN_CONFIG_WK_PATH = leagueWkTestPath;
+
+    const auth = await import("../../src/lib/auth-store");
+    auth.resetAuthStateForTests();
+    const fs = await import("fs");
+    fs.writeFileSync(
+      testPath,
+      JSON.stringify(
+        {
+          formation: "4-3-3",
+          lineupIds: [],
+          benchIds: [],
+          roundStates: {},
+          managerStates: {
+            "thomasbart91@gmail.com": {
+              formation: "3-5-2",
+              lineupIds: ["legacy-1"],
+              benchIds: ["legacy-2"],
+              pickedTransferId: null,
+              pendingSellId: null,
+              pendingBuyId: null,
+              roundStates: {
+                "5": {
+                  formation: "3-5-2",
+                  lineupIds: ["legacy-1"],
+                  benchIds: ["legacy-2"],
+                  pickedTransferId: null,
+                  pendingSellId: null,
+                  pendingBuyId: null,
+                },
+              },
+            },
+          },
+          roundLocks: [],
+          adminActionLog: [],
+        },
+        null,
+        2,
+      ),
+      "utf-8",
+    );
+
+    const mod = await import("../../src/lib/manager-state");
+    const before = mod.readManagerStateForRound(5, "eredivisie", "thomas-bart");
+    expect(before.lineupIds).toEqual(["legacy-1"]);
 
     mod.saveManagerStateForRound(
       5,
       {
-        formation: "3-5-2",
-        lineupIds: ["b-1", "b-2"],
-        benchIds: ["b-3"],
+        formation: "4-3-3",
+        lineupIds: ["legacy-1", "new-1"],
+        benchIds: ["legacy-2"],
       },
       "eredivisie",
       true,
-      "manager-b@example.com",
+      "Thomasbart91@gmail.com",
     );
 
-    const managerAAfterRefresh = mod.readManagerStateForRound(5, "eredivisie", "manager-a@example.com");
-    const managerBAfterRefresh = mod.readManagerStateForRound(5, "eredivisie", "manager-b@example.com");
+    const raw = JSON.parse(fs.readFileSync(testPath, "utf-8")) as {
+      managerStates?: Record<string, { lineupIds?: string[] }>;
+    };
 
-    expect(managerAAfterRefresh.formation).toBe("4-4-2");
-    expect(managerAAfterRefresh.lineupIds).toEqual(["a-1", "a-2"]);
-    expect(managerBAfterRefresh.formation).toBe("3-5-2");
-    expect(managerBAfterRefresh.lineupIds).toEqual(["b-1", "b-2"]);
+    expect(Object.keys(raw.managerStates ?? {})).toContain("thomas-bart");
+    expect(Object.keys(raw.managerStates ?? {})).not.toContain("thomasbart91@gmail.com");
+    expect(raw.managerStates?.["thomas-bart"]?.lineupIds).toEqual(["legacy-1", "new-1"]);
   });
 });
