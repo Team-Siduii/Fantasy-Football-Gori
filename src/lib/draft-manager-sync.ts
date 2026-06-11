@@ -415,39 +415,27 @@ export function syncManagerTeamFromDraftRoster(input: { managerEmail: string; sc
 export async function syncManagerTeamFromDraftRosterPersistent(input: { managerEmail: string; scope: ManagerStateScope }) {
   const managerEmail = normalizeEmail(input.managerEmail);
   if (!managerEmail) {
-    console.log("[SYNC-ROSTER] No managerEmail");
     return null;
   }
 
   const rosters = (await readTeamRosterStatePersistent(input.scope)).byTeamId;
-  console.log("[SYNC-ROSTER] Roster team IDs:", Object.keys(rosters));
-
   const identity = buildManagerIdentity(managerEmail, input.scope);
-  console.log("[SYNC-ROSTER] Identity aliases:", [...identity.aliases]);
-
   const match = findRosterMatch(rosters, identity, input.scope);
 
   if (!match) {
-    console.log("[SYNC-ROSTER] No roster match for", managerEmail);
     return null;
   }
 
   const [, playerIds] = match;
-  console.log("[SYNC-ROSTER] Matched team:", match[0], "with", playerIds.length, "players:", playerIds);
-  
   const current = await readManagerStatePersistent(input.scope, managerEmail);
-  console.log("[SYNC-ROSTER] Current state lineupIds:", current.lineupIds, "benchIds:", current.benchIds);
 
   // Alleen initialiseren als de state leeg is (nog geen spelers).
   // Zodra een manager spelers heeft (uit draft of transfers) NIET overschrijven —
   // anders gaan transfers verloren bij elke sync.
   const currentIds = [...current.lineupIds, ...current.benchIds];
   if (currentIds.length > 0) {
-    console.log("[SYNC-ROSTER] State already has", currentIds.length, "players — skipping init");
     return { managerEmail, state: current, changed: false };
   }
-
-  console.log("[SYNC-ROSTER] State empty — initializing from roster");
 
   const next = buildManagerTeamStateWithRoundSnapshots(playerIds, current);
   const nextIds = [...next.lineupIds, ...next.benchIds];
@@ -466,43 +454,22 @@ export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
 }) {
   const managerEmail = normalizeEmail(input.managerEmail);
   if (!managerEmail) {
-    console.log("[REPAIR] No managerEmail");
     return null;
   }
 
-  console.log("[REPAIR] Start for", managerEmail, "scope:", input.scope);
-
   const rosterRepair = await syncManagerTeamFromDraftRosterPersistent(input);
   if (rosterRepair) {
-    console.log("[REPAIR] Roster repair SUCCESS for", managerEmail, "playerIds:", [...rosterRepair.state.lineupIds, ...rosterRepair.state.benchIds]);
     return rosterRepair;
   }
 
-  console.log("[REPAIR] No roster match for", managerEmail, ", falling back to draft picks");
-
   const identity = buildManagerIdentity(managerEmail, input.scope);
-  console.log("[REPAIR] Identity aliases for", managerEmail, ":", [...identity.aliases]);
-
   const { readDraftStatePersistent } = await import("./draft-state");
   const draft = await readDraftStatePersistent(input.scope);
-  console.log("[REPAIR] Draft picks count:", draft.picks.length, "teamOrder:", draft.teamOrder);
-
   const playerIds = draft.picks
-    .filter((pick) => {
-      const aliasMatch = teamIdMatchesManagerIdentity(pick.teamId, identity);
-      const emailMatch = teamIdResolvesToManagerIdentity(pick.teamId, identity, input.scope);
-      if (aliasMatch || emailMatch) {
-        console.log("[REPAIR] Pick match for", pick.teamId, "player:", pick.playerId, "aliasMatch:", aliasMatch, "emailMatch:", emailMatch);
-        return true;
-      }
-      return false;
-    })
+    .filter((pick) => teamIdMatchesManagerIdentity(pick.teamId, identity) || teamIdResolvesToManagerIdentity(pick.teamId, identity, input.scope))
     .map((pick) => pick.playerId);
 
-  console.log("[REPAIR] Matched playerIds for", managerEmail, ":", playerIds);
-
   if (playerIds.length === 0) {
-    console.log("[REPAIR] No picks match for", managerEmail);
     return null;
   }
 
@@ -511,8 +478,6 @@ export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
     playerIds,
     scope: input.scope,
   });
-
-  console.log("[REPAIR] Sync result for", managerEmail, ":", result ? "SUCCESS" : "NULL");
 
   return result ? { ...result, changed: true, repairedFrom: "draft-picks" as const } : null;
 }
