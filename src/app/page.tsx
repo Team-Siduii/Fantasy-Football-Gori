@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { isAuthenticatedSession } from "@/lib/auth-session";
+import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
+import { resolvePreferredManagerRoute } from "@/lib/manager-entry-route";
 
 const previewItems = [
   "Bekijk je eigen team, draft en transfers pas na inloggen.",
@@ -10,7 +11,8 @@ const previewItems = [
 
 export default async function HomePage() {
   if (await isAuthenticatedSession()) {
-    redirect("/manager/my-team");
+    const email = await getAuthenticatedEmail();
+    redirect(email ? await resolvePreferredManagerRoute(email) : "/manager/my-team");
   }
 
   return (

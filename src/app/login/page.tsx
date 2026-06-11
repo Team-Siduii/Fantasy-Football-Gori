@@ -6,5 +6,5 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const params = await searchParams;
-  return <LoginForm nextPath={params.next ?? "/manager/my-team"} />;
+  return <LoginForm nextPath={params.next ?? "/manager"} />;
 }
