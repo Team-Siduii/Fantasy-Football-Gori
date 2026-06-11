@@ -1157,6 +1157,7 @@ select {
 }
 
 .pitch-row[data-size="5"] {
+  --slot-width: calc((100% - 4 * 0.5rem) / 5);
   grid-template-columns: repeat(5, var(--slot-width));
 }
 
@@ -1660,8 +1661,7 @@ select {
 
   .pitch-row[data-size="2"],
   .pitch-row[data-size="3"],
-  .pitch-row[data-size="4"],
-  .pitch-row[data-size="5"] {
+  .pitch-row[data-size="4"] {
     grid-template-columns: repeat(var(--pitch-cols), var(--slot-width));
   }
 
@@ -1677,8 +1677,18 @@ select {
     --pitch-cols: 4;
   }
 
+  /* 5-koloms rijen wrappen naar 3+2 op mobiel */
   .pitch-row[data-size="5"] {
-    --pitch-cols: 5;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .pitch-row[data-size="5"] > * {
+    width: var(--slot-width);
+    min-width: 0;
+    flex-shrink: 0;
   }
 
   .player-name,
