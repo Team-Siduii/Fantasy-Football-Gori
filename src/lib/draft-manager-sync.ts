@@ -1,7 +1,7 @@
 import { buildFormationSlots, getFormationOptions } from "../domain/formation";
 import type { PlayerRecord } from "../domain/player";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
-import { listManagerProfiles } from "./auth-store";
+import { getAuthAccountByEmail, listManagerProfiles } from "./auth-store";
 import { getLeagueAdminConfig, getLeagueAdminConfigPersistent, type LeagueMode } from "./league-admin-config";
 import {
   readManagerState,
@@ -18,6 +18,10 @@ const SQUAD_SIZE = 15;
 
 type DraftPosition = "GK" | "DEF" | "MID" | "FWD";
 type DraftPlayerCatalogEntry = Pick<PlayerRecord, "id" | "positie">;
+type ManagerIdentity = {
+  aliases: Set<string>;
+  emails: Set<string>;
+};
 
 function normalize(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -25,6 +29,32 @@ function normalize(value: string) {
 
 function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
+}
+
+function normalizeIdentityValue(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function addIdentityValue(target: Set<string>, value?: string | null) {
+  if (typeof value !== "string") {
+    return;
+  }
+
+  const normalized = normalizeIdentityValue(value);
+  if (normalized) {
+    target.add(normalized);
+  }
+}
+
+function addIdentityEmail(target: Set<string>, value?: string | null) {
+  if (typeof value !== "string") {
+    return;
+  }
+
+  const normalized = normalizeEmail(value);
+  if (normalized) {
+    target.add(normalized);
+  }
 }
 
 function valuesMatch(teamId: string, candidates: Array<string | undefined | null>) {
@@ -36,6 +66,80 @@ function valuesMatch(teamId: string, candidates: Array<string | undefined | null
   return candidates.some((candidate) => typeof candidate === "string" && normalize(candidate) === target);
 }
 
+function buildManagerIdentity(managerEmail: string, scope: ManagerStateScope): ManagerIdentity {
+  const aliases = new Set<string>();
+  const emails = new Set<string>();
+  const normalizedManagerEmail = normalizeEmail(managerEmail);
+  const config = getLeagueAdminConfig(scope as LeagueMode);
+  const runtimeAccount = getAuthAccountByEmail(normalizedManagerEmail);
+
+  addIdentityValue(aliases, normalizedManagerEmail);
+  addIdentityEmail(emails, normalizedManagerEmail);
+
+  if (runtimeAccount) {
+    addIdentityValue(aliases, runtimeAccount.id);
+    addIdentityValue(aliases, runtimeAccount.profile.name);
+    addIdentityValue(aliases, runtimeAccount.profile.teamName);
+    addIdentityValue(aliases, runtimeAccount.profile.email);
+    addIdentityEmail(emails, runtimeAccount.profile.email);
+  }
+
+  const participant = config.participants.find((candidate) => {
+    if (runtimeAccount?.id && candidate.managerId === runtimeAccount.id) {
+      return true;
+    }
+
+    const participantEmail = normalizeEmail(candidate.email);
+    return participantEmail === normalizedManagerEmail || emails.has(participantEmail);
+  });
+
+  if (participant) {
+    addIdentityValue(aliases, participant.managerId);
+    addIdentityValue(aliases, participant.label);
+    addIdentityValue(aliases, participant.email);
+    addIdentityEmail(emails, participant.email);
+  }
+
+  const preset = AUTH_TEST_ACCOUNT_PRESETS.find((candidate) => {
+    if (runtimeAccount?.id && candidate.id === runtimeAccount.id) {
+      return true;
+    }
+
+    const presetEmail = normalizeEmail(candidate.email);
+    return presetEmail === normalizedManagerEmail || emails.has(presetEmail);
+  });
+
+  if (preset) {
+    addIdentityValue(aliases, preset.id);
+    addIdentityValue(aliases, preset.label);
+    addIdentityValue(aliases, preset.name);
+    addIdentityValue(aliases, preset.teamName);
+    addIdentityValue(aliases, preset.email);
+    addIdentityEmail(emails, preset.email);
+  }
+
+  return { aliases, emails };
+}
+
+function teamIdMatchesManagerIdentity(teamId: string, identity: ManagerIdentity) {
+  return identity.aliases.has(normalizeIdentityValue(teamId));
+}
+
+function teamIdResolvesToManagerIdentity(teamId: string, identity: ManagerIdentity, scope: ManagerStateScope) {
+  const resolvedEmail = resolveDraftTeamManagerEmail(teamId, scope);
+  return resolvedEmail ? identity.emails.has(resolvedEmail) : false;
+}
+
+function findRosterMatch(
+  rosters: Record<string, string[]>,
+  identity: ManagerIdentity,
+  scope: ManagerStateScope,
+): [string, string[]] | undefined {
+  return Object.entries(rosters).find(
+    ([teamId]) => teamIdMatchesManagerIdentity(teamId, identity) || teamIdResolvesToManagerIdentity(teamId, identity, scope),
+  );
+}
+
 export function resolveDraftTeamManagerEmail(teamId: string, scope: ManagerStateScope = "eredivisie"): string | null {
   const target = normalize(teamId);
   if (!target) {
@@ -43,16 +147,12 @@ export function resolveDraftTeamManagerEmail(teamId: string, scope: ManagerState
   }
 
   const config = getLeagueAdminConfig(scope as LeagueMode);
-  const participant = config.participants.find((candidate) =>
-    valuesMatch(teamId, [candidate.label, candidate.managerId, candidate.email]),
-  );
+  const participant = config.participants.find((candidate) => valuesMatch(teamId, [candidate.label, candidate.managerId, candidate.email]));
   if (participant?.email) {
     return normalizeEmail(participant.email);
   }
 
-  const runtimeProfile = listManagerProfiles().find((profile) =>
-    valuesMatch(teamId, [profile.name, profile.teamName, profile.email]),
-  );
+  const runtimeProfile = listManagerProfiles().find((profile) => valuesMatch(teamId, [profile.name, profile.teamName, profile.email]));
   if (runtimeProfile?.email) {
     return normalizeEmail(runtimeProfile.email);
   }
@@ -203,14 +303,13 @@ function buildManagerTeamStateWithRoundSnapshots(
   };
 }
 
-export function syncDraftRosterToManagerTeam(input: {
-  teamId: string;
+export function syncPlayerIdsToManagerTeam(input: {
+  managerEmail: string;
   playerIds: string[];
   scope: ManagerStateScope;
-  formation?: string;
   playerCatalog?: DraftPlayerCatalogEntry[];
 }) {
-  const managerEmail = resolveDraftTeamManagerEmail(input.teamId, input.scope);
+  const managerEmail = normalizeEmail(input.managerEmail);
   if (!managerEmail) {
     return null;
   }
@@ -225,14 +324,13 @@ export function syncDraftRosterToManagerTeam(input: {
   return { managerEmail, state };
 }
 
-export async function syncDraftRosterToManagerTeamPersistent(input: {
-  teamId: string;
+export async function syncPlayerIdsToManagerTeamPersistent(input: {
+  managerEmail: string;
   playerIds: string[];
   scope: ManagerStateScope;
-  formation?: string;
   playerCatalog?: DraftPlayerCatalogEntry[];
 }) {
-  const managerEmail = await resolveDraftTeamManagerEmailPersistent(input.teamId, input.scope);
+  const managerEmail = normalizeEmail(input.managerEmail);
   if (!managerEmail) {
     return null;
   }
@@ -247,6 +345,46 @@ export async function syncDraftRosterToManagerTeamPersistent(input: {
   return { managerEmail, state };
 }
 
+export function syncDraftRosterToManagerTeam(input: {
+  teamId: string;
+  playerIds: string[];
+  scope: ManagerStateScope;
+  formation?: string;
+  playerCatalog?: DraftPlayerCatalogEntry[];
+}) {
+  const managerEmail = resolveDraftTeamManagerEmail(input.teamId, input.scope);
+  if (!managerEmail) {
+    return null;
+  }
+
+  return syncPlayerIdsToManagerTeam({
+    managerEmail,
+    playerIds: input.playerIds,
+    scope: input.scope,
+    playerCatalog: input.playerCatalog,
+  });
+}
+
+export async function syncDraftRosterToManagerTeamPersistent(input: {
+  teamId: string;
+  playerIds: string[];
+  scope: ManagerStateScope;
+  formation?: string;
+  playerCatalog?: DraftPlayerCatalogEntry[];
+}) {
+  const managerEmail = resolveDraftTeamManagerEmail(input.teamId, input.scope);
+  if (!managerEmail) {
+    return null;
+  }
+
+  return syncPlayerIdsToManagerTeamPersistent({
+    managerEmail,
+    playerIds: input.playerIds,
+    scope: input.scope,
+    playerCatalog: input.playerCatalog,
+  });
+}
+
 export function syncManagerTeamFromDraftRoster(input: { managerEmail: string; scope: ManagerStateScope }) {
   const managerEmail = normalizeEmail(input.managerEmail);
   if (!managerEmail) {
@@ -254,7 +392,8 @@ export function syncManagerTeamFromDraftRoster(input: { managerEmail: string; sc
   }
 
   const rosters = readTeamRosterState(input.scope).byTeamId;
-  const match = Object.entries(rosters).find(([teamId]) => resolveDraftTeamManagerEmail(teamId, input.scope) === managerEmail);
+  const identity = buildManagerIdentity(managerEmail, input.scope);
+  const match = findRosterMatch(rosters, identity, input.scope);
   if (!match) {
     return null;
   }
@@ -280,15 +419,9 @@ export async function syncManagerTeamFromDraftRosterPersistent(input: { managerE
   }
 
   const rosters = (await readTeamRosterStatePersistent(input.scope)).byTeamId;
-  // Resolve alle team IDs naar manager emails via de persistente config
-  const teamEmailEntries = await Promise.all(
-    Object.keys(rosters).map(async (teamId) => ({
-      teamId,
-      email: await resolveDraftTeamManagerEmailPersistent(teamId, input.scope),
-    })),
-  );
-  const teamEmailMap = new Map(teamEmailEntries.filter((e) => e.email).map((e) => [e.teamId, e.email!]));
-  const match = Object.entries(rosters).find(([teamId]) => teamEmailMap.get(teamId) === managerEmail);
+  const identity = buildManagerIdentity(managerEmail, input.scope);
+  const match = findRosterMatch(rosters, identity, input.scope);
+
   if (!match) {
     return null;
   }
@@ -313,4 +446,38 @@ export async function syncManagerTeamFromDraftRosterPersistent(input: { managerE
 
   const state = await saveManagerStatePersistent(next, input.scope, managerEmail);
   return { managerEmail, state, changed: true };
+}
+
+export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
+  managerEmail: string;
+  scope: ManagerStateScope;
+}) {
+  const managerEmail = normalizeEmail(input.managerEmail);
+  if (!managerEmail) {
+    return null;
+  }
+
+  const rosterRepair = await syncManagerTeamFromDraftRosterPersistent(input);
+  if (rosterRepair) {
+    return rosterRepair;
+  }
+
+  const identity = buildManagerIdentity(managerEmail, input.scope);
+  const { readDraftStatePersistent } = await import("./draft-state");
+  const draft = await readDraftStatePersistent(input.scope);
+  const playerIds = draft.picks
+    .filter((pick) => teamIdMatchesManagerIdentity(pick.teamId, identity) || teamIdResolvesToManagerIdentity(pick.teamId, identity, input.scope))
+    .map((pick) => pick.playerId);
+
+  if (playerIds.length === 0) {
+    return null;
+  }
+
+  const result = await syncPlayerIdsToManagerTeamPersistent({
+    managerEmail,
+    playerIds,
+    scope: input.scope,
+  });
+
+  return result ? { ...result, changed: true, repairedFrom: "draft-picks" as const } : null;
 }

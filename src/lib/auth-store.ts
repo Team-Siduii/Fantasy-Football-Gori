@@ -12,6 +12,13 @@ export type ManagerProfile = {
 
 type AuthRole = "manager" | "admin";
 
+export type AuthAccountSummary = {
+  id: string;
+  role: AuthRole;
+  profile: ManagerProfile;
+  mustSetup: boolean;
+};
+
 type AuthAccount = {
   id: string;
   role: AuthRole;
@@ -250,6 +257,46 @@ export function authenticateManager(email: string, password: string): boolean {
 export function getProfileByEmail(email: string): ManagerProfile | null {
   const account = findAccountByEmail(email);
   return account ? account.profile : null;
+}
+
+export function getAuthAccountByEmail(email: string): AuthAccountSummary | null {
+  const account = findAccountByEmail(email);
+  if (!account) {
+    return null;
+  }
+
+  return {
+    id: account.id,
+    role: account.role,
+    profile: account.profile,
+    mustSetup: account.mustSetup,
+  };
+}
+
+export function getAuthAccountById(id: string): AuthAccountSummary | null {
+  const normalized = id.trim().toLowerCase();
+  const account = authState.accounts.find((candidate) => candidate.id.trim().toLowerCase() === normalized);
+  if (!account) {
+    return null;
+  }
+
+  return {
+    id: account.id,
+    role: account.role,
+    profile: account.profile,
+    mustSetup: account.mustSetup,
+  };
+}
+
+export function listManagerAccounts(): AuthAccountSummary[] {
+  return authState.accounts
+    .filter((account) => account.role === "manager")
+    .map((account) => ({
+      id: account.id,
+      role: account.role,
+      profile: account.profile,
+      mustSetup: account.mustSetup,
+    }));
 }
 
 export function listManagerProfiles(): ManagerProfile[] {

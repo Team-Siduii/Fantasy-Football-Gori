@@ -8,7 +8,8 @@ async function loadModules() {
   const manager = await import("../../src/lib/manager-state");
   const sync = await import("../../src/lib/draft-manager-sync");
   const league = await import("../../src/lib/league-admin-config");
-  return { draft, roster, manager, sync, league };
+  const auth = await import("../../src/lib/auth-store");
+  return { draft, roster, manager, sync, league, auth };
 }
 
 describe("draft roster to manager team sync", () => {
@@ -19,6 +20,7 @@ describe("draft roster to manager team sync", () => {
     process.env.TEAM_ROSTER_STATE_WK_PATH = "/tmp/ffg-draft-manager-sync-roster-wk.test.json";
     process.env.MANAGER_STATE_PATH = "/tmp/ffg-draft-manager-sync-manager.test.json";
     process.env.MANAGER_STATE_WK_PATH = "/tmp/ffg-draft-manager-sync-manager-wk.test.json";
+    process.env.AUTH_STATE_PATH = "/tmp/ffg-draft-manager-sync-auth.test.json";
   });
 
   it("syncs WK picks for a draft team into that manager's My Team state", async () => {
@@ -230,5 +232,71 @@ describe("draft roster to manager team sync", () => {
     expect(johanWkState.formation).toBe("3-5-2");
     expect(johanWkState.lineupIds).toEqual(["gk-1", "def-1", "def-2", "def-3", "mid-1", "mid-2", "mid-3", "mid-4", "mid-5", "fwd-1", "fwd-2"]);
     expect(johanWkState.benchIds).toEqual([]);
+  });
+
+  it("repairs a manager session with drifted auth email by using account and participant aliases", async () => {
+    const { draft, roster, manager, sync, auth } = await loadModules();
+    draft.resetDraftStateForTests("wk");
+    roster.resetTeamRosterStateForTests("wk");
+    manager.resetManagerStateForTests("wk");
+    auth.resetAuthStateForTests();
+
+    const fs = await import("fs");
+    const authPath = process.env.AUTH_STATE_PATH!;
+    const authState = JSON.parse(fs.readFileSync(authPath, "utf-8")) as {
+      accounts: Array<{ id: string; profile: { email: string } }>;
+    };
+    const jack = authState.accounts.find((account) => account.id === "jack-van-der-reep");
+    if (!jack) {
+      throw new Error("jack account ontbreekt in testauth-state");
+    }
+    jack.profile.email = "Jackvandereep@hotmail.con";
+    fs.writeFileSync(authPath, JSON.stringify(authState, null, 2), "utf-8");
+    auth.reloadAuthStateForTests();
+
+    draft.startDraft({
+      leagueId: "wk-2026",
+      teamOrder: ["Jack", "Thomas"],
+      totalRounds: 2,
+      startedBy: "admin-1",
+      scope: "wk",
+    });
+    draft.registerPick({ teamId: "Jack", playerId: "wk-player-1", scope: "wk" });
+
+    manager.resetManagerStateForTests("wk");
+    const repaired = sync.syncManagerTeamFromDraftRoster({ managerEmail: "Jackvandereep@hotmail.con", scope: "wk" });
+
+    expect(repaired?.changed).toBe(true);
+    expect(manager.readManagerState("wk", "Jackvandereep@hotmail.con").lineupIds).toEqual(["wk-player-1"]);
+  });
+
+  it("rebuilds My Team from draft picks when team-roster state is missing", async () => {
+    const { draft, roster, manager, sync, auth } = await loadModules();
+    draft.resetDraftStateForTests("wk");
+    roster.resetTeamRosterStateForTests("wk");
+    manager.resetManagerStateForTests("wk");
+    auth.resetAuthStateForTests();
+
+    draft.startDraft({
+      leagueId: "wk-2026",
+      teamOrder: ["Johan Swart", "Thomas"],
+      totalRounds: 2,
+      startedBy: "admin-1",
+      scope: "wk",
+    });
+    draft.registerPick({ teamId: "Johan Swart", playerId: "wk-player-1", scope: "wk" });
+    draft.registerPick({ teamId: "Thomas", playerId: "wk-player-2", scope: "wk" });
+
+    roster.resetTeamRosterStateForTests("wk");
+    manager.resetManagerStateForTests("wk");
+
+    const repaired = await sync.repairManagerTeamFromDraftArtifactsPersistent({
+      managerEmail: "Thomasbart91@gmail.com",
+      scope: "wk",
+    });
+
+    expect(repaired?.changed).toBe(true);
+    expect((repaired as { repairedFrom?: string } | null)?.repairedFrom).toBe("draft-picks");
+    expect(manager.readManagerState("wk", "Thomasbart91@gmail.com").lineupIds).toEqual(["wk-player-2"]);
   });
 });

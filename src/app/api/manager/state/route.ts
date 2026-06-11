@@ -7,7 +7,7 @@ import {
   type ManagerStateScope,
 } from "@/lib/manager-state";
 import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
-import { syncManagerTeamFromDraftRosterPersistent } from "@/lib/draft-manager-sync";
+import { repairManagerTeamFromDraftArtifactsPersistent } from "@/lib/draft-manager-sync";
 
 function getScopeFromRequest(request: Request): ManagerStateScope {
   const mode = new URL(request.url).searchParams.get("mode");
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   const managerKey = await getAuthenticatedEmail();
   const scope = getScopeFromRequest(request);
   if (managerKey) {
-    await syncManagerTeamFromDraftRosterPersistent({ managerEmail: managerKey, scope });
+    await repairManagerTeamFromDraftArtifactsPersistent({ managerEmail: managerKey, scope });
   }
   const roundNumberParam = new URL(request.url).searchParams.get("roundNumber");
   const roundNumber = roundNumberParam ? Number(roundNumberParam) : null;

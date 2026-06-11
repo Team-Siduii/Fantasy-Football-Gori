@@ -1,6 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { isGoriDatabaseEnabled, readPersistentJson, writePersistentJson } from "./persistent-json-store";
+import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
+import { getAuthAccountByEmail, getAuthAccountById, listManagerAccounts } from "./auth-store";
+import { getLeagueAdminConfig, type LeagueMode } from "./league-admin-config";
 
 export type RoundLock = {
   roundNumber: number;
@@ -162,7 +165,127 @@ function normalizeRoundStates(input: unknown): Record<string, RoundSnapshot> {
   return normalized;
 }
 
-function normalizeManagerStates(input: unknown): Record<string, ManagerPersonalState> {
+function mergePersonalState(current: ManagerPersonalState | undefined, incoming: ManagerPersonalState): ManagerPersonalState {
+  if (!current) {
+    return incoming;
+  }
+
+  const currentScore = current.lineupIds.length + current.benchIds.length + Object.keys(current.roundStates).length * 10;
+  const incomingScore = incoming.lineupIds.length + incoming.benchIds.length + Object.keys(incoming.roundStates).length * 10;
+  const preferred = incomingScore >= currentScore ? incoming : current;
+
+  return {
+    ...current,
+    ...incoming,
+    ...preferred,
+    roundStates: {
+      ...current.roundStates,
+      ...incoming.roundStates,
+    },
+  };
+}
+
+type CanonicalManagerIdentity = {
+  canonicalKey: string;
+  aliases: Set<string>;
+};
+
+function normalizeAliasValue(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function addAlias(target: Set<string>, value?: string | null) {
+  if (typeof value !== "string") {
+    return;
+  }
+
+  const normalized = normalizeAliasValue(value);
+  if (normalized) {
+    target.add(normalized);
+  }
+}
+
+function buildCanonicalManagerIdentities(scope: ManagerStateScope): CanonicalManagerIdentity[] {
+  const byCanonical = new Map<string, CanonicalManagerIdentity>();
+  const ensure = (managerId: string) => {
+    const canonicalKey = normalizeAliasValue(managerId);
+    const existing = byCanonical.get(canonicalKey);
+    if (existing) {
+      return existing;
+    }
+
+    const created: CanonicalManagerIdentity = {
+      canonicalKey,
+      aliases: new Set<string>([canonicalKey]),
+    };
+    byCanonical.set(canonicalKey, created);
+    return created;
+  };
+
+  for (const preset of AUTH_TEST_ACCOUNT_PRESETS.filter((candidate) => candidate.role === "manager")) {
+    const identity = ensure(preset.id);
+    addAlias(identity.aliases, preset.id);
+    addAlias(identity.aliases, preset.label);
+    addAlias(identity.aliases, preset.name);
+    addAlias(identity.aliases, preset.teamName);
+    addAlias(identity.aliases, preset.email);
+  }
+
+  for (const account of listManagerAccounts()) {
+    const identity = ensure(account.id);
+    addAlias(identity.aliases, account.id);
+    addAlias(identity.aliases, account.profile.name);
+    addAlias(identity.aliases, account.profile.teamName);
+    addAlias(identity.aliases, account.profile.email);
+  }
+
+  const config = getLeagueAdminConfig(scope as LeagueMode);
+  for (const participant of config.participants) {
+    const identity = ensure(participant.managerId);
+    addAlias(identity.aliases, participant.managerId);
+    addAlias(identity.aliases, participant.label);
+    addAlias(identity.aliases, participant.email);
+  }
+
+  return Array.from(byCanonical.values());
+}
+
+function resolveCanonicalManagerKey(scope: ManagerStateScope, managerKey?: string | null): string | null {
+  if (!managerKey) {
+    return null;
+  }
+
+  const normalized = normalizeAliasValue(managerKey);
+  if (!normalized) {
+    return null;
+  }
+
+  const directAuthAccount = getAuthAccountById(normalized);
+  if (directAuthAccount?.role === "manager") {
+    return normalizeAliasValue(directAuthAccount.id);
+  }
+
+  const directParticipant = getLeagueAdminConfig(scope as LeagueMode).participants.find(
+    (participant) => normalizeAliasValue(participant.managerId) === normalized,
+  );
+  if (directParticipant) {
+    return normalizeAliasValue(directParticipant.managerId);
+  }
+
+  const directAuthEmail = getAuthAccountByEmail(normalized);
+  if (directAuthEmail?.role === "manager") {
+    return normalizeAliasValue(directAuthEmail.id);
+  }
+
+  const identities = buildCanonicalManagerIdentities(scope);
+  const matched = identities.find((identity) => identity.aliases.has(normalized));
+  return matched?.canonicalKey ?? normalized;
+}
+
+function normalizeManagerStates(
+  input: unknown,
+  scope: ManagerStateScope = "eredivisie",
+): Record<string, ManagerPersonalState> {
   if (!input || typeof input !== "object") {
     return {};
   }
@@ -173,23 +296,28 @@ function normalizeManagerStates(input: unknown): Record<string, ManagerPersonalS
       continue;
     }
 
-    normalized[managerKey] = toPersonalState(raw as Partial<ManagerPersonalState>);
+    const canonicalKey = resolveCanonicalManagerKey(scope, managerKey) ?? normalizeAliasValue(managerKey);
+    const nextState = toPersonalState(raw as Partial<ManagerPersonalState>);
+    normalized[canonicalKey] = mergePersonalState(normalized[canonicalKey], nextState);
   }
 
   return normalized;
 }
 
-function normalizeManagerKey(managerKey?: string | null): string | null {
+function normalizeManagerKey(scope: ManagerStateScope = "eredivisie", managerKey?: string | null): string | null {
   if (!managerKey) {
     return null;
   }
 
-  const normalized = managerKey.trim().toLowerCase();
-  return normalized.length > 0 ? normalized : null;
+  return resolveCanonicalManagerKey(scope, managerKey);
 }
 
-function resolvePersonalState(state: ManagerState, managerKey?: string | null): ManagerPersonalState {
-  const key = normalizeManagerKey(managerKey);
+function resolvePersonalState(
+  state: ManagerState,
+  scope: ManagerStateScope = "eredivisie",
+  managerKey?: string | null,
+): ManagerPersonalState {
+  const key = normalizeManagerKey(scope, managerKey);
   if (key && state.managerStates[key]) {
     return state.managerStates[key];
   }
@@ -228,12 +356,12 @@ export function readManagerState(scope: ManagerStateScope = "eredivisie", manage
             ? parsed.pickedTransferId
             : null,
       roundStates: normalizeRoundStates(parsed.roundStates),
-      managerStates: normalizeManagerStates(parsed.managerStates),
+      managerStates: normalizeManagerStates(parsed.managerStates, scope),
       roundLocks: normalizeRoundLocks(parsed.roundLocks),
       adminActionLog: normalizeAdminActionLog(parsed.adminActionLog),
     };
 
-    const personal = resolvePersonalState(state, managerKey);
+    const personal = resolvePersonalState(state, scope, managerKey);
 
     return {
       ...state,
@@ -256,19 +384,20 @@ export function saveManagerState(
   managerKey?: string | null,
 ): ManagerState {
   const current = readManagerState(scope);
-  const toWrite = buildNextManagerState(current, nextState, managerKey);
+  const toWrite = buildNextManagerState(current, nextState, scope, managerKey);
   writeManagerStateFile(toWrite, scope);
-  const key = normalizeManagerKey(managerKey);
+  const key = normalizeManagerKey(scope, managerKey);
   return key ? readManagerState(scope, key) : toWrite;
 }
 
 function buildNextManagerState(
   current: ManagerState,
   nextState: Partial<ManagerState>,
+  scope: ManagerStateScope = "eredivisie",
   managerKey?: string | null,
 ): ManagerState {
-  const key = normalizeManagerKey(managerKey);
-  const currentPersonal = resolvePersonalState(current, key);
+  const key = normalizeManagerKey(scope, managerKey);
+  const currentPersonal = resolvePersonalState(current, scope, key);
 
   const nextPersonal: ManagerPersonalState = {
     ...currentPersonal,
@@ -336,12 +465,12 @@ export async function saveManagerStatePersistent(
   managerKey?: string | null,
 ): Promise<ManagerState> {
   const current = await readManagerStatePersistent(scope);
-  const toWrite = buildNextManagerState(current, nextState, managerKey);
+  const toWrite = buildNextManagerState(current, nextState, scope, managerKey);
   writeManagerStateFile(toWrite, scope);
   if (isGoriDatabaseEnabled()) {
     await writePersistentJson({ store: "manager-state", scope }, toWrite);
   }
-  const key = normalizeManagerKey(managerKey);
+  const key = normalizeManagerKey(scope, managerKey);
   return key ? readManagerState(scope, key) : toWrite;
 }
 
