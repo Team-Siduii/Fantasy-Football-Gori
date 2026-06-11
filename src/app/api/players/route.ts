@@ -4,6 +4,7 @@ import path from "path";
 import { parsePlayerCsv } from "@/domain/player-csv";
 import { bootstrapPlayersFromDefaultCsv } from "@/lib/player-bootstrap";
 import { listPlayers } from "@/lib/player-store";
+import { loadPlayerPoints } from "@/lib/player-points-store";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -22,7 +23,37 @@ export async function GET(request: Request) {
       const csvContent = await readFile(wkCsvPath, "utf-8");
       const { players } = parsePlayerCsv(csvContent);
 
-      return NextResponse.json({ count: players.length, players }, { headers });
+      // Merge stored points
+      const pointsSnapshot = await loadPlayerPoints("wk");
+      const playerPointsMap = new Map<string, number>();
+      if (pointsSnapshot) {
+        for (const pp of pointsSnapshot.players) {
+          const key = pp.playerName
+            .normalize("NFD")
+            .replace(/\p{Diacritic}/gu, "")
+            .toLowerCase()
+            .trim();
+          playerPointsMap.set(key, pp.roundPoints);
+        }
+      }
+
+      const playersWithPoints = players.map((p) => {
+        const key = p.naam
+          .normalize("NFD")
+          .replace(/\p{Diacritic}/gu, "")
+          .toLowerCase()
+          .trim();
+        return {
+          ...p,
+          punten: playerPointsMap.get(key) ?? 0,
+        };
+      });
+
+      return NextResponse.json({
+        count: playersWithPoints.length,
+        players: playersWithPoints,
+        pointsLastSync: pointsSnapshot?.syncedAt ?? null,
+      }, { headers });
     } catch {
       return NextResponse.json({ count: 0, players: [] }, { headers });
     }
