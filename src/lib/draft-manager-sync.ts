@@ -295,8 +295,16 @@ export async function syncManagerTeamFromDraftRosterPersistent(input: { managerE
 
   const [, playerIds] = match;
   const current = await readManagerStatePersistent(input.scope, managerEmail);
-  const next = buildManagerTeamStateWithRoundSnapshots(playerIds, current);
+
+  // Alleen initialiseren als de state leeg is (nog geen spelers).
+  // Zodra een manager spelers heeft (uit draft of transfers) NIET overschrijven —
+  // anders gaan transfers verloren bij elke sync.
   const currentIds = [...current.lineupIds, ...current.benchIds];
+  if (currentIds.length > 0) {
+    return { managerEmail, state: current, changed: false };
+  }
+
+  const next = buildManagerTeamStateWithRoundSnapshots(playerIds, current);
   const nextIds = [...next.lineupIds, ...next.benchIds];
 
   if (currentIds.join("\u0000") === nextIds.join("\u0000")) {
