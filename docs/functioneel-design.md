@@ -298,6 +298,7 @@ FR-094: Admin-config bevat per mode een bewerkbare competitienaam en draft-ronde
 FR-095: Admin-config toont de bekende manager-deelnemers met status `In afwachting`, `Geaccepteerd` of `Geweigerd`; alleen geaccepteerde deelnemers worden automatisch in de draftvolgorde voor een oefendraft gezet.
 FR-096: Oefendraftbeheer is zichtbaar als vaste kaart in de draftkamer met link naar `/instellingen`, zodat de admin niet hoeft te zoeken in een ingeklapt detailpaneel om een volledige draft te starten.
 FR-097: Runtime-state voor Gori Fantasy ondersteunt database-backed opslag via `GORI_DATABASE_URL` (fallback `DATABASE_URL`/`POSTGRES_URL`) met app-namespace `gori_fantasy`; draft-state, team-rosters, manager-state en league-admin-config blijven gescheiden per store en competitie-mode (`eredivisie|wk`), terwijl manager-state intern canoniek per `managerId` wordt opgeslagen met alias-compatibiliteit voor legacy e-mailrecords, zodat RxAruba/andere apps en Gori-modes geen state mengen.
+FR-098: Instellingen bevat een admin health-check voor manager/account integrity per mode; de checker signaleert ontbrekende auth-accounts, participant↔auth email drift en legacy email-keyed manager-state records, en kan via een repair/backfill actie manager-state opnieuw canoniek onder `managerId` wegschrijven.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -539,6 +540,7 @@ Waarom zo:
 - 2026-05-04: Manager-state opslag gesplitst per mode (`eredivisie` vs `wk`) via scope-aware API en aparte persistencebestanden, zodat opstellingen en transferstatus volledig onafhankelijk blijven.
 - 2026-05-04: Runtime-isolatie uitgebreid met optionele env-variabele `MANAGER_STATE_WK_PATH` naast `MANAGER_STATE_PATH`, zodat ook bestandslocaties per mode expliciet te scheiden zijn op staging/prod.
 - 2026-05-04: Instellingenpagina uitgebreid met een zichtbare debug-sectie die de actieve manager-state opslagpaden voor Eredivisie en WK toont.
+- 2026-06-11: Instellingen uitgebreid met manager-state health check + repair/backfill per mode; admin ziet nu auth/participant drift en kan legacy email-keyed manager-state records terugschrijven naar canonieke `managerId` keys.
 - 2026-05-04: Pitch-achtergrond vanaf nul opnieuw opgebouwd door de laatst aangeleverde referentie-afbeelding direct als asset te gebruiken (`/public/images/pitch-reference.jpg`), zodat veldvisual exact overeenkomt met het voorbeeld; overlays/dieptelijnen verwijderd.
 - 2026-05-04: Pitch-referentiebeeld ingesteld op 200% zoom en visueel aangescherpt via subtiele contrast/saturatie/brightness-filtering op de achtergrondlaag, met ongewijzigde kaart-interactie.
 - 2026-05-04: WK-mode terminologie aangepast: overal in transfermarkt `Club` vervangen door `Land` (incl. `Alle landen`, `Zoek speler/land` en sorteerkolomheader).

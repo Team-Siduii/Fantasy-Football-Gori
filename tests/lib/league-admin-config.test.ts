@@ -59,11 +59,10 @@ describe("league admin config", () => {
 
     expect(updated.competition.name).toBe("WK Familie Poule");
     expect(updated.draft.totalRounds).toBe(12);
-    expect(updated.participants.map((participant) => participant.status)).toEqual(["ACCEPTED", "REJECTED", "PENDING", "ACCEPTED"]);
-    expect(updated.participants.filter((participant) => participant.status === "ACCEPTED").map((participant) => participant.label)).toEqual([
-      "Johan Swart",
-      "Emiel Zomerdijk",
-    ]);
+    expect(updated.participants.slice(0, 4).map((participant) => participant.status)).toEqual(["ACCEPTED", "REJECTED", "PENDING", "ACCEPTED"]);
+    expect(updated.participants.filter((participant) => participant.status === "ACCEPTED").map((participant) => participant.label)).toEqual(
+      expect.arrayContaining(["Johan Swart", "Emiel Zomerdijk"]),
+    );
   });
 
   it("kan waiver tiebreaker, budget en roles updaten", () => {

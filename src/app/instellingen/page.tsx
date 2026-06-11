@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/app-shell";
+import { IntegrityHealthPanel } from "@/components/integrity-health-panel";
 import { LeagueConfigEditor } from "@/components/league-config-editor";
 import { resolveLeagueAdminConfigPath } from "@/lib/league-admin-config";
 import { resolveManagerStatePath } from "@/lib/manager-state";
@@ -36,6 +37,7 @@ export default function InstellingenPage() {
         </section>
 
         <LeagueConfigEditor />
+        <IntegrityHealthPanel />
 
         <details className="card col-12 settings-debug-panel">
           <summary>Technische opslagpaden (debug)</summary>
