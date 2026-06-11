@@ -5,7 +5,7 @@ import { parsePlayerCsv } from "@/domain/player-csv";
 import { derivePlayerPoints } from "@/lib/player-derived";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "@/lib/auth-test-accounts";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
-import { getProfileByEmail } from "@/lib/auth-store";
+import { ensureAuthStateFromDb, getProfileByEmail } from "@/lib/auth-store";
 import { readManagerStatePersistent, type ManagerStateScope } from "@/lib/manager-state";
 import { bootstrapPlayersFromDefaultCsv } from "@/lib/player-bootstrap";
 import { listPlayers } from "@/lib/player-store";
@@ -39,6 +39,8 @@ export async function GET(request: Request) {
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  await ensureAuthStateFromDb();
 
   const modeParam = new URL(request.url).searchParams.get("mode");
   const scope: ManagerStateScope = modeParam === "wk" ? "wk" : "eredivisie";
