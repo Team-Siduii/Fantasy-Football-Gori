@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { reorderAcrossZones, type ZoneState } from "../../src/domain/lineup-state";
+import { findSwapPartner, reorderAcrossZones, type ZoneState } from "../../src/domain/lineup-state";
 
 type FakePlayer = {
   id: string;
   positie: "GK" | "DEF" | "MID" | "FWD";
 };
+
+type BenchPlayer = FakePlayer;
 
 function createState(): ZoneState<FakePlayer> {
   return {
@@ -20,6 +22,36 @@ function createState(): ZoneState<FakePlayer> {
     ],
   };
 }
+
+function getPosition(player: FakePlayer | BenchPlayer): string {
+  return player.positie;
+}
+
+describe("findSwapPartner", () => {
+  it("finds matching position partner from lineup on bench", () => {
+    const state = createState();
+    const index = findSwapPartner(state, "lineup", 0, getPosition);
+    expect(index).toBe(0); // p1(DEF) → b1(DEF) at bench index 0
+  });
+
+  it("finds matching position partner from bench on lineup", () => {
+    const state = createState();
+    const index = findSwapPartner(state, "bench", 1, getPosition);
+    expect(index).toBe(1); // b2(MID) → p2(MID) at lineup index 1
+  });
+
+  it("returns -1 when no matching partner exists in opposite zone", () => {
+    const state = createState();
+    const index = findSwapPartner(state, "bench", 2, getPosition);
+    expect(index).toBe(-1); // b3(GK) has no GK in lineup
+  });
+
+  it("finds matching partner from lineup on bench (different index)", () => {
+    const state = createState();
+    const index = findSwapPartner(state, "lineup", 1, getPosition);
+    expect(index).toBe(1); // p2(MID) → b2(MID) at bench index 1
+  });
+});
 
 describe("reorderAcrossZones", () => {
   it("reorders cards inside bench zone", () => {

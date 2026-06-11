@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PlayerCard } from "@/components/player-card";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
-import { reorderAcrossZones, type ZoneName, type ZoneState } from "@/domain/lineup-state";
+import { reorderAcrossZones, findSwapPartner, type ZoneName, type ZoneState } from "@/domain/lineup-state";
 import { buildPitchRows } from "@/domain/pitch-layout";
 import { calculateRemainingBudget, getTransferBudgetCapMillions, isWithinBudget } from "@/domain/team-budget";
 import type { PlayerRecord } from "@/domain/player";
@@ -1019,6 +1019,20 @@ export default function ManagerMyTeamPage() {
     };
   }
 
+  function handleSwapClick(zone: ZoneName, index: number) {
+    setState((prev) => {
+      const partnerIndex = findSwapPartner(prev, zone, index, (player) => player.positie);
+      if (partnerIndex < 0) return prev;
+
+      const targetZone: ZoneName = zone === "lineup" ? "bench" : "lineup";
+      return reorderAcrossZones(
+        prev,
+        { sourceZone: zone, sourceIndex: index, targetZone, targetIndex: partnerIndex },
+        { enforceLineupPosition: true, getPosition: (player) => player.positie },
+      );
+    });
+  }
+
   function handleSellSelection(playerId: string) {
     if (!playerId) {
       return;
@@ -1180,7 +1194,19 @@ export default function ManagerMyTeamPage() {
                         onDragStart={onDragStart("lineup", lineupIndex)}
                         onDragOver={(event) => event.preventDefault()}
                         onDrop={onDrop("lineup", lineupIndex)}
-                      />
+                      >
+                        {!player.id.startsWith("open-") ? (
+                          <button
+                            type="button"
+                            className="swap-button"
+                            onClick={(event) => { event.stopPropagation(); handleSwapClick("lineup", lineupIndex); }}
+                            title="Wissel met bank"
+                            aria-label="Wissel met bank"
+                          >
+                            ↻
+                          </button>
+                        ) : null}
+                      </PlayerCard>
                     );
                   })}
                 </div>
@@ -1216,7 +1242,19 @@ export default function ManagerMyTeamPage() {
                   onDragStart={onDragStart("bench", benchIndex)}
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={onDrop("bench", benchIndex)}
-                />
+                >
+                  {!player.id.startsWith("open-") ? (
+                    <button
+                      type="button"
+                      className="swap-button"
+                      onClick={(event) => { event.stopPropagation(); handleSwapClick("bench", benchIndex); }}
+                      title="Wissel met basis"
+                      aria-label="Wissel met basis"
+                    >
+                      ↻
+                    </button>
+                  ) : null}
+                </PlayerCard>
               );
             })}
           </div>

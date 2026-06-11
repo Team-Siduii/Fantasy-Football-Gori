@@ -51,6 +51,22 @@ function canSwapByLineupPosition<T>(
   return true;
 }
 
+export function findSwapPartner<T>(
+  state: ZoneState<T>,
+  sourceZone: ZoneName,
+  sourceIndex: number,
+  getPosition: (item: T) => string,
+): number {
+  const oppositeZone: ZoneName = sourceZone === "lineup" ? "bench" : "lineup";
+  const sourceList = state[sourceZone];
+  const targetList = state[oppositeZone];
+
+  if (!inBounds(sourceIndex, sourceList.length)) return -1;
+
+  const sourcePosition = getPosition(sourceList[sourceIndex]);
+  return targetList.findIndex((item) => getPosition(item) === sourcePosition);
+}
+
 export function reorderAcrossZones<T>(state: ZoneState<T>, input: ReorderInput, options: ReorderOptions<T> = {}): ZoneState<T> {
   const sourceList = state[input.sourceZone];
   const targetList = state[input.targetZone];
