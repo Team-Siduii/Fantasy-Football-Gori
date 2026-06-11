@@ -1408,7 +1408,8 @@ select {
 .swap-button {
   position: absolute;
   top: 0.18rem;
-  left: 2.2rem;
+  left: 50%;
+  transform: translateX(-50%);
   width: 1.15rem;
   height: 1.15rem;
   border: none;
@@ -1429,11 +1430,11 @@ select {
 .swap-button:hover {
   color: #2d4570;
   background: rgba(232, 237, 248, 0.6);
-  transform: scale(1.1);
+  transform: translateX(-50%) scale(1.1);
 }
 
 .swap-button:active {
-  transform: scale(0.9);
+  transform: translateX(-50%) scale(0.9);
 }
 
 .player-card--bench-row .swap-button {
