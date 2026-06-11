@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
 import { resolvePreferredManagerRoute } from "@/lib/manager-entry-route";
 
+export const dynamic = "force-dynamic";
+
 const previewItems = [
   "Bekijk je eigen team, draft en transfers pas na inloggen.",
   "Geen sessie actief? Dan blijf je veilig op deze publieke startpagina.",
