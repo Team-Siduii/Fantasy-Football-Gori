@@ -3,6 +3,12 @@ import { fetchWkcoachPointsSnapshot } from "@/lib/data-sources/wkcoach";
 import { savePlayerPoints, type PlayerPointsSnapshot } from "@/lib/player-points-store";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
 
+const NO_CACHE_HEADERS = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+  "Pragma": "no-cache",
+  "Expires": "0",
+};
+
 /**
  * Bepaalt welke WK-ronde NU actief is op basis van het wedstrijdschema.
  * - Als er wedstrijden bezig zijn (binnen 3 uur na kickoff of voor eindtijd), return die ronde
@@ -12,16 +18,14 @@ function getCurrentOrUpcomingRound(): number {
   const now = new Date();
   const nowMs = now.getTime();
 
-  // Kijk of er een actieve wedstrijd is (kickoff ≤ now ≤ kickoff+3h)
   for (const fixture of WORLD_CUP_2026_FIXTURES) {
     const kickoff = new Date(fixture.kickoffAt).getTime();
-    const endEstimate = kickoff + 3 * 60 * 60 * 1000; // 3 uur na kickoff
+    const endEstimate = kickoff + 3 * 60 * 60 * 1000;
     if (nowMs >= kickoff && nowMs <= endEstimate) {
       return fixture.round;
     }
   }
 
-  // Zoek de eerstvolgende wedstrijd
   let nextRound = 1;
   for (const fixture of WORLD_CUP_2026_FIXTURES) {
     const kickoff = new Date(fixture.kickoffAt).getTime();
@@ -43,7 +47,7 @@ export async function GET(request: Request) {
     if (!Number.isInteger(roundSequence) || roundSequence < 1 || roundSequence > 9) {
       return NextResponse.json(
         { error: "Ongeldig ronde nummer (1-9)" },
-        { status: 400 },
+        { status: 400, headers: NO_CACHE_HEADERS },
       );
     }
 
@@ -53,7 +57,7 @@ export async function GET(request: Request) {
     if (!email || !password) {
       return NextResponse.json(
         { error: "WKCoach credentials niet geconfigureerd" },
-        { status: 500 },
+        { status: 500, headers: NO_CACHE_HEADERS },
       );
     }
 
@@ -66,7 +70,7 @@ export async function GET(request: Request) {
     if (!snapshot) {
       return NextResponse.json(
         { error: "Kon WKCoach punten niet ophalen (login of API faalde)" },
-        { status: 502 },
+        { status: 502, headers: NO_CACHE_HEADERS },
       );
     }
 
@@ -95,13 +99,13 @@ export async function GET(request: Request) {
       syncedAt,
       activeSubs: snapshot.players.filter((p) => p.isSub).length,
       lastSync: syncedAt,
-    });
+    }, { headers: NO_CACHE_HEADERS });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("sync-points error:", message);
     return NextResponse.json(
       { error: "Interne fout", details: message },
-      { status: 500 },
+      { status: 500, headers: NO_CACHE_HEADERS },
     );
   }
 }
