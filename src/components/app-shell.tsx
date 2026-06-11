@@ -14,6 +14,7 @@ const eredivisieNavItems: NavItem[] = [
   { href: "/manager/my-team", label: "Mijn team" },
   { href: "/draft", label: "Draft" },
   { href: "/manager/transfer-pool", label: "Transfers" },
+  { href: "/manager/league", label: "Competitie" },
   { href: "/instellingen", label: "Instellingen" },
 ];
 
@@ -21,6 +22,7 @@ const wkNavItems: NavItem[] = [
   { href: "/manager/world-cup", label: "Mijn team" },
   { href: "/manager/world-cup/draft", label: "Draft" },
   { href: "/manager/world-cup/transfer-pool", label: "Transfers" },
+  { href: "/manager/world-cup/league", label: "Competitie" },
   { href: "/instellingen", label: "Instellingen" },
 ];
 

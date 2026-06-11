@@ -2344,3 +2344,92 @@ select {
   }
 }
 
+/* ---- Read-only team view ---- */
+.pitch-slot {
+  position: relative;
+  background: #f5f7fc;
+  border: 1px dashed #c4cdde;
+  border-radius: 8px;
+  padding: 0.4rem;
+  text-align: center;
+  min-height: 3.8rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.slot-pos {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--brand);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.slot-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1c2e4a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+}
+
+.slot-name.slot-empty {
+  color: var(--muted);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.slot-flag {
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+
+.slot-meta {
+  font-size: 0.58rem;
+  color: #6e7e99;
+}
+
+.bench-player-row {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid #eaeef5;
+  font-size: 0.78rem;
+}
+
+.bench-pos-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand);
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.1rem 0.3rem;
+  min-width: 2rem;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--brand);
+  font-weight: 700;
+  font-size: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link-button:hover {
+  color: #0a2f73;
+}
+

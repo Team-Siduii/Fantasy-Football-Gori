@@ -1,145 +1,132 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
-import type { PlayerRecord } from "@/domain/player";
-import { derivePlayerPoints } from "@/lib/player-derived";
-import {
-  getCurrentOrNextRound,
-  groupFixturesByRound,
-  REMAINING_FIXTURES_2025_2026,
-  SCHEDULE_SPONSOR,
-} from "@/lib/season-schedule";
-import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
 
-type MvpStateResponse = {
-  snapshot: {
-    managerTradeWindow: { isOpen: boolean; opensAt: string; closesAt: string };
-    currentRoundTransferLimit: number;
-  };
+type RankingEntry = {
+  managerId: string;
+  displayName: string;
+  teamName: string;
+  email: string;
+  subpoule: string;
+  totalPoints: number;
+  currentRoundPoints: number;
+  budgetRemaining: number;
 };
 
-type ClubStanding = {
-  club: string;
-  points: number;
+type LeagueRankingResponse = {
+  mode: string;
+  currentRound: number;
+  userSubpoule: string;
+  ranking: RankingEntry[];
+  allSubpoules: Record<string, RankingEntry[]>;
 };
 
 export default function ManagerLeaguePage() {
   const pathname = usePathname();
+  const router = useRouter();
   const isWkMode = pathname.startsWith("/manager/world-cup");
-  const activeFixtures = isWkMode ? WORLD_CUP_2026_FIXTURES : REMAINING_FIXTURES_2025_2026;
-  const [players, setPlayers] = useState<PlayerRecord[]>([]);
-  const [round, setRound] = useState<number | null>(() => getCurrentOrNextRound(activeFixtures, new Date()));
-  const [transferLimit, setTransferLimit] = useState<number | null>(null);
-  const [windowOpen, setWindowOpen] = useState<boolean>(false);
+  const modeParam = isWkMode ? "wk" : "eredivisie";
+
+  const [ranking, setRanking] = useState<RankingEntry[]>([]);
+  const [currentRound, setCurrentRound] = useState<number>(0);
+  const [userSubpoule, setUserSubpoule] = useState<string>("A");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadRanking = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/manager/league-ranking?mode=${modeParam}&_t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        const data = await response.json() as { error?: string };
+        throw new Error(data.error ?? "Ranglijst laden mislukt");
+      }
+      const data = (await response.json()) as LeagueRankingResponse;
+      setRanking(data.ranking);
+      setCurrentRound(data.currentRound);
+      setUserSubpoule(data.userSubpoule);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Onbekende fout");
+    } finally {
+      setLoading(false);
+    }
+  }, [modeParam]);
 
   useEffect(() => {
-    const load = async () => {
-      const [playersResponse, stateResponse] = await Promise.all([
-        fetch("/api/players", { cache: "no-store" }),
-        fetch("/api/mvp-state", { cache: "no-store" }),
-      ]);
+    void loadRanking();
+    // Poll elke 30 seconden voor live updates tijdens wedstrijden
+    const timer = window.setInterval(() => {
+      void loadRanking();
+    }, 30000);
+    return () => window.clearInterval(timer);
+  }, [loadRanking]);
 
-      if (playersResponse.ok) {
-        const playersData = (await playersResponse.json()) as { players: PlayerRecord[] };
-        setPlayers(playersData.players || []);
-      }
-
-      if (stateResponse.ok) {
-        const stateData = (await stateResponse.json()) as MvpStateResponse;
-        setTransferLimit(stateData.snapshot.currentRoundTransferLimit);
-        setWindowOpen(stateData.snapshot.managerTradeWindow.isOpen);
-      }
-
-      setRound(getCurrentOrNextRound(activeFixtures, new Date()));
-    };
-
-    void load();
-  }, [activeFixtures]);
-
-  const standings = useMemo<ClubStanding[]>(() => {
-    const byClub = new Map<string, number>();
-
-    for (const player of players) {
-      const current = byClub.get(player.club) ?? 0;
-      byClub.set(player.club, current + derivePlayerPoints(player));
-    }
-
-    return [...byClub.entries()]
-      .map(([club, points]) => ({ club, points }))
-      .sort((a, b) => b.points - a.points)
-      .slice(0, 10);
-  }, [players]);
-
-  const groupedFixtures = useMemo(() => groupFixturesByRound(activeFixtures), [activeFixtures]);
+  function viewTeam(entry: RankingEntry) {
+    // Navigeer naar read-only teamweergave
+    const basePath = isWkMode ? "/manager/world-cup/view-team" : "/manager/view-team";
+    router.push(`${basePath}?view=${encodeURIComponent(entry.email)}`);
+  }
 
   return (
     <AppShell
-      title="Competities"
+      title="Mijn competitie"
       subtitle={
         isWkMode
-          ? "Stand en WK-speelrondes. Ronde 1/2/3 = alle landen hebben respectievelijk 1/2/3 groepsduels gespeeld."
-          : "Stand en resterende Eredivisie-speelrondes voor seizoen 2025/2026."
+          ? `Subpoule ${userSubpoule} · Ranglijst op totaalpunten${currentRound > 0 ? ` · Ronde ${currentRound} actief` : ""}`
+          : `Subpoule ${userSubpoule} · Ranglijst op totaalpunten`
       }
     >
-      <div className="grid">
-        <section className="card col-8">
-          <h2>Stand (club-power ranking)</h2>
-          <ol>
-            {standings.map((item) => (
-              <li key={item.club}>
-                {item.club} — {item.points} pt
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section className="card col-4">
-          <h2>Ronde-info</h2>
-          <ul>
-            <li>Volgende speelronde: {round ?? "-"}</li>
-            <li>Transfer window: {windowOpen ? "open" : "gesloten"}</li>
-            <li>Transferlimiet: {transferLimit ?? "-"}</li>
-            <li>{isWkMode ? "WK speelrondes: 1 (MD1), 2 (MD2), 3 (MD3)" : "Bonusrondes: 5, 10, 20"}</li>
-          </ul>
-        </section>
-
-        <section className="card col-12">
-          <h2>{isWkMode ? "WK 2026 schema" : "Resterend schema seizoen 2025/2026"}</h2>
-          <p className="muted-note">
-            {isWkMode
-              ? "Ronde-definitie WK: ronde 1/2/3 betekent dat alle landen respectievelijk hun 1e/2e/3e groepswedstrijd hebben gespeeld."
-              : `Gesponsord door ${SCHEDULE_SPONSOR}. Ingedeeld in speelrondes 31 t/m 34.`}
-          </p>
-
-          {groupedFixtures.map((group) => (
-            <div key={`round-${group.round}`} className="table-wrap" style={{ marginBottom: "0.85rem" }}>
-              <h3>Speelronde {group.round}</h3>
+      {loading ? (
+        <p style={{ textAlign: "center", padding: "2rem", color: "var(--brand)" }}>Ranglijst laden…</p>
+      ) : error ? (
+        <p className="error-text">{error}</p>
+      ) : ranking.length === 0 ? (
+        <p style={{ textAlign: "center", padding: "2rem" }}>Nog geen teams in jouw subpoule.</p>
+      ) : (
+        <div className="grid">
+          <section className="card col-12">
+            <div className="table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>Datum</th>
-                    <th>Tijd</th>
-                    <th>Home</th>
-                    <th>Away</th>
+                    <th>#</th>
+                    <th>Team</th>
+                    <th>Manager</th>
+                    <th>Totaal punten</th>
+                    <th>Ronde {currentRound || "?"} punten</th>
+                    <th>Budget over</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {group.fixtures.map((fixture) => (
-                    <tr key={`${group.round}-${fixture.kickoffAt}-${fixture.home}-${fixture.away}`}>
-                      <td>{fixture.dateLabel}</td>
-                      <td>{fixture.kickoff}</td>
-                      <td>{fixture.home}</td>
-                      <td>{fixture.away}</td>
+                  {ranking.map((entry, index) => (
+                    <tr key={entry.email}>
+                      <td>{index + 1}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="link-button"
+                          onClick={() => viewTeam(entry)}
+                          title={`Bekijk team van ${entry.teamName}`}
+                        >
+                          {entry.teamName}
+                        </button>
+                      </td>
+                      <td>{entry.displayName}</td>
+                      <td><strong>{entry.totalPoints}</strong></td>
+                      <td>{entry.currentRoundPoints}</td>
+                      <td>€{entry.budgetRemaining.toFixed(1)}M</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          ))}
-        </section>
-      </div>
+          </section>
+        </div>
+      )}
     </AppShell>
   );
 }
