@@ -11,17 +11,24 @@ function byId(players: PlayerRecord[]) {
   return new Map(players.map((player) => [player.id, player]));
 }
 
-export function buildMarketPlayers<T extends PlayerRecord>(
+export type MarketPlayer = PlayerRecord & { punten: number; owned?: boolean };
+
+export function buildMarketPlayers<T extends PlayerRecord & { punten?: number }>(
   players: T[],
   lineupIds: string[],
   benchIds: string[],
   allTeamPlayerIds?: Set<string>,
-): T[] {
+): MarketPlayer[] {
   const squadIds = new Set([...lineupIds, ...benchIds]);
   if (allTeamPlayerIds && allTeamPlayerIds.size > 0) {
     for (const id of allTeamPlayerIds) squadIds.add(id);
   }
-  return players.filter((player) => !squadIds.has(String(player.id)));
+  // Markeer spelers die in een ander team zitten, maar filter ze niet weg
+  return players.map((player) => ({
+    ...player,
+    punten: player.punten ?? 0,
+    owned: squadIds.has(String(player.id)),
+  })) as MarketPlayer[];
 }
 
 export function canPickIncomingPlayer(state: TransferState): boolean {

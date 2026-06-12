@@ -1530,6 +1530,7 @@ export default function ManagerMyTeamPage() {
                       Transferwaarde {sortIndicator("prijs")}
                     </button>
                   </th>
+                  <th>Beschikb.</th>
                   <th>Actie</th>
                 </tr>
               </thead>
@@ -1541,11 +1542,12 @@ export default function ManagerMyTeamPage() {
                     <td>{item.club}</td>
                     <td>{item.punten}</td>
                     <td>€ {item.prijs.toFixed(2)}M</td>
+                    <td style={{ textAlign: "center" }}>{item.owned ? "❌" : "✅"}</td>
                     <td>
                       <button
                         type="button"
                         onClick={() => handlePickIncoming(item)}
-                        disabled={openSlots.length === 0 || transfersLocked}
+                        disabled={openSlots.length === 0 || transfersLocked || item.owned}
                         data-testid={`transfer-pick-${index}`}
                       >
                         Koop
