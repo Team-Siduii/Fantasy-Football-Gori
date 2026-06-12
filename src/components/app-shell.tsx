@@ -98,7 +98,8 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
       setSummaryLeagueName(data.leagueName ?? "");
 
       if (data.standing) {
-        setSummaryRankLabel(`#${data.standing.rank} (${data.standing.totalManagersInSubpoule}) · Poule ${data.standing.subpoule}`);
+        const label = data.leagueName || `Poule ${data.standing.subpoule}`;
+        setSummaryRankLabel(`#${data.standing.rank} (${data.standing.totalManagersInSubpoule}) · ${label}`);
         setSummaryPoints(String(data.standing.points));
       }
     };
@@ -162,7 +163,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
             <strong>{summaryTeamName}</strong>
           </article>
           <article>
-            <span>Subpoule rank</span>
+            <span>{summaryLeagueName || "Competitie"}</span>
             <strong>{summaryRankLabel}</strong>
           </article>
           <article>

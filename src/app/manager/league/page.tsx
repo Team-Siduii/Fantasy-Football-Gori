@@ -20,6 +20,7 @@ type LeagueRankingResponse = {
   currentRound: number;
   userSubpoule: string;
   userEmail: string;
+  leagueName: string;
   ranking: RankingEntry[];
   allSubpoules: Record<string, RankingEntry[]>;
 };
@@ -47,6 +48,7 @@ export default function ManagerLeaguePage() {
   const [currentRound, setCurrentRound] = useState<number>(0);
   const [userSubpoule, setUserSubpoule] = useState<string>("A");
   const [userEmail, setUserEmail] = useState<string>("");
+  const [leagueName, setLeagueName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,6 +66,7 @@ export default function ManagerLeaguePage() {
       setCurrentRound(data.currentRound);
       setUserSubpoule(data.userSubpoule);
       setUserEmail(data.userEmail);
+      setLeagueName(data.leagueName);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Onbekende fout");
@@ -94,8 +97,8 @@ export default function ManagerLeaguePage() {
       title="Competitie"
       subtitle={
         isWkMode
-          ? `Subpoule ${userSubpoule} · Ranglijst op totaalpunten${currentRound > 0 ? ` · Ronde ${currentRound}` : ""}`
-          : `Subpoule ${userSubpoule} · Ranglijst op totaalpunten`
+          ? `${leagueName || "Competitie"} · Ranglijst${currentRound > 0 ? ` · Ronde ${currentRound}` : ""}`
+          : `${leagueName || "Competitie"} · Ranglijst`
       }
     >
       {loading ? (
@@ -115,7 +118,7 @@ export default function ManagerLeaguePage() {
         <div className="league-board">
           {/* Poule header summary */}
           <div className="league-summary">
-            <span className="league-summary__label">Subpoule {userSubpoule}</span>
+            <span className="league-summary__label">{leagueName || `Poule ${userSubpoule}`}</span>
             <span className="league-summary__count">{ranking.length} teams</span>
             {currentRound > 0 && (
               <span className="league-summary__round">Ronde {currentRound}</span>

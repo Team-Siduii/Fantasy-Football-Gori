@@ -192,6 +192,7 @@ export async function GET(request: Request) {
     currentRound,
     userSubpoule,
     userEmail,
+    leagueName: leagueConfig.competition.name,
     ranking: userPouleRanking,
     allSubpoules: Object.fromEntries(bySubpoule),
   });
