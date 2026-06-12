@@ -118,14 +118,32 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: "Alleen admins kunnen draften in deze modus" }, { status: 403 });
         }
       }
-      const draft = await registerPickPersistent({
-        teamId: body.teamId,
-        playerId: body.playerId,
-        scope,
-        playerCatalog: await loadDraftPlayerCatalog(scope),
-        budgetCap: config.budget.teamValueCapMillions,
-      });
-      return NextResponse.json({ ok: true, draft, teamRosters: (await readTeamRosterStatePersistent(scope)).byTeamId });
+      try {
+        const draft = await registerPickPersistent({
+          teamId: body.teamId,
+          playerId: body.playerId,
+          scope,
+          playerCatalog: await loadDraftPlayerCatalog(scope),
+          budgetCap: config.budget.teamValueCapMillions,
+        });
+        return NextResponse.json({ ok: true, draft, teamRosters: (await readTeamRosterStatePersistent(scope)).byTeamId });
+      } catch (pickError) {
+        const msg = pickError instanceof Error ? pickError.message : "Onbekende fout";
+        // Verrijk "Speler is al in een ander team: X" met teamnaam
+        const match = msg.match(/^Speler is al in een ander team: (.+)$/);
+        if (match) {
+          const otherTeamId = match[1];
+          const participant = config.participants.find(
+            (p) => p.label === otherTeamId || p.managerId === otherTeamId,
+          );
+          const teamName = participant?.label ?? otherTeamId;
+          return NextResponse.json(
+            { error: `Speler zit al in het team van ${teamName}` },
+            { status: 409 },
+          );
+        }
+        return NextResponse.json({ error: msg }, { status: 400 });
+      }
     }
 
     if (body.action === "return") {

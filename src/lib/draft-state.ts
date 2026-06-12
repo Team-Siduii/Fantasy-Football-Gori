@@ -381,7 +381,8 @@ function buildRegisteredPickState(
     throw new Error("not this team's turn");
   }
   if (current.picks.some((pick) => pick.playerId === input.playerId)) {
-    throw new Error("player already picked");
+    const existingPick = current.picks.find((pick) => pick.playerId === input.playerId)!;
+    throw new Error("Speler is al in een ander team: " + existingPick.teamId);
   }
 
   validateDraftPickConstraints({
