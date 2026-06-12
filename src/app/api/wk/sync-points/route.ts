@@ -76,7 +76,7 @@ export async function GET(request: Request) {
         email,
         password,
         roundSequence,
-        pageSize: 200, // fewer pages = faster on Vercel (7 pages instead of 13)
+        pageSize: 1500, // single page = under Vercel 10s timeout
       });
 
       if (allPlayers.length > 0) {
