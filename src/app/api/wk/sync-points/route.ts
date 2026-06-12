@@ -57,7 +57,7 @@ function shouldSyncNow(round: number, force: boolean): {
 
   const now = Date.now();
   const MATCH_DURATION = 2.5 * 60 * 60 * 1000; // 2.5 uur (wedstrijd)
-  const POST_MATCH_WINDOW = 3 * 60 * 60 * 1000; // 3 uur na wedstrijd blijven syncen
+  const POST_MATCH_WINDOW = 6 * 60 * 60 * 1000; // 6 uur na wedstrijd blijven syncen
 
   for (const fixture of WORLD_CUP_2026_FIXTURES) {
     if (fixture.round !== round) continue;
