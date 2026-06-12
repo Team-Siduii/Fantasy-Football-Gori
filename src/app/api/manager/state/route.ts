@@ -28,8 +28,8 @@ export async function GET(request: Request) {
     try {
       const repairResult = await repairManagerTeamFromDraftArtifactsPersistent({ managerEmail: managerKey, scope });
       console.log("[STATE-API] Repair result:", repairResult ? `ok (${repairResult.state?.lineupIds?.length || 0}+${repairResult.state?.benchIds?.length || 0})` : "null");
-    } catch (e: any) {
-      console.error("[STATE-API] Repair error:", e?.message || e);
+    } catch (e: unknown) {
+      console.error("[STATE-API] Repair error:", String(e));
     }
   }
   const roundNumberParam = new URL(request.url).searchParams.get("roundNumber");
