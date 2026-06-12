@@ -41,12 +41,46 @@ function getCurrentOrUpcomingRound(): number {
   return nextRound;
 }
 
+/**
+ * Checkt of er NU een wedstrijd bezig is of maximaal 30 minuten geleden is afgelopen.
+ * Wedstrijd-venster: kickoff tot kickoff + 2.5 uur (90 min + extra tijd + 30 min marge).
+ */
+function isMatchActive(): { active: boolean; round: number } {
+  const now = Date.now();
+  const MATCH_DURATION = 2.5 * 60 * 60 * 1000; // 2.5 uur
+
+  for (const fixture of WORLD_CUP_2026_FIXTURES) {
+    const kickoff = new Date(fixture.kickoffAt).getTime();
+    const end = kickoff + MATCH_DURATION;
+    if (now >= kickoff && now <= end) {
+      return { active: true, round: fixture.round };
+    }
+  }
+
+  return { active: false, round: getCurrentOrUpcomingRound() };
+}
+
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const roundParam = url.searchParams.get("round");
     const roundSequence = roundParam ? Number(roundParam) : getCurrentOrUpcomingRound();
-    const fullSync = url.searchParams.get("full") !== "false"; // default: true
+    const fullSync = url.searchParams.get("full") !== "false";
+    const force = url.searchParams.get("force") === "true";
+
+    // Skip sync if no match is currently active (unless forced)
+    const matchStatus = isMatchActive();
+    if (!force && !matchStatus.active) {
+      return NextResponse.json(
+        {
+          success: true,
+          skipped: true,
+          reason: "geen wedstrijd bezig",
+          nextMatchRound: matchStatus.round,
+        },
+        { headers: NO_CACHE_HEADERS },
+      );
+    }
 
     if (!Number.isInteger(roundSequence) || roundSequence < 1 || roundSequence > 9) {
       return NextResponse.json(

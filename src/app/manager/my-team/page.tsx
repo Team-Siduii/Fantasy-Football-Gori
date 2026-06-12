@@ -30,7 +30,7 @@ const POSITION_SORT_ORDER: Record<Position, number> = {
 };
 const BONUS_ROUNDS = [5, 10, 20] as const;
 
-type MarketSortField = "naam" | "positie" | "club" | "prijs";
+type MarketSortField = "naam" | "positie" | "club" | "prijs" | "punten";
 type MarketSortDirection = "asc" | "desc";
 
 const MARKET_PAGE_SIZE = 40;
@@ -828,6 +828,8 @@ export default function ManagerMyTeamPage() {
         const leftOrder = POSITION_SORT_ORDER[left.positie as Position] ?? 99;
         const rightOrder = POSITION_SORT_ORDER[right.positie as Position] ?? 99;
         result = leftOrder - rightOrder;
+      } else if (marketSortField === "punten") {
+        result = (left.punten ?? 0) - (right.punten ?? 0);
       } else {
         result = left.prijs - right.prijs;
       }
@@ -1482,7 +1484,16 @@ export default function ManagerMyTeamPage() {
                       {clubLabel} {sortIndicator("club")}
                     </button>
                   </th>
-                  <th>Punten</th>
+                  <th>
+                    <button
+                      type="button"
+                      className="sortable-header-button"
+                      onClick={() => toggleMarketSort("punten")}
+                      data-testid="sort-points"
+                    >
+                      Punten {sortIndicator("punten")}
+                    </button>
+                  </th>
                   <th>
                     <button
                       type="button"
