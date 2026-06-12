@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
+import { PlayerCard } from "@/components/player-card";
 import { buildFormationSlots } from "@/domain/formation";
-import { getCountryFlagImageUrl } from "@/lib/country-flags";
-
-type Position = "GK" | "DEF" | "MID" | "FWD";
+import { getPlayerCardMeta } from "@/lib/player-card-display";
 
 type ViewPlayer = {
   id: string;
@@ -31,16 +30,6 @@ type ViewTeamResponse = {
   pendingSellId: string | null;
   pendingBuyId: string | null;
 };
-
-const POSITION_SORT: Record<Position, number> = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
-
-function sortByPosition(players: ViewPlayer[]): ViewPlayer[] {
-  return [...players].sort((a, b) => {
-    const pa = POSITION_SORT[a.positie as Position] ?? 99;
-    const pb = POSITION_SORT[b.positie as Position] ?? 99;
-    return pa - pb;
-  });
-}
 
 export default function ViewTeamPageContent() {
   const pathname = usePathname();
@@ -111,17 +100,18 @@ export default function ViewTeamPageContent() {
       return { position: slot, player };
     }),
   );
-  const lineupById = new Map(data.lineup.map((p) => [p.id, p]));
-  const sortedBench = sortByPosition(data.bench);
-  const totalPoints = [...data.lineup, ...data.bench].reduce((sum, p) => sum + (p.punten ?? 0), 0);
+
+  const lineupPts = data.lineup.reduce((sum, p) => sum + (p.punten ?? 0), 0);
+  const benchPts = data.bench.reduce((sum, p) => sum + Math.ceil((p.punten ?? 0) / 2), 0);
+  const totalPoints = lineupPts + benchPts;
 
   return (
     <AppShell
-      title={`${data.teamName}`}
+      title={data.teamName}
       subtitle={
         <>
           Manager: {data.managerName}
-          {data.isOwnTeam ? " (jouw team)" : " (read-only)"} · Budget: €{data.budgetRemaining.toFixed(1)}M van €{data.budgetCap}M
+          {data.isOwnTeam ? " (jouw team)" : ""} · Budget: €{data.budgetRemaining.toFixed(1)}M van €{data.budgetCap}M
         </>
       }
     >
@@ -133,62 +123,76 @@ export default function ViewTeamPageContent() {
 
       <div className="grid">
         <section className="card col-8">
-          <h2>Opstelling · {data.formation}</h2>
-          <div className="pitch" style={{ maxWidth: 480, margin: "0 auto" }}>
-            {pitchRows.map((row, rowIndex) => (
-            <div key={rowIndex} className="pitch-row" data-size={row.length}>
-              {row.map((slot, slotIndex) => {
-                const player = slot.player;
-                const flagUrl = player ? getCountryFlagImageUrl(player.club) : null;
-                  return (
-                    <div key={slotIndex} className="pitch-slot readonly-slot" style={{ position: "relative" }}>
-                      <div className="slot-pos">{slot.position}</div>
-                      {player ? (
-                        <>
-                          {player.punten > 0 ? <span className="player-score-badge">{player.punten}</span> : null}
-                          <div className="slot-name">
-                            {flagUrl ? (
-                              <img src={flagUrl} alt="" className="slot-flag" width={18} height={12} />
-                            ) : null}
-                            {player.naam}
-                          </div>
-                          <div className="slot-meta">
-                            {player.club} · €{player.prijs}M
-                          </div>
-                        </>
-                      ) : (
-                        <div className="slot-name slot-empty">Leeg</div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+          <div className="team-topbar" aria-label="Team overzicht">
+            <div className="team-topbar__metric team-topbar__metric--left">
+              <span>Budget over</span>
+              <strong>€ {data.budgetRemaining.toFixed(1)}M</strong>
+            </div>
+            <div className="team-topbar__metric team-topbar__metric--center">
+              <span>Totaal punten</span>
+              <strong>{totalPoints}</strong>
+            </div>
+            <div className="team-topbar__metric team-topbar__metric--right">
+              <span>Formatie</span>
+              <strong>{data.formation}</strong>
+            </div>
+          </div>
+
+          <div className="formation-header">
+            <h2>Basiselftal</h2>
+          </div>
+
+          <div className="pitch">
+            {pitchRows.map((row, rowIndex) => {
+              const rowStart = pitchRows.slice(0, rowIndex).reduce((sum, current) => sum + current.length, 0);
+
+              return (
+                <div key={`row-${rowIndex}`} className="pitch-row" data-size={row.length}>
+                  {row.map((slot, colIndex) => {
+                    const lineupIndex = rowStart + colIndex;
+                    const player = slot.player;
+                    const cardMeta = player ? getPlayerCardMeta(player) : { flag: "", countryCode: "", priceLabel: "", displayName: "" };
+
+                    return (
+                      <PlayerCard
+                        key={`lineup-${lineupIndex}-${player?.id ?? `empty-${colIndex}`}`}
+                        position={cardMeta.flag}
+                        club={cardMeta.countryCode}
+                        name={player?.naam ?? "Leeg"}
+                        pointsLabel={cardMeta.priceLabel}
+                        scoreBadge={player ? String(player.punten) : null}
+                        className={player ? undefined : "player-card--open"}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })}
           </div>
         </section>
 
         <section className="card col-4">
-          <h2>Bank ({sortedBench.length})</h2>
-          {sortedBench.length === 0 ? (
-            <p className="muted-note">Geen wisselspelers</p>
-          ) : (
-            <ul style={{ listStyle: "none", padding: 0 }}>
-              {sortedBench.map((player) => {
-                const flagUrl = getCountryFlagImageUrl(player.club);
+          <h2>Wisselspelers</h2>
+          <div className="bench-grid">
+            {data.bench.length === 0 ? (
+              <p className="muted-note">Geen wisselspelers</p>
+            ) : (
+              data.bench.map((player, benchIndex) => {
+                const cardMeta = getPlayerCardMeta(player);
                 return (
-                  <li key={player.id} className="bench-player-row" style={{ position: "relative" }}>
-                    <span className="bench-pos-badge">{player.positie}</span>
-                    {flagUrl ? (
-                      <img src={flagUrl} alt="" className="slot-flag" width={18} height={12} style={{ marginRight: 4 }} />
-                    ) : null}
-                    <strong>{player.naam}</strong>
-                    <span className="muted-note"> · {player.club} · €{player.prijs}M</span>
-                    {player.punten > 0 ? <span className="player-score-badge" style={{ top: "50%", transform: "translateY(-50%)", right: "0.5rem" }}>{player.punten}</span> : null}
-                  </li>
+                  <PlayerCard
+                    key={`bench-${benchIndex}-${player.id}`}
+                    position={cardMeta.flag}
+                    club={cardMeta.countryCode}
+                    name={player.naam}
+                    pointsLabel={cardMeta.priceLabel}
+                    scoreBadge={String(Math.ceil(player.punten / 2))}
+                    className="player-card--bench-row"
+                  />
                 );
-              })}
-            </ul>
-          )}
+              })
+            )}
+          </div>
         </section>
 
         <section className="card col-12">
