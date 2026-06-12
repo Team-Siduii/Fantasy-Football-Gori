@@ -9,6 +9,7 @@ import { getLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
 import { readManagerStatePersistent, type ManagerStateScope } from "@/lib/manager-state";
 import { syncManagerTeamFromDraftRosterPersistent } from "@/lib/draft-manager-sync";
 import { loadPlayerPoints } from "@/lib/player-points-store";
+import { getWkPlayerPoints } from "@/lib/wk-sync-store";
 import { computeTeamSquadPoints } from "@/lib/player-derived";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
 
@@ -92,13 +93,21 @@ export async function GET(request: Request) {
   const allPlayers = await loadPlayers(scope);
   const playerById = new Map(allPlayers.map((p) => ({ ...p })).map((p) => [p.id, p]));
 
-  // Load player points for current round
-  const pointsSnapshot = await loadPlayerPoints(scope);
+  // Laad spelerpunten: WK uit WK database (alle 1248 spelers), Eredivisie uit legacy store
   const playerPointsMap = new Map<string, { total: number; round: number }>();
-  if (pointsSnapshot) {
-    for (const pp of pointsSnapshot.players) {
-      const key = normalizePlayerName(pp.playerName);
-      playerPointsMap.set(key, { total: pp.totalPoints, round: pp.roundPoints });
+  if (scope === "wk") {
+    const dbPlayers = await getWkPlayerPoints(); // latest round per speler (DISTINCT ON)
+    for (const p of dbPlayers) {
+      const key = normalizePlayerName(p.name);
+      playerPointsMap.set(key, { total: p.total_points, round: p.round_points });
+    }
+  } else {
+    const pointsSnapshot = await loadPlayerPoints(scope);
+    if (pointsSnapshot) {
+      for (const pp of pointsSnapshot.players) {
+        const key = normalizePlayerName(pp.playerName);
+        playerPointsMap.set(key, { total: pp.totalPoints, round: pp.roundPoints });
+      }
     }
   }
 

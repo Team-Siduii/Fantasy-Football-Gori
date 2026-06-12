@@ -4,6 +4,7 @@ import path from "path";
 import { parsePlayerCsv } from "@/domain/player-csv";
 import { computeTeamSquadPoints } from "@/lib/player-derived";
 import { loadPlayerPoints } from "@/lib/player-points-store";
+import { getWkPlayerPoints } from "@/lib/wk-sync-store";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "@/lib/auth-test-accounts";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 import { ensureAuthStateFromDb, getProfileByEmail } from "@/lib/auth-store";
@@ -57,12 +58,19 @@ export async function GET(request: Request) {
   const scope: ManagerStateScope = modeParam === "wk" ? "wk" : "eredivisie";
   const players = await loadPlayers(scope);
 
-  // Laad cumulatieve spelerpunten uit de store (totalPoints)
-  const pointsSnapshot = await loadPlayerPoints(scope);
+  // Laad cumulatieve spelerpunten: WK uit WK database, Eredivisie uit legacy store
   const playerPointsMap = new Map<string, number>();
-  if (pointsSnapshot) {
-    for (const pp of pointsSnapshot.players) {
-      playerPointsMap.set(normalizePlayerName(pp.playerName), pp.totalPoints);
+  if (scope === "wk") {
+    const dbPlayers = await getWkPlayerPoints(); // latest round per speler
+    for (const p of dbPlayers) {
+      playerPointsMap.set(normalizePlayerName(p.name), p.total_points);
+    }
+  } else {
+    const pointsSnapshot = await loadPlayerPoints(scope);
+    if (pointsSnapshot) {
+      for (const pp of pointsSnapshot.players) {
+        playerPointsMap.set(normalizePlayerName(pp.playerName), pp.totalPoints);
+      }
     }
   }
 

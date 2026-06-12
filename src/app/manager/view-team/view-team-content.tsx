@@ -141,10 +141,11 @@ export default function ViewTeamPageContent() {
                 const player = slot.player;
                 const flagUrl = player ? getCountryFlagImageUrl(player.club) : null;
                   return (
-                    <div key={slotIndex} className="pitch-slot readonly-slot">
+                    <div key={slotIndex} className="pitch-slot readonly-slot" style={{ position: "relative" }}>
                       <div className="slot-pos">{slot.position}</div>
                       {player ? (
                         <>
+                          {player.punten > 0 ? <span className="player-score-badge">{player.punten}</span> : null}
                           <div className="slot-name">
                             {flagUrl ? (
                               <img src={flagUrl} alt="" className="slot-flag" width={18} height={12} />
@@ -152,7 +153,7 @@ export default function ViewTeamPageContent() {
                             {player.naam}
                           </div>
                           <div className="slot-meta">
-                            {player.club} · €{player.prijs}M · {player.punten} pt
+                            {player.club} · €{player.prijs}M
                           </div>
                         </>
                       ) : (
@@ -175,13 +176,14 @@ export default function ViewTeamPageContent() {
               {sortedBench.map((player) => {
                 const flagUrl = getCountryFlagImageUrl(player.club);
                 return (
-                  <li key={player.id} className="bench-player-row">
+                  <li key={player.id} className="bench-player-row" style={{ position: "relative" }}>
                     <span className="bench-pos-badge">{player.positie}</span>
                     {flagUrl ? (
                       <img src={flagUrl} alt="" className="slot-flag" width={18} height={12} style={{ marginRight: 4 }} />
                     ) : null}
                     <strong>{player.naam}</strong>
-                    <span className="muted-note"> · {player.club} · €{player.prijs}M · {player.punten} pt</span>
+                    <span className="muted-note"> · {player.club} · €{player.prijs}M</span>
+                    {player.punten > 0 ? <span className="player-score-badge" style={{ top: "50%", transform: "translateY(-50%)", right: "0.5rem" }}>{player.punten}</span> : null}
                   </li>
                 );
               })}

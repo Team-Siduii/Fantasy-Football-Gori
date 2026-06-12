@@ -8,6 +8,7 @@ import { getAuthenticatedEmail } from "@/lib/auth-session";
 import { syncManagerTeamFromDraftRosterPersistent } from "@/lib/draft-manager-sync";
 import { readManagerStatePersistent, type ManagerStateScope } from "@/lib/manager-state";
 import { loadPlayerPoints } from "@/lib/player-points-store";
+import { getWkPlayerPoints } from "@/lib/wk-sync-store";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "s.j.m.duindam@gmail.com": "A",
@@ -69,12 +70,19 @@ export async function GET(request: Request) {
 
   const playerById = new Map(allPlayers.map((p) => [p.id, p]));
 
-  // Load player points
-  const pointsSnapshot = await loadPlayerPoints(scope);
+  // Laad spelerpunten: WK uit WK database, Eredivisie uit legacy store
   const playerPointsMap = new Map<string, number>();
-  if (pointsSnapshot) {
-    for (const pp of pointsSnapshot.players) {
-      playerPointsMap.set(normalizePlayerName(pp.playerName), pp.totalPoints);
+  if (scope === "wk") {
+    const dbPlayers = await getWkPlayerPoints(); // latest round per speler
+    for (const p of dbPlayers) {
+      playerPointsMap.set(normalizePlayerName(p.name), p.total_points);
+    }
+  } else {
+    const pointsSnapshot = await loadPlayerPoints(scope);
+    if (pointsSnapshot) {
+      for (const pp of pointsSnapshot.players) {
+        playerPointsMap.set(normalizePlayerName(pp.playerName), pp.totalPoints);
+      }
     }
   }
 
