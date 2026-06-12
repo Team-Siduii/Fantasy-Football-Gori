@@ -7,7 +7,8 @@ export type PersistentStoreName =
   | "manager-state"
   | "league-admin-config"
   | "notification-events"
-  | "player-points";
+  | "player-points"
+  | "transfer-round-state";
 
 export type PersistentScope = "eredivisie" | "wk" | "global";
 

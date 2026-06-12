@@ -21,7 +21,7 @@ In scope (MVP):
 - [x] Draft ronde aan het begin van seizoen/competitie
 - [x] Teambeheer (line-up/bank optioneel in MVP-lite)
 - [x] Transferrondes tussen speelrondes
-- [x] Free pool mechaniek met directe transfers (drop + add)
+- [x] Free pool mechaniek met ronde-gestuurde transfers en gedeelde conflictresolutie
 - [x] Adminschermen voor import/updaten van spelerslijst
 - [x] Mobielvriendelijke responsive UI (telefoon + tablet) voor managerflows
 - [x] Aparte WK 2026 module naast reguliere competitie (landen + faseschema)
@@ -110,12 +110,19 @@ Per rol belangrijkste rechten:
 
 ### 4.5 Transfers (kern van MVP)
 - Er is een vrije pool met beschikbare spelers
-- Transfers zijn direct (drop + add), zonder geavanceerde conflictresolutie in fase 1
-- Transferflow in manager-UI is nu: (1) speler verkopen (direct placeholder op veld/bank), (2) optioneel formatie wisselen met placeholder(s), (3) vervanger kopen op open positie
-- Aankoop op open placeholder verwerkt transfer direct (geen extra confirm-stap)
-- Placeholder-slots zijn visueel lichtgrijs/transparant zodat open plekken direct herkenbaar zijn t.o.v. bezette slots
-- Simultane transfer op dezelfde vrije speler: first-write-wins met database lock
-- Vrije pool wordt elk uur ververst op basis van alle uitgevoerde transfers
+- Transfers voor poulewedstrijden verlopen in 4 fases per ronde:
+  - Fase 1: elke manager kiest exact 1 speler om te verkopen of kiest expliciet voor `niemand verkopen`
+  - Fase 2: alleen managers die verkocht hebben kiezen 1 vervanger uit de vrije pool
+  - Fase 3: wanneer alle koopkeuzes binnen zijn controleert de app op dubbele claims op dezelfde speler
+  - Fase 4: unieke claims en winnende dubbele claims worden uitgevoerd; verliezende managers moeten vóór de volgende ronde opnieuw een speler kiezen
+- De manager-UI toont per ronde altijd:
+  - huidige transferfase
+  - welke managers nog op actie wachten
+  - welke managers klaar zijn / geen transfer doen
+  - of de ingelogde manager opnieuw moet kiezen wegens verloren conflict
+- Simultane transfer op dezelfde vrije speler gebruikt geen first-write-wins meer; prioriteit gaat naar de manager met de lagere positie op de ranglijst
+- Teammutaties worden pas definitief toegepast zodra de transferfase voor die manager is gewonnen/opgelost
+- Verkochte spelers komen na fase 1 terug in de vrije pool voor de koopfase van die ronde
 - Basisregel blijft: binnen een league kan een speler maar in 1 team zitten
 - Positiebehoud op wissels: spelerwissel tussen basis en bank is alleen toegestaan als de doel-slotpositie gelijk blijft (bijv. MID↔MID, DEF↔DEF)
 - Na draft kan manager vrij transfers doen uit de vrije pool binnen het transferwindow
@@ -143,7 +150,7 @@ Per rol belangrijkste rechten:
   - Open: direct na laatste wedstrijd van huidige speelronde
   - Dicht: exact bij starttijd van eerste wedstrijd van volgende speelronde
   - Bij admin-aanpassing van rondetijden worden nieuwe grenzen direct actief
-- Fase 2: conflictresolutie (waiver/priority/queue) toevoegen
+- Conflictresolutie voor pouletransfers is actief en gebruikt ranglijstprioriteit binnen de actieve poule/subpoule
 - Managerpagina toont transfermarkt onder teamoverzicht zodat basiselftal/bank en transferkeuzes tegelijk zichtbaar zijn
 - In de Team-paginaheader (regel direct onder titel "Team") wordt de standaardtekst vervangen door een compacte speelrondekaart met ronde-nummer, start-countdown en een wedstrijdraster met 1-op-1 shirt-icoontjes per club, plus datum+tijd per duel.
 - Speelrondekaart heeft browsen met links/rechts-knoppen: rechts toont de volgende ronde (programma), links toont de vorige ronde met uitslagen.
@@ -191,10 +198,18 @@ Per rol belangrijkste rechten:
 - Steps: draft instellingen -> start draft -> picks lopen
 - Succescriteria: elk team heeft initiële selectie
 
-3) Speler doet transfer vanuit vrije pool
-- Trigger: speler wil selectie wijzigen
-- Steps: speler A droppen -> speler B uit vrije pool toevoegen -> uur-refresh verwerkt poolstatus
-- Succescriteria: teamupdate lukt en speler B verdwijnt uit vrije pool binnen refresh-cyclus
+3) Speler doet transfer vanuit vrije pool in poulefase
+- Trigger: transferwindow van ronde staat open
+- Steps:
+  - manager kiest speler om te verkopen of kiest `niemand verkopen`
+  - app wacht tot alle managers fase 1 hebben afgerond
+  - managers met verkoop kiezen een vervanger
+  - app lost dubbele claims op met ranglijstprioriteit
+  - eventuele verliezers kiezen opnieuw vóór de volgende ronde
+- Succescriteria:
+  - elke manager ziet live op welke managers nog gewacht wordt
+  - budget, formatie en max 2 spelers per land blijven geldig
+  - per speler bestaat na afronding maximaal 1 winnaar binnen de league
 
 ## 6. Functionele requirements (FR)
 FR-001: Binnen een league is elke speler op elk moment aan maximaal 1 team gekoppeld.
