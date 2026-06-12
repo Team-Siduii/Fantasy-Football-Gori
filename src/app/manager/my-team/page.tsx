@@ -596,13 +596,16 @@ export default function ManagerMyTeamPage() {
         setAllPlayers(nextPlayers);
         setFormation(initialFormation);
 
-        const hydratedState =
-          managerData.state?.lineupIds || managerData.state?.benchIds
+        const managerLineupIds = managerData.state?.lineupIds ?? [];
+        const managerBenchIds = managerData.state?.benchIds ?? [];
+        const hasManagerPlayers = managerLineupIds.length > 0 || managerBenchIds.length > 0;
+
+        const hydratedState = hasManagerPlayers
             ? buildStateFromSaved(
                 nextPlayers,
                 initialFormation,
-                managerData.state?.lineupIds ?? [],
-                managerData.state?.benchIds ?? [],
+                managerLineupIds,
+                managerBenchIds,
               )
             : buildBudgetDemoState(nextPlayers, initialFormation, activeBudgetCap);
 
@@ -666,13 +669,16 @@ export default function ManagerMyTeamPage() {
         const nextFormation =
           savedFormation && formationOptions.includes(savedFormation) ? savedFormation : formationOptions[0];
 
-        const hydratedState =
-          managerData.state?.lineupIds || managerData.state?.benchIds
+        const roundLineupIds = managerData.state?.lineupIds ?? [];
+        const roundBenchIds = managerData.state?.benchIds ?? [];
+        const hasRoundPlayers = roundLineupIds.length > 0 || roundBenchIds.length > 0;
+
+        const hydratedState = hasRoundPlayers
             ? buildStateFromSaved(
                 allPlayers,
                 nextFormation,
-                managerData.state?.lineupIds ?? [],
-                managerData.state?.benchIds ?? [],
+                roundLineupIds,
+                roundBenchIds,
               )
             : buildBudgetDemoState(allPlayers, nextFormation, budgetCapMillions);
 
@@ -702,6 +708,12 @@ export default function ManagerMyTeamPage() {
     }
 
     const { lineupIds, benchIds } = toPersistedIds(state);
+
+    // Blokkeer persist van lege state — voorkomt dat demo/fallback spelers
+    // per ongeluk de echte state overschrijven tijdens laad-race-conditions.
+    if (lineupIds.length === 0 && benchIds.length === 0) {
+      return;
+    }
 
     const controller = new AbortController();
     void fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}`, {
