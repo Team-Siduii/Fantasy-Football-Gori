@@ -42,6 +42,7 @@ export async function GET(request: Request) {
       roundPoints: number;
       totalPoints: number;
       hasPlayed: boolean;
+      pointEvents: Array<{ points: number; eventCode: string; minute?: number }>;
     }> = [];
     let source = "csv";
 
@@ -71,6 +72,11 @@ export async function GET(request: Request) {
           roundPoints: p.round_points,
           totalPoints: p.total_points,
           hasPlayed: p.has_played,
+          pointEvents: (p.point_events || []).map((e: { points: number; event_code: string; minute?: number }) => ({
+            points: e.points,
+            eventCode: e.event_code,
+            minute: e.minute,
+          })),
         }));
       }
 
@@ -96,6 +102,7 @@ export async function GET(request: Request) {
             roundPoints: 0,
             totalPoints: 0,
             hasPlayed: false,
+            pointEvents: [],
           }));
         }
       }
@@ -127,6 +134,7 @@ export async function GET(request: Request) {
               roundPoints: 0,
               totalPoints: 0,
               hasPlayed: false,
+              pointEvents: [],
             });
           }
         }
@@ -160,6 +168,7 @@ export async function GET(request: Request) {
         roundPoints: p.roundPoints || (pp?.roundPoints ?? 0),
         totalPoints: p.totalPoints || (pp?.totalPoints ?? 0),
         hasPlayed: p.hasPlayed ?? false,
+        pointEvents: p.pointEvents || [],
       };
     });
 

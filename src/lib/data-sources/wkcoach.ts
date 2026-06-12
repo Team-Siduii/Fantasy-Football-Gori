@@ -202,6 +202,7 @@ export type WkcoachSearchPlayer = {
   performance_points: number;
   average_points: number;
   percentage_in_formations: number;
+  point_events: Array<{ points: number; event_code: string; minute?: number }>;
 };
 
 export type WkcoachSearchResponse = {
