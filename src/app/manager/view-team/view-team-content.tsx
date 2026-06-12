@@ -186,7 +186,7 @@ export default function ViewTeamPageContent() {
                     club={cardMeta.countryCode}
                     name={player.naam}
                     pointsLabel={cardMeta.priceLabel}
-                    scoreBadge={String(Math.ceil(player.punten / 2))}
+                    scoreBadge={String(player.punten)}
                     className="player-card--bench-row"
                   />
                 );
