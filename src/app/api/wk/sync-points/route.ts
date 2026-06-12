@@ -52,6 +52,7 @@ async function shouldSync(round: number, force: boolean): Promise<{
   shouldSync: boolean;
   reason: string;
 }> {
+  console.log("[shouldSync] start round=" + round + " force=" + force);
   if (force) return { shouldSync: true, reason: "forced" };
 
   const now = Date.now();
@@ -68,7 +69,9 @@ async function shouldSync(round: number, force: boolean): Promise<{
   }
 
   // Check: zijn er gespeelde wedstrijden waarvan nog geen punten in DB?
+  console.log("[shouldSync] fetching DB players for round=" + round);
   const dbPlayers = await getWkPlayerPoints(round);
+  console.log("[shouldSync] DB players count=" + dbPlayers.length);
   if (dbPlayers.length === 0) {
     // Nog helemaal geen data voor deze ronde → syncen
     return { shouldSync: true, reason: "nog geen data voor ronde" };
@@ -119,7 +122,9 @@ export async function GET(request: Request) {
     const force = url.searchParams.get("force") === "true";
 
     // Check of sync nodig is (force bypassed alles)
+    console.log("[sync-points] calling shouldSync round=" + roundSequence + " force=" + force);
     const syncCheck = await shouldSync(roundSequence, force);
+    console.log("[sync-points] shouldSync result: " + JSON.stringify(syncCheck));
     if (!syncCheck.shouldSync) {
       return NextResponse.json(
         {
