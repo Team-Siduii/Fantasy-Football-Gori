@@ -79,7 +79,7 @@ export async function GET(request: Request) {
 
       return {
         ...csv,
-        punten: adjusted.roundPoints ?? 0,
+        punten: adjusted.totalPoints ?? 0,
         totalPoints: adjusted.totalPoints ?? 0,
         pointEvents: adjusted.pointEvents ?? [],
       };

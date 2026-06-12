@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
 import { parsePlayerCsv } from "@/domain/player-csv";
-import { derivePlayerPoints, computeTeamSquadPoints } from "@/lib/player-derived";
+import { computeTeamSquadPoints } from "@/lib/player-derived";
+import { loadPlayerPoints } from "@/lib/player-points-store";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "@/lib/auth-test-accounts";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 import { ensureAuthStateFromDb, getProfileByEmail } from "@/lib/auth-store";
@@ -20,6 +21,14 @@ const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "emielzomerdijk@gmail.com": "A",
   "ice.eckmund@gmail.com": "A",
 };
+
+function normalizePlayerName(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim();
+}
 
 async function loadPlayers(scope: ManagerStateScope) {
   if (scope === "wk") {
@@ -47,7 +56,21 @@ export async function GET(request: Request) {
   const modeParam = new URL(request.url).searchParams.get("mode");
   const scope: ManagerStateScope = modeParam === "wk" ? "wk" : "eredivisie";
   const players = await loadPlayers(scope);
-  const pointsById = new Map(players.map((player) => [player.id, derivePlayerPoints(player)]));
+
+  // Laad cumulatieve spelerpunten uit de store (totalPoints)
+  const pointsSnapshot = await loadPlayerPoints(scope);
+  const playerPointsMap = new Map<string, number>();
+  if (pointsSnapshot) {
+    for (const pp of pointsSnapshot.players) {
+      playerPointsMap.set(normalizePlayerName(pp.playerName), pp.totalPoints);
+    }
+  }
+
+  // Map speler-ID → cumulatieve punten
+  const pointsById = new Map<string, number>();
+  for (const player of players) {
+    pointsById.set(player.id, playerPointsMap.get(normalizePlayerName(player.naam)) ?? 0);
+  }
 
   const managerEntries = await Promise.all(
     AUTH_TEST_ACCOUNT_PRESETS.filter((preset) => Boolean(SUBPOULE_BY_EMAIL[preset.email.trim().toLowerCase()])).map(
