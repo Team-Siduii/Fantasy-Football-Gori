@@ -109,10 +109,10 @@ export default function ViewTeamPageContent() {
     <AppShell
       title={data.teamName}
       subtitle={
-        <>
-          Manager: {data.managerName}
-          {data.isOwnTeam ? " (jouw team)" : ""} · Budget: €{data.budgetRemaining.toFixed(1)}M van €{data.budgetCap}M
-        </>
+        <span className="view-team-subtitle">
+          <span className="view-team-subtitle__manager">{data.managerName}</span>
+          {data.isOwnTeam && <span className="view-team-subtitle__badge">Jouw team</span>}
+        </span>
       }
     >
       <p style={{ marginBottom: "0.5rem" }}>
