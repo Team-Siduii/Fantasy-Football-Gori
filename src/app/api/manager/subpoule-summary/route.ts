@@ -58,26 +58,34 @@ export async function GET(request: Request) {
   const scope: ManagerStateScope = modeParam === "wk" ? "wk" : "eredivisie";
   const players = await loadPlayers(scope);
 
-  // Laad cumulatieve spelerpunten: WK uit WK database, Eredivisie uit legacy store
-  const playerPointsMap = new Map<string, number>();
+  // Laad cumulatieve spelerpunten direct op fantasyplayer_id
+  const pointsById = new Map<string, number>();
   if (scope === "wk") {
     const dbPlayers = await getWkPlayerPoints(); // latest round per speler
     for (const p of dbPlayers) {
-      playerPointsMap.set(normalizePlayerName(p.name), p.total_points);
+      pointsById.set(String(p.fantasyplayer_id), p.total_points);
     }
   } else {
     const pointsSnapshot = await loadPlayerPoints(scope);
     if (pointsSnapshot) {
       for (const pp of pointsSnapshot.players) {
-        playerPointsMap.set(normalizePlayerName(pp.playerName), pp.totalPoints);
+        if (pp.fantasyplayerId) {
+          pointsById.set(String(pp.fantasyplayerId), pp.totalPoints);
+        }
       }
     }
-  }
-
-  // Map speler-ID → cumulatieve punten
-  const pointsById = new Map<string, number>();
-  for (const player of players) {
-    pointsById.set(player.id, playerPointsMap.get(normalizePlayerName(player.naam)) ?? 0);
+    // Fallback: naam-gebaseerde lookup voor Eredivisie (geen fantasyplayer_id in CSV)
+    if (pointsById.size === 0 && pointsSnapshot) {
+      const players = await loadPlayers(scope);
+      const nameMap = new Map<string, number>();
+      for (const pp of pointsSnapshot.players) {
+        nameMap.set(normalizePlayerName(pp.playerName), pp.totalPoints);
+      }
+      for (const player of players) {
+        const pts = nameMap.get(normalizePlayerName(player.naam)) ?? 0;
+        if (pts > 0) pointsById.set(player.id, pts);
+      }
+    }
   }
 
   const managerEntries = await Promise.all(

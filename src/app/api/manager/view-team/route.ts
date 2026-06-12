@@ -70,18 +70,18 @@ export async function GET(request: Request) {
 
   const playerById = new Map(allPlayers.map((p) => [p.id, p]));
 
-  // Laad spelerpunten: WK uit WK database, Eredivisie uit legacy store
-  const playerPointsMap = new Map<string, number>();
+  // Laad spelerpunten direct op fantasyplayer_id
+  const playerPointsMap = new Map<number, number>();
   if (scope === "wk") {
     const dbPlayers = await getWkPlayerPoints(); // latest round per speler
     for (const p of dbPlayers) {
-      playerPointsMap.set(normalizePlayerName(p.name), p.total_points);
+      playerPointsMap.set(p.fantasyplayer_id, p.total_points);
     }
   } else {
     const pointsSnapshot = await loadPlayerPoints(scope);
     if (pointsSnapshot) {
       for (const pp of pointsSnapshot.players) {
-        playerPointsMap.set(normalizePlayerName(pp.playerName), pp.totalPoints);
+        playerPointsMap.set(pp.fantasyplayerId ?? 0, pp.totalPoints);
       }
     }
   }
@@ -96,10 +96,9 @@ export async function GET(request: Request) {
   const enrichPlayer = (playerId: string) => {
     const player = playerById.get(playerId);
     if (!player) return { id: playerId, naam: "Onbekend", positie: "MID", club: "-", prijs: 0, punten: 0 };
-    const key = normalizePlayerName(player.naam);
     return {
       ...player,
-      punten: playerPointsMap.get(key) ?? 0,
+      punten: playerPointsMap.get(parseInt(playerId, 10)) ?? 0,
     };
   };
 

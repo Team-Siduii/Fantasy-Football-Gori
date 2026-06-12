@@ -93,20 +93,18 @@ export async function GET(request: Request) {
   const allPlayers = await loadPlayers(scope);
   const playerById = new Map(allPlayers.map((p) => ({ ...p })).map((p) => [p.id, p]));
 
-  // Laad spelerpunten: WK uit WK database (alle 1248 spelers), Eredivisie uit legacy store
-  const playerPointsMap = new Map<string, { total: number; round: number }>();
+  // Laad spelerpunten: WK uit WK database (op fantasyplayer_id), Eredivisie uit legacy store
+  const playerPointsMap = new Map<number, { total: number; round: number }>();
   if (scope === "wk") {
     const dbPlayers = await getWkPlayerPoints(); // latest round per speler (DISTINCT ON)
     for (const p of dbPlayers) {
-      const key = normalizePlayerName(p.name);
-      playerPointsMap.set(key, { total: p.total_points, round: p.round_points });
+      playerPointsMap.set(p.fantasyplayer_id, { total: p.total_points, round: p.round_points });
     }
   } else {
     const pointsSnapshot = await loadPlayerPoints(scope);
     if (pointsSnapshot) {
       for (const pp of pointsSnapshot.players) {
-        const key = normalizePlayerName(pp.playerName);
-        playerPointsMap.set(key, { total: pp.totalPoints, round: pp.roundPoints });
+        playerPointsMap.set(pp.fantasyplayerId ?? 0, { total: pp.totalPoints, round: pp.roundPoints });
       }
     }
   }
@@ -135,18 +133,14 @@ export async function GET(request: Request) {
     const benchIds = state.benchIds;
     const squadIds = [...lineupIds, ...benchIds];
 
-    // Bouw punten-map per speler-ID
+    // Bouw punten-map per speler-ID (direct op fantasyplayer_id)
     const roundPointsById = new Map<string, number>();
     const totalPointsById = new Map<string, number>();
     for (const playerId of squadIds) {
-      const player = playerById.get(playerId);
-      if (player) {
-        const key = normalizePlayerName(player.naam);
-        const pts = playerPointsMap.get(key);
-        if (pts) {
-          roundPointsById.set(playerId, pts.round);
-          totalPointsById.set(playerId, pts.total);
-        }
+      const pts = playerPointsMap.get(parseInt(playerId, 10));
+      if (pts) {
+        roundPointsById.set(playerId, pts.round);
+        totalPointsById.set(playerId, pts.total);
       }
     }
 

@@ -33,32 +33,26 @@ export async function GET(request: Request) {
     const dbPlayers = await getWkPlayerPoints(1); // round 1 voor nu
     const dbEvents = await getWkPlayerEvents(1);
 
-    // Indexeer DB data op naam (genormaliseerd)
-    const dbByName = new Map<string, typeof dbPlayers[0]>();
-    const eventsByName = new Map<string, typeof dbEvents>();
+    // Indexeer DB data op fantasyplayer_id
+    const dbById = new Map<number, typeof dbPlayers[0]>();
+    const eventsById = new Map<number, typeof dbEvents>();
 
     for (const p of dbPlayers) {
-      const key = normalizeName(p.name);
-      dbByName.set(key, p);
+      dbById.set(p.fantasyplayer_id, p);
     }
     for (const ev of dbEvents) {
-      // Koppel events via fantasyplayer_id
-      const player = dbPlayers.find(p => p.fantasyplayer_id === ev.fantasyplayer_id);
-      if (player) {
-        const key = normalizeName(player.name);
-        const arr = eventsByName.get(key) || [];
-        arr.push(ev);
-        eventsByName.set(key, arr);
-      }
+      const arr = eventsById.get(ev.fantasyplayer_id) || [];
+      arr.push(ev);
+      eventsById.set(ev.fantasyplayer_id, arr);
     }
 
     // Merge CSV data met DB punten
     const playersWithPoints = csvPlayers.map((csv) => {
-      const key = normalizeName(csv.naam);
-      const db = dbByName.get(key);
+      const playerId = parseInt(csv.id, 10);
+      const db = dbById.get(playerId);
 
       // Bouw point events uit DB
-      const rawEvents = (eventsByName.get(key) || []).map(ev => ({
+      const rawEvents = (eventsById.get(playerId) || []).map(ev => ({
         eventCode: ev.event_code,
         points: ev.points,
         minute: ev.minute,
