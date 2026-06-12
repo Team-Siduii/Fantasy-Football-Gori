@@ -191,6 +191,7 @@ export async function GET(request: Request) {
     mode: scope,
     currentRound,
     userSubpoule,
+    userEmail,
     ranking: userPouleRanking,
     allSubpoules: Object.fromEntries(bySubpoule),
   });
