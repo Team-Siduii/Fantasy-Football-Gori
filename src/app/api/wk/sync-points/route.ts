@@ -112,7 +112,7 @@ export async function GET(request: Request) {
 
     const syncedAt = new Date().toISOString();
     let playersCount = 0;
-    let matchesCount = 0;
+    const matchesCount = 0;
     let eventsCount = 0;
 
     // ── 1. Sync player points via search_all (with point_events!) ──
