@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
 import {
-  fetchWkcoachPointsSnapshot,
   fetchWkcoachAllPlayersWithPoints,
 } from "@/lib/data-sources/wkcoach";
-import { savePlayerPoints, type PlayerPointsSnapshot } from "@/lib/player-points-store";
 import {
-  saveWkMatches,
   saveWkPlayerPoints,
   saveWkPlayerEvents,
-  getWkPlayerEvents,
-  applyDefenderCleanSheetBonus,
 } from "@/lib/wk-sync-store";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
 
@@ -119,7 +114,6 @@ export async function GET(request: Request) {
     let playersCount = 0;
     let matchesCount = 0;
     let eventsCount = 0;
-    let csEventsByPlayer = new Map<number, Array<{ eventCode: string; points: number }>>();
 
     // ── 1. Sync player points via search_all (with point_events!) ──
     if (fullSync) {
@@ -174,13 +168,6 @@ export async function GET(request: Request) {
           eventsCount = allEvents.length;
         }
 
-        // Bouw een lookup van events per speler (voor CS bonus in legacy store)
-        csEventsByPlayer = new Map();
-        for (const ev of allEvents) {
-          const arr = csEventsByPlayer.get(ev.fantasyplayer_id) || [];
-          arr.push({ eventCode: ev.event_code, points: ev.points });
-          csEventsByPlayer.set(ev.fantasyplayer_id, arr);
-        }
       }
     }
 
