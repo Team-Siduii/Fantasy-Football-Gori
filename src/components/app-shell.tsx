@@ -98,8 +98,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
       setSummaryLeagueName(data.leagueName ?? "");
 
       if (data.standing) {
-        const label = data.leagueName || `Poule ${data.standing.subpoule}`;
-        setSummaryRankLabel(`#${data.standing.rank} (${data.standing.totalManagersInSubpoule}) · ${label}`);
+        setSummaryRankLabel(`#${data.standing.rank} (${data.standing.totalManagersInSubpoule})`);
         setSummaryPoints(String(data.standing.points));
       }
     };
@@ -124,6 +123,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
         <header className="top-header">
           <div className="brand-wrap">
             <p className="brand-eyebrow">{isWkMode ? "world cup" : "eredivisie"}</p>
+            <h1>{summaryLeagueName || (isWkMode ? "FANTASY WK" : "FANTASY EREDIVISIE")}</h1>
           </div>
 
           <div className="header-actions">
