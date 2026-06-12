@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-06-11
+Laatste update: 2026-06-12
 
 ## 1. Productvisie
 Doel van de app:
@@ -620,3 +620,4 @@ Waarom zo:
 - 2026-06-08: Definitieve actieve WKCoach spelerslijst opnieuw ingeladen in `data/players-wk.csv`: 1.244 selecteerbare spelers uit 48 landen; 10 door WKCoach als niet-actief gemarkeerde spelers zijn bewust uitgesloten van de fantasy pool.
 - 2026-06-08: Draft guardrails compleet gemaakt: server-side picks blokkeren nu ook land-stacking boven 2 spelers per land en eisen dat de volledige gekozen linie-mix binnen één toegestane formatie + bank past; geldige picks syncen direct naar My Team met automatische formatiekeuze en lineup/bank-vulling.
 - 2026-06-11: Mbappé hardcoded demo-punten verwijderd; transfermarkt-spelerspoule toont nu een expliciete `Punten`-kolom en spelers zonder actuele WKCoach-sync blijven zichtbaar op `0` totdat echte punten binnenkomen.
+- 2026-06-12: My Team hydrateert opgeslagen WK-selecties nu met een compatibele formatie op basis van de echte positieverdeling van de 15 opgeslagen spelers; managers met een verouderde/ongeldige opgeslagen formatie zien daardoor niet langer open slots terwijl hun API-state wel 15 spelers bevat, en de UI self-healt de correcte formatie terug naar `manager-state`.

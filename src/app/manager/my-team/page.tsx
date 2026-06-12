@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PlayerCard } from "@/components/player-card";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
+import { resolveCompatibleFormation } from "@/domain/roster-formation";
 import { reorderAcrossZones, type ZoneName, type ZoneState } from "@/domain/lineup-state";
 import { buildPitchRows } from "@/domain/pitch-layout";
 import { calculateRemainingBudget, getTransferBudgetCapMillions, isWithinBudget } from "@/domain/team-budget";
@@ -43,6 +44,11 @@ type ManagerStateResponse = {
     pendingSellId?: string | null;
     pendingBuyId?: string | null;
   };
+};
+
+type HydratedStateResult = {
+  formation: string;
+  state: ZoneState<EnhancedPlayer>;
 };
 
 type LeagueRuntimeConfigResponse = {
@@ -215,7 +221,12 @@ function buildStateForFormationWithVacancies(
   return buildStateWithVacancies(players, formation, vacancyCount);
 }
 
-function buildStateFromSaved(players: EnhancedPlayer[], formation: string, lineupIds: string[], benchIds: string[]) {
+function buildStateFromSaved(
+  players: EnhancedPlayer[],
+  formation: string,
+  lineupIds: string[],
+  benchIds: string[],
+): HydratedStateResult {
   const byId = new Map(players.map((player) => [player.id, player]));
   const seen = new Set<string>();
 
@@ -230,7 +241,18 @@ function buildStateFromSaved(players: EnhancedPlayer[], formation: string, lineu
 
   const requiredSlotCount = buildFormationSlots(formation).flat().length + BENCH_POSITIONS.length;
   const vacancyCount = Math.max(0, requiredSlotCount - savedPlayers.length);
-  return buildStateWithVacancies(savedPlayers, formation, vacancyCount) ?? buildStateForFormation(savedPlayers, formation);
+  const resolvedFormation = resolveCompatibleFormation({
+    preferredFormation: formation,
+    playerPositions: savedPlayers.map((player) => player.positie),
+    vacancyCount,
+  });
+
+  return {
+    formation: resolvedFormation,
+    state:
+      buildStateWithVacancies(savedPlayers, resolvedFormation, vacancyCount) ??
+      buildStateForFormation(savedPlayers, resolvedFormation),
+  };
 }
 
 function toPersistedIds(state: ZoneState<EnhancedPlayer>) {
@@ -607,21 +629,23 @@ export default function ManagerMyTeamPage() {
                 managerLineupIds,
                 managerBenchIds,
               )
-            : buildBudgetDemoState(nextPlayers, initialFormation, activeBudgetCap);
+            : { formation: initialFormation, state: buildBudgetDemoState(nextPlayers, initialFormation, activeBudgetCap) };
+
+        setFormation(hydratedState.formation);
 
         let nextState = isWithinBudget(
-          [...hydratedState.lineup, ...hydratedState.bench],
+          [...hydratedState.state.lineup, ...hydratedState.state.bench],
           activeBudgetCap,
         )
-          ? hydratedState
-          : buildBudgetDemoState(nextPlayers, initialFormation, activeBudgetCap);
+          ? hydratedState.state
+          : buildBudgetDemoState(nextPlayers, hydratedState.formation, activeBudgetCap);
 
         const savedPendingSellId = managerData.state?.pendingSellId ?? null;
         if (savedPendingSellId) {
           const playersWithoutSold = [...nextState.lineup, ...nextState.bench].filter(
             (player) => !player.id.startsWith("open-") && player.id !== savedPendingSellId,
           );
-          const rebuilt = buildStateForFormationWithVacancies(playersWithoutSold, initialFormation, 1);
+          const rebuilt = buildStateForFormationWithVacancies(playersWithoutSold, hydratedState.formation, 1);
           if (rebuilt) {
             nextState = rebuilt;
           }
@@ -680,11 +704,11 @@ export default function ManagerMyTeamPage() {
                 roundLineupIds,
                 roundBenchIds,
               )
-            : buildBudgetDemoState(allPlayers, nextFormation, budgetCapMillions);
+            : { formation: nextFormation, state: buildBudgetDemoState(allPlayers, nextFormation, budgetCapMillions) };
 
         suppressNextPersist.current = true;
-        setFormation(nextFormation);
-        setState(hydratedState);
+        setFormation(hydratedState.formation);
+        setState(hydratedState.state);
         setPendingSellId(managerData.state?.pendingSellId ?? null);
         setPendingBuyId(managerData.state?.pendingBuyId ?? managerData.state?.pickedTransferId ?? null);
       } catch {
