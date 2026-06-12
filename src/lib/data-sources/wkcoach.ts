@@ -3,6 +3,7 @@ import type { NormalizedMatch } from "./match-events-merge";
 type WkcoachApiPlayer = {
   fantasyplayer_id?: number;
   name?: string;
+  player_name?: string;
   club_codename?: string;
   club_fullname?: string;
   position?: string;
@@ -16,6 +17,15 @@ type WkcoachApiPlayer = {
 
 type WkcoachApiPlayerEntry = {
   player?: WkcoachApiPlayer;
+  player_name?: string;
+  fantasyplayer_id?: number;
+  club_codename?: string;
+  club_fullname?: string;
+  position?: string;
+  position_nl?: string;
+  round_points?: number;
+  total_points?: number;
+  value?: number;
   is_sub?: boolean;
 };
 
@@ -65,20 +75,30 @@ export function mapWkcoachPointsDetailedToSnapshot(payload: WkcoachPointsDetaile
     roundSequence: payload.round_sequence ?? null,
     players: (payload.players ?? [])
       .filter((entry) => {
-        const p = entry.player;
-        return p && typeof p.name === "string" && p.name.trim().length > 0;
+        const playerName = entry.player?.name ?? entry.player?.player_name ?? entry.player_name;
+        return typeof playerName === "string" && playerName.trim().length > 0;
       })
       .map((entry) => {
-        const p = entry.player!;
+        const p = entry.player;
         return {
-          fantasyplayerId: typeof p.fantasyplayer_id === "number" ? p.fantasyplayer_id : null,
-          playerName: p.name!.trim(),
-          roundPoints: Number(p.round_points ?? 0),
-          totalPoints: Number(p.total_points ?? 0),
-          teamName: p.club_fullname?.trim() || null,
-          teamCode: p.club_codename?.trim() || null,
-          position: p.position?.trim() || p.position_nl?.trim() || null,
-          value: typeof p.value === "number" ? p.value : null,
+          fantasyplayerId:
+            typeof p?.fantasyplayer_id === "number"
+              ? p.fantasyplayer_id
+              : typeof entry.fantasyplayer_id === "number"
+                ? entry.fantasyplayer_id
+                : null,
+          playerName: (p?.name ?? p?.player_name ?? entry.player_name ?? "").trim(),
+          roundPoints: Number(p?.round_points ?? entry.round_points ?? 0),
+          totalPoints: Number(p?.total_points ?? entry.total_points ?? 0),
+          teamName: p?.club_fullname?.trim() || entry.club_fullname?.trim() || null,
+          teamCode: p?.club_codename?.trim() || entry.club_codename?.trim() || null,
+          position: p?.position?.trim() || p?.position_nl?.trim() || entry.position?.trim() || entry.position_nl?.trim() || null,
+          value:
+            typeof p?.value === "number"
+              ? p.value
+              : typeof entry.value === "number"
+                ? entry.value
+                : null,
           isSub: entry.is_sub === true,
         };
       }),

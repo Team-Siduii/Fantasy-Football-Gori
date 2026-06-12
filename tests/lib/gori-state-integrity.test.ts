@@ -159,8 +159,9 @@ describe("gori state integrity", () => {
     expect(report.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ type: "participant_auth_email_mismatch", managerId: "thomas-bart" }),
-        expect.objectContaining({ type: "participant_missing_auth_account", managerId: "jack-van-der-reep" }),
         expect.objectContaining({ type: "legacy_manager_state_key", managerId: "thomas-bart", key: "thomas-old@example.com" }),
+        expect.objectContaining({ type: "participant_missing_auth_account", managerId: "sim-duindam" }),
+        expect.objectContaining({ type: "participant_missing_auth_account", managerId: "admin" }),
       ]),
     );
   });

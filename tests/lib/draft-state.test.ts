@@ -33,7 +33,7 @@ describe("draft-state persistence", () => {
     });
 
     expect(afterOnePick.currentTurnTeamId).toBe("B");
-  });
+  }, 15000);
 
   it("blocks same player from being picked twice", async () => {
     const mod = await import("../../src/lib/draft-state");

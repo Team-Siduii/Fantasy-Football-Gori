@@ -39,7 +39,10 @@ describe("wkcoach policy", () => {
       hasCredentials: false,
     });
 
-    expect(coordinatorAlert).toContain("WKCoach is primaire waarheid");
+    expect(coordinatorAlert).toMatchObject({
+      show: true,
+      message: expect.stringContaining("WKCoach is primaire waarheid"),
+    });
     expect(nonCoordinatorAlert).toBeNull();
   });
 });

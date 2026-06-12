@@ -372,7 +372,7 @@ export async function syncDraftRosterToManagerTeamPersistent(input: {
   formation?: string;
   playerCatalog?: DraftPlayerCatalogEntry[];
 }) {
-  const managerEmail = resolveDraftTeamManagerEmail(input.teamId, input.scope);
+  const managerEmail = await resolveDraftTeamManagerEmailPersistent(input.teamId, input.scope);
   if (!managerEmail) {
     return null;
   }

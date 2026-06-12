@@ -141,7 +141,11 @@ function normalizeParticipants(input: unknown, fallback: LeagueParticipant[]): L
     const defEmail = def.email.toLowerCase();
     const existingIdx = seenEmails.get(defEmail);
     if (existingIdx !== undefined) {
-      deduped[existingIdx] = { ...def, status: deduped[existingIdx].status };
+      deduped[existingIdx] = {
+        ...def,
+        ...deduped[existingIdx],
+        status: deduped[existingIdx].status,
+      };
       existingIds.add(def.managerId);
       continue;
     }

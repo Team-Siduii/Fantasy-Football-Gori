@@ -8,8 +8,9 @@ describe("app shell header menu", () => {
 
   it("shows manager-only options after login", () => {
     expect(getHeaderMenuItems(true, false).map((item) => item.label)).toEqual([
+      "Mijn team",
       "Draft",
-      "Naam aanpassen",
+      "Competitie",
       "Instellingen",
       "Spelregels",
       "CSV import",
@@ -17,6 +18,6 @@ describe("app shell header menu", () => {
   });
 
   it("uses the WK draft route in WK mode", () => {
-    expect(getHeaderMenuItems(true, true)[0]).toMatchObject({ href: "/manager/world-cup/draft", label: "Draft" });
+    expect(getHeaderMenuItems(true, true)[1]).toMatchObject({ href: "/manager/world-cup/draft", label: "Draft" });
   });
 });

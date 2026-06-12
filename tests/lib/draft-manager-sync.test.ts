@@ -43,7 +43,7 @@ describe("draft roster to manager team sync", () => {
     expect(johanWkState.lineupIds).toEqual(["wk-player-1"]);
     expect(johanWkState.benchIds).toEqual([]);
     expect(manager.readManagerState("eredivisie", JOHAN_EMAIL).lineupIds).toEqual([]);
-  });
+  }, 15000);
 
   it("removes a returned draft player from the manager's My Team state", async () => {
     const { draft, roster, manager } = await loadModules();

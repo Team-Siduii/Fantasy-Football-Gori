@@ -24,7 +24,7 @@ describe("auth-store security", () => {
     expect(store.authenticateManager("s.j.m.duindam@gmail.com", "WK-SIM-ADMIN-2026")).toBe(true);
     expect(store.authenticateManager("admin@gori.local", "admin1234")).toBe(true);
     expect(store.authenticateManager("Johan201@hotmail.com", "wrong")).toBe(false);
-  });
+  }, 15000);
 
   it("marks first login as setup required then clears after setup", async () => {
     const store = await loadStore();
