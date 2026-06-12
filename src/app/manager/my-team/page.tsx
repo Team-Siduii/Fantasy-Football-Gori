@@ -1352,6 +1352,7 @@ export default function ManagerMyTeamPage() {
                       {clubLabel} {sortIndicator("club")}
                     </button>
                   </th>
+                  <th>Punten</th>
                   <th>
                     <button
                       type="button"
@@ -1371,6 +1372,7 @@ export default function ManagerMyTeamPage() {
                     <td><TransferPlayerName player={item} /></td>
                     <td>{item.positie}</td>
                     <td>{item.club}</td>
+                    <td>{item.punten}</td>
                     <td>€ {item.prijs.toFixed(2)}M</td>
                     <td>
                       <button

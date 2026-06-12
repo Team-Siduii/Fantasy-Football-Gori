@@ -169,6 +169,7 @@ Per rol belangrijkste rechten:
 - Wisselspelersweergave gebruikt regel-layout (lijstregels met subtiele dashed scheiding) in plaats van kaartblokken.
 - Spelersnamen op kaarten worden nooit afgekapt met ellipsis; naamregels wrappen volledig binnen uniforme vaste kaarthoogte/rijverdeling.
 - Transfermarkt-kolommen zijn sorteerbaar op spelernaam, positie (GK→DEF→MID→FWD), club en transferwaarde
+- Algemene spelerspoule in transfermarkt toont ook een aparte kolom `Punten`; zolang WKCoach voor een speler nog geen actuele waarde heeft geleverd, blijft die waarde expliciet `0` (dus geen Mbappé-demo fallback meer).
 
 ### 4.6 Notificaties
 - Draft turn
@@ -244,6 +245,7 @@ FR-045: Manager-UI is responsive op mobiel/tablet: header, kaarten, opstellingsv
 FR-045a: De manager-header gebruikt op laptop én mobiel één openklapmenu (`Menu`); zonder actieve managersessie toont dit menu alleen `Log in`, en na login toont het secundaire manageracties zoals Draft, Naam aanpassen, Instellingen, Spelregels, CSV import en Log out. Deze acties mogen niet buiten de viewport vallen.
 FR-046: In mobiele Team-weergave staan de secties in deze volgorde: basiselftal, wisselspelers, daarna statistiektegels.
 FR-047: Transfermarkt ondersteunt kolomsortering op spelernaam, positie (GK, DEF, MID, FWD), club en transferwaarde, met omschakelbare oplopend/aflopend sorteerrichting.
+FR-047a: De algemene spelerspoule in transfermarkt toont per speler een zichtbare kolom `Punten`; als er nog geen actuele WKCoach-waarde beschikbaar is, toont de UI expliciet `0` in plaats van een hardcoded demo-score.
 FR-048: Transfermarkt-filters blijven op mobiel volledig bruikbaar: Positie/Club/Zoek stacken verticaal en elk veld gebruikt full-width.
 FR-049: Verkoop-selector staat open totdat de transferlimiet van de actieve ronde is bereikt; in rondes met limiet 1 is na 1 open placeholder een koopactie vereist, in bonusrondes met limiet 3 mogen eerst tot 3 verkopen worden gedaan.
 FR-050: League RuleProfile v2 is versieerbaar en valideert schema-gedreven op transferregels (default/bonusrondes), budget-cap, round-lock gedrag en benchcompositie.
@@ -450,6 +452,7 @@ Waarom zo:
 - [ ] WK mode laadt een eigen spelersdataset via `GET /api/players?mode=wk` (`data/players-wk.csv`) en Eredivisie blijft `data/players.csv` gebruiken
 - [ ] WK demo-draft spelers bevatten deelnemende landen en realistische waardes met bovengrens €4.5M voor topspelers
 - [ ] Transfermarkt is gepagineerd in zowel Eredivisie als WK mode (vorige/volgende + pagina-indicator boven én onder de tabel) en reset naar pagina 1 bij filter/sorteerwijzigingen
+- [ ] Algemene spelerspoule in transfermarkt toont een zichtbare kolom `Punten`; spelers zonder actuele WKCoach-waarde tonen daarin expliciet `0`
 - [ ] Instellingenpagina heeft een intuïtieve flow met staplabels, actieve-mode badge, niet-opgeslagen-wijzigingen status en een herstel-knop per actieve mode
 - [ ] Spelregelspagina (`/spelregels`) toont mode-switch + dynamische kernregels en impactsamenvatting op basis van actuele instellingen
 - [ ] Instellingen ondersteunt aanvullende vrije regels (titel/beschrijving/impact) en deze verschijnen automatisch op `/spelregels`
@@ -616,3 +619,4 @@ Waarom zo:
 - 2026-06-07: Database-backed Gori persistence toegevoegd naar RxAruba-patroon: centrale `persistent-json-store` met `gori_fantasy` namespace, Postgres tabel `gori_fantasy_state`, gescheiden keys per store/mode/manager en async API-routes voor draft, team-rosters, manager-state, league-config en round-locks; file-backed `/tmp`/data fallback blijft beschikbaar.
 - 2026-06-08: Definitieve actieve WKCoach spelerslijst opnieuw ingeladen in `data/players-wk.csv`: 1.244 selecteerbare spelers uit 48 landen; 10 door WKCoach als niet-actief gemarkeerde spelers zijn bewust uitgesloten van de fantasy pool.
 - 2026-06-08: Draft guardrails compleet gemaakt: server-side picks blokkeren nu ook land-stacking boven 2 spelers per land en eisen dat de volledige gekozen linie-mix binnen één toegestane formatie + bank past; geldige picks syncen direct naar My Team met automatische formatiekeuze en lineup/bank-vulling.
+- 2026-06-11: Mbappé hardcoded demo-punten verwijderd; transfermarkt-spelerspoule toont nu een expliciete `Punten`-kolom en spelers zonder actuele WKCoach-sync blijven zichtbaar op `0` totdat echte punten binnenkomen.
