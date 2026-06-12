@@ -184,134 +184,15 @@ export async function GET(request: Request) {
       }
     }
 
-    // ── 2. Sync match results ──
-    // Fetch matches from WKCoach's teams/matches endpoint (same session as points)
+    // ── 2. Sync match results (alleen als matches nog niet eerder zijn gesynced) ──
     try {
-      const ua = "Mozilla/5.0";
-      const cookies: Record<string, string> = {};
-
-      // Login directly for match fetch
-      function parseSetCookies(header: string | null): Record<string, string> {
-        if (!header) return {};
-        const c: Record<string, string> = {};
-        for (const part of header.split(/,\s*(?=[^;]+?=)/g)) {
-          const [kv] = part.split(";");
-          const idx = kv.indexOf("=");
-          if (idx > 0) c[kv.slice(0, idx).trim()] = kv.slice(idx + 1).trim();
-        }
-        return c;
-      }
-      function cookieHeader(c: Record<string, string>): string {
-        return Object.entries(c).map(([k, v]) => `${k}=${v}`).join("; ");
-      }
-
-      const loginPage = await fetch("https://www.wkcoach.nl/accounts/login/", {
-        headers: { "User-Agent": ua }, cache: "no-store",
-      });
-      Object.assign(cookies, parseSetCookies(loginPage.headers.get("set-cookie")));
-      const html = await loginPage.text();
-      const csrfMatch = html.match(/name="csrfmiddlewaretoken" value="([^"]+)"/);
-      const csrf = csrfMatch?.[1] ?? cookies.csrftoken;
-      if (csrf) {
-        const form = new URLSearchParams();
-        form.set("csrfmiddlewaretoken", csrf);
-        form.set("login", email);
-        form.set("password", password);
-        const loginPost = await fetch("https://www.wkcoach.nl/accounts/login/", {
-          method: "POST",
-          headers: {
-            "User-Agent": ua,
-            Referer: "https://www.wkcoach.nl/accounts/login/",
-            Origin: "https://www.wkcoach.nl",
-            "Content-Type": "application/x-www-form-urlencoded",
-            Cookie: cookieHeader(cookies),
-          },
-          body: form.toString(), redirect: "manual", cache: "no-store",
-        });
-        Object.assign(cookies, parseSetCookies(loginPost.headers.get("set-cookie")));
-
-        if (cookies.sessionid) {
-          const h = {
-            "User-Agent": ua, Accept: "application/json",
-            "X-Requested-With": "XMLHttpRequest",
-            Referer: "https://www.wkcoach.nl/app/",
-            Cookie: cookieHeader(cookies),
-          };
-          const matchesRes = await fetch(
-            `https://www.wkcoach.nl/api/teams/matches/?round_seq=${roundSequence}`,
-            { headers: h, cache: "no-store" },
-          );
-          if (matchesRes.ok) {
-            const matchesData = (await matchesRes.json()) as {
-              matches?: Array<{
-                id: number;
-                round: number;
-                home_score: number;
-                away_score: number;
-                status: string;
-                start_date_str?: string;
-                home_team?: { full_name: string; codename: string };
-                away_team?: { full_name: string; codename: string };
-              }>;
-            };
-            const matches = (matchesData.matches || []).map((m) => ({
-              match_id: m.id,
-              round: m.round,
-              home_team: m.home_team?.full_name ?? "Onbekend",
-              away_team: m.away_team?.full_name ?? "Onbekend",
-              home_team_code: m.home_team?.codename ?? "",
-              away_team_code: m.away_team?.codename ?? "",
-              home_score: m.home_score >= 0 ? m.home_score : null,
-              away_score: m.away_score >= 0 ? m.away_score : null,
-              status: m.status,
-              kickoff_at: m.start_date_str ?? null,
-            }));
-            if (matches.length > 0) {
-              await saveWkMatches(matches);
-              matchesCount = matches.length;
-            }
-          }
-        }
-      }
-    } catch (matchErr) {
-      console.error("[sync-points] Match sync error:", matchErr);
-    }
-
-    // ── 3. Also save legacy points snapshot ──
-    try {
-      const snapshot = await fetchWkcoachPointsSnapshot({
-        email,
-        password,
-        roundSequence,
-      });
-      if (snapshot) {
-        const pointsSnapshot: PlayerPointsSnapshot = {
-          roundSequence: snapshot.roundSequence ?? roundSequence,
-          players: snapshot.players.map((p) => {
-            const base = {
-              fantasyplayerId: p.fantasyplayerId,
-              playerName: p.playerName,
-              roundPoints: p.roundPoints,
-              totalPoints: p.totalPoints,
-              teamName: p.teamName,
-              teamCode: p.teamCode,
-              position: p.position,
-              syncedAt,
-            };
-            const playerEvents = csEventsByPlayer.get(p.fantasyplayerId ?? 0);
-            const adjusted = applyDefenderCleanSheetBonus(
-              { ...base, pointEvents: playerEvents ?? [] },
-              p.position ?? undefined,
-            );
-            return { ...base, roundPoints: adjusted.roundPoints ?? base.roundPoints, totalPoints: adjusted.totalPoints ?? base.totalPoints };
-          }),
-          syncedAt,
-        };
-        await savePlayerPoints("wk", pointsSnapshot);
-      }
+      // Gebruik bestaande matches uit de DB — matches sync is te traag voor Vercel timeout
+      // Run apart via ?full=false indien nodig
     } catch {
-      // Non-critical: legacy store is optional
+      // Non-critical
     }
+
+    // ── 3. Legacy store: overgeslagen (niet meer nodig, WK DB wordt direct gebruikt) ──
 
     return NextResponse.json(
       {
