@@ -8,7 +8,6 @@ import {
   saveWkMatches,
   saveWkPlayerPoints,
   saveWkPlayerEvents,
-  getWkPlayerPoints,
 } from "@/lib/wk-sync-store";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
 
@@ -45,72 +44,33 @@ function getCurrentOrUpcomingRound(): number {
 /**
  * Bepaalt of een sync nodig is:
  * - Force=true → altijd syncen
- * - Er is een wedstrijd bezig → syncen
- * - Er zijn gespeelde wedstrijden waarvan nog geen punten in de DB staan → syncen
+ * - Er is een wedstrijd bezig OF in de afgelopen 3 uur gespeeld → syncen
+ * - Anders → overslaan
  */
-async function shouldSync(round: number, force: boolean): Promise<{
+function shouldSyncNow(round: number, force: boolean): {
   shouldSync: boolean;
   reason: string;
-}> {
-  console.log("[shouldSync] start round=" + round + " force=" + force);
+} {
   if (force) return { shouldSync: true, reason: "forced" };
 
   const now = Date.now();
-  const MATCH_DURATION = 2.5 * 60 * 60 * 1000; // 2.5 uur
+  const MATCH_DURATION = 2.5 * 60 * 60 * 1000; // 2.5 uur (wedstrijd)
+  const POST_MATCH_WINDOW = 3 * 60 * 60 * 1000; // 3 uur na wedstrijd blijven syncen
 
-  // Check: is er een wedstrijd bezig in deze ronde?
   for (const fixture of WORLD_CUP_2026_FIXTURES) {
     if (fixture.round !== round) continue;
     const kickoff = new Date(fixture.kickoffAt).getTime();
-    const end = kickoff + MATCH_DURATION;
-    if (now >= kickoff && now <= end) {
-      return { shouldSync: true, reason: "wedstrijd bezig" };
+    const matchEnd = kickoff + MATCH_DURATION;
+    const syncDeadline = matchEnd + POST_MATCH_WINDOW;
+
+    // Wedstrijd is bezig of recent afgelopen → syncen
+    if (now >= kickoff && now <= syncDeadline) {
+      if (now <= matchEnd) return { shouldSync: true, reason: "wedstrijd bezig: " + fixture.home + " vs " + fixture.away };
+      return { shouldSync: true, reason: "sync window: " + fixture.home + " vs " + fixture.away };
     }
   }
 
-  // Check: zijn er gespeelde wedstrijden waarvan nog geen punten in DB?
-  console.log("[shouldSync] fetching DB players for round=" + round);
-  const dbPlayers = await getWkPlayerPoints(round);
-  console.log("[shouldSync] DB players count=" + dbPlayers.length);
-  if (dbPlayers.length === 0) {
-    // Nog helemaal geen data voor deze ronde → syncen
-    return { shouldSync: true, reason: "nog geen data voor ronde" };
-  }
-
-  // Check per gespeelde wedstrijd of er spelers met punten zijn
-  const now2 = Date.now();
-  for (const fixture of WORLD_CUP_2026_FIXTURES) {
-    if (fixture.round !== round) continue;
-    const kickoff = new Date(fixture.kickoffAt).getTime();
-    const end = kickoff + MATCH_DURATION;
-
-    // Wedstrijd is gespeeld (afgelopen)
-    if (now2 > end) {
-      const homeHasPoints = dbPlayers.some(
-        (p) => p.team_name === fixture.home && p.round_points > 0
-      );
-      const awayHasPoints = dbPlayers.some(
-        (p) => p.team_name === fixture.away && p.round_points > 0
-      );
-
-      if (!homeHasPoints || !awayHasPoints) {
-        return {
-          shouldSync: true,
-          reason: `punten missen: ${!homeHasPoints ? fixture.home : ""}${!homeHasPoints && !awayHasPoints ? " & " : ""}${!awayHasPoints ? fixture.away : ""}`,
-        };
-      }
-    }
-  }
-
-  // Check: zijn er überhaupt gespeelde wedstrijden deze ronde?
-  const hasPlayedMatches = WORLD_CUP_2026_FIXTURES.some(
-    (f) => f.round === round && now2 > new Date(f.kickoffAt).getTime() + MATCH_DURATION
-  );
-  if (!hasPlayedMatches) {
-    return { shouldSync: false, reason: "geen wedstrijden gespeeld deze ronde" };
-  }
-
-  return { shouldSync: false, reason: "alle punten al binnen" };
+  return { shouldSync: false, reason: "geen actieve of recente wedstrijden" };
 }
 
 export async function GET(request: Request) {
@@ -122,9 +82,9 @@ export async function GET(request: Request) {
     const force = url.searchParams.get("force") === "true";
 
     // Check of sync nodig is (force bypassed alles)
-    console.log("[sync-points] calling shouldSync round=" + roundSequence + " force=" + force);
-    const syncCheck = await shouldSync(roundSequence, force);
-    console.log("[sync-points] shouldSync result: " + JSON.stringify(syncCheck));
+    console.log("[sync-points] calling shouldSyncNow round=" + roundSequence + " force=" + force);
+    const syncCheck = shouldSyncNow(roundSequence, force);
+    console.log("[sync-points] shouldSyncNow result: " + JSON.stringify(syncCheck));
     if (!syncCheck.shouldSync) {
       return NextResponse.json(
         {
