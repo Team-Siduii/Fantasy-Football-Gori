@@ -182,6 +182,96 @@ export async function fetchWkcoachAllPlayers(params: {
   return [];
 }
 
+/** Player returned by the search_all endpoint — INCLUDES POINTS */
+export type WkcoachSearchPlayer = {
+  fantasyplayer_id: number;
+  first_name: string;
+  last_name: string;
+  name: string;
+  club_id: number;
+  club_codename: string;
+  club_fullname: string;
+  position: string;
+  position_nl: string;
+  value: number;
+  is_active: boolean;
+  round_points: number;
+  total_points: number;
+  has_played: boolean;
+  num_played: number;
+  performance_points: number;
+  average_points: number;
+  percentage_in_formations: number;
+};
+
+export type WkcoachSearchResponse = {
+  players: WkcoachSearchPlayer[];
+  pagination: { page: number; page_size: number; total_count: number; total_pages: number };
+};
+
+const WKCOACH_UA = "Mozilla/5.0";
+
+async function wkcoachLogin(email: string, password: string): Promise<Record<string, string> | null> {
+  const cookies: Record<string, string> = {};
+  const loginPage = await fetch("https://www.wkcoach.nl/accounts/login/", {
+    headers: { "User-Agent": WKCOACH_UA }, cache: "no-store",
+  });
+  if (!loginPage.ok) return null;
+  Object.assign(cookies, parseSetCookies(loginPage.headers.get("set-cookie")));
+  const html = await loginPage.text();
+  const csrfMatch = html.match(/name="csrfmiddlewaretoken" value="([^"]+)"/);
+  const csrf = csrfMatch?.[1] ?? cookies.csrftoken;
+  if (!csrf) return null;
+  const form = new URLSearchParams();
+  form.set("csrfmiddlewaretoken", csrf); form.set("login", email); form.set("password", password);
+  const lpRes = await fetch("https://www.wkcoach.nl/accounts/login/", {
+    method: "POST",
+    headers: {
+      "User-Agent": WKCOACH_UA, Referer: "https://www.wkcoach.nl/accounts/login/",
+      Origin: "https://www.wkcoach.nl", "Content-Type": "application/x-www-form-urlencoded",
+      Cookie: cookieHeader(cookies),
+    },
+    body: form.toString(), redirect: "manual", cache: "no-store",
+  });
+  Object.assign(cookies, parseSetCookies(lpRes.headers.get("set-cookie")));
+  return cookies.sessionid ? cookies : null;
+}
+
+/**
+ * Fetches all players WITH points from the search_all endpoint.
+ * This is the endpoint the "Zoek spelers" page uses — paginates to get all 1248 players.
+ */
+export async function fetchWkcoachAllPlayersWithPoints(params: {
+  email: string; password: string; roundSequence?: number; pageSize?: number;
+}): Promise<WkcoachSearchPlayer[]> {
+  const cookies = await wkcoachLogin(params.email, params.password);
+  if (!cookies) return [];
+  const seq = params.roundSequence ?? 1;
+  const pageSize = params.pageSize ?? 100;
+  const h = {
+    "User-Agent": WKCOACH_UA, Accept: "application/json",
+    "X-Requested-With": "XMLHttpRequest", Referer: "https://www.wkcoach.nl/app/",
+    Cookie: cookieHeader(cookies),
+  };
+  const firstRes = await fetch(
+    `https://www.wkcoach.nl/api/players/search_all/${seq}/?page=1&page_size=${pageSize}&sort=-total_points&ts=${Date.now()}`,
+    { headers: h, cache: "no-store" },
+  );
+  if (!firstRes.ok) return [];
+  const firstData = (await firstRes.json()) as WkcoachSearchResponse;
+  const all = [...(firstData.players ?? [])];
+  for (let p = 2; p <= (firstData.pagination?.total_pages ?? 1); p++) {
+    const r = await fetch(
+      `https://www.wkcoach.nl/api/players/search_all/${seq}/?page=${p}&page_size=${pageSize}&sort=-total_points&ts=${Date.now()}`,
+      { headers: h, cache: "no-store" },
+    );
+    if (!r.ok) break;
+    const d = (await r.json()) as WkcoachSearchResponse;
+    all.push(...(d.players ?? []));
+  }
+  return all;
+}
+
 export async function fetchWkcoachPointsSnapshot(params: {
   email: string;
   password: string;

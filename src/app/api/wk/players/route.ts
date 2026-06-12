@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchWkcoachAllPlayers } from "@/lib/data-sources/wkcoach";
+import { fetchWkcoachAllPlayers, fetchWkcoachAllPlayersWithPoints } from "@/lib/data-sources/wkcoach";
 import { loadPlayerPoints, type PlayerPointsEntry } from "@/lib/player-points-store";
 
 const NO_CACHE_HEADERS = {
@@ -29,9 +29,7 @@ export async function GET(request: Request) {
     const roundParam = url.searchParams.get("round");
     const roundSequence = roundParam ? Number(roundParam) : 1;
 
-    // 1. Try live WKCoach fetch
-    const email = process.env.WKCOACH_EMAIL;
-    const password = process.env.WKCOACH_PASSWORD;
+    // 1. Try live WKCoach fetch — prefer search_all (WITH points)
     let wkcoachPlayers: Array<{
       fantasyplayerId: number;
       name: string;
@@ -41,25 +39,66 @@ export async function GET(request: Request) {
       positionNl: string;
       value: number;
       isActive: boolean;
+      roundPoints: number;
+      totalPoints: number;
+      hasPlayed: boolean;
     }> = [];
+    let source = "csv";
+
+    const email = process.env.WKCOACH_EMAIL;
+    const password = process.env.WKCOACH_PASSWORD;
 
     if (email && password) {
-      const raw = await fetchWkcoachAllPlayers({
+      // Primary: search_all endpoint — includes round_points + total_points
+      const withPoints = await fetchWkcoachAllPlayersWithPoints({
         email,
         password,
         roundSequence,
+        pageSize: 100,
       });
 
-      wkcoachPlayers = raw.map((p) => ({
-        fantasyplayerId: p.fantasyplayer_id,
-        name: p.name,
-        teamName: p.club_fullname,
-        teamCode: p.club_codename,
-        position: p.position,
-        positionNl: p.position_nl,
-        value: p.value,
-        isActive: p.is_active,
-      }));
+      if (withPoints.length > 0) {
+        source = "wkcoach_search_all";
+        wkcoachPlayers = withPoints.map((p) => ({
+          fantasyplayerId: p.fantasyplayer_id,
+          name: p.name,
+          teamName: p.club_fullname,
+          teamCode: p.club_codename,
+          position: p.position,
+          positionNl: p.position_nl,
+          value: p.value,
+          isActive: p.is_active,
+          roundPoints: p.round_points,
+          totalPoints: p.total_points,
+          hasPlayed: p.has_played,
+        }));
+      }
+
+      // Fallback: players/all endpoint — no points
+      if (wkcoachPlayers.length === 0) {
+        const raw = await fetchWkcoachAllPlayers({
+          email,
+          password,
+          roundSequence,
+        });
+
+        if (raw.length > 0) {
+          source = "wkcoach_players_all";
+          wkcoachPlayers = raw.map((p) => ({
+            fantasyplayerId: p.fantasyplayer_id,
+            name: p.name,
+            teamName: p.club_fullname,
+            teamCode: p.club_codename,
+            position: p.position,
+            positionNl: p.position_nl,
+            value: p.value,
+            isActive: p.is_active,
+            roundPoints: 0,
+            totalPoints: 0,
+            hasPlayed: false,
+          }));
+        }
+      }
     }
 
     // 2. Fallback to CSV if WKCoach returned nothing
@@ -85,6 +124,9 @@ export async function GET(request: Request) {
               positionNl: cols[2].trim(),
               value,
               isActive: true,
+              roundPoints: 0,
+              totalPoints: 0,
+              hasPlayed: false,
             });
           }
         }
@@ -107,10 +149,17 @@ export async function GET(request: Request) {
       const key = normalizeName(p.name);
       const pp = pointsMap.get(key);
       return {
-        ...p,
-        punten: pp?.roundPoints ?? 0,
-        totaalPunten: pp?.totalPoints ?? 0,
-        hasPoints: pp != null,
+        fantasyplayerId: p.fantasyplayerId,
+        name: p.name,
+        teamName: p.teamName,
+        teamCode: p.teamCode,
+        position: p.position,
+        positionNl: p.positionNl,
+        value: p.value,
+        isActive: p.isActive,
+        roundPoints: p.roundPoints || (pp?.roundPoints ?? 0),
+        totalPoints: p.totalPoints || (pp?.totalPoints ?? 0),
+        hasPlayed: p.hasPlayed ?? false,
       };
     });
 
@@ -124,7 +173,7 @@ export async function GET(request: Request) {
         players,
         teams,
         positions,
-        source: wkcoachPlayers.length > 0 ? "wkcoach" : "csv",
+        source,
         pointsLastSync: pointsSnapshot?.syncedAt ?? null,
       },
       { headers: NO_CACHE_HEADERS },
