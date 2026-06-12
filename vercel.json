@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "src/app/api/wk/sync-points/route.ts": {
+      "maxDuration": 120
+    }
+  },
   "headers": [
     {
       "source": "/api/(.*)",
