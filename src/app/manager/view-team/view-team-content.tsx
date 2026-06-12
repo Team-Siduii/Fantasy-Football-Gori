@@ -102,7 +102,7 @@ export default function ViewTeamPageContent() {
   );
 
   const lineupPts = data.lineup.reduce((sum, p) => sum + (p.punten ?? 0), 0);
-  const benchPts = data.bench.reduce((sum, p) => sum + Math.ceil((p.punten ?? 0) / 2), 0);
+  const benchPts = data.bench.reduce((sum, p) => sum + (p.punten ?? 0), 0);
   const totalPoints = lineupPts + benchPts;
 
   return (
