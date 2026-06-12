@@ -8,6 +8,8 @@ import {
   saveWkMatches,
   saveWkPlayerPoints,
   saveWkPlayerEvents,
+  getWkPlayerEvents,
+  applyDefenderCleanSheetBonus,
 } from "@/lib/wk-sync-store";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
 
@@ -117,6 +119,7 @@ export async function GET(request: Request) {
     let playersCount = 0;
     let matchesCount = 0;
     let eventsCount = 0;
+    let csEventsByPlayer = new Map<number, Array<{ eventCode: string; points: number }>>();
 
     // ── 1. Sync player points via search_all (with point_events!) ──
     if (fullSync) {
@@ -169,6 +172,14 @@ export async function GET(request: Request) {
         if (allEvents.length > 0) {
           await saveWkPlayerEvents(allEvents);
           eventsCount = allEvents.length;
+        }
+
+        // Bouw een lookup van events per speler (voor CS bonus in legacy store)
+        csEventsByPlayer = new Map();
+        for (const ev of allEvents) {
+          const arr = csEventsByPlayer.get(ev.fantasyplayer_id) || [];
+          arr.push({ eventCode: ev.event_code, points: ev.points });
+          csEventsByPlayer.set(ev.fantasyplayer_id, arr);
         }
       }
     }
@@ -276,16 +287,24 @@ export async function GET(request: Request) {
       if (snapshot) {
         const pointsSnapshot: PlayerPointsSnapshot = {
           roundSequence: snapshot.roundSequence ?? roundSequence,
-          players: snapshot.players.map((p) => ({
-            fantasyplayerId: p.fantasyplayerId,
-            playerName: p.playerName,
-            roundPoints: p.roundPoints,
-            totalPoints: p.totalPoints,
-            teamName: p.teamName,
-            teamCode: p.teamCode,
-            position: p.position,
-            syncedAt,
-          })),
+          players: snapshot.players.map((p) => {
+            const base = {
+              fantasyplayerId: p.fantasyplayerId,
+              playerName: p.playerName,
+              roundPoints: p.roundPoints,
+              totalPoints: p.totalPoints,
+              teamName: p.teamName,
+              teamCode: p.teamCode,
+              position: p.position,
+              syncedAt,
+            };
+            const playerEvents = csEventsByPlayer.get(p.fantasyplayerId ?? 0);
+            const adjusted = applyDefenderCleanSheetBonus(
+              { ...base, pointEvents: playerEvents ?? [] },
+              p.position ?? undefined,
+            );
+            return { ...base, roundPoints: adjusted.roundPoints ?? base.roundPoints, totalPoints: adjusted.totalPoints ?? base.totalPoints };
+          }),
           syncedAt,
         };
         await savePlayerPoints("wk", pointsSnapshot);

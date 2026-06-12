@@ -327,3 +327,46 @@ export async function getLatestSyncRound(): Promise<number | null> {
   );
   return r.rows[0]?.max_round ?? null;
 }
+
+// ── Puntentelling vertaalslag ──────────────────────────────────────
+
+const DEFENDER_POSITIONS = ["DEF", "Verdediger", "Defender", "defender", "D"];
+
+function isDefender(position: string, positionNl?: string): boolean {
+  const normalized = position?.trim() ?? "";
+  const normalizedNl = positionNl?.trim() ?? "";
+  return DEFENDER_POSITIONS.includes(normalized) 
+      || DEFENDER_POSITIONS.includes(normalizedNl);
+}
+
+/** Verdedigers krijgen +2 extra punten per clean sheet (CS). */
+export function applyDefenderCleanSheetBonus<T extends { roundPoints?: number; totalPoints?: number; pointEvents?: Array<{ eventCode?: string; points: number }> }>(
+  item: T,
+  position?: string,
+  positionNl?: string,
+  externalEvents?: Array<{ eventCode?: string; points: number }>,
+): T {
+  if (!isDefender(position ?? "", positionNl)) return item;
+
+  const events = externalEvents ?? item.pointEvents ?? [];
+  const csEvents = events.filter(e => (e.eventCode ?? "") === "CS");
+  if (csEvents.length === 0) return item;
+
+  const bonusPerCs = 2;
+  const totalBonus = csEvents.length * bonusPerCs;
+
+  // Pas events aan
+  const adjustedEvents = events.map(e => {
+    if ((e.eventCode ?? "") === "CS") {
+      return { ...e, points: e.points + bonusPerCs };
+    }
+    return e;
+  });
+
+  return {
+    ...item,
+    roundPoints: (item.roundPoints ?? 0) + totalBonus,
+    totalPoints: (item.totalPoints ?? 0) + totalBonus,
+    pointEvents: externalEvents ? item.pointEvents : adjustedEvents,
+  };
+}
