@@ -96,7 +96,10 @@ export async function GET(request: Request) {
   };
 
   const lineup = state.lineupIds.map(enrichPlayer);
-  const bench = state.benchIds.map(enrichPlayer);
+  const bench = state.benchIds.map((id) => {
+    const p = enrichPlayer(id);
+    return { ...p, punten: Math.ceil(p.punten / 2) };
+  });
 
   // Budget
   const budgetCap = getTransferBudgetCapMillions(scope);

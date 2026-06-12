@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
 import { parsePlayerCsv } from "@/domain/player-csv";
-import { derivePlayerPoints } from "@/lib/player-derived";
+import { derivePlayerPoints, computeTeamSquadPoints } from "@/lib/player-derived";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "@/lib/auth-test-accounts";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 import { ensureAuthStateFromDb, getProfileByEmail } from "@/lib/auth-store";
@@ -54,10 +54,7 @@ export async function GET(request: Request) {
       async (preset) => {
         const managerEmail = preset.email.trim().toLowerCase();
         const state = await readManagerStatePersistent(scope, managerEmail);
-        const points = [...state.lineupIds, ...state.benchIds].reduce(
-          (sum, playerId) => sum + (pointsById.get(playerId) ?? 0),
-          0,
-        );
+        const points = computeTeamSquadPoints(state.lineupIds, state.benchIds, pointsById);
 
         return {
           email: managerEmail,

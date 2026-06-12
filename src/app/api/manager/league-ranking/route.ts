@@ -9,6 +9,7 @@ import { getLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
 import { readManagerStatePersistent, type ManagerStateScope } from "@/lib/manager-state";
 import { syncManagerTeamFromDraftRosterPersistent } from "@/lib/draft-manager-sync";
 import { loadPlayerPoints } from "@/lib/player-points-store";
+import { computeTeamSquadPoints } from "@/lib/player-derived";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
@@ -121,27 +122,34 @@ export async function GET(request: Request) {
     const teamName = profile?.teamName ?? "Onbekend team";
 
     const state = await readManagerStatePersistent(scope, managerEmail);
-    const squadIds = [...state.lineupIds, ...state.benchIds];
+    const lineupIds = state.lineupIds;
+    const benchIds = state.benchIds;
+    const squadIds = [...lineupIds, ...benchIds];
 
-    // Calculate points
-    let totalPoints = 0;
-    let currentRoundPoints = 0;
-    let squadCost = 0;
-
+    // Bouw punten-map per speler-ID
+    const roundPointsById = new Map<string, number>();
+    const totalPointsById = new Map<string, number>();
     for (const playerId of squadIds) {
       const player = playerById.get(playerId);
-      if (player) {
-        squadCost += player.prijs ?? 0;
-      }
-
-      // Lookup points by name
       if (player) {
         const key = normalizePlayerName(player.naam);
         const pts = playerPointsMap.get(key);
         if (pts) {
-          totalPoints += pts.total;
-          currentRoundPoints += pts.round;
+          roundPointsById.set(playerId, pts.round);
+          totalPointsById.set(playerId, pts.total);
         }
+      }
+    }
+
+    // Calculate points (bench = helft, afgerond naar boven)
+    const currentRoundPoints = computeTeamSquadPoints(lineupIds, benchIds, roundPointsById);
+    const totalPoints = computeTeamSquadPoints(lineupIds, benchIds, totalPointsById);
+
+    let squadCost = 0;
+    for (const playerId of squadIds) {
+      const player = playerById.get(playerId);
+      if (player) {
+        squadCost += player.prijs ?? 0;
       }
     }
 

@@ -1234,7 +1234,11 @@ export default function ManagerMyTeamPage() {
             </div>
             <div className="team-topbar__metric team-topbar__metric--center">
               <span>Totaal punten</span>
-              <strong>{state.lineup.reduce((sum, player) => sum + player.punten, 0)}</strong>
+              <strong>{(() => {
+                const lineupPts = state.lineup.reduce((sum, p) => sum + p.punten, 0);
+                const benchPts = state.bench.reduce((sum, p) => sum + Math.ceil(p.punten / 2), 0);
+                return lineupPts + benchPts;
+              })()}</strong>
             </div>
             <label className="formation-select team-topbar__formation">
               <span>Formatie</span>
@@ -1322,7 +1326,7 @@ export default function ManagerMyTeamPage() {
                   club={cardMeta.countryCode}
                   name={player.naam}
                   pointsLabel={cardMeta.priceLabel}
-                  scoreBadge={!player.id.startsWith("open-") ? String(player.punten) : null}
+                  scoreBadge={!player.id.startsWith("open-") ? String(Math.ceil(player.punten / 2)) : null}
                   className={[
                     "player-card--bench-row",
                     pendingSellId === player.id ? "player-card--sell" : "",
