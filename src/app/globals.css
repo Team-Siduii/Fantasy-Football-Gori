@@ -2458,7 +2458,7 @@ select {
 .view-team-subtitle__manager {
   font-weight: 600;
   font-size: 0.92rem;
-  color: rgba(255, 255, 255, 0.92);
+  color: #3b4a63;
   letter-spacing: 0.01em;
 }
 
@@ -2466,15 +2466,14 @@ select {
   display: inline-flex;
   align-items: center;
   padding: 0.1rem 0.48rem;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(10, 61, 145, 0.1);
+  border: 1px solid rgba(10, 61, 145, 0.22);
   border-radius: 999px;
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #fff;
-  backdrop-filter: blur(4px);
+  color: var(--brand);
 }
 
 /* ============================================
