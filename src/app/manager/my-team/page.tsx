@@ -558,6 +558,8 @@ export default function ManagerMyTeamPage() {
   const [pendingSellId, setPendingSellId] = useState<string | null>(null);
   const [pendingBuyId, setPendingBuyId] = useState<string | null>(null);
   const [transferMessage, setTransferMessage] = useState("");
+  const [allTeamPlayerIds, setAllTeamPlayerIds] = useState<Set<string>>(new Set());
+  const [transfersLocked, setTransfersLocked] = useState(false);
 
   const [pendingSwap, setPendingSwap] = useState<{ zone: ZoneName; index: number; playerId: string } | null>(null);
 
@@ -584,10 +586,13 @@ export default function ManagerMyTeamPage() {
           [...new Set(activeFixtures.map((fixture) => fixture.round))].sort((a, b) => a - b)[0] ??
           1;
 
-        const [playersResponse, managerStateResponse, leagueConfigResponse] = await Promise.all([
+        const [playersResponse, managerStateResponse, leagueConfigResponse, ownedIdsResponse] = await Promise.all([
           fetch(`/api/players?mode=${isWkMode ? "wk" : "eredivisie"}&_t=${Date.now()}`, { cache: "no-store" }),
           fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}&roundNumber=${initialRound}&_t=${Date.now()}`, { cache: "no-store" }),
           fetch(`/api/admin/league-config?mode=${isWkMode ? "wk" : "eredivisie"}&_t=${Date.now()}`, { cache: "no-store" }),
+          isWkMode
+            ? fetch(`/api/wk/owned-player-ids?_t=${Date.now()}`, { cache: "no-store" })
+            : Promise.resolve({ ok: true, json: async () => ({ ids: [] }) }),
         ]);
 
         if (!playersResponse.ok) {
@@ -617,6 +622,18 @@ export default function ManagerMyTeamPage() {
 
         setAllPlayers(nextPlayers);
         setFormation(initialFormation);
+
+        // Filter out players owned by ANY team from the free agent pool
+        if (ownedIdsResponse.ok) {
+          const ownedData = (await ownedIdsResponse.json()) as { ids: number[] };
+          setAllTeamPlayerIds(new Set(ownedData.ids.map(String)));
+        }
+
+        // Lock transfers if the current round has already started
+        const now = Date.now();
+        const currentRoundFixtures = activeFixtures.filter((f) => f.round === initialRound);
+        const roundStarted = currentRoundFixtures.some((f) => new Date(f.kickoffAt).getTime() <= now);
+        setTransfersLocked(roundStarted);
 
         const managerLineupIds = managerData.state?.lineupIds ?? [];
         const managerBenchIds = managerData.state?.benchIds ?? [];
@@ -781,8 +798,8 @@ export default function ManagerMyTeamPage() {
 
   const marketPlayers = useMemo(() => {
     const { lineupIds, benchIds } = toPersistedIds(state);
-    return buildMarketPlayers(allPlayers, lineupIds, benchIds);
-  }, [allPlayers, state]);
+    return buildMarketPlayers(allPlayers, lineupIds, benchIds, allTeamPlayerIds);
+  }, [allPlayers, state, allTeamPlayerIds]);
 
   const availableClubs = useMemo(() => {
     return Array.from(new Set(marketPlayers.map((player) => player.club))).sort();
@@ -1339,6 +1356,12 @@ export default function ManagerMyTeamPage() {
         <section className="card col-12" id="transfermarkt">
           <h2>Transfermarkt</h2>
 
+          {transfersLocked ? (
+            <div className="alert alert-warning" data-testid="transfers-locked-banner">
+              ⏸️ <strong>Transfers gesloten.</strong> De speelronde is bezig. Transfers zijn alleen mogelijk tussen de speelrondes.
+            </div>
+          ) : null}
+
           <div className="grid transfer-controls">
             <label className="col-4">
               1) Verkoop speler
@@ -1351,7 +1374,7 @@ export default function ManagerMyTeamPage() {
                   setSellSelection("");
                 }}
                 data-testid="sell-player-select"
-                disabled={!canSellMore}
+                disabled={!canSellMore || transfersLocked}
               >
                 <option value="">Kies speler om te verkopen</option>
                 {squadPlayers.map((player) => (
@@ -1377,6 +1400,7 @@ export default function ManagerMyTeamPage() {
                 value={selectedPosition}
                 onChange={(event) => setSelectedPosition(event.target.value)}
                 data-testid="transfer-position"
+                disabled={transfersLocked}
               >
                 <option value="ALL">Alle posities</option>
                 <option value="GK">GK</option>
@@ -1388,7 +1412,7 @@ export default function ManagerMyTeamPage() {
 
             <label className="col-3">
               {clubLabel}
-              <select value={selectedClub} onChange={(event) => setSelectedClub(event.target.value)} data-testid="transfer-club">
+              <select value={selectedClub} onChange={(event) => setSelectedClub(event.target.value)} data-testid="transfer-club" disabled={transfersLocked}>
                 <option value="ALL">Alle {clubsLabel}</option>
                 {availableClubs.map((club) => (
                   <option key={club} value={club}>
@@ -1405,6 +1429,7 @@ export default function ManagerMyTeamPage() {
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Bijv. Veerman"
                 data-testid="transfer-search"
+                disabled={transfersLocked}
               />
             </label>
 
@@ -1418,6 +1443,7 @@ export default function ManagerMyTeamPage() {
                 value={maxPrice}
                 onChange={(event) => setMaxPrice(Number(event.target.value))}
                 data-testid="transfer-price-slider"
+                disabled={transfersLocked}
               />
             </label>
 
@@ -1519,7 +1545,7 @@ export default function ManagerMyTeamPage() {
                       <button
                         type="button"
                         onClick={() => handlePickIncoming(item)}
-                        disabled={openSlots.length === 0}
+                        disabled={openSlots.length === 0 || transfersLocked}
                         data-testid={`transfer-pick-${index}`}
                       >
                         Koop

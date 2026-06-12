@@ -11,9 +11,17 @@ function byId(players: PlayerRecord[]) {
   return new Map(players.map((player) => [player.id, player]));
 }
 
-export function buildMarketPlayers<T extends PlayerRecord>(players: T[], lineupIds: string[], benchIds: string[]): T[] {
+export function buildMarketPlayers<T extends PlayerRecord>(
+  players: T[],
+  lineupIds: string[],
+  benchIds: string[],
+  allTeamPlayerIds?: Set<string>,
+): T[] {
   const squadIds = new Set([...lineupIds, ...benchIds]);
-  return players.filter((player) => !squadIds.has(player.id));
+  if (allTeamPlayerIds && allTeamPlayerIds.size > 0) {
+    for (const id of allTeamPlayerIds) squadIds.add(id);
+  }
+  return players.filter((player) => !squadIds.has(String(player.id)));
 }
 
 export function canPickIncomingPlayer(state: TransferState): boolean {
