@@ -5,14 +5,10 @@ export type EnhancedPlayer = PlayerRecord & {
 };
 
 export function derivePlayerPoints(player: PlayerRecord & { punten?: number }): number {
-  // Als de speler al punten heeft (vanuit API met stored points), gebruik die
-  if (typeof player.punten === "number" && player.punten > 0) {
+  // Als de speler al punten heeft (vanuit API met stored points), gebruik die ook als dat 0 is.
+  if (typeof player.punten === "number") {
     return player.punten;
   }
-
-  // Fallback: bekende spelers (tijdelijk, totdat punten sync actief is)
-  const name = player.naam.toLowerCase();
-  if (name.includes("mbapp")) return 12;
 
   return 0;
 }
