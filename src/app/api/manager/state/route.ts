@@ -16,22 +16,34 @@ function getScopeFromRequest(request: Request): ManagerStateScope {
 
 export async function GET(request: Request) {
   if (!(await isAuthenticatedSession())) {
+    console.log("[STATE-API] Unauthenticated");
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
 
   const managerKey = await getAuthenticatedEmail();
   const scope = getScopeFromRequest(request);
+  console.log("[STATE-API]", managerKey, "scope:", scope);
+  
   if (managerKey) {
-    await repairManagerTeamFromDraftArtifactsPersistent({ managerEmail: managerKey, scope });
+    try {
+      const repairResult = await repairManagerTeamFromDraftArtifactsPersistent({ managerEmail: managerKey, scope });
+      console.log("[STATE-API] Repair result:", repairResult ? `ok (${repairResult.state?.lineupIds?.length || 0}+${repairResult.state?.benchIds?.length || 0})` : "null");
+    } catch (e: any) {
+      console.error("[STATE-API] Repair error:", e?.message || e);
+    }
   }
   const roundNumberParam = new URL(request.url).searchParams.get("roundNumber");
   const roundNumber = roundNumberParam ? Number(roundNumberParam) : null;
 
   if (roundNumber && Number.isInteger(roundNumber) && roundNumber > 0) {
-    return NextResponse.json({ state: await readManagerStateForRoundPersistent(roundNumber, scope, managerKey) }, { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } });
+    const state = await readManagerStateForRoundPersistent(roundNumber, scope, managerKey);
+    console.log("[STATE-API] Round", roundNumber, "lineup:", state.lineupIds?.length, "bench:", state.benchIds?.length);
+    return NextResponse.json({ state }, { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } });
   }
 
-  return NextResponse.json({ state: await readManagerStatePersistent(scope, managerKey) }, { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } });
+  const state = await readManagerStatePersistent(scope, managerKey);
+  console.log("[STATE-API] Final lineup:", state.lineupIds?.length, "bench:", state.benchIds?.length);
+  return NextResponse.json({ state }, { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } });
 }
 
 export async function PUT(request: Request) {
