@@ -186,11 +186,29 @@ export async function saveWkPlayerPoints(
 
   const client = await p.connect();
   try {
-    await client.query("BEGIN");
-    for (const pl of players) {
+    // Batch insert: 50 players per chunk to avoid parameter limit
+    const CHUNK = 50;
+    for (let i = 0; i < players.length; i += CHUNK) {
+      const chunk = players.slice(i, i + CHUNK);
+      const values: unknown[] = [];
+      const placeholders: string[] = [];
+      
+      for (let j = 0; j < chunk.length; j++) {
+        const pl = chunk[j];
+        const base = j * 12;
+        values.push(
+          pl.fantasyplayer_id, pl.round, pl.name, pl.team_name,
+          pl.team_code, pl.position, pl.position_nl, pl.value,
+          pl.round_points, pl.total_points, pl.has_played, pl.num_played,
+        );
+        placeholders.push(
+          `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8},$${base + 9},$${base + 10},$${base + 11},$${base + 12},NOW())`,
+        );
+      }
+
       await client.query(
         `INSERT INTO wk_player_points (fantasyplayer_id, round, name, team_name, team_code, position, position_nl, value, round_points, total_points, has_played, num_played, synced_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW())
+         VALUES ${placeholders.join(", ")}
          ON CONFLICT (fantasyplayer_id, round) DO UPDATE SET
            name = EXCLUDED.name,
            team_name = EXCLUDED.team_name,
@@ -203,13 +221,9 @@ export async function saveWkPlayerPoints(
            has_played = EXCLUDED.has_played,
            num_played = EXCLUDED.num_played,
            synced_at = NOW()`,
-        [pl.fantasyplayer_id, pl.round, pl.name, pl.team_name, pl.team_code, pl.position, pl.position_nl, pl.value, pl.round_points, pl.total_points, pl.has_played, pl.num_played],
+        values,
       );
     }
-    await client.query("COMMIT");
-  } catch (e) {
-    await client.query("ROLLBACK");
-    throw e;
   } finally {
     client.release();
   }
@@ -229,23 +243,32 @@ export async function saveWkPlayerEvents(
 
   const client = await p.connect();
   try {
-    await client.query("BEGIN");
     // Delete old events for this round before re-inserting
     const rounds = [...new Set(events.map((e) => e.round))];
     for (const r of rounds) {
       await client.query("DELETE FROM wk_player_events WHERE round = $1", [r]);
     }
-    for (const ev of events) {
+
+    // Batch insert: 100 events per chunk
+    const CHUNK = 100;
+    for (let i = 0; i < events.length; i += CHUNK) {
+      const chunk = events.slice(i, i + CHUNK);
+      const values: unknown[] = [];
+      const placeholders: string[] = [];
+      
+      for (let j = 0; j < chunk.length; j++) {
+        const ev = chunk[j];
+        const base = j * 5;
+        values.push(ev.fantasyplayer_id, ev.round, ev.event_code, ev.points, ev.minute ?? null);
+        placeholders.push(`($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},NOW())`);
+      }
+
       await client.query(
         `INSERT INTO wk_player_events (fantasyplayer_id, round, event_code, points, minute, synced_at)
-         VALUES ($1,$2,$3,$4,$5,NOW())`,
-        [ev.fantasyplayer_id, ev.round, ev.event_code, ev.points, ev.minute ?? null],
+         VALUES ${placeholders.join(", ")}`,
+        values,
       );
     }
-    await client.query("COMMIT");
-  } catch (e) {
-    await client.query("ROLLBACK");
-    throw e;
   } finally {
     client.release();
   }
