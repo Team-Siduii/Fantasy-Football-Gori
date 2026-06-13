@@ -117,31 +117,52 @@ export async function GET(request: Request) {
 
     // ── 1. Sync player points via search_all (with point_events!) ──
     if (fullSync) {
-      const allPlayers = await fetchWkcoachAllPlayersWithPoints({
-        email,
-        password,
-        roundSequence,
-        pageSize: 1500, // single page = under Vercel 10s timeout
-      });
+      console.log("[sync-points] Starting WKCoach API fetch...");
+      let allPlayers: Awaited<ReturnType<typeof fetchWkcoachAllPlayersWithPoints>>;
+      try {
+        allPlayers = await fetchWkcoachAllPlayersWithPoints({
+          email,
+          password,
+          roundSequence,
+          pageSize: 1500,
+        });
+        console.log("[sync-points] WKCoach API fetch done: " + allPlayers.length + " players");
+      } catch (fetchErr) {
+        console.error("[sync-points] WKCoach API fetch FAILED:", String(fetchErr));
+        return NextResponse.json(
+          { error: "WKCoach API fetch failed", details: String(fetchErr) },
+          { status: 502, headers: NO_CACHE_HEADERS },
+        );
+      }
 
       if (allPlayers.length > 0) {
         // Save player points
-        await saveWkPlayerPoints(
-          allPlayers.map((p) => ({
-            fantasyplayer_id: p.fantasyplayer_id,
-            round: roundSequence,
-            name: p.name,
-            team_name: p.club_fullname,
-            team_code: p.club_codename,
-            position: p.position,
-            position_nl: p.position_nl,
-            value: p.value,
-            round_points: p.round_points,
-            total_points: p.total_points,
-            has_played: p.has_played,
-            num_played: p.num_played,
-          })),
-        );
+        console.log("[sync-points] Saving " + allPlayers.length + " player points...");
+        try {
+          await saveWkPlayerPoints(
+            allPlayers.map((p) => ({
+              fantasyplayer_id: p.fantasyplayer_id,
+              round: roundSequence,
+              name: p.name,
+              team_name: p.club_fullname,
+              team_code: p.club_codename,
+              position: p.position,
+              position_nl: p.position_nl,
+              value: p.value,
+              round_points: p.round_points,
+              total_points: p.total_points,
+              has_played: p.has_played,
+              num_played: p.num_played,
+            })),
+          );
+          console.log("[sync-points] Player points saved");
+        } catch (dbErr) {
+          console.error("[sync-points] DB save points FAILED:", String(dbErr));
+          return NextResponse.json(
+            { error: "Database save failed (points)", details: String(dbErr) },
+            { status: 502, headers: NO_CACHE_HEADERS },
+          );
+        }
         playersCount = allPlayers.length;
 
         // Save player events (point breakdown)
@@ -164,22 +185,22 @@ export async function GET(request: Request) {
           }
         }
         if (allEvents.length > 0) {
-          await saveWkPlayerEvents(allEvents);
+          console.log("[sync-points] Saving " + allEvents.length + " events...");
+          try {
+            await saveWkPlayerEvents(allEvents);
+            console.log("[sync-points] Events saved");
+          } catch (evtErr) {
+            console.error("[sync-points] DB save events FAILED:", String(evtErr));
+            return NextResponse.json(
+              { error: "Database save failed (events)", details: String(evtErr) },
+              { status: 502, headers: NO_CACHE_HEADERS },
+            );
+          }
           eventsCount = allEvents.length;
         }
 
       }
     }
-
-    // ── 2. Sync match results (alleen als matches nog niet eerder zijn gesynced) ──
-    try {
-      // Gebruik bestaande matches uit de DB — matches sync is te traag voor Vercel timeout
-      // Run apart via ?full=false indien nodig
-    } catch {
-      // Non-critical
-    }
-
-    // ── 3. Legacy store: overgeslagen (niet meer nodig, WK DB wordt direct gebruikt) ──
 
     return NextResponse.json(
       {
