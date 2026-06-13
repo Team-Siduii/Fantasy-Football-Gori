@@ -16,7 +16,7 @@ import { byPriceDesc, enrichPlayers, type EnhancedPlayer } from "@/lib/player-de
 import { getCountryFlagImageUrl, withCountryFlag } from "@/lib/country-flags";
 import { getPlayerCardMeta } from "@/lib/player-card-display";
 import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
-import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
+import { WORLD_CUP_2026_FIXTURES, isRoundActive } from "@/lib/world-cup-schedule";
 
 type Position = "GK" | "DEF" | "MID" | "FWD";
 
@@ -656,11 +656,8 @@ export default function ManagerMyTeamPage() {
           setAllTeamPlayerIds(new Set(ownedData.ids.map(String)));
         }
 
-        // Lock transfers if the current round has already started
-        const now = Date.now();
-        const currentRoundFixtures = activeFixtures.filter((f) => f.round === initialRound);
-        const roundStarted = currentRoundFixtures.some((f) => new Date(f.kickoffAt).getTime() <= now);
-        setTransfersLocked(roundStarted);
+        // Lock transfers + swaps tijdens een actieve speelronde
+        setTransfersLocked(isRoundActive(initialRound));
 
         const managerLineupIds = managerData.state?.lineupIds ?? [];
         const managerBenchIds = managerData.state?.benchIds ?? [];
@@ -755,6 +752,7 @@ export default function ManagerMyTeamPage() {
         suppressNextPersist.current = true;
         setFormation(hydratedState.formation);
         setState(hydratedState.state);
+        setTransfersLocked(isRoundActive(selectedRound));
 
         if (transferResponse.ok) {
           const transferData = (await transferResponse.json()) as TransferRoundResponse;
@@ -1184,6 +1182,8 @@ export default function ManagerMyTeamPage() {
   }
 
   function handleSwapClick(zone: ZoneName, index: number) {
+    if (transfersLocked) return;
+
     const clickedPlayer = state[zone][index];
     if (!clickedPlayer || clickedPlayer.id.startsWith("open-")) return;
 
@@ -1340,7 +1340,7 @@ export default function ManagerMyTeamPage() {
                         onDragOver={(event) => event.preventDefault()}
                         onDrop={onDrop("lineup", lineupIndex)}
                       >
-                        {!player.id.startsWith("open-") ? (
+                        {!player.id.startsWith("open-") && !transfersLocked ? (
                           <button
                             type="button"
                             className="swap-button"
@@ -1389,7 +1389,7 @@ export default function ManagerMyTeamPage() {
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={onDrop("bench", benchIndex)}
                 >
-                  {!player.id.startsWith("open-") ? (
+                  {!player.id.startsWith("open-") && !transfersLocked ? (
                     <button
                       type="button"
                       className="swap-button"

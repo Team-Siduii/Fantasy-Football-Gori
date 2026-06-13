@@ -8,6 +8,13 @@ import {
 } from "@/lib/manager-state";
 import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
 import { repairManagerTeamFromDraftArtifactsPersistent } from "@/lib/draft-manager-sync";
+import { isRoundActive } from "@/lib/world-cup-schedule";
+
+const NO_CACHE_HEADERS = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+  Pragma: "no-cache",
+  Expires: "0",
+};
 
 function getScopeFromRequest(request: Request): ManagerStateScope {
   const mode = new URL(request.url).searchParams.get("mode");
@@ -81,6 +88,15 @@ export async function PUT(request: Request) {
 
   const scope = getScopeFromRequest(request);
 
+  // Blokkeer lineage/bank-wijzigingen tijdens een actieve speelronde
+  const hasRoundNumber = Number.isInteger(body.roundNumber) && (body.roundNumber as number) > 0;
+  if (hasRoundNumber && isRoundActive(body.roundNumber as number)) {
+    return NextResponse.json(
+      { error: "Opstellen is gesloten — de speelronde is bezig" },
+      { status: 423, headers: NO_CACHE_HEADERS },
+    );
+  }
+
   const partialState = {
     formation: body.formation,
     lineupIds: body.lineupIds,
@@ -90,8 +106,7 @@ export async function PUT(request: Request) {
     pendingBuyId: body.pendingBuyId === null ? null : body.pendingBuyId,
   };
 
-  const hasRoundNumber = Number.isInteger(body.roundNumber) && (body.roundNumber as number) > 0;
-
+  // hasRoundNumber al bepaald in de lock-check hierboven
   const state = hasRoundNumber
     ? await saveManagerStateForRoundPersistent(
         body.roundNumber as number,

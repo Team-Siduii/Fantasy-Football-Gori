@@ -108,3 +108,28 @@ export const WORLD_CUP_2026_FIXTURES: SeasonFixture[] = [
   { round: 8, dateLabel: "Zaterdag 18 juli 2026", kickoff: "23:00", kickoffAt: "2026-07-18T23:00:00+02:00", home: "Verliezer duel 101", away: "Verliezer duel 102" },
   { round: 9, dateLabel: "Zondag 19 juli 2026", kickoff: "21:00", kickoffAt: "2026-07-19T21:00:00+02:00", home: "Winnaar duel 101", away: "Winnaar duel 102" },
 ];
+
+/**
+ * Bepaalt of een speelronde "actief" is (wedstrijden bezig of net afgelopen).
+ * Een ronde is actief zodra de eerste wedstrijd is afgetrapt en blijft actief
+ * tot 6 uur na de geschatte eindtijd van de laatste wedstrijd.
+ *
+ * Tijdens een actieve ronde mogen managers NIET wisselen (geen basis↔bank swaps).
+ */
+export function isRoundActive(roundNumber: number, now: Date = new Date()): boolean {
+  const nowMs = now.getTime();
+  const MATCH_DURATION = 2.5 * 60 * 60 * 1000; // 2.5 uur
+  const POST_MATCH_WINDOW = 6 * 60 * 60 * 1000; // 6 uur
+
+  const roundFixtures = WORLD_CUP_2026_FIXTURES.filter((f) => f.round === roundNumber);
+  if (roundFixtures.length === 0) return false;
+
+  // Eerste aftrap van de ronde
+  const firstKickoff = Math.min(...roundFixtures.map((f) => new Date(f.kickoffAt).getTime()));
+
+  // Laatste wedstrijd eindigt (geschat) + 6u window
+  const lastEnd = Math.max(...roundFixtures.map((f) => new Date(f.kickoffAt).getTime() + MATCH_DURATION));
+  const lockEnd = lastEnd + POST_MATCH_WINDOW;
+
+  return nowMs >= firstKickoff && nowMs < lockEnd;
+}
