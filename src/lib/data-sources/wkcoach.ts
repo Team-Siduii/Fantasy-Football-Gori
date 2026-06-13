@@ -233,11 +233,17 @@ export type WkcoachSearchResponse = {
 const WKCOACH_UA = "Mozilla/5.0";
 const FETCH_TIMEOUT_MS = 25_000;
 
+function fetchWithTimeout(url: string | URL, init?: RequestInit, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const signal = controller.signal;
+  return fetch(url, { ...init, signal }).finally(() => clearTimeout(timer));
+}
+
 async function wkcoachLogin(email: string, password: string): Promise<Record<string, string> | null> {
   const cookies: Record<string, string> = {};
-  const loginPage = await fetch("https://www.wkcoach.nl/accounts/login/", {
+  const loginPage = await fetchWithTimeout("https://www.wkcoach.nl/accounts/login/", {
     headers: { "User-Agent": WKCOACH_UA }, cache: "no-store",
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
   if (!loginPage.ok) return null;
   Object.assign(cookies, parseSetCookies(loginPage.headers.get("set-cookie")));
@@ -247,7 +253,7 @@ async function wkcoachLogin(email: string, password: string): Promise<Record<str
   if (!csrf) return null;
   const form = new URLSearchParams();
   form.set("csrfmiddlewaretoken", csrf); form.set("login", email); form.set("password", password);
-  const lpRes = await fetch("https://www.wkcoach.nl/accounts/login/", {
+  const lpRes = await fetchWithTimeout("https://www.wkcoach.nl/accounts/login/", {
     method: "POST",
     headers: {
       "User-Agent": WKCOACH_UA, Referer: "https://www.wkcoach.nl/accounts/login/",
@@ -255,7 +261,6 @@ async function wkcoachLogin(email: string, password: string): Promise<Record<str
       Cookie: cookieHeader(cookies),
     },
     body: form.toString(), redirect: "manual", cache: "no-store",
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
   Object.assign(cookies, parseSetCookies(lpRes.headers.get("set-cookie")));
   return cookies.sessionid ? cookies : null;
@@ -277,17 +282,17 @@ export async function fetchWkcoachAllPlayersWithPoints(params: {
     "X-Requested-With": "XMLHttpRequest", Referer: "https://www.wkcoach.nl/app/",
     Cookie: cookieHeader(cookies),
   };
-  const firstRes = await fetch(
+  const firstRes = await fetchWithTimeout(
     `https://www.wkcoach.nl/api/players/search_all/${seq}/?page=1&page_size=${pageSize}&sort=-total_points&ts=${Date.now()}`,
-    { headers: h, cache: "no-store", signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
+    { headers: h, cache: "no-store" },
   );
   if (!firstRes.ok) return [];
   const firstData = (await firstRes.json()) as WkcoachSearchResponse;
   const all = [...(firstData.players ?? [])];
   for (let p = 2; p <= (firstData.pagination?.total_pages ?? 1); p++) {
-    const r = await fetch(
+    const r = await fetchWithTimeout(
       `https://www.wkcoach.nl/api/players/search_all/${seq}/?page=${p}&page_size=${pageSize}&sort=-total_points&ts=${Date.now()}`,
-      { headers: h, cache: "no-store", signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
+      { headers: h, cache: "no-store" },
     );
     if (!r.ok) break;
     const d = (await r.json()) as WkcoachSearchResponse;
