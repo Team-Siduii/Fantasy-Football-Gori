@@ -7,10 +7,35 @@ const NO_CACHE_HEADERS = {
   "Expires": "0",
 };
 
+type PlayerPayload = {
+  fantasyplayer_id: number;
+  name: string;
+  team_name: string;
+  team_code: string;
+  position: string;
+  position_nl: string;
+  value: number;
+  round_points: number;
+  total_points: number;
+  has_played: boolean;
+  num_played: number;
+};
+
+type EventPayload = {
+  fantasyplayer_id: number;
+  event_code: string;
+  points: number;
+  minute?: number;
+};
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { round, players, events } = body;
+    const { round, players, events } = body as {
+      round: number;
+      players: PlayerPayload[];
+      events?: EventPayload[];
+    };
 
     if (!round || !Array.isArray(players)) {
       return NextResponse.json(
@@ -21,7 +46,7 @@ export async function POST(request: Request) {
 
     // Save player points
     await saveWkPlayerPoints(
-      players.map((p: any) => ({
+      players.map((p) => ({
         fantasyplayer_id: p.fantasyplayer_id,
         round,
         name: p.name,
@@ -38,9 +63,9 @@ export async function POST(request: Request) {
     );
 
     // Save player events
-    if (Array.isArray(events) && events.length > 0) {
+    if (events && events.length > 0) {
       await saveWkPlayerEvents(
-        events.map((e: any) => ({
+        events.map((e) => ({
           fantasyplayer_id: e.fantasyplayer_id,
           round,
           event_code: e.event_code,
