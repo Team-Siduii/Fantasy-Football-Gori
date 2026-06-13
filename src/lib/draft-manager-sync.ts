@@ -336,6 +336,14 @@ export async function syncPlayerIdsToManagerTeamPersistent(input: {
   }
 
   const current = await readManagerStatePersistent(input.scope, managerEmail);
+
+  // Alleen initialiseren als de state leeg is (nog geen spelers).
+  // Zodra een manager spelers heeft (uit draft of transfers) NIET overschrijven.
+  const currentIds = [...current.lineupIds, ...current.benchIds];
+  if (currentIds.length > 0) {
+    return { managerEmail, state: current, changed: false };
+  }
+
   const state = await saveManagerStatePersistent(
     buildManagerTeamStateWithRoundSnapshots(input.playerIds, current, input.playerCatalog),
     input.scope,
