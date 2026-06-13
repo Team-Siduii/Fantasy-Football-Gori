@@ -5,6 +5,7 @@ import { parsePlayerCsv } from "@/domain/player-csv";
 import { bootstrapPlayersFromDefaultCsv } from "@/lib/player-bootstrap";
 import { listPlayers } from "@/lib/player-store";
 import { getWkPlayerPoints, getWkPlayerEvents, applyDefenderCleanSheetBonus } from "@/lib/wk-sync-store";
+import { getLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
 
 const NO_CACHE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -32,6 +33,15 @@ export async function GET(request: Request) {
     // Haal punten en events uit onze eigen WK database
     const dbPlayers = await getWkPlayerPoints(1); // round 1 voor nu
     const dbEvents = await getWkPlayerEvents(1);
+
+    // Haal league config voor prijsaanpassing
+    let priceOffset = 0;
+    try {
+      const leagueConfig = await getLeagueAdminConfigPersistent("wk");
+      priceOffset = leagueConfig.budget.priceOffsetMillions ?? 0;
+    } catch {
+      // use default 0
+    }
 
     // Indexeer DB data op fantasyplayer_id
     const dbById = new Map<number, typeof dbPlayers[0]>();
@@ -71,8 +81,12 @@ export async function GET(request: Request) {
         positionNl,
       );
 
+      // Pas prijsaanpassing toe uit league config
+      const adjustedPrice = Math.max(0, csv.prijs - priceOffset);
+
       return {
         ...csv,
+        prijs: adjustedPrice,
         punten: adjusted.totalPoints ?? 0,
         totalPoints: adjusted.totalPoints ?? 0,
         pointEvents: adjusted.pointEvents ?? [],
@@ -91,12 +105,4 @@ export async function GET(request: Request) {
     count: listPlayers().length,
     players: listPlayers(),
   }, { headers: NO_CACHE_HEADERS });
-}
-
-function normalizeName(name: string): string {
-  return name
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .trim();
 }

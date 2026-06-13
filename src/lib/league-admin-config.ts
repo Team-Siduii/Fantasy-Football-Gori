@@ -46,6 +46,7 @@ export type LeagueAdminConfig = {
   };
   budget: {
     teamValueCapMillions: number;
+    priceOffsetMillions: number;
   };
   competition: LeagueCompetitionConfig;
   roles: LeagueRoleAssignments;
@@ -172,6 +173,7 @@ function defaultConfig(mode: LeagueMode): LeagueAdminConfig {
     },
     budget: {
       teamValueCapMillions: defaultBudgetCapForMode(mode),
+      priceOffsetMillions: mode === "wk" ? 3 : 0,
     },
     competition: {
       name: defaultCompetitionNameForMode(mode),
@@ -214,6 +216,10 @@ function normalize(input: Partial<LeagueAdminConfig>, mode: LeagueMode): LeagueA
         typeof input.budget?.teamValueCapMillions === "number" && input.budget.teamValueCapMillions > 0
           ? input.budget.teamValueCapMillions
           : base.budget.teamValueCapMillions,
+      priceOffsetMillions:
+        typeof input.budget?.priceOffsetMillions === "number" && Number.isFinite(input.budget.priceOffsetMillions)
+          ? input.budget.priceOffsetMillions
+          : base.budget.priceOffsetMillions,
     },
     competition: {
       name:

@@ -25,7 +25,7 @@ type LeagueAdminConfig = {
   draft: { totalRounds: number; mode: "admin" | "manager" };
   scoringProfile: { id: string; type: "CLASSIC" | "CUSTOM"; label: string };
   waiver: { enabled: boolean; round: { tieBreaker: "PRIORITY" | "EARLIEST_BID" } };
-  budget: { teamValueCapMillions: number };
+  budget: { teamValueCapMillions: number; priceOffsetMillions: number };
   roles: { ownerId: string; commissionerIds: string[]; managerIds: string[] };
   participants: LeagueParticipant[];
   customRuleNotes: LeagueRuleNote[];
@@ -65,7 +65,7 @@ function cloneConfig(input: LeagueAdminConfig): LeagueAdminConfig {
   return {
     scoringProfile: { ...input.scoringProfile },
     waiver: { enabled: input.waiver.enabled, round: { ...input.waiver.round } },
-    budget: { teamValueCapMillions: input.budget.teamValueCapMillions },
+    budget: { teamValueCapMillions: input.budget.teamValueCapMillions, priceOffsetMillions: input.budget.priceOffsetMillions },
     competition: { name: input.competition.name ?? "", cupTiePolicy: input.competition.cupTiePolicy, formats: [...input.competition.formats] },
     draft: { totalRounds: input.draft?.totalRounds ?? 15, mode: input.draft?.mode ?? "admin" },
     roles: {
@@ -162,6 +162,7 @@ export function LeagueConfigEditor() {
       waiver: config.waiver,
       budget: {
         teamValueCapMillions: config.budget.teamValueCapMillions,
+        priceOffsetMillions: config.budget.priceOffsetMillions,
       },
       competition: config.competition,
       draft: config.draft,
@@ -372,7 +373,36 @@ export function LeagueConfigEditor() {
                       setConfig({
                         ...config,
                         budget: {
+                          ...config.budget,
                           teamValueCapMillions: Number.isFinite(parsed) && parsed > 0 ? parsed : config.budget.teamValueCapMillions,
+                        },
+                      });
+                    }}
+                  />
+                </label>
+
+                <label className="field col-12">
+                  <span className="field-label">
+                    Prijsaanpassing (miljoen)
+                    <span className="help-dot" tabIndex={0} role="note" aria-label="Verlaag alle importprijzen met dit bedrag">
+                      ?
+                    </span>
+                    <span className="help-tooltip" role="tooltip">
+                      Alle spelersprijzen uit de WKCoach-import worden met dit bedrag verlaagd. 
+                      Negatieve waarde = verhogen. Dit geldt alleen voor de weergave, niet voor de database.
+                    </span>
+                  </span>
+                  <input
+                    type="number"
+                    step={0.5}
+                    value={config.budget.priceOffsetMillions}
+                    onChange={(event) => {
+                      const parsed = Number(event.target.value);
+                      setConfig({
+                        ...config,
+                        budget: {
+                          ...config.budget,
+                          priceOffsetMillions: Number.isFinite(parsed) ? parsed : config.budget.priceOffsetMillions,
                         },
                       });
                     }}
