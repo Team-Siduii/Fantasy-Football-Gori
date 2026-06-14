@@ -4,12 +4,6 @@
       "maxDuration": 300
     }
   },
-  "crons": [
-    {
-      "path": "/api/wk/sync-points",
-      "schedule": "*/15 * * * *"
-    }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
