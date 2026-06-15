@@ -1,6 +1,8 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { mkdirSync, unlinkSync, existsSync } from "fs";
 import path from "path";
+
+vi.mock("server-only", () => ({}));
 
 const root = "/tmp/ffg-league-ranking-tests";
 const managerPath = `${root}/manager-state.json`;
@@ -8,11 +10,13 @@ const managerWkPath = `${root}/manager-state-wk.json`;
 const authPath = `${root}/auth-state.json`;
 const leaguePath = `${root}/league-admin-config.json`;
 const leagueWkPath = `${root}/league-admin-config-wk.json`;
+const teamScoreWkPath = `${root}/team-score-state-wk.json`;
 
 async function loadModules() {
   const auth = await import("../../src/lib/auth-store");
-  const ranking = await import("../../src/lib/league-ranking");
-  return { auth, ranking };
+  const leagueRanking = await import("../../src/lib/league-ranking");
+  const teamScoreState = await import("../../src/lib/team-score-state");
+  return { auth, leagueRanking, teamScoreState };
 }
 
 afterEach(async () => {
@@ -21,8 +25,9 @@ afterEach(async () => {
   process.env.AUTH_STATE_PATH = authPath;
   process.env.LEAGUE_ADMIN_CONFIG_PATH = leaguePath;
   process.env.LEAGUE_ADMIN_CONFIG_WK_PATH = leagueWkPath;
+  process.env.TEAM_SCORE_STATE_WK_PATH = teamScoreWkPath;
 
-  for (const target of [managerPath, managerWkPath, authPath, leaguePath, leagueWkPath]) {
+  for (const target of [managerPath, managerWkPath, authPath, leaguePath, leagueWkPath, teamScoreWkPath]) {
     if (existsSync(target)) {
       unlinkSync(target);
     }
@@ -40,6 +45,7 @@ afterEach(async () => {
   delete process.env.AUTH_STATE_PATH;
   delete process.env.LEAGUE_ADMIN_CONFIG_PATH;
   delete process.env.LEAGUE_ADMIN_CONFIG_WK_PATH;
+  delete process.env.TEAM_SCORE_STATE_WK_PATH;
 });
 
 describe("league ranking snapshot", () => {
@@ -50,14 +56,27 @@ describe("league ranking snapshot", () => {
     process.env.AUTH_STATE_PATH = authPath;
     process.env.LEAGUE_ADMIN_CONFIG_PATH = leaguePath;
     process.env.LEAGUE_ADMIN_CONFIG_WK_PATH = leagueWkPath;
+    process.env.TEAM_SCORE_STATE_WK_PATH = teamScoreWkPath;
 
-    const { auth, ranking } = await loadModules();
+    const { auth, leagueRanking, teamScoreState } = await loadModules();
     auth.resetAuthStateForTests();
+    teamScoreState.resetTeamScoreStateForTests("wk");
+    await teamScoreState.saveManagerRoundScoreSnapshotPersistent("wk", "s.j.m.duindam@gmail.com", {
+      roundNumber: 1,
+      lineupIds: ["1"],
+      benchIds: ["2"],
+      lineupPoints: 9,
+      benchPoints: 2,
+      totalPoints: 11,
+      calculatedAt: "2026-06-15T12:00:00.000Z",
+      source: "wk-events-v1",
+    });
 
-    const snapshot = await ranking.buildLeagueRankingSnapshot("wk", "s.j.m.duindam@gmail.com");
+    const snapshot = await leagueRanking.buildLeagueRankingSnapshot("wk", "s.j.m.duindam@gmail.com");
 
     expect(snapshot.allRanking.map((entry) => entry.email)).toContain("s.j.m.duindam@gmail.com");
     expect(snapshot.ranking.map((entry) => entry.email)).toContain("s.j.m.duindam@gmail.com");
     expect(snapshot.allRanking.map((entry) => entry.email)).not.toContain("admin@gori.local");
-  });
+    expect(snapshot.allRanking.find((entry) => entry.email === "s.j.m.duindam@gmail.com")?.totalPoints).toBe(11);
+  }, 15000);
 });

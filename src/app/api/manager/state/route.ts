@@ -7,7 +7,6 @@ import {
   type ManagerStateScope,
 } from "@/lib/manager-state";
 import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
-import { repairManagerTeamFromDraftArtifactsPersistent } from "@/lib/draft-manager-sync";
 import { isRoundActive } from "@/lib/world-cup-schedule";
 
 const NO_CACHE_HEADERS = {
@@ -30,15 +29,6 @@ export async function GET(request: Request) {
   const managerKey = await getAuthenticatedEmail();
   const scope = getScopeFromRequest(request);
   console.log("[STATE-API]", managerKey, "scope:", scope);
-  
-  if (managerKey) {
-    try {
-      const repairResult = await repairManagerTeamFromDraftArtifactsPersistent({ managerEmail: managerKey, scope });
-      console.log("[STATE-API] Repair result:", repairResult ? `ok (${repairResult.state?.lineupIds?.length || 0}+${repairResult.state?.benchIds?.length || 0})` : "null");
-    } catch (e: unknown) {
-      console.error("[STATE-API] Repair error:", String(e));
-    }
-  }
   const roundNumberParam = new URL(request.url).searchParams.get("roundNumber");
   const roundNumber = roundNumberParam ? Number(roundNumberParam) : null;
 

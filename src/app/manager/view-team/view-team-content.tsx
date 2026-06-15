@@ -29,6 +29,9 @@ type ViewTeamResponse = {
   squadCost: number;
   pendingSellId: string | null;
   pendingBuyId: string | null;
+  teamTotalPoints?: number;
+  teamCurrentRoundPoints?: number;
+  scoreSource?: string;
 };
 
 export default function ViewTeamPageContent() {
@@ -103,7 +106,8 @@ export default function ViewTeamPageContent() {
 
   const lineupPts = data.lineup.reduce((sum, p) => sum + (p.punten ?? 0), 0);
   const benchPts = data.bench.reduce((sum, p) => sum + (p.punten ?? 0), 0);
-  const totalPoints = lineupPts + benchPts;
+  const visibleSquadPoints = lineupPts + benchPts;
+  const totalPoints = data.teamTotalPoints ?? visibleSquadPoints;
 
   return (
     <AppShell

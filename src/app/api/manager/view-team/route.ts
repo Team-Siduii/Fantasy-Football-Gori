@@ -5,10 +5,10 @@ import { parsePlayerCsv } from "@/domain/player-csv";
 import { getTransferBudgetCapMillions } from "@/domain/team-budget";
 import { ensureAuthStateFromDb, getProfileByEmail } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
-import { syncManagerTeamFromDraftRosterPersistent } from "@/lib/draft-manager-sync";
 import { readManagerStatePersistent, type ManagerStateScope } from "@/lib/manager-state";
 import { loadPlayerPoints } from "@/lib/player-points-store";
-import { getWkPlayerPoints } from "@/lib/wk-sync-store";
+import { summarizeManagerTeamScoresPersistent } from "@/lib/team-score-state";
+import { buildWkPlayerTotalPointsMapThroughRound } from "@/lib/wk-player-scoring";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "s.j.m.duindam@gmail.com": "A",
@@ -18,14 +18,6 @@ const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "emielzomerdijk@gmail.com": "A",
   "ice.eckmund@gmail.com": "A",
 };
-
-function normalizePlayerName(name: string): string {
-  return name
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .trim();
-}
 
 export async function GET(request: Request) {
   const email = await getAuthenticatedEmail();
@@ -39,7 +31,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Geen email opgegeven" }, { status: 400 });
   }
 
-  // Alleen managers in dezelfde subpoule mogen elkaars team zien
   const userSubpoule = SUBPOULE_BY_EMAIL[email] ?? "A";
   const targetSubpoule = SUBPOULE_BY_EMAIL[targetEmail] ?? "A";
   if (userSubpoule !== targetSubpoule) {
@@ -51,7 +42,6 @@ export async function GET(request: Request) {
   const scope: ManagerStateScope = url.searchParams.get("mode") === "wk" ? "wk" : "eredivisie";
   const isOwnTeam = email === targetEmail;
 
-  // Load players
   let allPlayers;
   if (scope === "wk") {
     const wkCsvPath = path.join(process.cwd(), "data", "players-wk.csv");
@@ -69,36 +59,31 @@ export async function GET(request: Request) {
   }
 
   const playerById = new Map(allPlayers.map((p) => [p.id, p]));
-
-  // Laad spelerpunten direct op fantasyplayer_id
-  const playerPointsMap = new Map<number, number>();
+  const playerPointsMap = new Map<string, number>();
   if (scope === "wk") {
-    const dbPlayers = await getWkPlayerPoints(); // latest round per speler
-    for (const p of dbPlayers) {
-      playerPointsMap.set(p.fantasyplayer_id, p.total_points);
+    const calculatedTotals = await buildWkPlayerTotalPointsMapThroughRound();
+    for (const [fantasyplayerId, totalPoints] of calculatedTotals.entries()) {
+      playerPointsMap.set(String(fantasyplayerId), totalPoints);
     }
   } else {
     const pointsSnapshot = await loadPlayerPoints(scope);
     if (pointsSnapshot) {
       for (const pp of pointsSnapshot.players) {
-        playerPointsMap.set(pp.fantasyplayerId ?? 0, pp.totalPoints);
+        if (pp.fantasyplayerId) {
+          playerPointsMap.set(String(pp.fantasyplayerId), pp.totalPoints);
+        }
       }
     }
   }
 
-  // Sync draft roster naar state voor deze manager (veiligheid)
-  await syncManagerTeamFromDraftRosterPersistent({ managerEmail: targetEmail, scope });
-
-  // Load target manager state (alleen huidige ronde, niet toekomst)
   const state = await readManagerStatePersistent(scope, targetEmail);
 
-  // Build player details for lineup + bench
   const enrichPlayer = (playerId: string) => {
     const player = playerById.get(playerId);
     if (!player) return { id: playerId, naam: "Onbekend", positie: "MID", club: "-", prijs: 0, punten: 0 };
     return {
       ...player,
-      punten: playerPointsMap.get(parseInt(playerId, 10)) ?? 0,
+      punten: playerPointsMap.get(String(playerId)) ?? 0,
     };
   };
 
@@ -108,16 +93,18 @@ export async function GET(request: Request) {
     return { ...p, punten: Math.ceil(p.punten / 2) };
   });
 
-  // Budget
   const budgetCap = getTransferBudgetCapMillions(scope);
   const squadCost = [...lineup, ...bench].reduce((sum, p) => sum + (p.prijs ?? 0), 0);
   const budgetRemaining = Math.max(0, budgetCap - squadCost);
-
-  // Alleen eigen team: toon transfer-info
   const pendingSellId = isOwnTeam ? state.pendingSellId : null;
   const pendingBuyId = isOwnTeam ? state.pendingBuyId : null;
-
   const profile = getProfileByEmail(targetEmail);
+  const scoreSummary = scope === "wk"
+    ? await summarizeManagerTeamScoresPersistent(scope, targetEmail)
+    : {
+        totalPoints: lineup.reduce((sum, player) => sum + player.punten, 0) + bench.reduce((sum, player) => sum + player.punten, 0),
+        currentRoundPoints: lineup.reduce((sum, player) => sum + player.punten, 0) + bench.reduce((sum, player) => sum + player.punten, 0),
+      };
 
   return NextResponse.json({
     isOwnTeam,
@@ -131,5 +118,8 @@ export async function GET(request: Request) {
     squadCost,
     pendingSellId,
     pendingBuyId,
+    teamTotalPoints: scoreSummary.totalPoints,
+    teamCurrentRoundPoints: scoreSummary.currentRoundPoints,
+    scoreSource: scope === "wk" ? "team-score-state" : "player-points",
   });
 }

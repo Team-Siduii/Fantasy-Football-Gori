@@ -6,6 +6,7 @@ import {
   saveWkPlayerPoints,
   saveWkPlayerEvents,
 } from "@/lib/wk-sync-store";
+import { recalculateAllManagerRoundScoresPersistent } from "@/lib/team-score-engine";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
 
 const NO_CACHE_HEADERS = {
@@ -114,6 +115,7 @@ export async function GET(request: Request) {
     let playersCount = 0;
     const matchesCount = 0;
     let eventsCount = 0;
+    let recalculatedManagersCount = 0;
 
     // ── 1. Sync player points via search_all (with point_events!) ──
     if (fullSync) {
@@ -202,6 +204,12 @@ export async function GET(request: Request) {
       }
     }
 
+    if (playersCount > 0 || eventsCount > 0) {
+      recalculatedManagersCount = (
+        await recalculateAllManagerRoundScoresPersistent({ scope: "wk", roundNumber: roundSequence })
+      ).length;
+    }
+
     return NextResponse.json(
       {
         success: true,
@@ -210,6 +218,7 @@ export async function GET(request: Request) {
         playersCount,
         eventsCount,
         matchesCount,
+        recalculatedManagersCount,
         lastSync: syncedAt,
       },
       { headers: NO_CACHE_HEADERS },

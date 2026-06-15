@@ -1,4 +1,3 @@
-import "server-only";
 import { resolveGoriDatabaseUrl } from "./persistent-json-store";
 import { Pool } from "pg";
 
@@ -292,6 +291,24 @@ export async function getWkPlayerPoints(
 
   const r = await p.query<WkPlayerPointRow>(
     "SELECT DISTINCT ON (fantasyplayer_id) * FROM wk_player_points ORDER BY fantasyplayer_id, round DESC",
+  );
+  return r.rows;
+}
+
+export async function getWkPlayerPointHistory(maxRound?: number): Promise<WkPlayerPointRow[]> {
+  const p = await ensureSchema();
+  if (!p) return [];
+
+  if (typeof maxRound === "number" && Number.isInteger(maxRound) && maxRound > 0) {
+    const r = await p.query<WkPlayerPointRow>(
+      "SELECT * FROM wk_player_points WHERE round <= $1 ORDER BY round, fantasyplayer_id",
+      [maxRound],
+    );
+    return r.rows;
+  }
+
+  const r = await p.query<WkPlayerPointRow>(
+    "SELECT * FROM wk_player_points ORDER BY round, fantasyplayer_id",
   );
   return r.rows;
 }

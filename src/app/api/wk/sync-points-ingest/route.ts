@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { saveWkPlayerPoints, saveWkPlayerEvents } from "@/lib/wk-sync-store";
+import { recalculateAllManagerRoundScoresPersistent } from "@/lib/team-score-engine";
 
 const NO_CACHE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -75,12 +76,17 @@ export async function POST(request: Request) {
       );
     }
 
+    const recalculatedManagersCount = (
+      await recalculateAllManagerRoundScoresPersistent({ scope: "wk", roundNumber: round })
+    ).length;
+
     return NextResponse.json(
       {
         success: true,
         round,
         playersCount: players.length,
         eventsCount: events?.length ?? 0,
+        recalculatedManagersCount,
         syncedAt: new Date().toISOString(),
       },
       { headers: NO_CACHE_HEADERS },
