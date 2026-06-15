@@ -2,7 +2,7 @@ import { readFile } from "fs/promises";
 import path from "path";
 import { parsePlayerCsv } from "../domain/player-csv";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
-import { ensureAuthStateFromDb, getProfileByEmail } from "./auth-store";
+import { ensureAuthStateFromDb, getAuthAccountByEmail, getProfileByEmail } from "./auth-store";
 import { getLeagueAdminConfigPersistent } from "./league-admin-config";
 import { readManagerStatePersistent, type ManagerStateScope } from "./manager-state";
 import { syncManagerTeamFromDraftRosterPersistent } from "./draft-manager-sync";
@@ -86,10 +86,18 @@ export async function buildLeagueRankingSnapshot(scope: ManagerStateScope, reque
       .map((participant) => participant.email.trim().toLowerCase())
       .filter(Boolean),
   );
-  const managerEmails = AUTH_TEST_ACCOUNT_PRESETS
+  const acceptedManagerEmails = leagueConfig.participants
+    .filter((participant) => participant.status === "ACCEPTED")
+    .map((participant) => participant.email.trim().toLowerCase())
+    .filter((email) => {
+      const account = getAuthAccountByEmail(email);
+      return account?.role === "manager" || Boolean(SUBPOULE_BY_EMAIL[email]);
+    });
+  const presetManagerEmails = AUTH_TEST_ACCOUNT_PRESETS
     .filter((preset) => preset.role === "manager")
     .map((preset) => preset.email.trim().toLowerCase())
     .filter((email) => acceptedParticipantEmails.has(email) || Boolean(SUBPOULE_BY_EMAIL[email]));
+  const managerEmails = Array.from(new Set([...acceptedManagerEmails, ...presetManagerEmails]));
 
   const rankingSeed: Omit<RankingEntry, "position">[] = [];
   for (const managerEmail of managerEmails) {
