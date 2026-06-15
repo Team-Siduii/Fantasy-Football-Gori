@@ -299,4 +299,75 @@ describe("draft roster to manager team sync", () => {
     expect((repaired as { repairedFrom?: string } | null)?.repairedFrom).toBe("draft-picks");
     expect(manager.readManagerState("wk", "Thomasbart91@gmail.com").lineupIds).toEqual(["wk-player-2"]);
   });
+
+  it("forces an explicit repair when a visible manager-state is corrupt but roster artifacts contain the full team", async () => {
+    const { draft, roster, manager, sync, league } = await loadModules();
+    draft.resetDraftStateForTests("wk");
+    roster.resetTeamRosterStateForTests("wk");
+    manager.resetManagerStateForTests("wk");
+    league.resetLeagueAdminConfigForTests("wk");
+
+    league.updateLeagueAdminConfig(
+      {
+        participants: [{ managerId: "sim-duindam", label: "Sim Duindam", email: "s.j.m.duindam@gmail.com", status: "ACCEPTED" }],
+      },
+      "wk",
+    );
+
+    roster.saveTeamRosterState(
+      {
+        byTeamId: {
+          "Sim Duindam": Array.from({ length: 15 }, (_, index) => `wk-player-${index + 1}`),
+        },
+      },
+      "wk",
+    );
+
+    manager.saveManagerState(
+      {
+        formation: "4-3-3",
+        lineupIds: ["wk-player-999"],
+        benchIds: [],
+        roundStates: {
+          "1": {
+            formation: "4-3-3",
+            lineupIds: ["wk-player-999"],
+            benchIds: [],
+            pickedTransferId: null,
+            pendingSellId: null,
+            pendingBuyId: null,
+          },
+        },
+      },
+      "wk",
+      "s.j.m.duindam@gmail.com",
+    );
+
+    expect(manager.readManagerState("wk", "s.j.m.duindam@gmail.com").lineupIds).toEqual(["wk-player-999"]);
+
+    const repaired = await sync.repairManagerTeamFromDraftArtifactsPersistent({
+      managerEmail: "s.j.m.duindam@gmail.com",
+      scope: "wk",
+    });
+
+    const repairedState = manager.readManagerState("wk", "s.j.m.duindam@gmail.com");
+    expect(repaired?.changed).toBe(true);
+    expect((repaired as { repairedFrom?: string } | null)?.repairedFrom).toBe("team-roster");
+    expect(repairedState.lineupIds).toEqual([
+      "wk-player-1",
+      "wk-player-2",
+      "wk-player-3",
+      "wk-player-4",
+      "wk-player-5",
+      "wk-player-6",
+      "wk-player-7",
+      "wk-player-8",
+      "wk-player-9",
+      "wk-player-10",
+      "wk-player-11",
+    ]);
+    expect(repairedState.benchIds).toEqual(["wk-player-12", "wk-player-13", "wk-player-14", "wk-player-15"]);
+    expect(repairedState.roundStates["1"]?.lineupIds).toEqual(repairedState.lineupIds);
+    expect(repairedState.roundStates["1"]?.benchIds).toEqual(repairedState.benchIds);
+  });
 });

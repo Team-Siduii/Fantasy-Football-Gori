@@ -456,6 +456,28 @@ export async function syncManagerTeamFromDraftRosterPersistent(input: { managerE
   return { managerEmail, state, changed: true };
 }
 
+function shouldForceRepairFromCandidate(currentIds: string[], candidateIds: string[]) {
+  return currentIds.length > 0 && currentIds.length < SQUAD_SIZE && candidateIds.length >= SQUAD_SIZE && candidateIds.length > currentIds.length;
+}
+
+async function forceRepairManagerTeamPersistent(input: {
+  managerEmail: string;
+  scope: ManagerStateScope;
+  playerIds: string[];
+}) {
+  const current = await readManagerStatePersistent(input.scope, input.managerEmail);
+  const next = buildManagerTeamStateWithRoundSnapshots(input.playerIds, current);
+  const nextIds = [...next.lineupIds, ...next.benchIds];
+  const currentIds = [...current.lineupIds, ...current.benchIds];
+
+  if (currentIds.join("\u0000") === nextIds.join("\u0000")) {
+    return { managerEmail: input.managerEmail, state: current, changed: false };
+  }
+
+  const state = await saveManagerStatePersistent(next, input.scope, input.managerEmail);
+  return { managerEmail: input.managerEmail, state, changed: true };
+}
+
 export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
   managerEmail: string;
   scope: ManagerStateScope;
@@ -465,27 +487,55 @@ export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
     return null;
   }
 
-  const rosterRepair = await syncManagerTeamFromDraftRosterPersistent(input);
-  if (rosterRepair) {
-    return rosterRepair;
+  const current = await readManagerStatePersistent(input.scope, managerEmail);
+  const currentIds = [...current.lineupIds, ...current.benchIds];
+  const rosters = (await readTeamRosterStatePersistent(input.scope)).byTeamId;
+  const identity = buildManagerIdentity(managerEmail, input.scope);
+  const rosterMatch = findRosterMatch(rosters, identity, input.scope);
+  const rosterPlayerIds = rosterMatch?.[1] ?? [];
+
+  if (currentIds.length === 0) {
+    const rosterRepair = await syncManagerTeamFromDraftRosterPersistent(input);
+    if (rosterRepair) {
+      return { ...rosterRepair, repairedFrom: "team-roster" as const };
+    }
+  } else if (shouldForceRepairFromCandidate(currentIds, rosterPlayerIds)) {
+    const forcedRosterRepair = await forceRepairManagerTeamPersistent({
+      managerEmail,
+      playerIds: rosterPlayerIds,
+      scope: input.scope,
+    });
+    return { ...forcedRosterRepair, repairedFrom: "team-roster" as const };
   }
 
-  const identity = buildManagerIdentity(managerEmail, input.scope);
   const { readDraftStatePersistent } = await import("./draft-state");
   const draft = await readDraftStatePersistent(input.scope);
-  const playerIds = draft.picks
+  const draftPlayerIds = draft.picks
     .filter((pick) => teamIdMatchesManagerIdentity(pick.teamId, identity) || teamIdResolvesToManagerIdentity(pick.teamId, identity, input.scope))
     .map((pick) => pick.playerId);
 
-  if (playerIds.length === 0) {
+  if (draftPlayerIds.length === 0) {
     return null;
   }
 
-  const result = await syncPlayerIdsToManagerTeamPersistent({
-    managerEmail,
-    playerIds,
-    scope: input.scope,
-  });
+  if (currentIds.length === 0) {
+    const result = await syncPlayerIdsToManagerTeamPersistent({
+      managerEmail,
+      playerIds: draftPlayerIds,
+      scope: input.scope,
+    });
 
-  return result ? { ...result, changed: true, repairedFrom: "draft-picks" as const } : null;
+    return result ? { ...result, changed: true, repairedFrom: "draft-picks" as const } : null;
+  }
+
+  if (shouldForceRepairFromCandidate(currentIds, draftPlayerIds)) {
+    const forcedDraftRepair = await forceRepairManagerTeamPersistent({
+      managerEmail,
+      playerIds: draftPlayerIds,
+      scope: input.scope,
+    });
+    return { ...forcedDraftRepair, repairedFrom: "draft-picks" as const };
+  }
+
+  return { managerEmail, state: current, changed: false };
 }
