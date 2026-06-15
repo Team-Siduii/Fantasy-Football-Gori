@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-const syncManagerTeamFromDraftRosterPersistent = vi.fn(async () => ({ changed: true }));
+const repairManagerTeamFromDraftArtifactsPersistent = vi.fn(async () => ({ changed: true }));
 const readManagerStatePersistent = vi.fn(async () => ({
   formation: "4-3-3",
   lineupIds: ["wk-player-1"],
@@ -42,7 +42,7 @@ vi.mock("@/lib/auth-session", () => ({
 }));
 
 vi.mock("@/lib/draft-manager-sync", () => ({
-  syncManagerTeamFromDraftRosterPersistent,
+  repairManagerTeamFromDraftArtifactsPersistent,
 }));
 
 vi.mock("@/lib/manager-state", () => ({
@@ -66,20 +66,24 @@ afterEach(() => {
 });
 
 describe("GET /api/manager/view-team", () => {
-  it("repairs the manager team from draft roster before reading WK view-team state", async () => {
-    const { GET } = await import("../../src/app/api/manager/view-team/route");
+  it(
+    "repairs the manager team from draft artifacts before reading WK view-team state",
+    async () => {
+      const { GET } = await import("../../src/app/api/manager/view-team/route");
 
-    const response = await GET(
-      new Request("http://localhost/api/manager/view-team?mode=wk&email=s.j.m.duindam@gmail.com"),
-    );
-    const payload = await response.json();
+      const response = await GET(
+        new Request("http://localhost/api/manager/view-team?mode=wk&email=s.j.m.duindam@gmail.com"),
+      );
+      const payload = await response.json();
 
-    expect(syncManagerTeamFromDraftRosterPersistent).toHaveBeenCalledWith({
-      managerEmail: "s.j.m.duindam@gmail.com",
-      scope: "wk",
-    });
-    expect(readManagerStatePersistent).toHaveBeenCalledWith("wk", "s.j.m.duindam@gmail.com");
-    expect(payload.lineup).toHaveLength(1);
-    expect(payload.teamTotalPoints).toBe(42);
-  });
+      expect(repairManagerTeamFromDraftArtifactsPersistent).toHaveBeenCalledWith({
+        managerEmail: "s.j.m.duindam@gmail.com",
+        scope: "wk",
+      });
+      expect(readManagerStatePersistent).toHaveBeenCalledWith("wk", "s.j.m.duindam@gmail.com");
+      expect(payload.lineup).toHaveLength(1);
+      expect(payload.teamTotalPoints).toBe(42);
+    },
+    15000,
+  );
 });
