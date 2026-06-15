@@ -5,6 +5,7 @@ import { parsePlayerCsv } from "@/domain/player-csv";
 import { getTransferBudgetCapMillions } from "@/domain/team-budget";
 import { ensureAuthStateFromDb, getProfileByEmail } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
+import { syncManagerTeamFromDraftRosterPersistent } from "@/lib/draft-manager-sync";
 import { readManagerStatePersistent, type ManagerStateScope } from "@/lib/manager-state";
 import { loadPlayerPoints } from "@/lib/player-points-store";
 import { summarizeManagerTeamScoresPersistent } from "@/lib/team-score-state";
@@ -59,6 +60,9 @@ export async function GET(request: Request) {
   }
 
   const playerById = new Map(allPlayers.map((p) => [p.id, p]));
+
+  await syncManagerTeamFromDraftRosterPersistent({ managerEmail: targetEmail, scope });
+
   const playerPointsMap = new Map<string, number>();
   if (scope === "wk") {
     const calculatedTotals = await buildWkPlayerTotalPointsMapThroughRound();
