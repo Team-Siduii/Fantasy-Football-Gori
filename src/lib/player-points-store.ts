@@ -1,5 +1,3 @@
-import "server-only";
-
 import { isGoriDatabaseEnabled, readPersistentJson, writePersistentJson } from "./persistent-json-store";
 
 export type PlayerPointsEntry = {

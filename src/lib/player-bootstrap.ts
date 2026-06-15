@@ -1,4 +1,3 @@
-import "server-only";
 import { readFile } from "fs/promises";
 import path from "path";
 import { parsePlayerCsv } from "@/domain/player-csv";
