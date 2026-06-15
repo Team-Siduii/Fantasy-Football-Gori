@@ -6,6 +6,7 @@ import {
   saveManagerStatePersistent,
   type ManagerStateScope,
 } from "@/lib/manager-state";
+import { repairManagerTeamFromDraftArtifactsPersistent } from "@/lib/draft-manager-sync";
 import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
 import { isRoundActive } from "@/lib/world-cup-schedule";
 
@@ -31,6 +32,10 @@ export async function GET(request: Request) {
   console.log("[STATE-API]", managerKey, "scope:", scope);
   const roundNumberParam = new URL(request.url).searchParams.get("roundNumber");
   const roundNumber = roundNumberParam ? Number(roundNumberParam) : null;
+
+  if (scope === "wk" && managerKey) {
+    await repairManagerTeamFromDraftArtifactsPersistent({ managerEmail: managerKey, scope });
+  }
 
   if (roundNumber && Number.isInteger(roundNumber) && roundNumber > 0) {
     const state = await readManagerStateForRoundPersistent(roundNumber, scope, managerKey);

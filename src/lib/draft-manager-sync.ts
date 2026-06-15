@@ -303,6 +303,19 @@ function buildManagerTeamStateWithRoundSnapshots(
   };
 }
 
+function areIdsEqual(left: string[], right: string[]) {
+  return left.join("\u0000") === right.join("\u0000");
+}
+
+function hasRoundSnapshotDrift(
+  current: Awaited<ReturnType<typeof readManagerStatePersistent>>,
+  next: ReturnType<typeof buildManagerTeamStateWithRoundSnapshots>,
+) {
+  return Object.values(current.roundStates).some(
+    (snapshot) => !areIdsEqual(snapshot.lineupIds, next.lineupIds) || !areIdsEqual(snapshot.benchIds, next.benchIds),
+  );
+}
+
 export function syncPlayerIdsToManagerTeam(input: {
   managerEmail: string;
   playerIds: string[];
@@ -469,8 +482,9 @@ async function forceRepairManagerTeamPersistent(input: {
   const next = buildManagerTeamStateWithRoundSnapshots(input.playerIds, current);
   const nextIds = [...next.lineupIds, ...next.benchIds];
   const currentIds = [...current.lineupIds, ...current.benchIds];
+  const roundSnapshotDrift = hasRoundSnapshotDrift(current, next);
 
-  if (currentIds.join("\u0000") === nextIds.join("\u0000")) {
+  if (areIdsEqual(currentIds, nextIds) && !roundSnapshotDrift) {
     return { managerEmail: input.managerEmail, state: current, changed: false };
   }
 
@@ -493,13 +507,16 @@ export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
   const identity = buildManagerIdentity(managerEmail, input.scope);
   const rosterMatch = findRosterMatch(rosters, identity, input.scope);
   const rosterPlayerIds = rosterMatch?.[1] ?? [];
+  const rosterRoundSnapshotDrift =
+    rosterPlayerIds.length >= SQUAD_SIZE &&
+    hasRoundSnapshotDrift(current, buildManagerTeamStateWithRoundSnapshots(rosterPlayerIds, current));
 
   if (currentIds.length === 0) {
     const rosterRepair = await syncManagerTeamFromDraftRosterPersistent(input);
     if (rosterRepair) {
       return { ...rosterRepair, repairedFrom: "team-roster" as const };
     }
-  } else if (shouldForceRepairFromCandidate(currentIds, rosterPlayerIds)) {
+  } else if (shouldForceRepairFromCandidate(currentIds, rosterPlayerIds) || rosterRoundSnapshotDrift) {
     const forcedRosterRepair = await forceRepairManagerTeamPersistent({
       managerEmail,
       playerIds: rosterPlayerIds,
@@ -513,6 +530,9 @@ export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
   const draftPlayerIds = draft.picks
     .filter((pick) => teamIdMatchesManagerIdentity(pick.teamId, identity) || teamIdResolvesToManagerIdentity(pick.teamId, identity, input.scope))
     .map((pick) => pick.playerId);
+  const draftRoundSnapshotDrift =
+    draftPlayerIds.length >= SQUAD_SIZE &&
+    hasRoundSnapshotDrift(current, buildManagerTeamStateWithRoundSnapshots(draftPlayerIds, current));
 
   if (draftPlayerIds.length === 0) {
     return null;
@@ -528,7 +548,7 @@ export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
     return result ? { ...result, changed: true, repairedFrom: "draft-picks" as const } : null;
   }
 
-  if (shouldForceRepairFromCandidate(currentIds, draftPlayerIds)) {
+  if (shouldForceRepairFromCandidate(currentIds, draftPlayerIds) || draftRoundSnapshotDrift) {
     const forcedDraftRepair = await forceRepairManagerTeamPersistent({
       managerEmail,
       playerIds: draftPlayerIds,
