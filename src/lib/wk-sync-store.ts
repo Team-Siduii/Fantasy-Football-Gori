@@ -30,6 +30,7 @@ async function ensureSchema() {
       home_score INTEGER,
       away_score INTEGER,
       status TEXT NOT NULL DEFAULT 'F',
+      minute INTEGER,
       kickoff_at TEXT,
       synced_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       PRIMARY KEY (match_id, round)
@@ -70,6 +71,8 @@ async function ensureSchema() {
       ON wk_matches (round);
   `);
 
+  await p.query("ALTER TABLE wk_matches ADD COLUMN IF NOT EXISTS minute INTEGER");
+
   dbReady = true;
   return p;
 }
@@ -91,6 +94,7 @@ export type WkMatchRow = {
   home_score: number | null;
   away_score: number | null;
   status: string;
+  minute: number | null;
   kickoff_at: string | null;
   synced_at: string;
 };
@@ -134,6 +138,7 @@ export async function saveWkMatches(
     home_score: number | null;
     away_score: number | null;
     status: string;
+    minute?: number | null;
     kickoff_at: string | null;
   }>,
 ): Promise<void> {
@@ -145,14 +150,15 @@ export async function saveWkMatches(
     await client.query("BEGIN");
     for (const m of matches) {
       await client.query(
-        `INSERT INTO wk_matches (match_id, round, home_team, away_team, home_team_code, away_team_code, home_score, away_score, status, kickoff_at, synced_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW())
+        `INSERT INTO wk_matches (match_id, round, home_team, away_team, home_team_code, away_team_code, home_score, away_score, status, minute, kickoff_at, synced_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW())
          ON CONFLICT (match_id, round) DO UPDATE SET
            home_score = EXCLUDED.home_score,
            away_score = EXCLUDED.away_score,
            status = EXCLUDED.status,
+           minute = EXCLUDED.minute,
            synced_at = NOW()`,
-        [m.match_id, m.round, m.home_team, m.away_team, m.home_team_code, m.away_team_code, m.home_score, m.away_score, m.status, m.kickoff_at],
+        [m.match_id, m.round, m.home_team, m.away_team, m.home_team_code, m.away_team_code, m.home_score, m.away_score, m.status, m.minute ?? null, m.kickoff_at],
       );
     }
     await client.query("COMMIT");

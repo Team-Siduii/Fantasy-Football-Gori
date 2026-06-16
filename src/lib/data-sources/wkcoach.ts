@@ -47,6 +47,9 @@ type WkcoachApiMatch = {
   home_score?: number;
   away_score?: number;
   status?: string;
+  minute?: number | string;
+  match_minute?: number | string;
+  elapsed?: number | string;
   start_date_str?: string;
 };
 
@@ -60,8 +63,25 @@ export type WkcoachMatchSyncRow = {
   home_score: number | null;
   away_score: number | null;
   status: string;
+  minute: number | null;
   kickoff_at: string | null;
 };
+
+function toMatchMinute(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const match = value.match(/(\d{1,3})(?:\s*\+\s*\d{1,2})?/);
+    if (match) {
+      const parsed = Number(match[1]);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+  }
+
+  return null;
+}
 
 export type WkcoachPointsSnapshot = {
   roundSequence: number | null;
@@ -343,6 +363,7 @@ export function mapWkcoachMatchesToSyncRows(matches: WkcoachApiMatch[], fallback
       home_score: typeof match.home_score === "number" && match.home_score >= 0 ? match.home_score : null,
       away_score: typeof match.away_score === "number" && match.away_score >= 0 ? match.away_score : null,
       status: match.status?.trim() || "NS",
+      minute: toMatchMinute(match.minute ?? match.match_minute ?? match.elapsed ?? match.status),
       kickoff_at: match.start_date_str ?? null,
     }));
 }

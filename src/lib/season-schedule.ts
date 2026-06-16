@@ -8,6 +8,7 @@ export type SeasonFixture = {
   homeScore?: number;
   awayScore?: number;
   status?: string;
+  minute?: number | null;
 };
 
 export const SCHEDULE_SPONSOR = "Staatsloterij";
