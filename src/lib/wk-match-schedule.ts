@@ -12,12 +12,25 @@ export type SyncedWkMatchLike = {
 };
 
 function normalizeFixtureTeamName(input: string | null | undefined): string {
-  return (input ?? "")
+  const normalized = (input ?? "")
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .replace(/[^\p{Letter}\p{Number}]+/gu, " ")
     .trim()
     .toLowerCase();
+
+  switch (normalized) {
+    case "bosnie herzegovina":
+    case "bosnie en herzegovina":
+    case "bosnia and herzegovina":
+      return "bosnia herzegovina";
+    case "saoedi arabie":
+    case "saudi arabie":
+    case "saudi arabia":
+      return "saudi arabia";
+    default:
+      return normalized;
+  }
 }
 
 function buildFixtureKey(round: number, home: string, away: string): string {
