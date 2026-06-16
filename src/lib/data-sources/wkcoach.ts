@@ -34,6 +34,35 @@ type WkcoachPointsDetailedPayload = {
   players?: WkcoachApiPlayerEntry[];
 };
 
+type WkcoachApiMatchTeam = {
+  full_name?: string;
+  codename?: string;
+};
+
+type WkcoachApiMatch = {
+  id?: number;
+  round?: number;
+  home_team?: WkcoachApiMatchTeam;
+  away_team?: WkcoachApiMatchTeam;
+  home_score?: number;
+  away_score?: number;
+  status?: string;
+  start_date_str?: string;
+};
+
+export type WkcoachMatchSyncRow = {
+  match_id: number;
+  round: number;
+  home_team: string;
+  away_team: string;
+  home_team_code: string;
+  away_team_code: string;
+  home_score: number | null;
+  away_score: number | null;
+  status: string;
+  kickoff_at: string | null;
+};
+
 export type WkcoachPointsSnapshot = {
   roundSequence: number | null;
   players: Array<{
@@ -299,6 +328,54 @@ export async function fetchWkcoachAllPlayersWithPoints(params: {
     all.push(...(d.players ?? []));
   }
   return all;
+}
+
+export function mapWkcoachMatchesToSyncRows(matches: WkcoachApiMatch[], fallbackRoundSequence?: number): WkcoachMatchSyncRow[] {
+  return matches
+    .filter((match): match is WkcoachApiMatch & { id: number } => typeof match.id === "number")
+    .map((match) => ({
+      match_id: match.id,
+      round: typeof match.round === "number" ? match.round : (fallbackRoundSequence ?? 1),
+      home_team: match.home_team?.full_name?.trim() || "?",
+      away_team: match.away_team?.full_name?.trim() || "?",
+      home_team_code: match.home_team?.codename?.trim() || "",
+      away_team_code: match.away_team?.codename?.trim() || "",
+      home_score: typeof match.home_score === "number" && match.home_score >= 0 ? match.home_score : null,
+      away_score: typeof match.away_score === "number" && match.away_score >= 0 ? match.away_score : null,
+      status: match.status?.trim() || "NS",
+      kickoff_at: match.start_date_str ?? null,
+    }));
+}
+
+export async function fetchWkcoachMatches(params: {
+  email: string;
+  password: string;
+  roundSequence?: number;
+}): Promise<WkcoachMatchSyncRow[]> {
+  const cookies = await wkcoachLogin(params.email, params.password);
+  if (!cookies) return [];
+
+  const seq = params.roundSequence ?? 1;
+  const headers = {
+    "User-Agent": WKCOACH_UA,
+    Accept: "application/json",
+    "X-Requested-With": "XMLHttpRequest",
+    Referer: "https://www.wkcoach.nl/app/",
+    Cookie: cookieHeader(cookies),
+  };
+
+  const response = await fetchWithTimeout(
+    `https://www.wkcoach.nl/api/teams/matches/?round_seq=${seq}&ts=${Date.now()}`,
+    { headers, cache: "no-store" },
+  );
+
+  if (!response.ok) {
+    throw new Error(`WKCoach matches fetch failed with status ${response.status}`);
+  }
+
+  const payload = (await response.json()) as { matches?: WkcoachApiMatch[] } | WkcoachApiMatch[];
+  const matches = Array.isArray(payload) ? payload : Array.isArray(payload.matches) ? payload.matches : [];
+  return mapWkcoachMatchesToSyncRows(matches, seq);
 }
 
 export async function fetchWkcoachPointsSnapshot(params: {
