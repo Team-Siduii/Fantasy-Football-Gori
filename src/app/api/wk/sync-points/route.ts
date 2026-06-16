@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import {
   fetchWkcoachAllPlayersWithPoints,
+  fetchWkcoachMatches,
 } from "@/lib/data-sources/wkcoach";
 import {
   saveWkPlayerPoints,
   saveWkPlayerEvents,
+  saveWkMatches,
 } from "@/lib/wk-sync-store";
 import { recalculateAllManagerRoundScoresPersistent } from "@/lib/team-score-engine";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
@@ -113,11 +115,43 @@ export async function GET(request: Request) {
 
     const syncedAt = new Date().toISOString();
     let playersCount = 0;
-    const matchesCount = 0;
+    let matchesCount = 0;
     let eventsCount = 0;
     let recalculatedManagersCount = 0;
 
-    // ── 1. Sync player points via search_all (with point_events!) ──
+    // ── 1. Sync WK match states (kickoff, live score, final score) ──
+    console.log("[sync-points] Starting WKCoach matches fetch...");
+    let matches = [] as Awaited<ReturnType<typeof fetchWkcoachMatches>>;
+    try {
+      matches = await fetchWkcoachMatches({
+        email,
+        password,
+        roundSequence,
+      });
+      console.log("[sync-points] WKCoach matches fetch done: " + matches.length + " matches");
+    } catch (fetchErr) {
+      console.error("[sync-points] WKCoach matches fetch FAILED:", String(fetchErr));
+      return NextResponse.json(
+        { error: "WKCoach matches fetch failed", details: String(fetchErr) },
+        { status: 502, headers: NO_CACHE_HEADERS },
+      );
+    }
+
+    if (matches.length > 0) {
+      try {
+        await saveWkMatches(matches);
+        matchesCount = matches.length;
+        console.log("[sync-points] Matches saved");
+      } catch (dbErr) {
+        console.error("[sync-points] DB save matches FAILED:", String(dbErr));
+        return NextResponse.json(
+          { error: "Database save failed (matches)", details: String(dbErr) },
+          { status: 502, headers: NO_CACHE_HEADERS },
+        );
+      }
+    }
+
+    // ── 2. Sync player points via search_all (with point_events!) ──
     if (fullSync) {
       console.log("[sync-points] Starting WKCoach API fetch...");
       let allPlayers: Awaited<ReturnType<typeof fetchWkcoachAllPlayersWithPoints>>;

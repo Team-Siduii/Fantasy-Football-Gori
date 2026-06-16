@@ -16,6 +16,7 @@ import { byPriceDesc, enrichPlayers, type EnhancedPlayer } from "@/lib/player-de
 import { getCountryFlagImageUrl, withCountryFlag } from "@/lib/country-flags";
 import { getPlayerCardMeta } from "@/lib/player-card-display";
 import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
+import { mergeWorldCupFixturesWithSyncedMatches, hasVisibleFixtureScore, isLiveWkMatchStatus, type SyncedWkMatchLike } from "@/lib/wk-match-schedule";
 import { WORLD_CUP_2026_FIXTURES, isRoundActive } from "@/lib/world-cup-schedule";
 
 type Position = "GK" | "DEF" | "MID" | "FWD";
@@ -57,6 +58,18 @@ type LeagueRuntimeConfigResponse = {
       teamValueCapMillions?: number;
     };
   };
+};
+
+type WkMatchesApiResponse = {
+  matches?: Array<{
+    round: number;
+    homeTeam: string;
+    awayTeam: string;
+    homeScore: number | null;
+    awayScore: number | null;
+    status: string | null;
+    kickoffAt: string | null;
+  }>;
 };
 
 type TransferRoundEntryStatus = {
@@ -549,8 +562,13 @@ function getCountdownParts(targetIso: string) {
 export default function ManagerMyTeamPage() {
   const pathname = usePathname();
   const isWkMode = pathname.startsWith("/manager/world-cup");
+  const scheduleFixtures = isWkMode ? WORLD_CUP_2026_FIXTURES : REMAINING_FIXTURES_2025_2026;
   const [budgetCapMillions, setBudgetCapMillions] = useState(() => getTransferBudgetCapMillions(isWkMode ? "wk" : "eredivisie"));
-  const activeFixtures = isWkMode ? WORLD_CUP_2026_FIXTURES : REMAINING_FIXTURES_2025_2026;
+  const [wkSyncedMatches, setWkSyncedMatches] = useState<SyncedWkMatchLike[]>([]);
+  const activeFixtures = useMemo(
+    () => (isWkMode ? mergeWorldCupFixturesWithSyncedMatches(scheduleFixtures, wkSyncedMatches) : scheduleFixtures),
+    [isWkMode, scheduleFixtures, wkSyncedMatches],
+  );
   const clubLabel = isWkMode ? "Land" : "Club";
   const clubsLabel = isWkMode ? "landen" : "clubs";
   const searchLabel = isWkMode ? "Zoek speler/land" : "Zoek speler/club";
@@ -609,8 +627,8 @@ export default function ManagerMyTeamPage() {
 
       try {
         const initialRound =
-          getCurrentOrNextRound(activeFixtures, new Date()) ??
-          [...new Set(activeFixtures.map((fixture) => fixture.round))].sort((a, b) => a - b)[0] ??
+          getCurrentOrNextRound(scheduleFixtures, new Date()) ??
+          [...new Set(scheduleFixtures.map((fixture) => fixture.round))].sort((a, b) => a - b)[0] ??
           1;
 
         const [playersResponse, managerStateResponse, leagueConfigResponse, ownedIdsResponse] = await Promise.all([
@@ -707,7 +725,47 @@ export default function ManagerMyTeamPage() {
     };
 
     void load();
-  }, [formationOptions, isWkMode]);
+  }, [formationOptions, isWkMode, scheduleFixtures]);
+
+  useEffect(() => {
+    if (!isWkMode || !selectedRound) {
+      setWkSyncedMatches([]);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadWkMatches = async () => {
+      try {
+        const response = await fetch(`/api/wk/matches?round=${selectedRound}&_t=${Date.now()}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          setWkSyncedMatches([]);
+          return;
+        }
+
+        const payload = (await response.json()) as WkMatchesApiResponse;
+        const normalizedMatches: SyncedWkMatchLike[] = (payload.matches ?? []).map((match) => ({
+          round: match.round,
+          home_team: match.homeTeam,
+          away_team: match.awayTeam,
+          home_score: match.homeScore,
+          away_score: match.awayScore,
+          status: match.status,
+          kickoff_at: match.kickoffAt,
+        }));
+        setWkSyncedMatches(normalizedMatches);
+      } catch {
+        setWkSyncedMatches([]);
+      }
+    };
+
+    void loadWkMatches();
+
+    return () => controller.abort();
+  }, [isWkMode, selectedRound]);
 
   useEffect(() => {
     if (!hydrated.current || !selectedRound) {
@@ -962,6 +1020,16 @@ export default function ManagerMyTeamPage() {
     return getCountdownParts(firstFixture.kickoffAt);
   }, [selectedRoundFixtures]);
 
+  const roundHasVisibleScores = useMemo(
+    () => selectedRoundFixtures.some((fixture) => hasVisibleFixtureScore(fixture)),
+    [selectedRoundFixtures],
+  );
+
+  const roundHasLiveScores = useMemo(
+    () => selectedRoundFixtures.some((fixture) => hasVisibleFixtureScore(fixture) && isLiveWkMatchStatus(fixture.status)),
+    [selectedRoundFixtures],
+  );
+
   const isPastRound = selectedRound !== null && currentRound !== null && selectedRound < currentRound;
   const currentTransferLimit = currentRound ? getTransferLimitForRound(currentRound, [...BONUS_ROUNDS]) : 1;
   const transferPhase = transferRound?.phase ?? "SELL";
@@ -1055,7 +1123,9 @@ export default function ManagerMyTeamPage() {
             <strong className="round-title-value">{selectedRound}</strong>
           </div>
 
-          {isPastRound ? (
+          {roundHasLiveScores ? (
+            <div className="round-result-pill">Live</div>
+          ) : isPastRound || roundHasVisibleScores ? (
             <div className="round-result-pill">Uitslagen</div>
           ) : roundCountdown ? (
             <div className="round-countdown" aria-label="Start volgende speelronde">
@@ -1080,17 +1150,22 @@ export default function ManagerMyTeamPage() {
         <div className="round-fixtures-grid">
           {fixtureColumns.map((column, columnIndex) => (
             <ul key={`fixture-column-${columnIndex}`} className="round-fixture-column">
-              {column.map((fixture) => (
+              {column.map((fixture) => {
+                const fixtureHasVisibleScore = hasVisibleFixtureScore(fixture);
+                const showFixtureScore = isWkMode ? fixtureHasVisibleScore : isPastRound;
+                const fixtureIsLive = fixtureHasVisibleScore && isLiveWkMatchStatus(fixture.status);
+
+                return (
                 <li key={`${fixture.kickoffAt}-${fixture.home}-${fixture.away}`} className="round-fixture-row">
                   <span className="fixture-team fixture-team--home">
                     <span className="fixture-team-code">{toClubCode(fixture.home)}</span>
                     <span className={`team-shirt team-shirt--${toShirtClass(fixture.home)}`} aria-hidden="true" />
                   </span>
                   <span className="fixture-time">
-                    {isPastRound ? (
+                    {showFixtureScore ? (
                       <>
                         {fixture.homeScore ?? "-"} - {fixture.awayScore ?? "-"}
-                        <small>uitslag</small>
+                        <small>{fixtureIsLive ? "live" : "uitslag"}</small>
                         {isWkMode ? <small>{getFixturePouleLabel(fixture, wkGroupLookup) ?? "Knock-out"}</small> : null}
                       </>
                     ) : (
@@ -1106,7 +1181,7 @@ export default function ManagerMyTeamPage() {
                     <span className={`team-shirt team-shirt--${toShirtClass(fixture.away)}`} aria-hidden="true" />
                   </span>
                 </li>
-              ))}
+              )})}
             </ul>
           ))}
         </div>
@@ -1117,6 +1192,8 @@ export default function ManagerMyTeamPage() {
     isPastRound,
     isWkMode,
     roundCountdown,
+    roundHasLiveScores,
+    roundHasVisibleScores,
     roundNumbers.length,
     selectedRound,
     selectedRoundFixtures,
