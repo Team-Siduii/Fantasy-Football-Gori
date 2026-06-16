@@ -27,6 +27,7 @@ export async function GET(request: Request) {
         homeScore: m.home_score,
         awayScore: m.away_score,
         status: m.status,
+        minute: m.minute,
         kickoffAt: m.kickoff_at,
       })),
       source: "db",

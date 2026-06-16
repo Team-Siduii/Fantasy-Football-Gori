@@ -409,16 +409,95 @@ a {
 .fixture-time {
   display: grid;
   justify-items: center;
-  gap: 0.02rem;
+  gap: 0.08rem;
   font-size: 0.64rem;
   color: #636f82;
   text-transform: lowercase;
   white-space: nowrap;
 }
 
+.fixture-time--scored {
+  gap: 0.12rem;
+}
+
+.fixture-time--finished .fixture-score {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #243041;
+}
+
+.fixture-time--live .fixture-score {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #067a58;
+  text-shadow: 0 0 14px rgba(6, 122, 88, 0.16);
+}
+
+.fixture-score {
+  letter-spacing: 0.01em;
+}
+
+.fixture-live-minute {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.26rem;
+  min-width: 2.8rem;
+  padding: 0.14rem 0.5rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(6, 122, 88, 0.14), rgba(32, 182, 133, 0.24));
+  border: 1px solid rgba(6, 122, 88, 0.14);
+  box-shadow: 0 8px 18px rgba(6, 122, 88, 0.14);
+  color: #067a58;
+  font-size: 0.59rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  animation: fixture-live-pulse 1.3s ease-in-out infinite;
+}
+
+.fixture-live-minute::before {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: #09a06f;
+  box-shadow: 0 0 0 0 rgba(9, 160, 111, 0.45);
+  animation: fixture-live-dot 1.3s ease-in-out infinite;
+}
+
 .fixture-time small {
   font-size: 0.61rem;
   color: #8a94a5;
+}
+
+.fixture-time--live small {
+  color: #0d8a63;
+}
+
+@keyframes fixture-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(13, 138, 99, 0.18);
+  }
+  50% {
+    opacity: 0.62;
+    transform: scale(0.97);
+    box-shadow: 0 0 0 4px rgba(13, 138, 99, 0.04);
+  }
+}
+
+@keyframes fixture-live-dot {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(9, 160, 111, 0.45);
+  }
+  50% {
+    transform: scale(0.85);
+    box-shadow: 0 0 0 6px rgba(9, 160, 111, 0.06);
+  }
 }
 
 .team-shirt {
@@ -1746,6 +1825,17 @@ select {
   .round-fixture-row {
     grid-template-columns: minmax(64px, 1fr) minmax(86px, auto) minmax(64px, 1fr);
     font-size: 0.69rem;
+  }
+
+  .fixture-time--finished .fixture-score,
+  .fixture-time--live .fixture-score {
+    font-size: 0.8rem;
+  }
+
+  .fixture-live-minute {
+    min-width: 2.4rem;
+    font-size: 0.56rem;
+    padding-inline: 0.36rem;
   }
 
   .bottom-nav {

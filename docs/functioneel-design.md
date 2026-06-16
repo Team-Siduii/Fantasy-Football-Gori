@@ -157,7 +157,7 @@ Per rol belangrijkste rechten:
 - Managerpagina toont transfermarkt onder teamoverzicht zodat basiselftal/bank en transferkeuzes tegelijk zichtbaar zijn
 - In de Team-paginaheader (regel direct onder titel "Team") wordt de standaardtekst vervangen door een compacte speelrondekaart met ronde-nummer, start-countdown en een wedstrijdraster met 1-op-1 shirt-icoontjes per club, plus datum+tijd per duel.
 - Speelrondekaart heeft browsen met links/rechts-knoppen: rechts toont de volgende ronde (programma), links toont de vorige ronde met uitslagen.
-- In WK mode verrijkt de Team-speelrondekaart het statische schema per geselecteerde ronde met gesynchroniseerde `wk_matches` data, zodat live standen tijdens lopende wedstrijden en definitieve uitslagen na afloop direct zichtbaar zijn in hetzelfde programma-overzicht.
+- In WK mode verrijkt de Team-speelrondekaart het statische schema per geselecteerde ronde met gesynchroniseerde `wk_matches` data, zodat live standen tijdens lopende wedstrijden en definitieve uitslagen na afloop direct zichtbaar zijn in hetzelfde programma-overzicht. Gespeelde wedstrijden krijgen een duidelijkere score-hiërarchie (dikgedrukt/groter), terwijl live wedstrijden geen tekstlabel tonen maar via accentkleur, subtiele puls/knippering en wedstrijdminuut visueel opvallen. Naamvarianten tussen schema en bronfeed (zoals `Bosnië-Herzegovina` vs `Bosnië en Herzegovina`, of `Saoedi-Arabië` vs `Saudi-Arabië`) worden als hetzelfde land gematcht zodat uitslagen niet wegvallen door schrijfwijzeverschillen.
 - Transfermarkt-filters in MVP: positie, club en maximale transferwaarde (slider)
 - In mobiele weergave stacken transfermarkt-filters onder elkaar met full-width velden (geen samengedrukte Positie/Club/Zoek-layout)
 - Mobile transfermarkt-filters gebruiken extra label-contrast en spacing voor leesbaarheid en touch-bruikbaarheid
@@ -261,6 +261,8 @@ FR-042: Team-paginaheader (onder titel "Team", boven basiselftal) toont een spee
 FR-043: Basiselftal-veld behoudt bestaande kaarten/interactie maar rendert de expliciet aangeleverde referentie-afbeelding als pitch-achtergrond (`/public/images/pitch-reference.jpg`) zodat de visuele veldstijl 1-op-1 overeenkomt met het goedgekeurde voorbeeld.
 FR-044: Speelrondekaart ondersteunt browsen via links/rechts-knoppen: rechts navigeert naar volgende ronde (programma), links naar vorige ronde met uitslagenweergave.
 FR-044a: In WK mode haalt de Team-speelrondekaart per geselecteerde ronde live `wk_matches` op en toont ze live-stand zodra scoredata beschikbaar is; afgeronde wedstrijden blijven als uitslag zichtbaar in hetzelfde programma-overzicht.
+FR-044b: De scorepresentatie in de Team-speelrondekaart gebruikt visuele status in plaats van het woord "live": gespeelde wedstrijden tonen een dikkere/grotere score, live wedstrijden krijgen een accentkleur plus subtiele pulsanimatie, en tonen de beschikbare wedstrijdminuut naast de tussenstand.
+FR-044c: Bij het koppelen van `wk_matches` aan het statische WK-speelschema normaliseert de applicatie bekende land-naamvarianten uit bronfeeds, zodat uitslagen en live-standen zichtbaar blijven ondanks afwijkende schrijfwijzen.
 FR-045: Manager-UI is responsive op mobiel/tablet: header, kaarten, opstellingsveld en bottom navigation blijven bruikbaar zonder horizontaal scrollen in de standaard flows.
 FR-045a: De manager-header gebruikt op laptop én mobiel één openklapmenu (`Menu`); zonder actieve managersessie toont dit menu alleen `Log in`, en na login toont het secundaire manageracties zoals Draft, Naam aanpassen, Instellingen, Spelregels, CSV import en Log out. Deze acties mogen niet buiten de viewport vallen.
 FR-046: In mobiele Team-weergave staan de secties in deze volgorde: basiselftal, wisselspelers, daarna statistiektegels.
@@ -449,6 +451,7 @@ Waarom zo:
 - [ ] Basiselftal gebruikt exact de aangeleverde referentie-afbeelding als pitch-achtergrond (`/public/images/pitch-reference.jpg`), met ongewijzigde kaarten/interactie erbovenop
 - [ ] Links/rechts-knoppen browsen speelrondes: rechts toont volgende ronde-programma, links toont vorige ronde met uitslagen
 - [ ] In WK mode toont de speelrondekaart live-stand zodra `wk_matches` een tussenscore heeft en laat dezelfde kaart na afloop de definitieve uitslag staan.
+- [ ] Gespeelde wedstrijden vallen visueel op met grotere/dikgedrukte scoreweergave; live wedstrijden gebruiken accentkleur + subtiele animatie en tonen, zodra beschikbaar, de wedstrijdminuut zonder expliciet "live"-label.
 - [ ] Manager-UI blijft mobiel bruikbaar (telefoon/tablet) met responsive header, opstellingskaarten, statistiektegels en bottom navigation
 - [ ] Headeracties staan op laptop en mobiel in één openklapmenu (`Menu`); logged-out toont alleen `Log in`, logged-in toont Draft/Naam aanpassen/Instellingen/Spelregels/CSV import/Log out, zonder horizontale overflow
 - [ ] In mobiele Team-weergave staat de volgorde als: basiselftal → wisselspelers → statistiektegels
@@ -608,6 +611,8 @@ Waarom zo:
 - 2026-05-24: Manager Team-widget koppelt draft-roster nu automatisch aan ingelogde `teamName`; bij match wordt teamselectie vergrendeld op eigen team, bij geen match blijft handmatige keuze beschikbaar.
 - 2026-05-24: Alias-mapping toegevoegd voor draft-teamkoppeling (o.a. `FC Slot`→`Team A`) zodat account-teamnamen en draftteamnamen consistent gematcht blijven.
 - 2026-06-16: WK Team-speelrondekaart leest nu per geselecteerde ronde live `wk_matches` in, waardoor lopende wedstrijden direct hun tussenstand tonen en afgeronde wedstrijden in hetzelfde programma-overzicht als uitslag zichtbaar blijven.
+- 2026-06-16: Scorevisuals in de WK Team-speelrondekaart verfijnd: geen tekstuele `live`-badge meer in wedstrijdregels, maar grotere/dikkere uitslagtypografie voor gespeelde duels en een geaccentueerde live-stand met minuut + subtiele pulsanimatie voor lopende wedstrijden.
+- 2026-06-16: WK score-merge herkent nu ook bekende bronnaam-varianten (o.a. `Bosnië-Herzegovina`/`Bosnië en Herzegovina` en `Saoedi-Arabië`/`Saudi-Arabië`), zodat ontbrekende uitslagen door naamverschillen niet meer voorkomen.
 - 2026-05-24: Manager Team-widget staat geen handmatige draftteam-keuze meer toe; managers zien alleen eigen gekoppelde team of een geen-koppeling melding.
 - 2026-05-24: WK ronde-overzicht toont nu per wedstrijd de poule-indicatie (`Poule X`) in groepsfase, met `Knock-out` label buiten groepsfase.
 - 2026-05-24: Poule-mapping WK hersteld op basis van bronvolgorde uit KPN speelschema (pouleletters op eerste speeldagvolgorde) en corrupte fixturetekst opgeschoond (`Jordanië - Argentinië`).

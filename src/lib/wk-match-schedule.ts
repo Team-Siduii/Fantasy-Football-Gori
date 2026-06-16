@@ -7,16 +7,30 @@ export type SyncedWkMatchLike = {
   home_score: number | null;
   away_score: number | null;
   status: string | null;
+  minute?: number | null;
   kickoff_at: string | null;
 };
 
 function normalizeFixtureTeamName(input: string | null | undefined): string {
-  return (input ?? "")
+  const normalized = (input ?? "")
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .replace(/[^\p{Letter}\p{Number}]+/gu, " ")
     .trim()
     .toLowerCase();
+
+  switch (normalized) {
+    case "bosnie herzegovina":
+    case "bosnie en herzegovina":
+    case "bosnia and herzegovina":
+      return "bosnia herzegovina";
+    case "saoedi arabie":
+    case "saudi arabie":
+    case "saudi arabia":
+      return "saudi arabia";
+    default:
+      return normalized;
+  }
 }
 
 function buildFixtureKey(round: number, home: string, away: string): string {
@@ -47,13 +61,14 @@ export function mergeWorldCupFixturesWithSyncedMatches(
       homeScore: match.home_score ?? fixture.homeScore,
       awayScore: match.away_score ?? fixture.awayScore,
       status: match.status || fixture.status,
+      minute: match.minute ?? fixture.minute ?? null,
     };
   });
 }
 
 export function isFinishedWkMatchStatus(status: string | null | undefined): boolean {
   const normalized = (status ?? "").trim().toUpperCase();
-  return ["F", "FT", "FINISHED", "AET", "PEN"].includes(normalized);
+  return ["F", "FT", "FINISHED", "AET", "PEN", "X"].includes(normalized);
 }
 
 export function isLiveWkMatchStatus(status: string | null | undefined): boolean {
@@ -71,4 +86,37 @@ export function isLiveWkMatchStatus(status: string | null | undefined): boolean 
 
 export function hasVisibleFixtureScore(fixture: Pick<SeasonFixture, "homeScore" | "awayScore">): boolean {
   return typeof fixture.homeScore === "number" && typeof fixture.awayScore === "number";
+}
+
+export function getWkMatchLiveMinuteLabel(
+  minute: number | null | undefined,
+  status: string | null | undefined,
+): string | null {
+  if (!isLiveWkMatchStatus(status)) {
+    return null;
+  }
+
+  if (typeof minute === "number" && Number.isFinite(minute) && minute > 0) {
+    return `${minute}'`;
+  }
+
+  const normalized = (status ?? "").trim().toUpperCase();
+  const explicitMinute = normalized.match(/(\d{1,3})(?:\s*\+\s*(\d{1,2}))?/);
+  if (explicitMinute) {
+    return explicitMinute[2] ? `${explicitMinute[1]}+${explicitMinute[2]}'` : `${explicitMinute[1]}'`;
+  }
+
+  if (["HT", "HALF", "HALFTIME"].includes(normalized)) {
+    return "rust";
+  }
+
+  if (["2H", "SECOND HALF"].includes(normalized)) {
+    return "2e helft";
+  }
+
+  if (["1H", "FIRST HALF"].includes(normalized)) {
+    return "1e helft";
+  }
+
+  return "nu";
 }
