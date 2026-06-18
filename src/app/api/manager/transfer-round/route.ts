@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import {
   allRequiredBuyChoicesSubmitted,
   allRetryChoicesSubmitted,
-  applyAutoSells,
   createTransferRoundState,
   getBuyCount,
   getPendingManagers,
@@ -222,14 +221,30 @@ export async function POST(request: Request) {
   let nextState = hydratedState;
 
   // Apply auto-sells voor inactive spelers (WK verlaten)
-  const rosterState = await readTeamRosterStatePersistent(scope);
-  function getTeamPlayerIds(managerId: string): string[] {
-    return rosterState.byTeamId[managerId] ?? [];
-  }
   function getInactiveIds(ids: string[]): string[] {
     return ids.filter((id) => Boolean(getInactivePlayer(id)));
   }
-  nextState = applyAutoSells(nextState, getInactiveIds, getTeamPlayerIds);
+  // Per manager: haal team op uit manager state (niet roster state — IDs kunnen verschillen)
+  for (const entry of nextState.entries) {
+    const managerState = await readManagerStatePersistent(scope, entry.email);
+    const teamIds = [...managerState.lineupIds, ...managerState.benchIds];
+    const inactiveIds = getInactiveIds(teamIds);
+    if (inactiveIds.length === 0) continue;
+    // Filter out IDs die al handmatig verkocht zijn
+    const newAutoSells = inactiveIds.filter(
+      (id) => id !== entry.sellPlayerId && !entry.autoSellPlayerIds.includes(id),
+    );
+    if (newAutoSells.length === 0) continue;
+    // Direct via replaceEntry (applyAutoSells domein functie werkt niet door managerId mismatch)
+    nextState = {
+      ...nextState,
+      entries: nextState.entries.map((e) =>
+        e.managerId === entry.managerId
+          ? { ...e, autoSellPlayerIds: [...e.autoSellPlayerIds, ...newAutoSells], updatedAt: new Date().toISOString() }
+          : e,
+      ),
+    };
+  }
   await saveTransferRoundPersistent(nextState, scope);
 
   const action = body.action ?? "";
