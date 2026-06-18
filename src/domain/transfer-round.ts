@@ -84,8 +84,13 @@ export function syncTransferRoundParticipants(
 ): TransferRoundState {
   const now = at ?? new Date().toISOString();
   const existingByManagerId = new Map(state.entries.map((entry) => [entry.managerId, entry]));
+  const existingByEmail = new Map(state.entries.map((entry) => [entry.email.toLowerCase(), entry]));
   const nextEntries = participants.map((participant) => {
-    const existing = existingByManagerId.get(participant.managerId);
+    let existing = existingByManagerId.get(participant.managerId);
+    if (!existing) {
+      // Fallback: match by email — managerId kan verschillen tussen ranking en transfer state
+      existing = existingByEmail.get((participant.email ?? "").toLowerCase()) ?? undefined;
+    }
     if (!existing) {
       return {
         ...participant,

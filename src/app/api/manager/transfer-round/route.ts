@@ -247,6 +247,12 @@ export async function POST(request: Request) {
   }
   await saveTransferRoundPersistent(nextState, scope);
 
+  // Re-read requesterEntry from nextState — auto-sells may have modified the entries array
+  const currentRequesterEntry = nextState.entries.find((entry) => entry.email.toLowerCase() === requesterEmail.toLowerCase());
+  if (!currentRequesterEntry) {
+    return NextResponse.json({ error: "Manager zit niet in deze transfergroep" }, { status: 403 });
+  }
+
   const action = body.action ?? "";
   try {
   if (action === "submit-sell") {
@@ -258,9 +264,9 @@ export async function POST(request: Request) {
     if (!ownPlayerIds.has(body.playerId)) {
       return NextResponse.json({ error: "Je kunt alleen een speler uit je eigen team verkopen" }, { status: 400 });
     }
-    nextState = submitSellChoice(nextState, requesterEntry.managerId, body.playerId);
+    nextState = submitSellChoice(nextState, currentRequesterEntry.managerId, body.playerId);
   } else if (action === "skip-sell") {
-    nextState = skipSellChoice(nextState, requesterEntry.managerId);
+    nextState = skipSellChoice(nextState, currentRequesterEntry.managerId);
   } else if (action === "submit-buy") {
     if (!body.playerId) {
       return NextResponse.json({ error: "playerId is verplicht" }, { status: 400 });
@@ -298,7 +304,7 @@ export async function POST(request: Request) {
     const budgetCap = (await getLeagueAdminConfigPersistent(scope)).budget.teamValueCapMillions ?? getTransferBudgetCapMillions(scope);
 
     // Validate primary buy
-    const primarySoldId = requesterEntry.sellPlayerId ?? requesterEntry.autoSellPlayerIds[0] ?? "";
+    const primarySoldId = currentRequesterEntry.sellPlayerId ?? currentRequesterEntry.autoSellPlayerIds[0] ?? "";
     try {
       validateTransferSquad({
         rosterPlayers,
@@ -317,7 +323,7 @@ export async function POST(request: Request) {
         validateTransferSquad({
           rosterPlayers,
           incomingPlayer: extraPlayer,
-          soldPlayerId: requesterEntry.autoSellPlayerIds[1] ?? requesterEntry.autoSellPlayerIds[0] ?? "",
+          soldPlayerId: currentRequesterEntry.autoSellPlayerIds[1] ?? currentRequesterEntry.autoSellPlayerIds[0] ?? "",
           budgetCap,
         });
       } catch (error) {
@@ -325,7 +331,7 @@ export async function POST(request: Request) {
       }
     }
 
-    nextState = submitBuyChoice(nextState, requesterEntry.managerId, body.playerId, extraBuyPlayerId);
+    nextState = submitBuyChoice(nextState, currentRequesterEntry.managerId, body.playerId, extraBuyPlayerId);
     nextState = maybeResolveState(nextState);
     await applyResolvedTransfers(scope, roundNumber, nextState);
   } else {
