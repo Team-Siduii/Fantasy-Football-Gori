@@ -55,14 +55,22 @@ function normalizeRoundState(raw: Partial<TransferRoundState>, roundNumber: numb
       rankingPosition: typeof entry?.rankingPosition === "number" && entry.rankingPosition > 0 ? entry.rankingPosition : 999,
       sellStatus: entry?.sellStatus === "SKIPPED" || entry?.sellStatus === "SUBMITTED" ? entry.sellStatus : "PENDING",
       sellPlayerId: typeof entry?.sellPlayerId === "string" ? entry.sellPlayerId : null,
+      autoSellPlayerIds: Array.isArray(entry?.autoSellPlayerIds)
+        ? entry.autoSellPlayerIds.filter((id): id is string => typeof id === "string")
+        : [],
       buyStatus:
         entry?.buyStatus === "PENDING" || entry?.buyStatus === "SUBMITTED" || entry?.buyStatus === "COMPLETED" || entry?.buyStatus === "RETRY_REQUIRED"
           ? entry.buyStatus
           : "LOCKED",
       buyPlayerId: typeof entry?.buyPlayerId === "string" ? entry.buyPlayerId : null,
+      extraBuyPlayerId: typeof entry?.extraBuyPlayerId === "string" ? entry.extraBuyPlayerId : null,
       resolvedTransfer:
         entry?.resolvedTransfer && typeof entry.resolvedTransfer.soldPlayerId === "string" && typeof entry.resolvedTransfer.boughtPlayerId === "string"
           ? { soldPlayerId: entry.resolvedTransfer.soldPlayerId, boughtPlayerId: entry.resolvedTransfer.boughtPlayerId }
+          : null,
+      extraResolvedTransfer:
+        entry?.extraResolvedTransfer && typeof entry.extraResolvedTransfer.soldPlayerId === "string" && typeof entry.extraResolvedTransfer.boughtPlayerId === "string"
+          ? { soldPlayerId: entry.extraResolvedTransfer.soldPlayerId, boughtPlayerId: entry.extraResolvedTransfer.boughtPlayerId }
           : null,
       updatedAt: typeof entry?.updatedAt === "string" ? entry.updatedAt : null,
     })),

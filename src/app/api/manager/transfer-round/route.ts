@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import {
   allRequiredBuyChoicesSubmitted,
   allRetryChoicesSubmitted,
+  applyAutoSells,
   createTransferRoundState,
+  getBuyCount,
   getPendingManagers,
   resolveSubmittedBuys,
   skipSellChoice,
@@ -24,6 +26,7 @@ import { readTeamRosterStatePersistent, removePlayerFromTeamRosterPersistent, ad
 import { parsePlayerCsv } from "@/domain/player-csv";
 import { readFile } from "fs/promises";
 import path from "path";
+import { getInactivePlayer } from "@/lib/inactive-players";
 
 function getScopeFromRequest(request: Request): ManagerStateScope {
   const mode = new URL(request.url).searchParams.get("mode");
@@ -99,15 +102,30 @@ async function applyResolvedTransfers(scope: ManagerStateScope, roundNumber: num
   const appliedManagerIds = new Set<string>();
 
   for (const entry of state.entries) {
-    if (!entry.resolvedTransfer || appliedManagerIds.has(entry.managerId)) {
-      continue;
-    }
-    const managerState = await readManagerStateForRoundPersistent(roundNumber, scope, entry.email);
-    const soldPlayerId = entry.resolvedTransfer.soldPlayerId;
-    const boughtPlayerId = entry.resolvedTransfer.boughtPlayerId;
+    if (appliedManagerIds.has(entry.managerId)) continue;
 
-    const nextLineupIds = managerState.lineupIds.map((playerId) => (playerId === soldPlayerId ? boughtPlayerId : playerId));
-    const nextBenchIds = managerState.benchIds.map((playerId) => (playerId === soldPlayerId ? boughtPlayerId : playerId));
+    const resolved = entry.resolvedTransfer;
+    const extraResolved = entry.extraResolvedTransfer;
+
+    if (!resolved && !extraResolved) continue;
+
+    const managerState = await readManagerStateForRoundPersistent(roundNumber, scope, entry.email);
+    let nextLineupIds = [...managerState.lineupIds];
+    let nextBenchIds = [...managerState.benchIds];
+
+    if (resolved) {
+      nextLineupIds = nextLineupIds.map((id) => (id === resolved.soldPlayerId ? resolved.boughtPlayerId : id));
+      nextBenchIds = nextBenchIds.map((id) => (id === resolved.soldPlayerId ? resolved.boughtPlayerId : id));
+      await removePlayerFromTeamRosterPersistent(entry.managerId, resolved.soldPlayerId, scope);
+      await addPlayerToTeamRosterPersistent(entry.managerId, resolved.boughtPlayerId, scope);
+    }
+
+    if (extraResolved) {
+      nextLineupIds = nextLineupIds.map((id) => (id === extraResolved.soldPlayerId ? extraResolved.boughtPlayerId : id));
+      nextBenchIds = nextBenchIds.map((id) => (id === extraResolved.soldPlayerId ? extraResolved.boughtPlayerId : id));
+      await removePlayerFromTeamRosterPersistent(entry.managerId, extraResolved.soldPlayerId, scope);
+      await addPlayerToTeamRosterPersistent(entry.managerId, extraResolved.boughtPlayerId, scope);
+    }
 
     await saveManagerStateForRoundPersistent(
       roundNumber,
@@ -124,8 +142,6 @@ async function applyResolvedTransfers(scope: ManagerStateScope, roundNumber: num
       entry.email,
     );
 
-    await removePlayerFromTeamRosterPersistent(entry.managerId, soldPlayerId, scope);
-    await addPlayerToTeamRosterPersistent(entry.managerId, boughtPlayerId, scope);
     appliedManagerIds.add(entry.managerId);
   }
 }
@@ -178,9 +194,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
 
-  let body: { action?: string; roundNumber?: number; playerId?: string } = {};
+  let body: { action?: string; roundNumber?: number; playerId?: string; extraBuyPlayerId?: string } = {};
   try {
-    body = (await request.json()) as { action?: string; roundNumber?: number; playerId?: string };
+    body = (await request.json()) as { action?: string; roundNumber?: number; playerId?: string; extraBuyPlayerId?: string };
   } catch {
     body = {};
   }
@@ -204,6 +220,18 @@ export async function POST(request: Request) {
   }
 
   let nextState = hydratedState;
+
+  // Apply auto-sells voor inactive spelers (WK verlaten)
+  const rosterState = await readTeamRosterStatePersistent(scope);
+  function getTeamPlayerIds(managerId: string): string[] {
+    return rosterState.byTeamId[managerId] ?? [];
+  }
+  function getInactiveIds(ids: string[]): string[] {
+    return ids.filter((id) => Boolean(getInactivePlayer(id)));
+  }
+  nextState = applyAutoSells(nextState, getInactiveIds, getTeamPlayerIds);
+  await saveTransferRoundPersistent(nextState, scope);
+
   const action = body.action ?? "";
   try {
   if (action === "submit-sell") {
@@ -222,6 +250,8 @@ export async function POST(request: Request) {
     if (!body.playerId) {
       return NextResponse.json({ error: "playerId is verplicht" }, { status: 400 });
     }
+    const extraBuyPlayerId: string | undefined = typeof body.extraBuyPlayerId === "string" && body.extraBuyPlayerId ? body.extraBuyPlayerId : undefined;
+
     const allPlayers = await loadPlayers(scope);
     const playerById = new Map(allPlayers.map((player) => [player.id, player]));
     const incomingPlayer = playerById.get(body.playerId);
@@ -229,10 +259,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Speler niet gevonden" }, { status: 404 });
     }
 
+    // Validate extra buy if provided
+    if (extraBuyPlayerId) {
+      const extraPlayer = playerById.get(extraBuyPlayerId);
+      if (!extraPlayer) {
+        return NextResponse.json({ error: "Tweede speler niet gevonden" }, { status: 404 });
+      }
+      if (extraBuyPlayerId === body.playerId) {
+        return NextResponse.json({ error: "Je kunt niet twee keer dezelfde speler kopen" }, { status: 400 });
+      }
+    }
+
     const rosterByManager = await buildRosterByManager(scope, nextState);
     const blockedPlayerIds = new Set(buildBlockedPlayerIds(rosterByManager, nextState));
-    if (blockedPlayerIds.has(body.playerId)) {
-      return NextResponse.json({ error: "Deze speler is niet beschikbaar in de transferpool" }, { status: 400 });
+    if (blockedPlayerIds.has(body.playerId) || (extraBuyPlayerId && blockedPlayerIds.has(extraBuyPlayerId))) {
+      return NextResponse.json({ error: "Een van deze spelers is niet beschikbaar in de transferpool" }, { status: 400 });
     }
 
     const managerState = await readManagerStatePersistent(scope, requesterEmail);
@@ -241,18 +282,35 @@ export async function POST(request: Request) {
       .filter((player): player is PlayerRecord => Boolean(player));
     const budgetCap = (await getLeagueAdminConfigPersistent(scope)).budget.teamValueCapMillions ?? getTransferBudgetCapMillions(scope);
 
+    // Validate primary buy
+    const primarySoldId = requesterEntry.sellPlayerId ?? requesterEntry.autoSellPlayerIds[0] ?? "";
     try {
       validateTransferSquad({
         rosterPlayers,
         incomingPlayer,
-        soldPlayerId: requesterEntry.sellPlayerId ?? "",
+        soldPlayerId: primarySoldId,
         budgetCap,
       });
     } catch (error) {
       return NextResponse.json({ error: error instanceof Error ? error.message : "Ongeldige transfer" }, { status: 400 });
     }
 
-    nextState = submitBuyChoice(nextState, requesterEntry.managerId, body.playerId);
+    // Validate extra buy if provided
+    if (extraBuyPlayerId) {
+      const extraPlayer = playerById.get(extraBuyPlayerId)!;
+      try {
+        validateTransferSquad({
+          rosterPlayers,
+          incomingPlayer: extraPlayer,
+          soldPlayerId: requesterEntry.autoSellPlayerIds[1] ?? requesterEntry.autoSellPlayerIds[0] ?? "",
+          budgetCap,
+        });
+      } catch (error) {
+        return NextResponse.json({ error: error instanceof Error ? `Tweede speler: ${error.message}` : "Ongeldige tweede transfer" }, { status: 400 });
+      }
+    }
+
+    nextState = submitBuyChoice(nextState, requesterEntry.managerId, body.playerId, extraBuyPlayerId);
     nextState = maybeResolveState(nextState);
     await applyResolvedTransfers(scope, roundNumber, nextState);
   } else {
