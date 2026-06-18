@@ -10,24 +10,45 @@ function resolveDbUrl() {
 
 const STATE_KEY = "gori_fantasy:manager-state:wk:shared";
 
-export async function GET() {
+export async function GET(request: Request) {
   const db = resolveDbUrl();
   if (!db) return NextResponse.json({ error: "No DB URL" }, { status: 500 });
+  
+  const url = new URL(request.url);
+  const targetManager = url.searchParams.get("manager") || "johan";
+  
   const pool = new Pool({ connectionString: db, ssl: { rejectUnauthorized: false } });
   try {
     const r = await pool.query("SELECT payload FROM gori_fantasy_state WHERE state_key = $1", [STATE_KEY]);
     const p = r.rows[0]?.payload || {};
     const ms = p.managerStates || {};
     
-    let johan: any = null;
+    const results: any[] = [];
     for (const [k, v] of Object.entries(ms)) {
-      if (k.toLowerCase().includes('johan')) {
+      if (k.toLowerCase().includes(targetManager.toLowerCase())) {
         const vv = v as any;
-        johan = { key: k, formation: vv.formation, lineupIds: vv.lineupIds, round2: vv.roundStates?.['2'] };
+        results.push({
+          key: k,
+          formation: vv.formation,
+          lineupIds: vv.lineupIds,
+          benchIds: vv.benchIds,
+          roundStates: Object.keys(vv.roundStates || {}).reduce((acc: any, rk: string) => {
+            acc[rk] = {
+              formation: vv.roundStates[rk].formation,
+              lineupIds: vv.roundStates[rk].lineupIds,
+              benchIds: vv.roundStates[rk].benchIds,
+            };
+            return acc;
+          }, {}),
+        });
       }
     }
     
-    return NextResponse.json({ formation: p.formation, lineupIds: p.lineupIds, johan });
+    return NextResponse.json({ 
+      formation: p.formation, 
+      lineupIds: p.lineupIds,
+      managers: results,
+    });
   } finally { await pool.end(); }
 }
 
