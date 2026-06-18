@@ -1443,6 +1443,20 @@ select {
   color: #5f6f8d;
 }
 
+/* Uitgeschakelde speler (niet meer in WK dataset — land uitgeschakeld / roster gewijzigd) */
+.player-card--inactive {
+  filter: grayscale(0.75);
+  opacity: 0.55;
+  pointer-events: auto;
+}
+
+.player-card--inactive .player-name::after {
+  content: " (uitgeschakeld)";
+  font-size: 0.65rem;
+  color: #a0a0a0;
+  font-style: italic;
+}
+
 .player-card--bench-row {
   height: auto;
   min-height: 2.5rem;

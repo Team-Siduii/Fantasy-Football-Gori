@@ -2,6 +2,7 @@ import type { PlayerRecord } from "@/domain/player";
 
 export type EnhancedPlayer = PlayerRecord & {
   punten: number;
+  inactive?: boolean;
 };
 
 export function derivePlayerPoints(player: PlayerRecord & { punten?: number }): number {

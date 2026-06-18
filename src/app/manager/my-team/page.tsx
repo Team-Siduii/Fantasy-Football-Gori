@@ -14,6 +14,7 @@ import { buildMarketPlayers } from "@/domain/transfer-workflow";
 import { getTransferLimitForRound } from "@/domain/rules";
 import { byPriceDesc, enrichPlayers, type EnhancedPlayer } from "@/lib/player-derived";
 import { getCountryFlagImageUrl, withCountryFlag } from "@/lib/country-flags";
+import { getInactivePlayer } from "@/lib/inactive-players";
 import { getPlayerCardMeta } from "@/lib/player-card-display";
 import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
 import { getWkMatchLiveMinuteLabel, mergeWorldCupFixturesWithSyncedMatches, hasVisibleFixtureScore, isLiveWkMatchStatus, type SyncedWkMatchLike } from "@/lib/wk-match-schedule";
@@ -273,6 +274,18 @@ function buildStateFromSaved(
     if (player && !seen.has(player.id)) {
       seen.add(player.id);
       savedPlayers.push(player);
+    } else if (!player && !seen.has(id)) {
+      // Speler niet in de actieve dataset (uit WK, uitgeschakeld land, etc.)
+      // → toon als inactive placeholder met originele naam uit de graveyard
+      const graveyard = getInactivePlayer(id);
+      if (graveyard) {
+        seen.add(id);
+        savedPlayers.push({
+          ...graveyard,
+          punten: 0,
+          inactive: true,
+        });
+      }
     }
   }
 
@@ -1410,6 +1423,7 @@ export default function ManagerMyTeamPage() {
                         key={`lineup-${lineupIndex}-${player.id}`}
                         data-testid={`lineup-card-${lineupIndex}`}
                         draggable={!player.id.startsWith("open-")}
+                        inactive={player.inactive === true}
                         position={cardMeta.flag}
                         club={cardMeta.countryCode}
                         name={cardMeta.displayName}
@@ -1426,7 +1440,7 @@ export default function ManagerMyTeamPage() {
                         onDragOver={(event) => event.preventDefault()}
                         onDrop={onDrop("lineup", lineupIndex)}
                       >
-                        {!player.id.startsWith("open-") && !transfersLocked ? (
+                        {!player.id.startsWith("open-") && !player.inactive && !transfersLocked ? (
                           <button
                             type="button"
                             className="swap-button"
@@ -1458,6 +1472,7 @@ export default function ManagerMyTeamPage() {
                   key={`bench-${benchIndex}-${player.id}`}
                   data-testid={`bench-card-${benchIndex}`}
                   draggable={!player.id.startsWith("open-")}
+                  inactive={player.inactive === true}
                   position={cardMeta.flag}
                   club={cardMeta.countryCode}
                   name={player.naam}
@@ -1475,7 +1490,7 @@ export default function ManagerMyTeamPage() {
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={onDrop("bench", benchIndex)}
                 >
-                  {!player.id.startsWith("open-") && !transfersLocked ? (
+                  {!player.id.startsWith("open-") && !player.inactive && !transfersLocked ? (
                     <button
                       type="button"
                       className="swap-button"
