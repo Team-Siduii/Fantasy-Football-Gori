@@ -835,6 +835,12 @@ export default function ManagerMyTeamPage() {
           setBlockedTransferPlayerIds(transferData.blockedPlayerIds ?? []);
           setPendingSellId(transferData.currentEntry?.sellPlayerId ?? null);
           setPendingBuyId(transferData.currentEntry?.buyPlayerId ?? null);
+          // Sync sellSelection met de opgeslagen keuze
+          if (transferData.currentEntry?.sellPlayerId) {
+            setSellSelection(transferData.currentEntry.sellPlayerId);
+          } else if (transferData.currentEntry?.sellStatus === "SKIPPED") {
+            setSellSelection("skip");
+          }
         } else {
           setTransferRound(null);
           setCurrentTransferEntry(null);
@@ -1077,6 +1083,12 @@ export default function ManagerMyTeamPage() {
       setBlockedTransferPlayerIds(payload.blockedPlayerIds ?? []);
       setPendingSellId(payload.currentEntry?.sellPlayerId ?? null);
       setPendingBuyId(payload.currentEntry?.buyPlayerId ?? null);
+      // Sync sellSelection met de opgeslagen keuze
+      if (payload.currentEntry?.sellPlayerId) {
+        setSellSelection(payload.currentEntry.sellPlayerId);
+      } else if (payload.currentEntry?.sellStatus === "SKIPPED") {
+        setSellSelection("skip");
+      }
 
       const managerStateResponse = await fetch(
         `/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}&roundNumber=${selectedRound}`,
@@ -1555,15 +1567,25 @@ export default function ManagerMyTeamPage() {
                         });
                       }
                     }}
-                    disabled={transferBusy || !sellSelection}
+                    disabled={transferBusy || (!sellSelection && currentTransferEntry?.sellStatus !== "SUBMITTED" && currentTransferEntry?.sellStatus !== "SKIPPED")}
                     style={{ marginTop: 8 }}
                   >
-                    {sellSelection === "skip" || !sellSelection
-                      ? "Niemand verkopen"
-                      : `${(() => {
-                          const player = squadPlayers.find((p) => p.id === sellSelection);
-                          return player ? player.naam : "";
-                        })()} verkopen`}
+                    {(() => {
+                      // Al een keuze gemaakt → toon wijzig-knop
+                      if (currentTransferEntry?.sellStatus === "SUBMITTED" && currentTransferEntry.sellPlayerId) {
+                        const player = squadPlayers.find((p) => p.id === currentTransferEntry.sellPlayerId);
+                        return `${player ? player.naam : "Speler"} verkocht ✓ — wijzig`;
+                      }
+                      if (currentTransferEntry?.sellStatus === "SKIPPED") {
+                        return "Niemand verkopen ✓ — wijzig";
+                      }
+                      // Geen keuze gemaakt → toon dropdown-selectie
+                      if (sellSelection === "skip" || !sellSelection) {
+                        return "Niemand verkopen";
+                      }
+                      const player = squadPlayers.find((p) => p.id === sellSelection);
+                      return `${player ? player.naam : ""} verkopen`;
+                    })()}
                   </button>
                 </>
               ) : !currentTransferEntry ? (
@@ -1571,11 +1593,13 @@ export default function ManagerMyTeamPage() {
                   Transfergroep voor deze ronde wordt geladen.
                 </small>
               ) : currentTransferEntry.sellStatus === "SKIPPED" ? (
-                <small className="transfer-hint">
-                  Je hebt deze ronde gekozen om niemand te verkopen.
+                <small className="transfer-hint" style={{ color: "var(--brand)" }}>
+                  Je hebt gekozen om niemand te verkopen. Je kunt dit nog wijzigen.
                 </small>
               ) : currentTransferEntry.sellPlayerId ? (
-                <small className="transfer-hint">Verkoopkeuze staat vast voor deze ronde.</small>
+                <small className="transfer-hint" style={{ color: "var(--brand)" }}>
+                  Keuze opgeslagen — je kunt nog wijzigen tot de SELL fase sluit.
+                </small>
               ) : null}
             </label>
 
