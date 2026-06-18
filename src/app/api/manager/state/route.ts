@@ -84,8 +84,9 @@ export async function PUT(request: Request) {
   const scope = getScopeFromRequest(request);
 
   // Blokkeer lineage/bank-wijzigingen tijdens een actieve speelronde
+  // ADMIN OVERRIDE — tijdelijk uitgezet
   const hasRoundNumber = Number.isInteger(body.roundNumber) && (body.roundNumber as number) > 0;
-  if (hasRoundNumber && isRoundActive(body.roundNumber as number)) {
+  if (false && hasRoundNumber && isRoundActive(body.roundNumber as number)) {
     return NextResponse.json(
       { error: "Opstellen is gesloten — de speelronde is bezig" },
       { status: 423, headers: NO_CACHE_HEADERS },

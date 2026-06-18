@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { isGoriDatabaseEnabled, readPersistentJson, writePersistentJson } from "./persistent-json-store";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
-import { getAuthAccountByEmail, getAuthAccountById, listManagerAccounts } from "./auth-store";
+import { ensureAuthStateFromDb, getAuthAccountByEmail, getAuthAccountById, listManagerAccounts } from "./auth-store";
 import { getLeagueAdminConfig, type LeagueMode } from "./league-admin-config";
 
 export type RoundLock = {
@@ -304,7 +304,7 @@ function normalizeManagerStates(
   return normalized;
 }
 
-function normalizeManagerKey(scope: ManagerStateScope = "eredivisie", managerKey?: string | null): string | null {
+export function normalizeManagerKey(scope: ManagerStateScope = "eredivisie", managerKey?: string | null): string | null {
   if (!managerKey) {
     return null;
   }
@@ -453,6 +453,10 @@ export async function readManagerStatePersistent(
   if (!isGoriDatabaseEnabled()) {
     return fallback;
   }
+
+  // Sync auth-state van DB — anders kan key resolution mislukken
+  // op een cold Vercel lambda met stale file-based auth state.
+  await ensureAuthStateFromDb();
 
   const persisted = await readPersistentJson({ store: "manager-state", scope }, readManagerState(scope));
   writeManagerStateFile(persisted, scope);

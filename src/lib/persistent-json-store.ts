@@ -22,12 +22,12 @@ export type PersistentStateKeyInput = {
 const APP_NAMESPACE = "gori_fantasy";
 let pool: Pool | null = null;
 let dbReady = false;
+let poolCreatedAt = 0;
 
 export function resolveGoriDatabaseUrl() {
   if (process.env.GORI_DISABLE_DATABASE === "1" || process.env.GORI_DISABLE_DATABASE === "true") {
     return undefined;
   }
-
   return process.env.GORI_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL || undefined;
 }
 
@@ -52,8 +52,17 @@ function getPool() {
     return null;
   }
 
+  // Herstart pool als die ouder is dan 60 seconden (Vercel warm invocation)
+  const now = Date.now();
+  if (pool && (now - poolCreatedAt) > 60_000) {
+    pool.end().catch(() => {});
+    pool = null;
+    dbReady = false;
+  }
+
   if (!pool) {
     pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
+    poolCreatedAt = now;
   }
 
   return pool;

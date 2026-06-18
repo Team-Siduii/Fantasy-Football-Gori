@@ -173,7 +173,7 @@ function defaultConfig(mode: LeagueMode): LeagueAdminConfig {
     },
     budget: {
       teamValueCapMillions: defaultBudgetCapForMode(mode),
-      priceOffsetMillions: mode === "wk" ? 3 : 0,
+      priceOffsetMillions: 0, // -3M wordt al in parsePlayerCsv toegepast
     },
     competition: {
       name: defaultCompetitionNameForMode(mode),

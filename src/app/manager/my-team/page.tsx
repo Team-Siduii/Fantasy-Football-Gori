@@ -618,7 +618,7 @@ export default function ManagerMyTeamPage() {
   const [extraBuySelection, setExtraBuySelection] = useState<string | null>(null);
   const [transferMessage, setTransferMessage] = useState("");
   const [allTeamPlayerIds, setAllTeamPlayerIds] = useState<Set<string>>(new Set());
-  const [transfersLocked, setTransfersLocked] = useState(false);
+  const [transfersLocked] = useState(false); // Eén bron: admin override tijdelijk op false
   const [pendingSwap, setPendingSwap] = useState<{ zone: ZoneName; index: number; playerId: string } | null>(null);
   const [transferRound, setTransferRound] = useState<TransferRoundResponse["state"] | null>(null);
   const [currentTransferEntry, setCurrentTransferEntry] = useState<TransferRoundEntryStatus | null>(null);
@@ -692,8 +692,8 @@ export default function ManagerMyTeamPage() {
           setAllTeamPlayerIds(new Set(ownedData.ids.map(String)));
         }
 
-        // Lock transfers + swaps tijdens een actieve speelronde
-        setTransfersLocked(isRoundActive(initialRound));
+        // Lock transfers: geregeld via centrale useState(false) — admin override actief
+        // (was: setTransfersLocked(isRoundActive(initialRound)))
 
         const managerLineupIds = managerData.state?.lineupIds ?? [];
         const managerBenchIds = managerData.state?.benchIds ?? [];
@@ -829,7 +829,8 @@ export default function ManagerMyTeamPage() {
         suppressNextPersist.current = true;
         setFormation(hydratedState.formation);
         setState(hydratedState.state);
-        setTransfersLocked(isRoundActive(selectedRound));
+        // Lock transfers: geregeld via centrale useState(false) — admin override actief
+        // (was: setTransfersLocked(isRoundActive(selectedRound)))
 
         if (transferResponse.ok) {
           const transferData = (await transferResponse.json()) as TransferRoundResponse;
@@ -1057,7 +1058,7 @@ export default function ManagerMyTeamPage() {
   const ownTransferCanSell = transferPhase === "SELL";
   const ownTransferCanBuy =
     (transferPhase === "BUY" || transferPhase === "AWAITING_RETRY") &&
-    (currentTransferEntry?.buyStatus === "PENDING" || currentTransferEntry?.buyStatus === "RETRY_REQUIRED");
+    (currentTransferEntry?.buyStatus === "PENDING" || currentTransferEntry?.buyStatus === "RETRY_REQUIRED" || currentTransferEntry?.buyStatus === "SUBMITTED");
   const pendingTransferLabel =
     pendingTransferManagers.length > 0
       ? pendingTransferManagers.map((entry) => entry.teamName || entry.displayName).join(", ")
@@ -1550,13 +1551,8 @@ export default function ManagerMyTeamPage() {
           {transfersLocked ? (
             <div className="alert alert-warning" data-testid="transfers-locked-banner">
               ⏸️ <strong>Transfers gesloten.</strong> De speelronde is bezig. Transfers zijn alleen mogelijk tussen de speelrondes.
-              <br/><small>[DEBUG] transfersLocked=true selectedRound={selectedRound} isRoundActive={String(isRoundActive(selectedRound ?? 0))} now={new Date().toISOString()}</small>
             </div>
-          ) : (
-            <small className="muted-note" style={{display:"block",marginBottom:4}}>
-              [DEBUG] transfersLocked=false selectedRound={selectedRound} isRoundActive={String(isRoundActive(selectedRound ?? 0))} now={new Date().toISOString()}
-            </small>
-          )}
+          ) : null}
           <div className="transfer-status-wrap" style={{ marginBottom: 16 }}>
             <p className="muted-note">
               Fase: <strong>{transferPhase === "SELL" ? "1 · verkopen/skippen" : transferPhase === "BUY" ? "2 · kopen" : transferPhase === "AWAITING_RETRY" ? "4 · verliezers kiezen opnieuw" : "4 · afgerond"}</strong>
@@ -1565,7 +1561,7 @@ export default function ManagerMyTeamPage() {
               Wachten op: <strong>{pendingTransferLabel}</strong>
             </p>
             {currentTransferEntry?.buyStatus === "RETRY_REQUIRED" ? (
-              <p className="error-text">Je hebt een conflict verloren op ranglijstprioriteit en moet vóór de volgende ronde opnieuw een speler kiezen.</p>
+              <p className="error-text">Een andere lager geklasseerde manager heeft dezelfde speler gekozen. Kies een andere speler.</p>
             ) : null}
             {currentTransferEntry?.resolvedTransfer ? (
               <p className="success-text">Jouw transfer is verwerkt voor deze ronde.</p>

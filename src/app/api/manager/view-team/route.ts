@@ -10,6 +10,8 @@ import { readManagerStatePersistent, type ManagerStateScope } from "@/lib/manage
 import { loadPlayerPoints } from "@/lib/player-points-store";
 import { summarizeManagerTeamScoresPersistent } from "@/lib/team-score-state";
 import { buildWkPlayerTotalPointsMapThroughRound } from "@/lib/wk-player-scoring";
+import { resolveCompatibleFormation } from "@/domain/roster-formation";
+import { buildFormationSlots } from "@/domain/formation";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "s.j.m.duindam@gmail.com": "A",
@@ -97,6 +99,16 @@ export async function GET(request: Request) {
     return { ...p, punten: Math.ceil(p.punten / 2) };
   });
 
+  // Pas dezelfde compatibiliteitslogica toe als de my-team pagina
+  const allSquadPositions = [...lineup, ...bench].map((p) => p.positie);
+  const requiredSlotCount = buildFormationSlots(state.formation).flat().length + 4; // 4 bench
+  const vacancyCount = Math.max(0, requiredSlotCount - (lineup.length + bench.length));
+  const resolvedFormation = resolveCompatibleFormation({
+    preferredFormation: state.formation,
+    playerPositions: allSquadPositions,
+    vacancyCount,
+  });
+
   const budgetCap = getTransferBudgetCapMillions(scope);
   const squadCost = [...lineup, ...bench].reduce((sum, p) => sum + (p.prijs ?? 0), 0);
   const budgetRemaining = Math.max(0, budgetCap - squadCost);
@@ -114,7 +126,7 @@ export async function GET(request: Request) {
     isOwnTeam,
     teamName: profile?.teamName ?? "Onbekend team",
     managerName: profile?.name ?? targetEmail.split("@")[0],
-    formation: state.formation,
+    formation: resolvedFormation,
     lineup,
     bench,
     budgetCap,

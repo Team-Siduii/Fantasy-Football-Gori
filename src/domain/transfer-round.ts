@@ -245,7 +245,7 @@ export function submitBuyChoice(
   if (!(state.phase === "BUY" || state.phase === "AWAITING_RETRY")) {
     throw new Error("koopfase is nog niet geopend");
   }
-  if (!(entry.buyStatus === "PENDING" || entry.buyStatus === "RETRY_REQUIRED")) {
+  if (!(entry.buyStatus === "PENDING" || entry.buyStatus === "RETRY_REQUIRED" || entry.buyStatus === "SUBMITTED")) {
     throw new Error("deze manager hoeft nu geen aankoop te kiezen");
   }
   if (!entry.sellPlayerId && entry.autoSellPlayerIds.length === 0) {
