@@ -1551,19 +1551,22 @@ export default function ManagerMyTeamPage() {
                     type="button"
                     onClick={() => {
                       const playerId = sellSelection;
+                      // Ongedaan maken: zelfde speler als al verkocht → skip
+                      if (currentTransferEntry?.sellStatus === "SUBMITTED" && playerId === currentTransferEntry.sellPlayerId) {
+                        void syncTransferRound("skip-sell").then((ok) => {
+                          if (ok) setTransferMessage("Verkoop ongedaan gemaakt.");
+                        });
+                        return;
+                      }
                       if (playerId === "skip" || !playerId) {
                         void syncTransferRound("skip-sell").then((ok) => {
-                          if (ok) {
-                            setTransferMessage("Je hebt gekozen om niemand te verkopen deze ronde.");
-                          }
+                          if (ok) setTransferMessage("Je hebt gekozen om niemand te verkopen deze ronde.");
                         });
                       } else {
                         const player = squadPlayers.find((p) => p.id === playerId);
                         if (!player) return;
                         void syncTransferRound("submit-sell", playerId).then((ok) => {
-                          if (ok) {
-                            setTransferMessage(`Je hebt ${player.naam} verkocht. We wachten tot alle managers fase 1 hebben afgerond.`);
-                          }
+                          if (ok) setTransferMessage(`Je hebt ${player.naam} verkocht. We wachten tot alle managers fase 1 hebben afgerond.`);
                         });
                       }
                     }}
@@ -1571,18 +1574,24 @@ export default function ManagerMyTeamPage() {
                     style={{ marginTop: 8 }}
                   >
                     {(() => {
-                      // Al een keuze gemaakt → toon wijzig-knop
+                      // Al verkocht → toon ongedaan maken of wijzigen
                       if (currentTransferEntry?.sellStatus === "SUBMITTED" && currentTransferEntry.sellPlayerId) {
-                        const player = squadPlayers.find((p) => p.id === currentTransferEntry.sellPlayerId);
-                        return `${player ? player.naam : "Speler"} verkocht ✓ — wijzig`;
+                        const currentPlayer = squadPlayers.find((p) => p.id === currentTransferEntry.sellPlayerId);
+                        const currentName = currentPlayer ? currentPlayer.naam : "Speler";
+                        if (sellSelection === currentTransferEntry.sellPlayerId) {
+                          return `Verkoop ongedaan maken`;
+                        }
+                        const newPlayer = squadPlayers.find((p) => p.id === sellSelection);
+                        return newPlayer ? `${newPlayer.naam} verkopen` : "Niemand verkopen";
                       }
+                      // Al geskipt
                       if (currentTransferEntry?.sellStatus === "SKIPPED") {
-                        return "Niemand verkopen ✓ — wijzig";
+                        if (sellSelection === "skip" || !sellSelection) return "Niemand verkopen ✓";
+                        const player = squadPlayers.find((p) => p.id === sellSelection);
+                        return player ? `${player.naam} verkopen` : "Niemand verkopen";
                       }
-                      // Geen keuze gemaakt → toon dropdown-selectie
-                      if (sellSelection === "skip" || !sellSelection) {
-                        return "Niemand verkopen";
-                      }
+                      // Geen keuze gemaakt
+                      if (sellSelection === "skip" || !sellSelection) return "Niemand verkopen";
                       const player = squadPlayers.find((p) => p.id === sellSelection);
                       return `${player ? player.naam : ""} verkopen`;
                     })()}
