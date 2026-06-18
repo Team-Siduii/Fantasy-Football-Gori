@@ -305,10 +305,7 @@ export async function POST(request: Request) {
 
     // Validate primary buy
     const primarySoldId = currentRequesterEntry.sellPlayerId ?? currentRequesterEntry.autoSellPlayerIds[0] ?? "";
-    console.log("[TRANSFER-DEBUG] primarySoldId:", primarySoldId, "sellPlayerId:", currentRequesterEntry.sellPlayerId, "autoSell:", currentRequesterEntry.autoSellPlayerIds);
-    console.log("[TRANSFER-DEBUG] rosterPlayerIds:", rosterPlayers.map(p => `${p.id}(${p.naam} €${p.prijs}M)`));
-    console.log("[TRANSFER-DEBUG] incomingPlayer:", incomingPlayer.id, incomingPlayer.naam, `€${incomingPlayer.prijs}M`);
-    console.log("[TRANSFER-DEBUG] budgetCap:", budgetCap, "rosterCost:", rosterPlayers.reduce((s,p) => s + p.prijs, 0));
+    const rosterCost = rosterPlayers.reduce((s,p) => s + p.prijs, 0);
     try {
       validateTransferSquad({
         rosterPlayers,
@@ -317,7 +314,9 @@ export async function POST(request: Request) {
         budgetCap,
       });
     } catch (error) {
-      return NextResponse.json({ error: error instanceof Error ? error.message : "Ongeldige transfer" }, { status: 400 });
+      const msg = error instanceof Error ? error.message : "Ongeldige transfer";
+      const debug = `[DEBUG] soldId=${primarySoldId || "LEEG"} sellPlayerId=${currentRequesterEntry.sellPlayerId || "null"} autoSells=[${currentRequesterEntry.autoSellPlayerIds.join(",")}] rosterCost=€${rosterCost}M cap=€${budgetCap}M rosterIds=[${rosterPlayers.map(p => `${p.id}(${p.naam})`).join(",")}]`;
+      return NextResponse.json({ error: `${msg} — ${debug}` }, { status: 400 });
     }
 
     // Validate extra buy if provided
