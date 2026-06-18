@@ -218,7 +218,7 @@ export function skipSellChoice(state: TransferRoundState, managerId: string, at?
       ...current,
       sellStatus: "SKIPPED",
       sellPlayerId: null,
-      buyStatus: "LOCKED",
+      buyStatus: current.autoSellPlayerIds.length > 0 ? "PENDING" : "LOCKED",
       buyPlayerId: null,
       extraBuyPlayerId: null,
       resolvedTransfer: null,

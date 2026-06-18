@@ -240,7 +240,7 @@ export async function POST(request: Request) {
       ...nextState,
       entries: nextState.entries.map((e) =>
         e.managerId === entry.managerId
-          ? { ...e, autoSellPlayerIds: [...e.autoSellPlayerIds, ...newAutoSells], updatedAt: new Date().toISOString() }
+          ? { ...e, autoSellPlayerIds: [...e.autoSellPlayerIds, ...newAutoSells], buyStatus: "PENDING" as const, updatedAt: new Date().toISOString() }
           : e,
       ),
     };
