@@ -1049,7 +1049,7 @@ export default function ManagerMyTeamPage() {
   const isPastRound = selectedRound !== null && currentRound !== null && selectedRound < currentRound;
   const currentTransferLimit = currentRound ? getTransferLimitForRound(currentRound, [...BONUS_ROUNDS]) : 1;
   const transferPhase = transferRound?.phase ?? "SELL";
-  const ownTransferCanSell = currentTransferEntry?.sellStatus === "PENDING";
+  const ownTransferCanSell = transferPhase === "SELL";
   const ownTransferCanBuy =
     (transferPhase === "BUY" || transferPhase === "AWAITING_RETRY") &&
     (currentTransferEntry?.buyStatus === "PENDING" || currentTransferEntry?.buyStatus === "RETRY_REQUIRED");
