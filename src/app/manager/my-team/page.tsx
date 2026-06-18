@@ -1550,8 +1550,13 @@ export default function ManagerMyTeamPage() {
           {transfersLocked ? (
             <div className="alert alert-warning" data-testid="transfers-locked-banner">
               ⏸️ <strong>Transfers gesloten.</strong> De speelronde is bezig. Transfers zijn alleen mogelijk tussen de speelrondes.
+              <br/><small>[DEBUG] transfersLocked=true selectedRound={selectedRound} isRoundActive={String(isRoundActive(selectedRound ?? 0))} now={new Date().toISOString()}</small>
             </div>
-          ) : null}
+          ) : (
+            <small className="muted-note" style={{display:"block",marginBottom:4}}>
+              [DEBUG] transfersLocked=false selectedRound={selectedRound} isRoundActive={String(isRoundActive(selectedRound ?? 0))} now={new Date().toISOString()}
+            </small>
+          )}
           <div className="transfer-status-wrap" style={{ marginBottom: 16 }}>
             <p className="muted-note">
               Fase: <strong>{transferPhase === "SELL" ? "1 · verkopen/skippen" : transferPhase === "BUY" ? "2 · kopen" : transferPhase === "AWAITING_RETRY" ? "4 · verliezers kiezen opnieuw" : "4 · afgerond"}</strong>
