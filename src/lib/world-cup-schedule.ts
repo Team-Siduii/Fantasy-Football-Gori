@@ -120,17 +120,16 @@ export function isRoundActive(roundNumber: number, now: Date = new Date()): bool
   const nowMs = now.getTime();
   const MATCH_DURATION = 2.5 * 60 * 60 * 1000; // 2.5 uur
   const POST_MATCH_WINDOW = 6 * 60 * 60 * 1000; // 6 uur
-  const PRE_KICKOFF_GRACE = 2 * 60 * 1000; // 2 min — wedstrijden starten zelden exact op de minuut
 
   const roundFixtures = WORLD_CUP_2026_FIXTURES.filter((f) => f.round === roundNumber);
   if (roundFixtures.length === 0) return false;
 
-  // Eerste aftrap van de ronde (minus 2 min grace)
+  // Eerste aftrap van de ronde
   const firstKickoff = Math.min(...roundFixtures.map((f) => new Date(f.kickoffAt).getTime()));
 
   // Laatste wedstrijd eindigt (geschat) + 6u window
   const lastEnd = Math.max(...roundFixtures.map((f) => new Date(f.kickoffAt).getTime() + MATCH_DURATION));
   const lockEnd = lastEnd + POST_MATCH_WINDOW;
 
-  return nowMs >= firstKickoff + PRE_KICKOFF_GRACE && nowMs < lockEnd;
+  return nowMs >= firstKickoff && nowMs < lockEnd;
 }
