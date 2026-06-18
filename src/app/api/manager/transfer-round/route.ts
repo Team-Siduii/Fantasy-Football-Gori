@@ -205,6 +205,7 @@ export async function POST(request: Request) {
 
   let nextState = hydratedState;
   const action = body.action ?? "";
+  try {
   if (action === "submit-sell") {
     if (!body.playerId) {
       return NextResponse.json({ error: "playerId is verplicht" }, { status: 400 });
@@ -256,6 +257,9 @@ export async function POST(request: Request) {
     await applyResolvedTransfers(scope, roundNumber, nextState);
   } else {
     return NextResponse.json({ error: "Onbekende actie" }, { status: 400 });
+  }
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Transferactie mislukt" }, { status: 400 });
   }
 
   nextState = maybeResolveState(nextState);

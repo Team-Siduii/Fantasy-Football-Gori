@@ -1329,23 +1329,6 @@ export default function ManagerMyTeamPage() {
     setPendingSwap({ zone, index, playerId: clickedPlayer.id });
   }
 
-  function handleSellSelection(playerId: string) {
-    if (!playerId) {
-      return;
-    }
-
-    if (!ownTransferCanSell) {
-      setTransferMessage("Je kunt in deze fase geen speler verkopen.");
-      return;
-    }
-
-    void syncTransferRound("submit-sell", playerId).then((ok) => {
-      if (ok) {
-        setTransferMessage("Verkoopkeuze opgeslagen. We wachten tot alle managers fase 1 hebben afgerond.");
-      }
-    });
-  }
-
   function handlePickIncoming(player: EnhancedPlayer) {
     if (!ownTransferCanBuy) {
       setTransferMessage("Je kunt nu nog geen speler kopen.");
@@ -1537,15 +1520,12 @@ export default function ManagerMyTeamPage() {
               <select
                 value={sellSelection}
                 onChange={(event) => {
-                  const playerId = event.target.value;
-                  setSellSelection(playerId);
-                  handleSellSelection(playerId);
-                  setSellSelection("");
+                  setSellSelection(event.target.value);
                 }}
                 data-testid="sell-player-select"
                 disabled={!ownTransferCanSell || transferBusy || transfersLocked}
               >
-                <option value="">Kies speler om te verkopen</option>
+                <option value="skip">Niemand verkopen</option>
                 {squadPlayers.map((player) => (
                   <option key={player.id} value={player.id}>
                     {withCountryFlag(player.club, player.naam)} ({player.positie}) - {player.club}
@@ -1558,16 +1538,32 @@ export default function ManagerMyTeamPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      void syncTransferRound("skip-sell").then((ok) => {
-                        if (ok) {
-                          setTransferMessage("Je hebt gekozen om niemand te verkopen deze ronde.");
-                        }
-                      });
+                      const playerId = sellSelection;
+                      if (playerId === "skip" || !playerId) {
+                        void syncTransferRound("skip-sell").then((ok) => {
+                          if (ok) {
+                            setTransferMessage("Je hebt gekozen om niemand te verkopen deze ronde.");
+                          }
+                        });
+                      } else {
+                        const player = squadPlayers.find((p) => p.id === playerId);
+                        if (!player) return;
+                        void syncTransferRound("submit-sell", playerId).then((ok) => {
+                          if (ok) {
+                            setTransferMessage(`Je hebt ${player.naam} verkocht. We wachten tot alle managers fase 1 hebben afgerond.`);
+                          }
+                        });
+                      }
                     }}
-                    disabled={transferBusy}
+                    disabled={transferBusy || !sellSelection}
                     style={{ marginTop: 8 }}
                   >
-                    Niemand verkopen
+                    {sellSelection === "skip" || !sellSelection
+                      ? "Niemand verkopen"
+                      : `${(() => {
+                          const player = squadPlayers.find((p) => p.id === sellSelection);
+                          return player ? player.naam : "";
+                        })()} verkopen`}
                   </button>
                 </>
               ) : !currentTransferEntry ? (

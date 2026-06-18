@@ -123,8 +123,8 @@ function replaceEntry(state: TransferRoundState, managerId: string, updater: (en
 
 export function submitSellChoice(state: TransferRoundState, managerId: string, sellPlayerId: string, at?: string) {
   const entry = getEntryOrThrow(state, managerId);
-  if (entry.sellStatus !== "PENDING") {
-    throw new Error("verkoopkeuze is al gemaakt");
+  if (state.phase !== "SELL") {
+    throw new Error("verkopen is alleen mogelijk in de SELL fase");
   }
   if (!sellPlayerId) {
     throw new Error("speler om te verkopen ontbreekt");
@@ -148,8 +148,8 @@ export function submitSellChoice(state: TransferRoundState, managerId: string, s
 
 export function skipSellChoice(state: TransferRoundState, managerId: string, at?: string) {
   const entry = getEntryOrThrow(state, managerId);
-  if (entry.sellStatus !== "PENDING") {
-    throw new Error("transferkeuze is al gemaakt");
+  if (state.phase !== "SELL") {
+    throw new Error("verkopen is alleen mogelijk in de SELL fase");
   }
 
   return replaceEntry(
