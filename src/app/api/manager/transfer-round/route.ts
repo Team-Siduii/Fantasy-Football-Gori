@@ -305,6 +305,10 @@ export async function POST(request: Request) {
 
     // Validate primary buy
     const primarySoldId = currentRequesterEntry.sellPlayerId ?? currentRequesterEntry.autoSellPlayerIds[0] ?? "";
+    console.log("[TRANSFER-DEBUG] primarySoldId:", primarySoldId, "sellPlayerId:", currentRequesterEntry.sellPlayerId, "autoSell:", currentRequesterEntry.autoSellPlayerIds);
+    console.log("[TRANSFER-DEBUG] rosterPlayerIds:", rosterPlayers.map(p => `${p.id}(${p.naam} €${p.prijs}M)`));
+    console.log("[TRANSFER-DEBUG] incomingPlayer:", incomingPlayer.id, incomingPlayer.naam, `€${incomingPlayer.prijs}M`);
+    console.log("[TRANSFER-DEBUG] budgetCap:", budgetCap, "rosterCost:", rosterPlayers.reduce((s,p) => s + p.prijs, 0));
     try {
       validateTransferSquad({
         rosterPlayers,
