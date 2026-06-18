@@ -32,11 +32,16 @@ function normalizePrice(prijsRaw: string): number {
     throw new Error(`Ongeldige prijs: ${prijsRaw}`);
   }
 
+  let millions: number;
   if (parsed >= 100000) {
-    return parsed / 1_000_000;
+    millions = parsed / 1_000_000;
+  } else {
+    millions = parsed;
   }
 
-  return parsed;
+  // WKCoach prijzen minus 3M, met floor van 0.5M
+  const adjusted = millions - 3;
+  return Math.max(0.5, adjusted);
 }
 
 function normalizePosition(input: string): string {
