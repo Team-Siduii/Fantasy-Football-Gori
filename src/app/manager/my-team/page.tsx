@@ -1547,6 +1547,11 @@ export default function ManagerMyTeamPage() {
         <section className="card col-12" id="transfermarkt">
           <h2>Transfermarkt</h2>
 
+          {transfersLocked ? (
+            <div className="alert alert-warning" data-testid="transfers-locked-banner">
+              ⏸️ <strong>Transfers gesloten.</strong> De speelronde is bezig. Transfers zijn alleen mogelijk tussen de speelrondes.
+            </div>
+          ) : null}
           <div className="transfer-status-wrap" style={{ marginBottom: 16 }}>
             <p className="muted-note">
               Fase: <strong>{transferPhase === "SELL" ? "1 · verkopen/skippen" : transferPhase === "BUY" ? "2 · kopen" : transferPhase === "AWAITING_RETRY" ? "4 · verliezers kiezen opnieuw" : "4 · afgerond"}</strong>
@@ -1582,7 +1587,7 @@ export default function ManagerMyTeamPage() {
                   setSellSelection(event.target.value);
                 }}
                 data-testid="sell-player-select"
-                disabled={!ownTransferCanSell || transferBusy}
+                disabled={!ownTransferCanSell || transferBusy || transfersLocked}
               >
                 <option value="skip">Niemand verkopen</option>
                 {squadPlayers.map((player) => (
@@ -1665,6 +1670,7 @@ export default function ManagerMyTeamPage() {
                 value={selectedPosition}
                 onChange={(event) => setSelectedPosition(event.target.value)}
                 data-testid="transfer-position"
+                disabled={transfersLocked}
               >
                 <option value="ALL">Alle posities</option>
                 <option value="GK">GK</option>
@@ -1676,7 +1682,7 @@ export default function ManagerMyTeamPage() {
 
             <label className="col-3">
               {clubLabel}
-              <select value={selectedClub} onChange={(event) => setSelectedClub(event.target.value)} data-testid="transfer-club">
+              <select value={selectedClub} onChange={(event) => setSelectedClub(event.target.value)} data-testid="transfer-club" disabled={transfersLocked}>
                 <option value="ALL">Alle {clubsLabel}</option>
                 {availableClubs.map((club) => (
                   <option key={club} value={club}>
@@ -1693,6 +1699,7 @@ export default function ManagerMyTeamPage() {
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Bijv. Veerman"
                 data-testid="transfer-search"
+                disabled={transfersLocked}
               />
             </label>
 
@@ -1706,6 +1713,7 @@ export default function ManagerMyTeamPage() {
                 value={maxPrice}
                 onChange={(event) => setMaxPrice(Number(event.target.value))}
                 data-testid="transfer-price-slider"
+                disabled={transfersLocked}
               />
             </label>
 
@@ -1832,7 +1840,7 @@ export default function ManagerMyTeamPage() {
                       <button
                         type="button"
                         onClick={() => handlePickIncoming(item)}
-                        disabled={!ownTransferCanBuy || transferBusy || item.owned}
+                        disabled={!ownTransferCanBuy || transferBusy || transfersLocked || item.owned}
                         data-testid={`transfer-pick-${index}`}
                       >
                         {pendingBuyId === item.id ? "Geselecteerd" : "Koop"}
