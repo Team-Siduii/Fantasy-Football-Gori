@@ -170,6 +170,9 @@ export async function GET(request: Request) {
   }
 
   const { state } = await getTransferRoundContext(scope, roundNumber, requesterEmail);
+  if (state.entries.some((entry) => entry.resolvedTransfer)) {
+    await applyResolvedTransfers(scope, roundNumber, state);
+  }
   const rosterByManager = await buildRosterByManager(scope, state);
   const currentEntry = state.entries.find((entry) => entry.email.toLowerCase() === requesterEmail.toLowerCase()) ?? null;
 
