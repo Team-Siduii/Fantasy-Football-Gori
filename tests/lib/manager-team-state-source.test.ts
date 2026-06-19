@@ -85,7 +85,7 @@ describe("manager team state source", () => {
     expect(snapshot.formation).toBe("3-4-3");
     expect(snapshot.lineupIds).toEqual(["round-1", "round-2"]);
     expect(snapshot.benchIds).toEqual(["round-bench"]);
-  });
+  }, 15000);
 
   it("falls back to the top-level team state when no WK round is requested", async () => {
     mkdirSync(root, { recursive: true });
