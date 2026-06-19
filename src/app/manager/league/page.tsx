@@ -85,7 +85,8 @@ export default function ManagerLeaguePage() {
 
   function viewTeam(entry: RankingEntry) {
     const basePath = isWkMode ? "/manager/world-cup/view-team" : "/manager/view-team";
-    router.push(`${basePath}?view=${encodeURIComponent(entry.email)}`);
+    const roundSuffix = isWkMode && currentRound > 0 ? `&round=${currentRound}` : "";
+    router.push(`${basePath}?view=${encodeURIComponent(entry.email)}${roundSuffix}`);
   }
 
   const roundLabel = currentRound > 0
