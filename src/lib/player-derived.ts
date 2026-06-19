@@ -3,8 +3,6 @@ import type { PlayerRecord } from "@/domain/player";
 export type EnhancedPlayer = PlayerRecord & {
   punten: number;
   inactive?: boolean;
-  roundPoints?: number;
-  totalPoints?: number;
 };
 
 export function derivePlayerPoints(player: PlayerRecord & { punten?: number }): number {
@@ -21,22 +19,6 @@ export function enrichPlayers(players: (PlayerRecord & { punten?: number })[]): 
     ...player,
     punten: derivePlayerPoints(player),
   }));
-}
-
-export function getPlayerRoundPoints(player: Pick<EnhancedPlayer, "punten" | "roundPoints">): number {
-  if (typeof player.roundPoints === "number") {
-    return player.roundPoints;
-  }
-
-  return player.punten ?? 0;
-}
-
-export function getPlayerTotalPoints(player: Pick<EnhancedPlayer, "punten" | "totalPoints">): number {
-  if (typeof player.totalPoints === "number") {
-    return player.totalPoints;
-  }
-
-  return player.punten ?? 0;
 }
 
 export function byPriceDesc(a: PlayerRecord, b: PlayerRecord) {

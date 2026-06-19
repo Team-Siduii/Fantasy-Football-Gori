@@ -15,15 +15,12 @@ type ViewPlayer = {
   club: string;
   prijs: number;
   punten: number;
-  roundPoints?: number;
-  totalPoints?: number;
 };
 
 type ViewTeamResponse = {
   isOwnTeam: boolean;
   teamName: string;
   managerName: string;
-  roundNumber?: number | null;
   formation: string;
   lineup: ViewPlayer[];
   bench: ViewPlayer[];
@@ -43,7 +40,6 @@ export default function ViewTeamPageContent() {
   const isWkMode = pathname.startsWith("/manager/world-cup");
   const modeParam = isWkMode ? "wk" : "eredivisie";
   const viewEmail = searchParams.get("view") ?? "";
-  const roundParam = searchParams.get("round") ?? "";
 
   const [data, setData] = useState<ViewTeamResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +55,7 @@ export default function ViewTeamPageContent() {
     const load = async () => {
       try {
         const response = await fetch(
-          `/api/manager/view-team?mode=${modeParam}&email=${encodeURIComponent(viewEmail)}${roundParam ? `&roundNumber=${encodeURIComponent(roundParam)}` : ""}&_t=${Date.now()}`,
+          `/api/manager/view-team?mode=${modeParam}&email=${encodeURIComponent(viewEmail)}&_t=${Date.now()}`,
           { cache: "no-store" },
         );
         if (!response.ok) {
@@ -76,7 +72,7 @@ export default function ViewTeamPageContent() {
     };
 
     void load();
-  }, [modeParam, roundParam, viewEmail]);
+  }, [modeParam, viewEmail]);
 
   if (loading) {
     return (
@@ -120,7 +116,6 @@ export default function ViewTeamPageContent() {
         <span className="view-team-subtitle">
           <span className="view-team-subtitle__manager">{data.managerName}</span>
           {data.isOwnTeam && <span className="view-team-subtitle__badge">Jouw team</span>}
-          {isWkMode && data.roundNumber ? <span className="view-team-subtitle__badge">Ronde {data.roundNumber}</span> : null}
         </span>
       }
     >

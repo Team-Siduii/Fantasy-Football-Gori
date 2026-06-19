@@ -6,11 +6,12 @@ import { getTransferBudgetCapMillions } from "@/domain/team-budget";
 import { ensureAuthStateFromDb, getProfileByEmail } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 import { repairManagerTeamFromDraftArtifactsPersistent } from "@/lib/draft-manager-sync";
-import { readTeamViewSnapshotPersistent } from "@/lib/manager-team-state-source";
-import { type ManagerStateScope } from "@/lib/manager-state";
+import { readManagerStatePersistent, type ManagerStateScope } from "@/lib/manager-state";
 import { loadPlayerPoints } from "@/lib/player-points-store";
 import { summarizeManagerTeamScoresPersistent } from "@/lib/team-score-state";
-import { buildWkPlayerRoundPointsMap, buildWkPlayerTotalPointsMapThroughRound } from "@/lib/wk-player-scoring";
+import { buildWkPlayerTotalPointsMapThroughRound } from "@/lib/wk-player-scoring";
+import { resolveCompatibleFormation } from "@/domain/roster-formation";
+import { buildFormationSlots } from "@/domain/formation";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "s.j.m.duindam@gmail.com": "A",
@@ -42,7 +43,6 @@ export async function GET(request: Request) {
   await ensureAuthStateFromDb();
 
   const scope: ManagerStateScope = url.searchParams.get("mode") === "wk" ? "wk" : "eredivisie";
-  const roundNumber = Number(url.searchParams.get("roundNumber") ?? "");
   const isOwnTeam = email === targetEmail;
 
   let allPlayers;
@@ -66,15 +66,10 @@ export async function GET(request: Request) {
   await repairManagerTeamFromDraftArtifactsPersistent({ managerEmail: targetEmail, scope });
 
   const playerPointsMap = new Map<string, number>();
-  const playerTotalPointsMap = new Map<string, number>();
   if (scope === "wk") {
-    const calculatedRoundPoints = await buildWkPlayerRoundPointsMap();
     const calculatedTotals = await buildWkPlayerTotalPointsMapThroughRound();
-    for (const [fantasyplayerId, roundPoints] of calculatedRoundPoints.entries()) {
-      playerPointsMap.set(String(fantasyplayerId), roundPoints);
-    }
     for (const [fantasyplayerId, totalPoints] of calculatedTotals.entries()) {
-      playerTotalPointsMap.set(String(fantasyplayerId), totalPoints);
+      playerPointsMap.set(String(fantasyplayerId), totalPoints);
     }
   } else {
     const pointsSnapshot = await loadPlayerPoints(scope);
@@ -87,11 +82,7 @@ export async function GET(request: Request) {
     }
   }
 
-  const state = await readTeamViewSnapshotPersistent({
-    scope,
-    managerEmail: targetEmail,
-    roundNumber,
-  });
+  const state = await readManagerStatePersistent(scope, targetEmail);
 
   const enrichPlayer = (playerId: string) => {
     const player = playerById.get(playerId);
@@ -99,8 +90,6 @@ export async function GET(request: Request) {
     return {
       ...player,
       punten: playerPointsMap.get(String(playerId)) ?? 0,
-      totalPoints: playerTotalPointsMap.get(String(playerId)) ?? playerPointsMap.get(String(playerId)) ?? 0,
-      roundPoints: playerPointsMap.get(String(playerId)) ?? 0,
     };
   };
 
@@ -108,6 +97,16 @@ export async function GET(request: Request) {
   const bench = state.benchIds.map((id) => {
     const p = enrichPlayer(id);
     return { ...p, punten: Math.ceil(p.punten / 2) };
+  });
+
+  // Pas dezelfde compatibiliteitslogica toe als de my-team pagina
+  const allSquadPositions = [...lineup, ...bench].map((p) => p.positie);
+  const requiredSlotCount = buildFormationSlots(state.formation).flat().length + 4; // 4 bench
+  const vacancyCount = Math.max(0, requiredSlotCount - (lineup.length + bench.length));
+  const resolvedFormation = resolveCompatibleFormation({
+    preferredFormation: state.formation,
+    playerPositions: allSquadPositions,
+    vacancyCount,
   });
 
   const budgetCap = getTransferBudgetCapMillions(scope);
@@ -127,8 +126,7 @@ export async function GET(request: Request) {
     isOwnTeam,
     teamName: profile?.teamName ?? "Onbekend team",
     managerName: profile?.name ?? targetEmail.split("@")[0],
-    roundNumber: scope === "wk" && Number.isInteger(roundNumber) && roundNumber > 0 ? roundNumber : null,
-    formation: state.formation,
+    formation: resolvedFormation,
     lineup,
     bench,
     budgetCap,

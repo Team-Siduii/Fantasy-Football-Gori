@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 const repairManagerTeamFromDraftArtifactsPersistent = vi.fn(async () => ({ changed: true }));
-const readTeamViewSnapshotPersistent = vi.fn(async () => ({
+const readManagerStatePersistent = vi.fn(async () => ({
   formation: "4-3-3",
   lineupIds: ["wk-player-1"],
   benchIds: [],
@@ -14,7 +14,6 @@ const getAuthenticatedEmail = vi.fn(async () => "s.j.m.duindam@gmail.com");
 const ensureAuthStateFromDb = vi.fn(async () => undefined);
 const getProfileByEmail = vi.fn(() => ({ name: "Simon", teamName: "Simons Team" }));
 const summarizeManagerTeamScoresPersistent = vi.fn(async () => ({ totalPoints: 42, currentRoundPoints: 12 }));
-const buildWkPlayerRoundPointsMap = vi.fn(async () => new Map([["wk-player-1", 0]]));
 const buildWkPlayerTotalPointsMapThroughRound = vi.fn(async () => new Map([["wk-player-1", 42]]));
 const parsePlayerCsv = vi.fn(() => ({
   players: [{ id: "wk-player-1", naam: "Speler 1", positie: "MID", club: "NL", prijs: 10 }],
@@ -46,8 +45,8 @@ vi.mock("@/lib/draft-manager-sync", () => ({
   repairManagerTeamFromDraftArtifactsPersistent,
 }));
 
-vi.mock("@/lib/manager-team-state-source", () => ({
-  readTeamViewSnapshotPersistent,
+vi.mock("@/lib/manager-state", () => ({
+  readManagerStatePersistent,
 }));
 
 vi.mock("@/lib/player-points-store", () => ({
@@ -59,7 +58,6 @@ vi.mock("@/lib/team-score-state", () => ({
 }));
 
 vi.mock("@/lib/wk-player-scoring", () => ({
-  buildWkPlayerRoundPointsMap,
   buildWkPlayerTotalPointsMapThroughRound,
 }));
 
@@ -82,14 +80,8 @@ describe("GET /api/manager/view-team", () => {
         managerEmail: "s.j.m.duindam@gmail.com",
         scope: "wk",
       });
-      expect(readTeamViewSnapshotPersistent).toHaveBeenCalledWith({
-        scope: "wk",
-        managerEmail: "s.j.m.duindam@gmail.com",
-        roundNumber: 0,
-      });
+      expect(readManagerStatePersistent).toHaveBeenCalledWith("wk", "s.j.m.duindam@gmail.com");
       expect(payload.lineup).toHaveLength(1);
-      expect(payload.lineup[0]?.punten).toBe(0);
-      expect(payload.lineup[0]?.totalPoints).toBe(42);
       expect(payload.teamTotalPoints).toBe(42);
     },
     15000,
