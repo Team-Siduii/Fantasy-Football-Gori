@@ -162,6 +162,7 @@ Per rol belangrijkste rechten:
 - Verkoop-selector respecteert transferlimiet van de actieve ronde: in normale rondes max 1 open verkoop, in bonusrondes (3 transfers) tot 3 open verkopen vóórdat kopen verplicht wordt
 - UI toont bij open verkopen een duidelijke teller/hint (bijv. 1/3, 2/3) en blokkeert nieuwe verkoop pas bij bereikt limiet
 - Transfer policy-engine berekent per ronde deterministisch: transferlimiet, open-sell ruimte en koop-toestemming op basis van bonusrondeconfig + voltooide transfers
+- WK transfer-round availability gebruikt bij blokkades eerst de zichtbare `manager-state` van de manager als bron van waarheid; alleen wanneer een manager nog geen teamstate heeft, valt de backend terug op een alias-aware merge van raw `team-roster` sleutels (bijv. `emielzomerdijk` + `Emiel Zomerdijk`). Daardoor blokkeren orphan alias-rosters handmatige of herstelde WK-transfers niet meer onterecht.
 - Bankverdeling is vast: altijd 4 bankslots met 1x GK, 1x DEF, 1x MID en 1x FWD
 - Basiselftal-weergave op het veld toont per slot de echte speler op die index (geen naamherhaling binnen een linie); elke speler-id mag maar 1x tegelijk in teamstate voorkomen
 - Pitch in basiselftal gebruikt exact de aangeleverde referentie-afbeelding als achtergrondasset (`/public/images/pitch-reference.jpg`) met sterke zoom-in (`background-size: 200% auto`) zodat het veld close-up in beeld staat

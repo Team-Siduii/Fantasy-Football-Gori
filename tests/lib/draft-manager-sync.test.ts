@@ -270,6 +270,38 @@ describe("draft roster to manager team sync", () => {
     expect(manager.readManagerState("wk", "Jackvandereep@hotmail.con").lineupIds).toEqual(["wk-player-1"]);
   });
 
+  it("merges alias roster keys for the same WK manager when raw roster lookup is needed", async () => {
+    const { roster, sync, league, auth } = await loadModules();
+    roster.resetTeamRosterStateForTests("wk");
+    league.resetLeagueAdminConfigForTests("wk");
+    auth.resetAuthStateForTests();
+
+    league.updateLeagueAdminConfig(
+      {
+        participants: [{ managerId: "emielzomerdijk", label: "Emiel Zomerdijk", email: "emielzomerdijk@gmail.com", status: "ACCEPTED" }],
+      },
+      "wk",
+    );
+
+    roster.saveTeamRosterState(
+      {
+        byTeamId: {
+          emielzomerdijk: ["921"],
+          "Emiel Zomerdijk": ["256", "395", "274", "497", "945", "326", "309", "465", "237", "241", "26", "1323", "689", "89", "1054"],
+        },
+      },
+      "wk",
+    );
+
+    const rosterPlayerIds = await sync.readRosterPlayerIdsForManagerPersistent({
+      managerEmail: "emielzomerdijk@gmail.com",
+      scope: "wk",
+    });
+
+    expect(rosterPlayerIds).toHaveLength(16);
+    expect(rosterPlayerIds).toEqual(expect.arrayContaining(["921", "945", "256", "1054"]));
+  });
+
   it("rebuilds My Team from draft picks when team-roster state is missing", async () => {
     const { draft, roster, manager, sync, auth } = await loadModules();
     draft.resetDraftStateForTests("wk");
