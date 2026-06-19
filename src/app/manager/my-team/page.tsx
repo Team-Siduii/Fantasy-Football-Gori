@@ -5,14 +5,13 @@ import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PlayerCard } from "@/components/player-card";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
-import { resolveCompatibleFormation } from "@/domain/roster-formation";
 import { reorderAcrossZones, type ZoneName, type ZoneState } from "@/domain/lineup-state";
 import { buildPitchRows } from "@/domain/pitch-layout";
 import { calculateRemainingBudget, getTransferBudgetCapMillions, isWithinBudget } from "@/domain/team-budget";
 import type { PlayerRecord } from "@/domain/player";
 import { buildMarketPlayers } from "@/domain/transfer-workflow";
 import { getTransferLimitForRound } from "@/domain/rules";
-import { byPriceDesc, enrichPlayers, type EnhancedPlayer } from "@/lib/player-derived";
+import { byPriceDesc, enrichPlayers, getPlayerRoundPoints, getPlayerTotalPoints, type EnhancedPlayer } from "@/lib/player-derived";
 import { getCountryFlagImageUrl, withCountryFlag } from "@/lib/country-flags";
 import { getPlayerCardMeta } from "@/lib/player-card-display";
 import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
@@ -278,17 +277,11 @@ function buildStateFromSaved(
 
   const requiredSlotCount = buildFormationSlots(formation).flat().length + BENCH_POSITIONS.length;
   const vacancyCount = Math.max(0, requiredSlotCount - savedPlayers.length);
-  const resolvedFormation = resolveCompatibleFormation({
-    preferredFormation: formation,
-    playerPositions: savedPlayers.map((player) => player.positie),
-    vacancyCount,
-  });
-
   return {
-    formation: resolvedFormation,
+    formation,
     state:
-      buildStateWithVacancies(savedPlayers, resolvedFormation, vacancyCount) ??
-      buildStateForFormation(savedPlayers, resolvedFormation),
+      buildStateWithVacancies(savedPlayers, formation, vacancyCount) ??
+      buildStateForFormation(savedPlayers, formation),
   };
 }
 
@@ -633,7 +626,7 @@ export default function ManagerMyTeamPage() {
           1;
 
         const [playersResponse, managerStateResponse, leagueConfigResponse, ownedIdsResponse] = await Promise.all([
-          fetch(`/api/players?mode=${isWkMode ? "wk" : "eredivisie"}&_t=${Date.now()}`, { cache: "no-store" }),
+          fetch(`/api/players?mode=${isWkMode ? "wk" : "eredivisie"}${isWkMode ? `&round=${initialRound}` : ""}&_t=${Date.now()}`, { cache: "no-store" }),
           fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}&roundNumber=${initialRound}&_t=${Date.now()}`, { cache: "no-store" }),
           fetch(`/api/admin/league-config?mode=${isWkMode ? "wk" : "eredivisie"}&_t=${Date.now()}`, { cache: "no-store" }),
           isWkMode
@@ -727,6 +720,40 @@ export default function ManagerMyTeamPage() {
 
     void load();
   }, [formationOptions, isWkMode, scheduleFixtures]);
+
+  useEffect(() => {
+    if (!hydrated.current || !isWkMode || !selectedRound) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const refreshPlayersForRound = async () => {
+      try {
+        const response = await fetch(`/api/players?mode=wk&round=${selectedRound}&_t=${Date.now()}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          return;
+        }
+
+        const playersData = (await response.json()) as { players: PlayerRecord[] };
+        const refreshed = enrichPlayers(playersData.players || []).sort(byPriceDesc);
+        if (refreshed.length === 0) {
+          return;
+        }
+
+        setAllPlayers(refreshed);
+      } catch {
+        // no-op
+      }
+    };
+
+    void refreshPlayersForRound();
+
+    return () => controller.abort();
+  }, [isWkMode, selectedRound]);
 
   useEffect(() => {
     if (!isWkMode || !selectedRound) {
@@ -1371,8 +1398,8 @@ export default function ManagerMyTeamPage() {
             <div className="team-topbar__metric team-topbar__metric--center">
               <span>Totaal punten</span>
               <strong>{(() => {
-                const lineupPts = state.lineup.reduce((sum, p) => sum + p.punten, 0);
-                const benchPts = state.bench.reduce((sum, p) => sum + Math.ceil(p.punten / 2), 0);
+                const lineupPts = state.lineup.reduce((sum, p) => sum + getPlayerTotalPoints(p), 0);
+                const benchPts = state.bench.reduce((sum, p) => sum + Math.ceil(getPlayerTotalPoints(p) / 2), 0);
                 return lineupPts + benchPts;
               })()}</strong>
             </div>
@@ -1414,7 +1441,7 @@ export default function ManagerMyTeamPage() {
                         club={cardMeta.countryCode}
                         name={cardMeta.displayName}
                         pointsLabel={cardMeta.priceLabel}
-                        scoreBadge={!player.id.startsWith("open-") ? String(player.punten) : null}
+                        scoreBadge={!player.id.startsWith("open-") ? String(getPlayerRoundPoints(player)) : null}
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",
                           pendingSwap?.playerId === player.id ? "player-card--swap-selected" : "",
@@ -1462,7 +1489,7 @@ export default function ManagerMyTeamPage() {
                   club={cardMeta.countryCode}
                   name={player.naam}
                   pointsLabel={cardMeta.priceLabel}
-                  scoreBadge={!player.id.startsWith("open-") ? String(Math.ceil(player.punten / 2)) : null}
+                  scoreBadge={!player.id.startsWith("open-") ? String(Math.ceil(getPlayerRoundPoints(player) / 2)) : null}
                   className={[
                     "player-card--bench-row",
                     pendingSellId === player.id ? "player-card--sell" : "",

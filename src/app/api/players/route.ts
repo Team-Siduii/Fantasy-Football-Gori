@@ -16,6 +16,8 @@ const NO_CACHE_HEADERS = {
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const mode = (url.searchParams.get("mode") ?? "eredivisie").toLowerCase();
+  const roundParam = url.searchParams.get("round");
+  const roundSequence = roundParam ? Number(roundParam) : undefined;
 
   if (mode === "wk") {
     const wkCsvPath = path.join(process.cwd(), "data", "players-wk.csv");
@@ -29,7 +31,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ count: 0, players: [] }, { headers: NO_CACHE_HEADERS });
     }
 
-    const calculatedPlayers = await listCalculatedWkPlayerPoints();
+    const calculatedPlayers = await listCalculatedWkPlayerPoints(roundSequence);
 
     let priceOffset = 0;
     try {
