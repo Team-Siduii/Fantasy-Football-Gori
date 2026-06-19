@@ -17,11 +17,12 @@ import { validateTransferSquad } from "@/domain/transfer-validation";
 import type { PlayerRecord } from "@/domain/player";
 import { getTransferBudgetCapMillions } from "@/domain/team-budget";
 import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
+import { readRosterPlayerIdsForManagerPersistent } from "@/lib/draft-manager-sync";
 import { getLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
 import { buildLeagueRankingSnapshot } from "@/lib/league-ranking";
 import { isRoundLockedPersistent, readManagerStateForRoundPersistent, readManagerStatePersistent, saveManagerStateForRoundPersistent, type ManagerStateScope } from "@/lib/manager-state";
 import { readTransferRoundPersistent, saveTransferRoundPersistent } from "@/lib/transfer-round-state";
-import { readTeamRosterStatePersistent, removePlayerFromTeamRosterPersistent, addPlayerToTeamRosterPersistent } from "@/lib/team-roster-state";
+import { removePlayerFromTeamRosterPersistent, addPlayerToTeamRosterPersistent } from "@/lib/team-roster-state";
 import { parsePlayerCsv } from "@/domain/player-csv";
 import { readFile } from "fs/promises";
 import path from "path";
@@ -89,10 +90,22 @@ function buildBlockedPlayerIds(rosterByManager: Record<string, string[]>, state:
 }
 
 async function buildRosterByManager(scope: ManagerStateScope, state: TransferRoundState) {
-  const rosterState = await readTeamRosterStatePersistent(scope);
   const result: Record<string, string[]> = {};
   for (const entry of state.entries) {
-    result[entry.managerId] = rosterState.byTeamId[entry.managerId] ?? [];
+    const managerState = await readManagerStatePersistent(scope, entry.email);
+    const managerStateIds = [...managerState.lineupIds, ...managerState.benchIds].filter(
+      (playerId) => typeof playerId === "string" && playerId.trim().length > 0,
+    );
+
+    if (managerStateIds.length > 0) {
+      result[entry.managerId] = managerStateIds;
+      continue;
+    }
+
+    result[entry.managerId] = await readRosterPlayerIdsForManagerPersistent({
+      managerEmail: entry.email,
+      scope,
+    });
   }
   return result;
 }

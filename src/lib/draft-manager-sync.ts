@@ -143,6 +143,38 @@ function findRosterMatch(
   );
 }
 
+function findRosterMatches(
+  rosters: Record<string, string[]>,
+  identity: ManagerIdentity,
+  scope: ManagerStateScope,
+): Array<[string, string[]]> {
+  return Object.entries(rosters).filter(
+    ([teamId]) => teamIdMatchesManagerIdentity(teamId, identity) || teamIdResolvesToManagerIdentity(teamId, identity, scope),
+  );
+}
+
+export async function readRosterPlayerIdsForManagerPersistent(input: {
+  managerEmail: string;
+  scope: ManagerStateScope;
+}) {
+  const managerEmail = normalizeEmail(input.managerEmail);
+  if (!managerEmail) {
+    return [] as string[];
+  }
+
+  const rosters = (await readTeamRosterStatePersistent(input.scope)).byTeamId;
+  const identity = buildManagerIdentity(managerEmail, input.scope);
+  const matches = findRosterMatches(rosters, identity, input.scope);
+
+  return Array.from(
+    new Set(
+      matches.flatMap(([, playerIds]) =>
+        playerIds.filter((playerId) => typeof playerId === "string" && playerId.trim().length > 0),
+      ),
+    ),
+  );
+}
+
 export function resolveDraftTeamManagerEmail(teamId: string, scope: ManagerStateScope = "eredivisie"): string | null {
   const target = normalize(teamId);
   if (!target) {
