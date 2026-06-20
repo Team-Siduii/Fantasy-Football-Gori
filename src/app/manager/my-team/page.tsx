@@ -606,6 +606,7 @@ export default function ManagerMyTeamPage() {
   const playerRefreshRequestTracker = useRef(createLatestRequestTracker());
   const wkMatchesRequestTracker = useRef(createLatestRequestTracker());
   const roundHydrationRequestTracker = useRef(createLatestRequestTracker());
+  const pendingRoundHydrationRequestId = useRef<number | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -781,24 +782,35 @@ export default function ManagerMyTeamPage() {
 
     const controller = new AbortController();
     const requestId = roundHydrationRequestTracker.current.begin();
+    pendingRoundHydrationRequestId.current = requestId;
+
+    const clearPendingRoundHydration = () => {
+      if (pendingRoundHydrationRequestId.current === requestId) {
+        pendingRoundHydrationRequestId.current = null;
+      }
+    };
 
     const hydrateRoundState = async () => {
-      try {
-        const mode = isWkMode ? "wk" : "eredivisie";
-        const [teamViewResponse, transferResponse] = await Promise.all([
-          fetch(`/api/manager/my-team-view?mode=${mode}&roundNumber=${selectedRound}&_t=${Date.now()}`, { cache: "no-store", signal: controller.signal }),
-          fetch(`/api/manager/transfer-round?mode=${mode}&roundNumber=${selectedRound}`, {
-            cache: "no-store",
-            signal: controller.signal,
-          }),
-        ]);
+      const mode = isWkMode ? "wk" : "eredivisie";
+      const teamViewPromise = fetch(
+        `/api/manager/my-team-view?mode=${mode}&roundNumber=${selectedRound}&_t=${Date.now()}`,
+        { cache: "no-store", signal: controller.signal },
+      );
+      const transferPromise = fetch(`/api/manager/transfer-round?mode=${mode}&roundNumber=${selectedRound}`, {
+        cache: "no-store",
+        signal: controller.signal,
+      }).catch(() => null);
 
+      try {
+        const teamViewResponse = await teamViewPromise;
         if (!teamViewResponse.ok) {
+          clearPendingRoundHydration();
           return;
         }
 
         const teamViewData = (await teamViewResponse.json()) as MyTeamViewResponse;
         if (!roundHydrationRequestTracker.current.isActive(requestId, controller.signal.aborted)) {
+          clearPendingRoundHydration();
           return;
         }
         const savedFormation = teamViewData.formation;
@@ -818,8 +830,14 @@ export default function ManagerMyTeamPage() {
         setFormation(hydratedState.formation);
         setState(hydratedState.state);
         setTransfersLocked(isRoundActive(selectedRound));
+        clearPendingRoundHydration();
 
-        if (transferResponse.ok) {
+        const transferResponse = await transferPromise;
+        if (!roundHydrationRequestTracker.current.isActive(requestId, controller.signal.aborted)) {
+          return;
+        }
+
+        if (transferResponse?.ok) {
           const transferData = (await transferResponse.json()) as TransferRoundResponse;
           if (!roundHydrationRequestTracker.current.isActive(requestId, controller.signal.aborted)) {
             return;
@@ -839,17 +857,24 @@ export default function ManagerMyTeamPage() {
           setPendingBuyId(teamViewData.pendingBuyId ?? null);
         }
       } catch {
-        // no-op
+        clearPendingRoundHydration();
       }
     };
 
     void hydrateRoundState();
 
-    return () => controller.abort();
+    return () => {
+      clearPendingRoundHydration();
+      controller.abort();
+    };
   }, [allPlayers, budgetCapMillions, formationOptions, isWkMode, selectedRound]);
 
   useEffect(() => {
     if (!hydrated.current) {
+      return;
+    }
+
+    if (pendingRoundHydrationRequestId.current !== null) {
       return;
     }
 
