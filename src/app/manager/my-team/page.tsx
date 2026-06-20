@@ -16,6 +16,7 @@ import { getCountryFlagImageUrl, withCountryFlag } from "@/lib/country-flags";
 import { getInactivePlayer } from "@/lib/inactive-players";
 import { getPlayerCardMeta } from "@/lib/player-card-display";
 import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
+import { createLatestRequestTracker } from "@/lib/latest-request";
 import { getWkMatchLiveMinuteLabel, mergeWorldCupFixturesWithSyncedMatches, hasVisibleFixtureScore, isLiveWkMatchStatus, type SyncedWkMatchLike } from "@/lib/wk-match-schedule";
 import { WORLD_CUP_2026_FIXTURES, isRoundActive } from "@/lib/world-cup-schedule";
 
@@ -630,6 +631,9 @@ export default function ManagerMyTeamPage() {
 
   const hydrated = useRef(false);
   const suppressNextPersist = useRef(false);
+  const playerRefreshRequestTracker = useRef(createLatestRequestTracker());
+  const wkMatchesRequestTracker = useRef(createLatestRequestTracker());
+  const roundHydrationRequestTracker = useRef(createLatestRequestTracker());
 
   useEffect(() => {
     const load = async () => {
@@ -744,6 +748,7 @@ export default function ManagerMyTeamPage() {
     }
 
     const controller = new AbortController();
+    const requestId = playerRefreshRequestTracker.current.begin();
 
     const refreshPlayersForRound = async () => {
       try {
@@ -758,6 +763,10 @@ export default function ManagerMyTeamPage() {
         const playersData = (await response.json()) as { players: PlayerRecord[] };
         const refreshed = enrichPlayers(playersData.players || []).sort(byPriceDesc);
         if (refreshed.length === 0) {
+          return;
+        }
+
+        if (!playerRefreshRequestTracker.current.isActive(requestId, controller.signal.aborted)) {
           return;
         }
 
@@ -779,6 +788,7 @@ export default function ManagerMyTeamPage() {
     }
 
     const controller = new AbortController();
+    const requestId = wkMatchesRequestTracker.current.begin();
 
     const loadWkMatches = async () => {
       try {
@@ -802,6 +812,9 @@ export default function ManagerMyTeamPage() {
           minute: match.minute,
           kickoff_at: match.kickoffAt,
         }));
+        if (!wkMatchesRequestTracker.current.isActive(requestId, controller.signal.aborted)) {
+          return;
+        }
         setWkSyncedMatches(normalizedMatches);
       } catch {
         setWkSyncedMatches([]);
@@ -819,12 +832,16 @@ export default function ManagerMyTeamPage() {
     }
 
     const controller = new AbortController();
+    const requestId = roundHydrationRequestTracker.current.begin();
 
     const hydrateRoundState = async () => {
       try {
         const mode = isWkMode ? "wk" : "eredivisie";
         const [managerResponse, transferResponse] = await Promise.all([
-          fetch(`/api/manager/state?mode=${mode}&roundNumber=${selectedRound}`, { cache: "no-store", signal: controller.signal }),
+          fetch(`/api/manager/state?mode=${mode}&roundNumber=${selectedRound}&_t=${Date.now()}`, {
+            cache: "no-store",
+            signal: controller.signal,
+          }),
           fetch(`/api/manager/transfer-round?mode=${mode}&roundNumber=${selectedRound}`, {
             cache: "no-store",
             signal: controller.signal,
@@ -836,6 +853,9 @@ export default function ManagerMyTeamPage() {
         }
 
         const managerData = (await managerResponse.json()) as ManagerStateResponse;
+        if (!roundHydrationRequestTracker.current.isActive(requestId, controller.signal.aborted)) {
+          return;
+        }
         const savedFormation = managerData.state?.formation;
         const nextFormation =
           savedFormation && formationOptions.includes(savedFormation) ? savedFormation : formationOptions[0];
@@ -861,6 +881,9 @@ export default function ManagerMyTeamPage() {
 
         if (transferResponse.ok) {
           const transferData = (await transferResponse.json()) as TransferRoundResponse;
+          if (!roundHydrationRequestTracker.current.isActive(requestId, controller.signal.aborted)) {
+            return;
+          }
           setTransferRound(transferData.state);
           setCurrentTransferEntry(transferData.currentEntry);
           setPendingTransferManagers(transferData.pendingManagers);
