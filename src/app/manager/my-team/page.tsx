@@ -572,6 +572,10 @@ export default function ManagerMyTeamPage() {
   });
   const selectedRound = roundNumbers[selectedRoundIndex] ?? null;
 
+  useEffect(() => {
+    selectedRoundRef.current = selectedRound;
+  }, [selectedRound]);
+
   const [formation, setFormation] = useState(formationOptions[0]);
   const [allPlayers, setAllPlayers] = useState<EnhancedPlayer[]>(fallbackPlayers());
   const [state, setState] = useState<ZoneState<EnhancedPlayer>>(() =>
@@ -603,6 +607,7 @@ export default function ManagerMyTeamPage() {
 
   const hydrated = useRef(false);
   const suppressNextPersist = useRef(false);
+  const selectedRoundRef = useRef<number | null>(selectedRound);
   const playerRefreshRequestTracker = useRef(createLatestRequestTracker());
   const wkMatchesRequestTracker = useRef(createLatestRequestTracker());
   const roundHydrationRequestTracker = useRef(createLatestRequestTracker());
@@ -891,6 +896,15 @@ export default function ManagerMyTeamPage() {
       return;
     }
 
+    // Alleen echte teammutaties mogen een snapshot wegschrijven.
+    // Een pure rondenavigatie verandert selectedRound wél, maar niet de lineup-state.
+    // Als deze effect ook op selectedRound triggert, kan de vorige ronde-state
+    // per ongeluk in de nieuw gekozen historische ronde worden opgeslagen.
+    const persistRound = selectedRoundRef.current;
+    if (persistRound === null) {
+      return;
+    }
+
     const controller = new AbortController();
     void fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}`, {
       method: "PUT",
@@ -902,7 +916,7 @@ export default function ManagerMyTeamPage() {
         pendingSellId,
         pendingBuyId,
         pickedTransferId: pendingBuyId,
-        roundNumber: selectedRound,
+        roundNumber: persistRound,
         propagateToFutureRounds: true,
       }),
       signal: controller.signal,
@@ -911,7 +925,7 @@ export default function ManagerMyTeamPage() {
     });
 
     return () => controller.abort();
-  }, [formation, isWkMode, pendingBuyId, pendingSellId, selectedRound, state]);
+  }, [formation, isWkMode, pendingBuyId, pendingSellId, state]);
 
   const pitchRows = useMemo(() => {
     return buildPitchRows(formation, state.lineup);
