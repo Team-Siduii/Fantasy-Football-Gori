@@ -35,28 +35,21 @@ type MarketSortDirection = "asc" | "desc";
 
 const MARKET_PAGE_SIZE = 40;
 
-type ManagerStateResponse = {
-  state?: {
-    formation?: string;
-    lineupIds?: string[];
-    benchIds?: string[];
-    pickedTransferId?: string | null;
-    pendingSellId?: string | null;
-    pendingBuyId?: string | null;
-  };
-};
-
 type HydratedStateResult = {
   formation: string;
   state: ZoneState<EnhancedPlayer>;
 };
 
-type LeagueRuntimeConfigResponse = {
-  config?: {
-    budget?: {
-      teamValueCapMillions?: number;
-    };
-  };
+type MyTeamViewResponse = {
+  formation: string;
+  lineup: EnhancedPlayer[];
+  bench: EnhancedPlayer[];
+  budgetCap: number;
+  pendingSellId: string | null;
+  pendingBuyId: string | null;
+  teamTotalPoints?: number;
+  teamCurrentRoundPoints?: number;
+  hasPersistedPlayers?: boolean;
 };
 
 type WkMatchesApiResponse = {
@@ -257,31 +250,27 @@ function buildStateForFormationWithVacancies(
   return buildStateWithVacancies(players, formation, vacancyCount);
 }
 
-function buildStateFromSaved(
-  players: EnhancedPlayer[],
-  formation: string,
-  lineupIds: string[],
-  benchIds: string[],
+function buildStateFromTeamView(
+  teamView: Pick<MyTeamViewResponse, "formation" | "lineup" | "bench" | "pendingSellId">,
 ): HydratedStateResult {
-  const byId = new Map(players.map((player) => [player.id, player]));
-  const seen = new Set<string>();
+  let nextState: ZoneState<EnhancedPlayer> = {
+    lineup: [...teamView.lineup],
+    bench: [...teamView.bench],
+  };
 
-  const savedPlayers: EnhancedPlayer[] = [];
-  for (const id of [...lineupIds, ...benchIds]) {
-    const player = byId.get(id);
-    if (player && !seen.has(player.id)) {
-      seen.add(player.id);
-      savedPlayers.push(player);
+  if (teamView.pendingSellId) {
+    const playersWithoutSold = [...nextState.lineup, ...nextState.bench].filter(
+      (player) => !player.id.startsWith("open-") && player.id !== teamView.pendingSellId,
+    );
+    const rebuilt = buildStateForFormationWithVacancies(playersWithoutSold, teamView.formation, 1);
+    if (rebuilt) {
+      nextState = rebuilt;
     }
   }
 
-  const requiredSlotCount = buildFormationSlots(formation).flat().length + BENCH_POSITIONS.length;
-  const vacancyCount = Math.max(0, requiredSlotCount - savedPlayers.length);
   return {
-    formation,
-    state:
-      buildStateWithVacancies(savedPlayers, formation, vacancyCount) ??
-      buildStateForFormation(savedPlayers, formation),
+    formation: teamView.formation,
+    state: nextState,
   };
 }
 
@@ -625,10 +614,9 @@ export default function ManagerMyTeamPage() {
           [...new Set(scheduleFixtures.map((fixture) => fixture.round))].sort((a, b) => a - b)[0] ??
           1;
 
-        const [playersResponse, managerStateResponse, leagueConfigResponse, ownedIdsResponse] = await Promise.all([
+        const [playersResponse, teamViewResponse, ownedIdsResponse] = await Promise.all([
           fetch(`/api/players?mode=${isWkMode ? "wk" : "eredivisie"}${isWkMode ? `&round=${initialRound}` : ""}&_t=${Date.now()}`, { cache: "no-store" }),
-          fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}&roundNumber=${initialRound}&_t=${Date.now()}`, { cache: "no-store" }),
-          fetch(`/api/admin/league-config?mode=${isWkMode ? "wk" : "eredivisie"}&_t=${Date.now()}`, { cache: "no-store" }),
+          fetch(`/api/manager/my-team-view?mode=${isWkMode ? "wk" : "eredivisie"}&roundNumber=${initialRound}&_t=${Date.now()}`, { cache: "no-store" }),
           isWkMode
             ? fetch(`/api/wk/owned-player-ids?_t=${Date.now()}`, { cache: "no-store" })
             : Promise.resolve({ ok: true, json: async () => ({ ids: [] }) }),
@@ -641,21 +629,15 @@ export default function ManagerMyTeamPage() {
         }
 
         const playersData = (await playersResponse.json()) as { players: PlayerRecord[] };
-        const managerData = managerStateResponse.ok
-          ? ((await managerStateResponse.json()) as ManagerStateResponse)
-          : { state: undefined };
-        const leagueConfigData = leagueConfigResponse.ok
-          ? ((await leagueConfigResponse.json()) as LeagueRuntimeConfigResponse)
-          : { config: undefined };
-        const fallbackBudgetCap = getTransferBudgetCapMillions(isWkMode ? "wk" : "eredivisie");
-        const configBudgetCap = leagueConfigData.config?.budget?.teamValueCapMillions;
-        const activeBudgetCap =
-          typeof configBudgetCap === "number" && configBudgetCap > 0 ? configBudgetCap : fallbackBudgetCap;
+        const teamViewData = teamViewResponse.ok
+          ? ((await teamViewResponse.json()) as MyTeamViewResponse)
+          : null;
+        const activeBudgetCap = teamViewData?.budgetCap ?? getTransferBudgetCapMillions(isWkMode ? "wk" : "eredivisie");
         setBudgetCapMillions(activeBudgetCap);
 
         const enriched = enrichPlayers(playersData.players || []).sort(byPriceDesc);
         const nextPlayers = enriched.length > 0 ? enriched : fallbackPlayers();
-        const savedFormation = managerData.state?.formation;
+        const savedFormation = teamViewData?.formation;
         const initialFormation =
           savedFormation && formationOptions.includes(savedFormation) ? savedFormation : formationOptions[0];
 
@@ -671,41 +653,24 @@ export default function ManagerMyTeamPage() {
         // Lock transfers + swaps tijdens een actieve speelronde
         setTransfersLocked(isRoundActive(initialRound));
 
-        const managerLineupIds = managerData.state?.lineupIds ?? [];
-        const managerBenchIds = managerData.state?.benchIds ?? [];
-        const hasManagerPlayers = managerLineupIds.length > 0 || managerBenchIds.length > 0;
+        const teamViewState = teamViewData
+          ? buildStateFromTeamView({
+              formation: initialFormation,
+              lineup: teamViewData.lineup ?? [],
+              bench: teamViewData.bench ?? [],
+              pendingSellId: teamViewData.pendingSellId,
+            })
+          : null;
+        const hasManagerPlayers = teamViewData?.hasPersistedPlayers ?? false;
 
-        const hydratedState = hasManagerPlayers
-            ? buildStateFromSaved(
-                nextPlayers,
-                initialFormation,
-                managerLineupIds,
-                managerBenchIds,
-              )
-            : { formation: initialFormation, state: buildBudgetDemoState(nextPlayers, initialFormation, activeBudgetCap) };
+        const hydratedState = hasManagerPlayers && teamViewState
+          ? teamViewState
+          : { formation: initialFormation, state: buildBudgetDemoState(nextPlayers, initialFormation, activeBudgetCap) };
 
         setFormation(hydratedState.formation);
-
-        let nextState = isWithinBudget(
-          [...hydratedState.state.lineup, ...hydratedState.state.bench],
-          activeBudgetCap,
-        )
-          ? hydratedState.state
-          : buildBudgetDemoState(nextPlayers, hydratedState.formation, activeBudgetCap);
-
-        const savedPendingSellId = managerData.state?.pendingSellId ?? null;
-        if (savedPendingSellId) {
-          const playersWithoutSold = [...nextState.lineup, ...nextState.bench].filter(
-            (player) => !player.id.startsWith("open-") && player.id !== savedPendingSellId,
-          );
-          const rebuilt = buildStateForFormationWithVacancies(playersWithoutSold, hydratedState.formation, 1);
-          if (rebuilt) {
-            nextState = rebuilt;
-          }
-        }
-        setState(nextState);
-        setPendingSellId(savedPendingSellId);
-        setPendingBuyId(managerData.state?.pendingBuyId ?? managerData.state?.pickedTransferId ?? null);
+        setState(hydratedState.state);
+        setPendingSellId(teamViewData?.pendingSellId ?? null);
+        setPendingBuyId(teamViewData?.pendingBuyId ?? null);
 
         const maxAvailable = Math.max(0, ...nextPlayers.map((player) => player.prijs));
         setMaxPrice(maxAvailable);
@@ -806,35 +771,31 @@ export default function ManagerMyTeamPage() {
     const hydrateRoundState = async () => {
       try {
         const mode = isWkMode ? "wk" : "eredivisie";
-        const [managerResponse, transferResponse] = await Promise.all([
-          fetch(`/api/manager/state?mode=${mode}&roundNumber=${selectedRound}`, { cache: "no-store", signal: controller.signal }),
+        const [teamViewResponse, transferResponse] = await Promise.all([
+          fetch(`/api/manager/my-team-view?mode=${mode}&roundNumber=${selectedRound}`, { cache: "no-store", signal: controller.signal }),
           fetch(`/api/manager/transfer-round?mode=${mode}&roundNumber=${selectedRound}`, {
             cache: "no-store",
             signal: controller.signal,
           }),
         ]);
 
-        if (!managerResponse.ok) {
+        if (!teamViewResponse.ok) {
           return;
         }
 
-        const managerData = (await managerResponse.json()) as ManagerStateResponse;
-        const savedFormation = managerData.state?.formation;
+        const teamViewData = (await teamViewResponse.json()) as MyTeamViewResponse;
+        const savedFormation = teamViewData.formation;
         const nextFormation =
           savedFormation && formationOptions.includes(savedFormation) ? savedFormation : formationOptions[0];
 
-        const roundLineupIds = managerData.state?.lineupIds ?? [];
-        const roundBenchIds = managerData.state?.benchIds ?? [];
-        const hasRoundPlayers = roundLineupIds.length > 0 || roundBenchIds.length > 0;
-
-        const hydratedState = hasRoundPlayers
-            ? buildStateFromSaved(
-                allPlayers,
-                nextFormation,
-                roundLineupIds,
-                roundBenchIds,
-              )
-            : { formation: nextFormation, state: buildBudgetDemoState(allPlayers, nextFormation, budgetCapMillions) };
+        const hydratedState = teamViewData.hasPersistedPlayers
+          ? buildStateFromTeamView({
+              formation: nextFormation,
+              lineup: teamViewData.lineup ?? [],
+              bench: teamViewData.bench ?? [],
+              pendingSellId: teamViewData.pendingSellId,
+            })
+          : { formation: nextFormation, state: buildBudgetDemoState(allPlayers, nextFormation, budgetCapMillions) };
 
         suppressNextPersist.current = true;
         setFormation(hydratedState.formation);
@@ -854,8 +815,8 @@ export default function ManagerMyTeamPage() {
           setCurrentTransferEntry(null);
           setPendingTransferManagers([]);
           setBlockedTransferPlayerIds([]);
-          setPendingSellId(managerData.state?.pendingSellId ?? null);
-          setPendingBuyId(managerData.state?.pendingBuyId ?? managerData.state?.pickedTransferId ?? null);
+          setPendingSellId(teamViewData.pendingSellId ?? null);
+          setPendingBuyId(teamViewData.pendingBuyId ?? null);
         }
       } catch {
         // no-op
@@ -1092,23 +1053,23 @@ export default function ManagerMyTeamPage() {
       setPendingSellId(payload.currentEntry?.sellPlayerId ?? null);
       setPendingBuyId(payload.currentEntry?.buyPlayerId ?? null);
 
-      const managerStateResponse = await fetch(
-        `/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}&roundNumber=${selectedRound}`,
+      const teamViewResponse = await fetch(
+        `/api/manager/my-team-view?mode=${isWkMode ? "wk" : "eredivisie"}&roundNumber=${selectedRound}`,
         { cache: "no-store" },
       );
-      if (managerStateResponse.ok) {
-        const managerData = (await managerStateResponse.json()) as ManagerStateResponse;
-        const savedFormation = managerData.state?.formation;
+      if (teamViewResponse.ok) {
+        const teamViewData = (await teamViewResponse.json()) as MyTeamViewResponse;
+        const savedFormation = teamViewData.formation;
         const nextFormation =
           savedFormation && formationOptions.includes(savedFormation) ? savedFormation : formationOptions[0];
         const hydratedState =
-          managerData.state?.lineupIds || managerData.state?.benchIds
-            ? buildStateFromSaved(
-                allPlayers,
-                nextFormation,
-                managerData.state?.lineupIds ?? [],
-                managerData.state?.benchIds ?? [],
-              )
+          teamViewData.hasPersistedPlayers
+            ? buildStateFromTeamView({
+                formation: nextFormation,
+                lineup: teamViewData.lineup ?? [],
+                bench: teamViewData.bench ?? [],
+                pendingSellId: teamViewData.pendingSellId,
+              })
             : { formation: nextFormation, state: buildBudgetDemoState(allPlayers, nextFormation, budgetCapMillions) };
         suppressNextPersist.current = true;
         setFormation(hydratedState.formation);

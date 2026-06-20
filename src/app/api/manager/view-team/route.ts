@@ -1,16 +1,10 @@
-import { readFile } from "fs/promises";
-import path from "path";
 import { NextResponse } from "next/server";
-import { parsePlayerCsv } from "@/domain/player-csv";
-import { getTransferBudgetCapMillions } from "@/domain/team-budget";
+
 import { ensureAuthStateFromDb, getProfileByEmail } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
-import { syncManagerTeamFromDraftRosterPersistent } from "@/lib/draft-manager-sync";
-import { readTeamViewSnapshotPersistent } from "../../../../lib/manager-team-state-source";
+import { repairManagerTeamFromDraftArtifactsPersistent } from "@/lib/draft-manager-sync";
+import { buildManagerTeamViewPersistent } from "@/lib/manager-team-view";
 import { type ManagerStateScope } from "@/lib/manager-state";
-import { loadPlayerPoints } from "@/lib/player-points-store";
-import { summarizeManagerTeamScoresPersistent } from "@/lib/team-score-state";
-import { buildWkPlayerRoundPointsMap, buildWkPlayerTotalPointsMapThroughRound } from "@/lib/wk-player-scoring";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "s.j.m.duindam@gmail.com": "A",
@@ -45,99 +39,33 @@ export async function GET(request: Request) {
   const roundNumber = Number(url.searchParams.get("roundNumber") ?? "");
   const isOwnTeam = email === targetEmail;
 
-  let allPlayers;
-  if (scope === "wk") {
-    const wkCsvPath = path.join(process.cwd(), "data", "players-wk.csv");
-    try {
-      const csvContent = await readFile(wkCsvPath, "utf-8");
-      allPlayers = parsePlayerCsv(csvContent).players;
-    } catch {
-      return NextResponse.json({ error: "Spelersdata niet beschikbaar" }, { status: 500 });
-    }
-  } else {
-    const { bootstrapPlayersFromDefaultCsv } = await import("@/lib/player-bootstrap");
-    const { listPlayers } = await import("@/lib/player-store");
-    await bootstrapPlayersFromDefaultCsv();
-    allPlayers = listPlayers();
-  }
+  await repairManagerTeamFromDraftArtifactsPersistent({ managerEmail: targetEmail, scope });
 
-  const playerById = new Map(allPlayers.map((p) => [p.id, p]));
-
-  await syncManagerTeamFromDraftRosterPersistent({ managerEmail: targetEmail, scope });
-
-  const playerPointsMap = new Map<string, number>();
-  const playerTotalPointsMap = new Map<string, number>();
-  if (scope === "wk") {
-    const calculatedRoundPoints = await buildWkPlayerRoundPointsMap();
-    const calculatedTotals = await buildWkPlayerTotalPointsMapThroughRound();
-    for (const [fantasyplayerId, roundPoints] of calculatedRoundPoints.entries()) {
-      playerPointsMap.set(String(fantasyplayerId), roundPoints);
-    }
-    for (const [fantasyplayerId, totalPoints] of calculatedTotals.entries()) {
-      playerTotalPointsMap.set(String(fantasyplayerId), totalPoints);
-    }
-  } else {
-    const pointsSnapshot = await loadPlayerPoints(scope);
-    if (pointsSnapshot) {
-      for (const pp of pointsSnapshot.players) {
-        if (pp.fantasyplayerId) {
-          playerPointsMap.set(String(pp.fantasyplayerId), pp.totalPoints);
-        }
-      }
-    }
-  }
-
-  const state = await readTeamViewSnapshotPersistent({
+  const teamView = await buildManagerTeamViewPersistent({
     scope,
     managerEmail: targetEmail,
     roundNumber,
   });
-
-  const enrichPlayer = (playerId: string) => {
-    const player = playerById.get(playerId);
-    if (!player) return { id: playerId, naam: "Onbekend", positie: "MID", club: "-", prijs: 0, punten: 0 };
-    return {
-      ...player,
-      punten: playerPointsMap.get(String(playerId)) ?? 0,
-      totalPoints: playerTotalPointsMap.get(String(playerId)) ?? playerPointsMap.get(String(playerId)) ?? 0,
-      roundPoints: playerPointsMap.get(String(playerId)) ?? 0,
-    };
-  };
-
-  const lineup = state.lineupIds.map(enrichPlayer);
-  const bench = state.benchIds.map((id) => {
-    const p = enrichPlayer(id);
-    return { ...p, punten: Math.ceil(p.punten / 2) };
-  });
-
-  const budgetCap = getTransferBudgetCapMillions(scope);
-  const squadCost = [...lineup, ...bench].reduce((sum, p) => sum + (p.prijs ?? 0), 0);
-  const budgetRemaining = Math.max(0, budgetCap - squadCost);
-  const pendingSellId = isOwnTeam ? state.pendingSellId : null;
-  const pendingBuyId = isOwnTeam ? state.pendingBuyId : null;
   const profile = getProfileByEmail(targetEmail);
-  const scoreSummary = scope === "wk"
-    ? await summarizeManagerTeamScoresPersistent(scope, targetEmail)
-    : {
-        totalPoints: lineup.reduce((sum, player) => sum + player.punten, 0) + bench.reduce((sum, player) => sum + player.punten, 0),
-        currentRoundPoints: lineup.reduce((sum, player) => sum + player.punten, 0) + bench.reduce((sum, player) => sum + player.punten, 0),
-      };
 
   return NextResponse.json({
     isOwnTeam,
     teamName: profile?.teamName ?? "Onbekend team",
     managerName: profile?.name ?? targetEmail.split("@")[0],
-    roundNumber: scope === "wk" && Number.isInteger(roundNumber) && roundNumber > 0 ? roundNumber : null,
-    formation: state.formation,
-    lineup,
-    bench,
-    budgetCap,
-    budgetRemaining,
-    squadCost,
-    pendingSellId,
-    pendingBuyId,
-    teamTotalPoints: scoreSummary.totalPoints,
-    teamCurrentRoundPoints: scoreSummary.currentRoundPoints,
-    scoreSource: scope === "wk" ? "team-score-state" : "player-points",
+    roundNumber: teamView.roundNumber,
+    formation: teamView.formation,
+    lineup: teamView.lineup,
+    bench: teamView.bench.map((player) => ({
+      ...player,
+      punten: Math.ceil(player.punten / 2),
+    })),
+    budgetCap: teamView.budgetCap,
+    budgetRemaining: teamView.budgetRemaining,
+    squadCost: teamView.squadCost,
+    pendingSellId: isOwnTeam ? teamView.pendingSellId : null,
+    pendingBuyId: isOwnTeam ? teamView.pendingBuyId : null,
+    teamTotalPoints: teamView.teamTotalPoints,
+    teamCurrentRoundPoints: teamView.teamCurrentRoundPoints,
+    scoreSource: teamView.scoreSource,
   });
 }
