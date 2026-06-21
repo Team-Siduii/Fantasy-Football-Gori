@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { resolveAppShellMode, type AppShellPreferredMode } from "@/lib/app-shell-mode";
 import { getHeaderMenuItems } from "@/lib/app-shell-menu";
+import { countPlayers, resolveModeFallbackPath } from "@/lib/manager-route-utils";
 
 type NavItem = {
   href: string;
@@ -69,9 +70,17 @@ type PreferredModeResponse = {
   route?: string;
 };
 
+type ManagerStateCountResponse = {
+  state?: {
+    lineupIds?: string[];
+    benchIds?: string[];
+  };
+};
+
 export function AppShell({ title, subtitle, children }: { title: string; subtitle: ReactNode; children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [preferredMode, setPreferredMode] = useState<AppShellPreferredMode>("eredivisie");
   const shellMode = resolveAppShellMode(pathname, preferredMode);
   const isWkMode = shellMode === "wk";
@@ -147,7 +156,48 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
     };
 
     void load();
-  }, [isWkMode]);
+  }, [isWkMode, router]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadModeFallback = async () => {
+      const [eredivisieResponse, wkResponse] = await Promise.all([
+        fetch(`/api/manager/state?mode=eredivisie`, { cache: "no-store" }),
+        fetch(`/api/manager/state?mode=wk`, { cache: "no-store" }),
+      ]);
+
+      if (!eredivisieResponse.ok || !wkResponse.ok || cancelled) {
+        return;
+      }
+
+      const [eredivisieData, wkData] = await Promise.all([
+        eredivisieResponse.json() as Promise<ManagerStateCountResponse>,
+        wkResponse.json() as Promise<ManagerStateCountResponse>,
+      ]);
+
+      if (cancelled) {
+        return;
+      }
+
+      const fallbackPath = resolveModeFallbackPath({
+        currentPath: pathname,
+        eredivisieCount: countPlayers(eredivisieData.state?.lineupIds, eredivisieData.state?.benchIds),
+        wkCount: countPlayers(wkData.state?.lineupIds, wkData.state?.benchIds),
+      });
+
+      if (fallbackPath && fallbackPath !== pathname) {
+        const query = searchParams.toString();
+        router.replace(query ? `${fallbackPath}?${query}` : fallbackPath);
+      }
+    };
+
+    void loadModeFallback();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, router, searchParams]);
 
   useEffect(() => {
     setIsMenuOpen(false);
