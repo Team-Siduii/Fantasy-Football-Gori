@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { resolveAppShellMode, type AppShellPreferredMode } from "@/lib/app-shell-mode";
 import { getHeaderMenuItems } from "@/lib/app-shell-menu";
 
 type NavItem = {
@@ -63,10 +64,17 @@ type SubpouleSummaryResponse = {
   } | null;
 };
 
+type PreferredModeResponse = {
+  mode?: AppShellPreferredMode;
+  route?: string;
+};
+
 export function AppShell({ title, subtitle, children }: { title: string; subtitle: ReactNode; children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isWkMode = pathname.startsWith("/manager/world-cup");
+  const [preferredMode, setPreferredMode] = useState<AppShellPreferredMode>("eredivisie");
+  const shellMode = resolveAppShellMode(pathname, preferredMode);
+  const isWkMode = shellMode === "wk";
   const activeNavItems = isWkMode ? wkNavItems : eredivisieNavItems;
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -76,6 +84,41 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
   const [summaryPoints, setSummaryPoints] = useState("-");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const headerMenuItems = getHeaderMenuItems(isAuthenticated === true, isWkMode);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const explicitMode = pathname.startsWith("/manager/world-cup")
+      ? "wk"
+      : pathname === "/draft" || pathname.startsWith("/manager/")
+        ? "eredivisie"
+        : null;
+
+    if (explicitMode) {
+      setPreferredMode(explicitMode);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const loadPreferredMode = async () => {
+      const response = await fetch("/api/manager/preferred-mode", { cache: "no-store" });
+      if (!response.ok) {
+        return;
+      }
+
+      const data = (await response.json()) as PreferredModeResponse;
+      if (!cancelled && (data.mode === "wk" || data.mode === "eredivisie")) {
+        setPreferredMode(data.mode);
+      }
+    };
+
+    void loadPreferredMode();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   useEffect(() => {
     const mode = isWkMode ? "wk" : "eredivisie";
