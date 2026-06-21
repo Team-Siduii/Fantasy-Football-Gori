@@ -109,6 +109,7 @@ Per rol belangrijkste rechten:
 - Draft is bereikbaar via het globale openklapmenu en de mobiele ondernavigatie; in WK mode verwijst Draft naar `/manager/world-cup/draft`, in Eredivisie mode naar `/draft`.
 - De header gebruikt op laptop én mobiel één compacte `Menu`-knop; zonder actieve managersessie toont het menu uitsluitend `Log in`, en na login toont het menu `Mijn team`, `Draft`, `Competitie`, `Instellingen`, `Spelregels` en `CSV import` zodat de kernacties compact en consistent bereikbaar blijven.
 - Op neutrale, auth-only pagina's zonder expliciete competitieroute (zoals `/account`, `/instellingen` en `/spelregels`) volgt de header/ondernavigatie de **voorkeurscompetitie van de ingelogde manager**. Een WK-only manager ziet daar dus WK-links naar `Mijn team`, `Draft` en `Competitie` in plaats van terug te vallen naar lege Eredivisie-routes.
+- WK round reads voor `Mijn team` vallen niet meer terug op een lege snapshot als die ronde-state geen spelers bevat terwijl de canonieke teamstate wel gevuld is. In dat geval gebruikt de app de laatst-populated/canonieke selectie, zodat managers na deploys of state-drift niet op een leeg `Open slot`-veld landen.
 - Oefendraftbeheer zit ingeklapt in de draftkamer: start/reset draft met standaardvolgorde `Johan Swart, Thomas, Jack, Emiel Zomerdijk`, 15 rondes, en return-actie voor testcorrecties.
 - Accountpagina (`/account`) bevat managernaam, teamnaam en wachtwoordbeheer; managernaam/teamnaam worden gebruikt voor herkenning in de draftkamer.
 

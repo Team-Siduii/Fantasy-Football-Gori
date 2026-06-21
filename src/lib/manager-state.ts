@@ -487,17 +487,25 @@ export function readManagerStateForRound(
   return pickRoundSnapshot(state, roundNumber);
 }
 
+function snapshotHasPlayers(snapshot: RoundSnapshot): boolean {
+  return snapshot.lineupIds.length + snapshot.benchIds.length > 0;
+}
+
 function pickRoundSnapshot(state: ManagerState, roundNumber: number): RoundSnapshot {
   const entries = Object.entries(state.roundStates)
     .map(([key, snapshot]) => ({ round: Number(key), snapshot }))
     .filter((entry) => Number.isInteger(entry.round) && entry.round > 0 && entry.round <= roundNumber)
     .sort((a, b) => b.round - a.round);
 
-  if (entries.length > 0) {
-    return entries[0].snapshot;
+  const topLevelSnapshot = toRoundSnapshot(state);
+
+  for (const entry of entries) {
+    if (snapshotHasPlayers(entry.snapshot)) {
+      return entry.snapshot;
+    }
   }
 
-  return toRoundSnapshot(state);
+  return topLevelSnapshot;
 }
 
 export async function readManagerStateForRoundPersistent(

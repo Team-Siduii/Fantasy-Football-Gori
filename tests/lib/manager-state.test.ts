@@ -173,6 +173,49 @@ describe("manager-state persistence", () => {
     expect(round6After.lineupIds).toEqual(["r5-new-a", "r5-new-b"]);
   });
 
+  it("falls back to the populated top-level WK snapshot when a requested round snapshot is empty", async () => {
+    mkdirSync(dirname(wkTestPath), { recursive: true });
+    process.env.MANAGER_STATE_WK_PATH = wkTestPath;
+
+    const fs = await import("fs");
+    fs.writeFileSync(
+      wkTestPath,
+      JSON.stringify(
+        {
+          formation: "4-3-3",
+          lineupIds: ["wk-top-1", "wk-top-2"],
+          benchIds: ["wk-top-bench"],
+          pickedTransferId: null,
+          pendingSellId: null,
+          pendingBuyId: null,
+          roundStates: {
+            "2": {
+              formation: "4-3-3",
+              lineupIds: [],
+              benchIds: [],
+              pickedTransferId: null,
+              pendingSellId: null,
+              pendingBuyId: null,
+            },
+          },
+          managerStates: {},
+          roundLocks: [],
+          adminActionLog: [],
+        },
+        null,
+        2,
+      ),
+      "utf-8",
+    );
+
+    const mod = await import("../../src/lib/manager-state");
+    const snapshot = mod.readManagerStateForRound(2, "wk");
+
+    expect(snapshot.formation).toBe("4-3-3");
+    expect(snapshot.lineupIds).toEqual(["wk-top-1", "wk-top-2"]);
+    expect(snapshot.benchIds).toEqual(["wk-top-bench"]);
+  });
+
   it("stores canonical manager state under managerId while remaining readable by email", async () => {
     mkdirSync(dirname(testPath), { recursive: true });
     process.env.MANAGER_STATE_PATH = testPath;
