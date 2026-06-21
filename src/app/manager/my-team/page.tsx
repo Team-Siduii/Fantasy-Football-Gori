@@ -18,6 +18,7 @@ import { getPlayerCardMeta } from "@/lib/player-card-display";
 import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
 import { createLatestRequestTracker } from "@/lib/latest-request";
 import { getWkMatchLiveMinuteLabel, mergeWorldCupFixturesWithSyncedMatches, hasVisibleFixtureScore, isLiveWkMatchStatus, type SyncedWkMatchLike } from "@/lib/wk-match-schedule";
+import { hydrateSavedSquadState } from "@/lib/manager-team-hydration";
 import { WORLD_CUP_2026_FIXTURES, isRoundActive } from "@/lib/world-cup-schedule";
 
 type Position = "GK" | "DEF" | "MID" | "FWD";
@@ -268,37 +269,19 @@ function buildStateFromSaved(
   lineupIds: string[],
   benchIds: string[],
 ): HydratedStateResult {
-  const byId = new Map(players.map((player) => [player.id, player]));
-  const seen = new Set<string>();
-
-  const savedPlayers: EnhancedPlayer[] = [];
-  for (const id of [...lineupIds, ...benchIds]) {
-    const player = byId.get(id);
-    if (player && !seen.has(player.id)) {
-      seen.add(player.id);
-      savedPlayers.push(player);
-    } else if (!player && !seen.has(id)) {
-      // Speler niet in de actieve dataset (uit WK, uitgeschakeld land, etc.)
-      // → toon als inactive placeholder met originele naam uit de graveyard
-      const graveyard = getInactivePlayer(id);
-      if (graveyard) {
-        seen.add(id);
-        savedPlayers.push({
-          ...graveyard,
-          punten: 0,
-          inactive: true,
-        });
-      }
-    }
-  }
-
-  const requiredSlotCount = buildFormationSlots(formation).flat().length + BENCH_POSITIONS.length;
-  const vacancyCount = Math.max(0, requiredSlotCount - savedPlayers.length);
   return {
     formation,
-    state:
-      buildStateWithVacancies(savedPlayers, formation, vacancyCount) ??
-      buildStateForFormation(savedPlayers, formation),
+    state: hydrateSavedSquadState({
+      players,
+      formation,
+      lineupIds,
+      benchIds,
+      benchPositions: BENCH_POSITIONS,
+      resolveInactivePlayer: (id) => {
+        const graveyard = getInactivePlayer(id);
+        return graveyard ? { ...graveyard, punten: 0, inactive: true } : null;
+      },
+    }),
   };
 }
 
