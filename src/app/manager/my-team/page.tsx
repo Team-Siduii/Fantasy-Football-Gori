@@ -636,7 +636,7 @@ export default function ManagerMyTeamPage() {
 
         const [playersResponse, managerStateResponse, leagueConfigResponse, ownedIdsResponse] = await Promise.all([
           fetch(`/api/players?mode=${isWkMode ? "wk" : "eredivisie"}${isWkMode ? `&round=${initialRound}` : ""}&_t=${Date.now()}`, { cache: "no-store" }),
-          fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}&_t=${Date.now()}`, { cache: "no-store" }),
+          fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}&roundNumber=${initialRound}&_t=${Date.now()}`, { cache: "no-store" }),
           fetch(`/api/admin/league-config?mode=${isWkMode ? "wk" : "eredivisie"}&_t=${Date.now()}`, { cache: "no-store" }),
           isWkMode
             ? fetch(`/api/wk/owned-player-ids?_t=${Date.now()}`, { cache: "no-store" })
@@ -825,12 +825,8 @@ export default function ManagerMyTeamPage() {
     const hydrateRoundState = async () => {
       try {
         const mode = isWkMode ? "wk" : "eredivisie";
-        const isCurrentRound = currentRound !== null && selectedRound === currentRound;
-        const stateUrl = isCurrentRound
-          ? `/api/manager/state?mode=${mode}&_t=${Date.now()}`
-          : `/api/manager/state?mode=${mode}&roundNumber=${selectedRound}&_t=${Date.now()}`;
         const [managerResponse, transferResponse] = await Promise.all([
-          fetch(stateUrl, {
+          fetch(`/api/manager/state?mode=${mode}&roundNumber=${selectedRound}&_t=${Date.now()}`, {
             cache: "no-store",
             signal: controller.signal,
           }),
@@ -905,7 +901,7 @@ export default function ManagerMyTeamPage() {
     void hydrateRoundState();
 
     return () => controller.abort();
-  }, [allPlayers, budgetCapMillions, currentRound, formationOptions, isWkMode, selectedRound]);
+  }, [allPlayers, budgetCapMillions, formationOptions, isWkMode, selectedRound]);
 
   useEffect(() => {
     if (!hydrated.current) {
