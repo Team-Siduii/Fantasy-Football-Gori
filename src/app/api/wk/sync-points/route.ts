@@ -9,7 +9,7 @@ import {
   saveWkMatches,
 } from "@/lib/wk-sync-store";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
-import { recalculateAllManagerRoundScoresPersistent } from "@/lib/team-score-engine";
+import { backfillAllManagerScoresThroughLatestRoundPersistent } from "@/lib/team-score-engine";
 
 const NO_CACHE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -245,18 +245,17 @@ export async function GET(request: Request) {
       }
     }
 
-    // ── 3. Recalculate team scores ──
+    // ── 3. Recalculate team scores (all rounds) ──
     let recalculatedManagers = 0;
+    let recalculatedRounds = 0;
     try {
-      console.log("[sync-points] Recalculating team scores...");
-      const recalcResult = await recalculateAllManagerRoundScoresPersistent({
-        scope: "wk",
-        roundNumber: roundSequence,
-      });
-      recalculatedManagers = recalcResult.length;
-      console.log("[sync-points] Team scores recalculated: " + recalculatedManagers + " managers");
+      console.log("[sync-points] Backfilling team scores through round " + roundSequence + "...");
+      const recalcResult = await backfillAllManagerScoresThroughLatestRoundPersistent("wk");
+      recalculatedManagers = recalcResult.recalculatedManagersCount;
+      recalculatedRounds = recalcResult.recalculatedRounds;
+      console.log("[sync-points] Team scores backfilled: " + recalculatedManagers + " managers x " + recalculatedRounds + " rounds");
     } catch (recalcErr) {
-      console.error("[sync-points] Team score recalculation FAILED:", String(recalcErr));
+      console.error("[sync-points] Team score backfill FAILED:", String(recalcErr));
       // Non-fatal — still return sync results
     }
 
@@ -269,6 +268,7 @@ export async function GET(request: Request) {
         eventsCount,
         matchesCount: syncedMatches,
         recalculatedManagers,
+        recalculatedRounds,
         lastSync: syncedAt,
       },
       { headers: NO_CACHE_HEADERS },
