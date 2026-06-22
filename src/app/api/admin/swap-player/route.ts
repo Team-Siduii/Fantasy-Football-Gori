@@ -110,16 +110,24 @@ export async function POST(request: Request) {
       // non-fatal
     }
 
-    // 5. Update roster
+    // 5. Update roster — zoek in ALLE team entries naar de oude speler
     const rosterResult = await pool.query("SELECT payload FROM gori_fantasy_state WHERE state_key = $1", [ROSTER_KEY]);
     if (rosterResult.rows.length > 0) {
       const rosterState: any = rosterResult.rows[0].payload;
       const byTeamId: any = rosterState.byTeamId || {};
 
-      if (byTeamId[foundKey]) {
-        byTeamId[foundKey] = replacePlayer(byTeamId[foundKey]);
-        rosterState.byTeamId = byTeamId;
+      // Zoek in alle roster entries naar de oude speler
+      let rosterUpdated = false;
+      for (const [teamKey, playerIds] of Object.entries(byTeamId)) {
+        const ids = playerIds as string[];
+        if (ids.includes(body.oldPlayerId)) {
+          byTeamId[teamKey] = replacePlayer(ids);
+          rosterUpdated = true;
+        }
+      }
 
+      if (rosterUpdated) {
+        rosterState.byTeamId = byTeamId;
         await pool.query(
           `INSERT INTO gori_fantasy_state (state_key, store_name, scope, manager_key, payload, updated_at)
            VALUES ($1, 'team-roster-state', 'wk', 'shared', $2::jsonb, NOW())
