@@ -487,8 +487,13 @@ export async function syncManagerTeamFromDraftRosterPersistent(input: { managerE
   return { managerEmail, state, changed: true };
 }
 
+/** Minimum aantal spelers voordat we een team als "geïnitialiseerd" beschouwen.
+ *  Alleen teams met MINDER dan dit aantal worden force-gerepaired.
+ *  Voorkomt dat transfers (die tijdelijk tot 14/15 kunnen leiden) ongedaan worden gemaakt. */
+const MIN_TEAM_SIZE_FORCE_REPAIR = 11; // lineup size — als je 11+ hebt, is je team legit
+
 function shouldForceRepairFromCandidate(currentIds: string[], candidateIds: string[]) {
-  return currentIds.length > 0 && currentIds.length < SQUAD_SIZE && candidateIds.length >= SQUAD_SIZE && candidateIds.length > currentIds.length;
+  return currentIds.length > 0 && currentIds.length < MIN_TEAM_SIZE_FORCE_REPAIR && candidateIds.length >= SQUAD_SIZE && candidateIds.length > currentIds.length;
 }
 
 async function forceRepairManagerTeamPersistent(input: {
