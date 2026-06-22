@@ -319,19 +319,6 @@ async function loadPersistentPlayerCatalog(scope: ManagerStateScope): Promise<Dr
   }
 }
 
-function areIdsEqual(left: string[], right: string[]) {
-  return left.join("\u0000") === right.join("\u0000");
-}
-
-function hasRoundSnapshotDrift(
-  current: Awaited<ReturnType<typeof readManagerStatePersistent>>,
-  next: ReturnType<typeof buildManagerTeamStateWithRoundSnapshots>,
-) {
-  return Object.values(current.roundStates).some(
-    (snapshot) => !areIdsEqual(snapshot.lineupIds, next.lineupIds) || !areIdsEqual(snapshot.benchIds, next.benchIds),
-  );
-}
-
 export function syncPlayerIdsToManagerTeam(input: {
   managerEmail: string;
   playerIds: string[];
@@ -487,41 +474,6 @@ export async function syncManagerTeamFromDraftRosterPersistent(input: { managerE
   return { managerEmail, state, changed: true };
 }
 
-/** Minimum aantal spelers voordat we een team als "geïnitialiseerd" beschouwen.
- *  Alleen teams met MINDER dan dit aantal worden force-gerepaired.
- *  Voorkomt dat transfers (die tijdelijk tot 14/15 kunnen leiden) ongedaan worden gemaakt. */
-const MIN_TEAM_SIZE_FORCE_REPAIR = 11; // lineup size — als je 11+ hebt, is je team legit
-
-function shouldForceRepairFromCandidate(currentIds: string[], candidateIds: string[]) {
-  return currentIds.length > 0 && currentIds.length < MIN_TEAM_SIZE_FORCE_REPAIR && candidateIds.length >= SQUAD_SIZE && candidateIds.length > currentIds.length;
-}
-
-async function forceRepairManagerTeamPersistent(input: {
-  managerEmail: string;
-  scope: ManagerStateScope;
-  playerIds: string[];
-  playerCatalog?: DraftPlayerCatalogEntry[];
-}) {
-  const current = await readManagerStatePersistent(input.scope, input.managerEmail);
-  const playerCatalog = input.playerCatalog ?? (await loadPersistentPlayerCatalog(input.scope));
-  const next = buildManagerTeamStateWithRoundSnapshots(input.playerIds, current, playerCatalog);
-  const nextIds = [...next.lineupIds, ...next.benchIds];
-  const currentIds = [...current.lineupIds, ...current.benchIds];
-  const roundSnapshotDrift = hasRoundSnapshotDrift(current, next);
-
-  if (areIdsEqual(currentIds, nextIds) && !roundSnapshotDrift) {
-    return { managerEmail: input.managerEmail, state: current, changed: false };
-  }
-
-  const state = await saveManagerStatePersistent(next, input.scope, input.managerEmail);
-  return { managerEmail: input.managerEmail, state, changed: true };
-}
-
-function buildCandidateIds(playerIds: string[], formation: string, playerCatalog?: DraftPlayerCatalogEntry[]) {
-  const candidate = buildManagerTeamState(playerIds, formation, playerCatalog);
-  return [...candidate.lineupIds, ...candidate.benchIds];
-}
-
 export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
   managerEmail: string;
   scope: ManagerStateScope;
@@ -533,50 +485,35 @@ export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
 
   const current = await readManagerStatePersistent(input.scope, managerEmail);
   const currentIds = [...current.lineupIds, ...current.benchIds];
-  const playerCatalog = await loadPersistentPlayerCatalog(input.scope);
-  const rosters = (await readTeamRosterStatePersistent(input.scope)).byTeamId;
-  const identity = buildManagerIdentity(managerEmail, input.scope);
-  const rosterMatch = findRosterMatch(rosters, identity, input.scope);
-  const rosterPlayerIds = rosterMatch?.[1] ?? [];
-  const rosterRoundSnapshotDrift =
-    rosterPlayerIds.length >= SQUAD_SIZE &&
-    hasRoundSnapshotDrift(current, buildManagerTeamStateWithRoundSnapshots(rosterPlayerIds, current, playerCatalog));
-  const rosterOrderingDrift =
-    rosterPlayerIds.length >= SQUAD_SIZE &&
-    !areIdsEqual(currentIds, buildCandidateIds(rosterPlayerIds, current.formation || DEFAULT_FORMATION, playerCatalog));
 
-  if (currentIds.length === 0) {
+  // Alleen repareren als het team volledig leeg is (nooit geïnitialiseerd).
+  // Zodra er spelers in staan, heeft de manager transfers/aanpassingen gedaan
+  // en mag géén enkele automatische repair de boel overschrijven.
+  if (currentIds.length > 0) {
+    return { managerEmail, state: current, changed: false };
+  }
+
+  // Team is leeg — probeer te vullen via roster, dan draft
+  {
     const rosterRepair = await syncManagerTeamFromDraftRosterPersistent(input);
     if (rosterRepair) {
       return { ...rosterRepair, repairedFrom: "team-roster" as const };
     }
-  } else if (shouldForceRepairFromCandidate(currentIds, rosterPlayerIds)) {
-    const forcedRosterRepair = await forceRepairManagerTeamPersistent({
-      managerEmail,
-      playerIds: rosterPlayerIds,
-      playerCatalog,
-      scope: input.scope,
-    });
-    return { ...forcedRosterRepair, repairedFrom: "team-roster" as const };
   }
 
+  const identity = buildManagerIdentity(managerEmail, input.scope);
+  const playerCatalog = await loadPersistentPlayerCatalog(input.scope);
   const { readDraftStatePersistent } = await import("./draft-state");
   const draft = await readDraftStatePersistent(input.scope);
   const draftPlayerIds = draft.picks
     .filter((pick) => teamIdMatchesManagerIdentity(pick.teamId, identity) || teamIdResolvesToManagerIdentity(pick.teamId, identity, input.scope))
     .map((pick) => pick.playerId);
-  const draftRoundSnapshotDrift =
-    draftPlayerIds.length >= SQUAD_SIZE &&
-    hasRoundSnapshotDrift(current, buildManagerTeamStateWithRoundSnapshots(draftPlayerIds, current, playerCatalog));
-  const draftOrderingDrift =
-    draftPlayerIds.length >= SQUAD_SIZE &&
-    !areIdsEqual(currentIds, buildCandidateIds(draftPlayerIds, current.formation || DEFAULT_FORMATION, playerCatalog));
 
   if (draftPlayerIds.length === 0) {
     return null;
   }
 
-  if (currentIds.length === 0) {
+  {
     const result = await syncPlayerIdsToManagerTeamPersistent({
       managerEmail,
       playerIds: draftPlayerIds,
@@ -586,16 +523,4 @@ export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
 
     return result ? { ...result, changed: true, repairedFrom: "draft-picks" as const } : null;
   }
-
-  if (shouldForceRepairFromCandidate(currentIds, draftPlayerIds)) {
-    const forcedDraftRepair = await forceRepairManagerTeamPersistent({
-      managerEmail,
-      playerIds: draftPlayerIds,
-      playerCatalog,
-      scope: input.scope,
-    });
-    return { ...forcedDraftRepair, repairedFrom: "draft-picks" as const };
-  }
-
-  return { managerEmail, state: current, changed: false };
 }
