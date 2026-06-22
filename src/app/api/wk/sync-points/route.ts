@@ -9,6 +9,7 @@ import {
   saveWkMatches,
 } from "@/lib/wk-sync-store";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
+import { recalculateAllManagerRoundScoresPersistent } from "@/lib/team-score-engine";
 
 const NO_CACHE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -244,6 +245,21 @@ export async function GET(request: Request) {
       }
     }
 
+    // ── 3. Recalculate team scores ──
+    let recalculatedManagers = 0;
+    try {
+      console.log("[sync-points] Recalculating team scores...");
+      const recalcResult = await recalculateAllManagerRoundScoresPersistent({
+        scope: "wk",
+        roundNumber: roundSequence,
+      });
+      recalculatedManagers = recalcResult.length;
+      console.log("[sync-points] Team scores recalculated: " + recalculatedManagers + " managers");
+    } catch (recalcErr) {
+      console.error("[sync-points] Team score recalculation FAILED:", String(recalcErr));
+      // Non-fatal — still return sync results
+    }
+
     return NextResponse.json(
       {
         success: true,
@@ -252,6 +268,7 @@ export async function GET(request: Request) {
         playersCount,
         eventsCount,
         matchesCount: syncedMatches,
+        recalculatedManagers,
         lastSync: syncedAt,
       },
       { headers: NO_CACHE_HEADERS },
