@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     managerKey: string;
     oldPlayerId: string;
     newPlayerId: string;
+    rounds?: number[];  // optioneel: alleen deze rondes updaten. Leeg = alle rondes.
   };
 
   if (!body.managerKey || !body.oldPlayerId || !body.newPlayerId) {
@@ -66,10 +67,16 @@ export async function POST(request: Request) {
     foundState.lineupIds = newLineup;
     foundState.benchIds = newBench;
 
-    // 3. Update ALLE round states (historisch bewaren maar met vervangen speler)
+    // 3. Update round states — alleen opgegeven rondes, of alle als geen rounds-array
+    const targetRoundSet = body.rounds && body.rounds.length > 0
+      ? new Set(body.rounds.map(String))
+      : null;
     const updatedRounds: string[] = [];
     if (foundState.roundStates) {
       for (const [rk, rs] of Object.entries(foundState.roundStates)) {
+        if (targetRoundSet !== null && !targetRoundSet.has(rk)) {
+          continue;  // skip rondes die niet in de target list zitten
+        }
         const snapshot = rs as any;
         const oldRoundLineup = [...(snapshot.lineupIds || [])];
         const oldRoundBench = [...(snapshot.benchIds || [])];
