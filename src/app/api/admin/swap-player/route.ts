@@ -89,13 +89,26 @@ export async function POST(request: Request) {
     managerStates[foundKey] = foundState;
     fullState.managerStates = managerStates;
 
-    // 4. Schrijf manager state
+    // 4. Schrijf manager state naar DB én file cache
     await pool.query(
       `INSERT INTO gori_fantasy_state (state_key, store_name, scope, manager_key, payload, updated_at)
        VALUES ($1, 'manager-state', 'wk', 'shared', $2::jsonb, NOW())
        ON CONFLICT (state_key) DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()`,
       [STATE_KEY, JSON.stringify(fullState)]
     );
+
+    // Update de file cache op de huidige Vercel instance
+    try {
+      const { writeFileSync, mkdirSync } = await import("fs");
+      const { join } = await import("path");
+      const fsPath = process.env.VERCEL
+        ? "/tmp/manager-state-wk.json"
+        : join(process.cwd(), "data", "manager-state-wk.json");
+      mkdirSync(join(fsPath, ".."), { recursive: true });
+      writeFileSync(fsPath, JSON.stringify(fullState, null, 2), "utf-8");
+    } catch {
+      // non-fatal
+    }
 
     // 5. Update roster
     const rosterResult = await pool.query("SELECT payload FROM gori_fantasy_state WHERE state_key = $1", [ROSTER_KEY]);
