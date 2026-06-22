@@ -829,7 +829,13 @@ export default function ManagerMyTeamPage() {
         const stateUrl = isCurrentRound
           ? `/api/manager/state?mode=${mode}&_t=${Date.now()}`
           : `/api/manager/state?mode=${mode}&roundNumber=${selectedRound}&_t=${Date.now()}`;
-        const [managerResponse, transferResponse] = await Promise.all([
+        // Re-fetch spelers met round parameter voor correcte roundPoints per ronde
+        const doRefreshPlayers = !isCurrentRound;
+        const playersUrl = isWkMode
+          ? `/api/players?mode=wk&round=${selectedRound}&_t=${Date.now()}`
+          : `/api/players?mode=eredivisie&_t=${Date.now()}`;
+
+        const [managerResponse, transferResponse, playersResponse] = await Promise.all([
           fetch(stateUrl, {
             cache: "no-store",
             signal: controller.signal,
@@ -838,6 +844,9 @@ export default function ManagerMyTeamPage() {
             cache: "no-store",
             signal: controller.signal,
           }),
+          doRefreshPlayers
+            ? fetch(playersUrl, { cache: "no-store", signal: controller.signal })
+            : Promise.resolve(null),
         ]);
 
         if (!managerResponse.ok) {
@@ -848,6 +857,22 @@ export default function ManagerMyTeamPage() {
         if (!roundHydrationRequestTracker.current.isActive(requestId, controller.signal.aborted)) {
           return;
         }
+
+        // Update allPlayers met round-specifieke punten
+        let refreshedPlayers: EnhancedPlayer[] | null = null;
+        if (playersResponse && playersResponse.ok) {
+          try {
+            const playersData = (await playersResponse.json()) as { players: PlayerRecord[] };
+            const enriched = enrichPlayers(playersData.players || []).sort(byPriceDesc);
+            if (enriched.length > 0) {
+              setAllPlayers(enriched);
+              refreshedPlayers = enriched;
+            }
+          } catch {
+            // no-op: behoud huidige allPlayers bij fetch-fout
+          }
+        }
+
         const savedFormation = managerData.state?.formation;
         const nextFormation =
           savedFormation && formationOptions.includes(savedFormation) ? savedFormation : formationOptions[0];
@@ -856,9 +881,12 @@ export default function ManagerMyTeamPage() {
         const roundBenchIds = managerData.state?.benchIds ?? [];
         const hasRoundPlayers = roundLineupIds.length > 0 || roundBenchIds.length > 0;
 
+        // Gebruik verse spelers als we ze net hebben opgehaald, anders de huidige state
+        const currentAllPlayers = refreshedPlayers ?? allPlayers;
+
         const hydratedState = hasRoundPlayers
             ? buildStateFromSaved(
-                allPlayers,
+                currentAllPlayers,
                 nextFormation,
                 roundLineupIds,
                 roundBenchIds,
