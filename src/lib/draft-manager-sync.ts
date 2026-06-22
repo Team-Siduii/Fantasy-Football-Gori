@@ -545,7 +545,7 @@ export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
     if (rosterRepair) {
       return { ...rosterRepair, repairedFrom: "team-roster" as const };
     }
-  } else if (shouldForceRepairFromCandidate(currentIds, rosterPlayerIds) || rosterRoundSnapshotDrift || rosterOrderingDrift) {
+  } else if (shouldForceRepairFromCandidate(currentIds, rosterPlayerIds)) {
     const forcedRosterRepair = await forceRepairManagerTeamPersistent({
       managerEmail,
       playerIds: rosterPlayerIds,
@@ -582,7 +582,7 @@ export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
     return result ? { ...result, changed: true, repairedFrom: "draft-picks" as const } : null;
   }
 
-  if (shouldForceRepairFromCandidate(currentIds, draftPlayerIds) || draftRoundSnapshotDrift || draftOrderingDrift) {
+  if (shouldForceRepairFromCandidate(currentIds, draftPlayerIds)) {
     const forcedDraftRepair = await forceRepairManagerTeamPersistent({
       managerEmail,
       playerIds: draftPlayerIds,
