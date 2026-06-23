@@ -1244,7 +1244,7 @@ select {
   position: relative;
   border-radius: 10px;
   border: 1px solid rgba(6, 43, 102, 0.28);
-  background: #fff;
+  background: #dbeafe;
   overflow: hidden;
   display: grid;
   height: 6rem;
