@@ -237,6 +237,20 @@ function buildAutoFormationTeamState(playerIds: string[], playerCatalog: DraftPl
         slotCounts[slot] += 1;
       }
     }
+
+    // Check of de bank (1 GK, 1 DEF, 1 MID, 1 FWD) gevuld kan worden
+    const benchNeeded: Record<DraftPosition, number> = { GK: 1, DEF: 1, MID: 1, FWD: 1 };
+    const totalNeeded: Record<DraftPosition, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+    for (const pos of (Object.keys(slotCounts) as DraftPosition[])) {
+      totalNeeded[pos] = slotCounts[pos] + (benchNeeded[pos] ?? 0);
+    }
+
+    const canFillAll = (Object.keys(totalNeeded) as DraftPosition[]).every(
+      (pos) => idsByPosition[pos].length >= totalNeeded[pos],
+    );
+
+    if (!canFillAll) continue; // Sla formaties over die de bench niet kunnen vullen
+
     const lineupCount = (Object.keys(slotCounts) as DraftPosition[]).reduce(
       (sum, position) => sum + Math.min(slotCounts[position], idsByPosition[position].length),
       0,
@@ -263,7 +277,26 @@ function buildAutoFormationTeamState(playerIds: string[], playerCatalog: DraftPl
     lineupIds.push(playerId);
   }
 
-  const benchIds = uniquePlayerIds.filter((id) => !used.has(id)).slice(0, SQUAD_SIZE - lineupIds.length);
+  // Vul de bank met precies 1 GK, 1 DEF, 1 MID, 1 FWD
+  const benchIds: string[] = [];
+  const benchPositions: DraftPosition[] = ["GK", "DEF", "MID", "FWD"];
+  for (const pos of benchPositions) {
+    const next = idsByPosition[pos].find((id) => !used.has(id));
+    if (next) {
+      used.add(next);
+      benchIds.push(next);
+    }
+  }
+
+  // Eventuele overgebleven spelers die nog niet in lineup of bench zitten
+  for (const pos of benchPositions) {
+    if (benchIds.length >= SQUAD_SIZE - lineupIds.length) break;
+    const extra = idsByPosition[pos].find((id) => !used.has(id));
+    if (extra) {
+      used.add(extra);
+      benchIds.push(extra);
+    }
+  }
   return { formation: bestFormation, lineupIds, benchIds };
 }
 

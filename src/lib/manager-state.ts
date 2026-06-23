@@ -528,11 +528,19 @@ export function saveManagerStateForRound(
   const snapshot = toRoundSnapshot({ ...state, ...nextState });
   const nextRoundStates = buildNextRoundStates(state.roundStates, roundNumber, snapshot, propagateToFutureRounds);
 
+  // Update de live formatie ALLEEN als die expliciet gewijzigd is in deze request.
+  const existingFormation =
+    typeof nextState.formation === "string" && nextState.formation !== state.formation
+      ? nextState.formation
+      : state.formation;
+
   return saveManagerState(
     {
+      ...state,
       ...nextState,
       ...snapshot,
       roundStates: nextRoundStates,
+      formation: existingFormation,
     },
     scope,
     managerKey,
@@ -571,11 +579,20 @@ export async function saveManagerStateForRoundPersistent(
   const snapshot = toRoundSnapshot({ ...state, ...nextState });
   const nextRoundStates = buildNextRoundStates(state.roundStates, roundNumber, snapshot, propagateToFutureRounds);
 
+  // Update de live formatie ALLEEN als die expliciet gewijzigd is in deze request.
+  // Als er geen formation of dezelfde formation wordt meegestuurd, behouden we de bestaande.
+  const existingFormation =
+    typeof nextState.formation === "string" && nextState.formation !== state.formation
+      ? nextState.formation
+      : state.formation;
+
   return saveManagerStatePersistent(
     {
+      ...state,
       ...nextState,
       ...snapshot,
       roundStates: nextRoundStates,
+      formation: existingFormation,
     },
     scope,
     managerKey,

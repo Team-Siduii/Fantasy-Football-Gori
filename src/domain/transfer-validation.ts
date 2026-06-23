@@ -75,7 +75,11 @@ export function validateTransferSquad(input: {
   }
 
   if (!hasViableFormationForCounts(counts)) {
-    throw new Error("deze speler past niet in de gekozen formatie");
+    throw new Error(
+      "Deze transfer is niet mogelijk: met deze spelers kun je geen geldige formatie " +
+      "(4-3-3, 4-4-2, 3-5-2, 3-4-3 of 5-3-2) maken. Je hebt minimaal 2 keepers nodig, " +
+      "en voldoende verdedigers, middenvelders en aanvallers voor een complete opstelling met 1 speler per positie op de bank.",
+    );
   }
 
   return candidatePlayers;

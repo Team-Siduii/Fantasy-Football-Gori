@@ -1329,6 +1329,40 @@ export default function ManagerMyTeamPage() {
     const nonOpen = [...state.lineup, ...state.bench].filter((player) => !player.id.startsWith("open-"));
     const openCount = countOpenSlots(state);
 
+    // Valideer of de gekozen formatie mogelijk is met de huidige spelersposities.
+    // De bank moet altijd 1 GK, 1 DEF, 1 MID, 1 FWD bevatten.
+    const positions = nonOpen.map((p) => p.positie as Position);
+    const actualCounts: Record<string, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+    for (const pos of positions) {
+      if (actualCounts[pos] !== undefined) actualCounts[pos] += 1;
+    }
+
+    const requiredSlots = buildFormationSlots(nextFormation).flat() as Position[];
+    const requiredCounts: Record<string, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+    for (const pos of requiredSlots) requiredCounts[pos] += 1;
+    // Bank: altijd 1 van elke positie
+    for (const pos of BENCH_POSITIONS) requiredCounts[pos] += 1;
+
+    // Met open slots mag het tekort <= openCount zijn
+    const deficit = (["GK", "DEF", "MID", "FWD"] as Position[]).reduce(
+      (sum, pos) => sum + Math.max(0, (requiredCounts[pos] ?? 0) - (actualCounts[pos] ?? 0)),
+      0,
+    );
+
+    if (deficit > openCount) {
+      const needed: string[] = [];
+      for (const pos of ["GK", "DEF", "MID", "FWD"] as Position[]) {
+        const need = (requiredCounts[pos] ?? 0) - (actualCounts[pos] ?? 0);
+        if (need > 0) needed.push(`${need}x ${pos}`);
+      }
+      setTransferMessage(
+        `Formatie ${nextFormation} is niet mogelijk met je huidige selectie. ` +
+        `Je komt tekort: ${needed.join(", ")}. ` +
+        `Toegestane formaties: 4-3-3, 4-4-2, 3-5-2, 3-4-3, 5-3-2.`,
+      );
+      return;
+    }
+
     if (openCount > 0) {
       const rebuilt = buildStateForFormationWithVacancies(nonOpen, nextFormation, openCount);
       if (!rebuilt) {
