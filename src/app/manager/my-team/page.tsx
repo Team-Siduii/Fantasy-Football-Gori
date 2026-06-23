@@ -599,7 +599,10 @@ export default function ManagerMyTeamPage() {
   const [extraBuySelection, setExtraBuySelection] = useState<string | null>(null);
   const [transferMessage, setTransferMessage] = useState("");
   const [allTeamPlayerIds, setAllTeamPlayerIds] = useState<Set<string>>(new Set());
-  const [transfersLocked] = useState(false); // Eén bron: admin override tijdelijk op false
+  const transfersLocked = useMemo(
+    () => (selectedRound !== null ? isRoundActive(selectedRound) : false),
+    [selectedRound],
+  );
   const [pendingSwap, setPendingSwap] = useState<{ zone: ZoneName; index: number; playerId: string } | null>(null);
   const [transferRound, setTransferRound] = useState<TransferRoundResponse["state"] | null>(null);
   const [currentTransferEntry, setCurrentTransferEntry] = useState<TransferRoundEntryStatus | null>(null);
@@ -677,8 +680,7 @@ export default function ManagerMyTeamPage() {
           setAllTeamPlayerIds(new Set(ownedData.ids.map(String)));
         }
 
-        // Lock transfers: geregeld via centrale useState(false) — admin override actief
-        // (was: setTransfersLocked(isRoundActive(initialRound)))
+        // Transfers lock wordt centraal bepaald via useMemo(isRoundActive)
 
         const managerLineupIds = managerData.state?.lineupIds ?? [];
         const managerBenchIds = managerData.state?.benchIds ?? [];
@@ -896,8 +898,7 @@ export default function ManagerMyTeamPage() {
         suppressNextPersist.current = true;
         setFormation(hydratedState.formation);
         setState(hydratedState.state);
-        // Lock transfers: geregeld via centrale useState(false) — admin override actief
-        // (was: setTransfersLocked(isRoundActive(selectedRound)))
+        // Transfers lock wordt centraal bepaald via useMemo(isRoundActive)
 
         if (transferResponse.ok) {
           const transferData = (await transferResponse.json()) as TransferRoundResponse;
