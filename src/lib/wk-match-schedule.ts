@@ -28,6 +28,9 @@ function normalizeFixtureTeamName(input: string | null | undefined): string {
     case "saudi arabie":
     case "saudi arabia":
       return "saudi arabia";
+    case "congo":
+    case "dr congo":
+      return "congo";
     default:
       return normalized;
   }
