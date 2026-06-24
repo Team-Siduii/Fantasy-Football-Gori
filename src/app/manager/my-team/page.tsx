@@ -1529,7 +1529,8 @@ export default function ManagerMyTeamPage() {
   }
 
   return (
-    <AppShell title="Team" subtitle={scheduleSubtitle}>
+    <AppShell title="Team" data-deploy-check="v4"
+        subtitle={scheduleSubtitle}>
       <div className="grid">
         <section className="card col-8">
           <div className="team-topbar" aria-label="Team overzicht">
