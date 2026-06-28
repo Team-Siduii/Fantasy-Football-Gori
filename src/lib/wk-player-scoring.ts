@@ -190,11 +190,11 @@ export async function buildWkPlayerRoundPointsMap(roundNumber?: number): Promise
       position: row.position,
       positionNl: row.position_nl,
     });
-    // Advancement bonus (round 3+): +5 for players on non-eliminated teams
+    // Advancement bonus: +5 for players on non-eliminated teams — only for round 3 (knockout qualification)
     const ADVANCEMENT_BONUS = 5;
     const KNOCKOUT_START_ROUND = 3;
     const advancementPoints =
-      effectiveRound >= KNOCKOUT_START_ROUND && !isTeamEliminated(row.team_name)
+      effectiveRound === KNOCKOUT_START_ROUND && !isTeamEliminated(row.team_name)
         ? ADVANCEMENT_BONUS
         : 0;
     result.set(fantasyplayerId, basePoints + advancementPoints);
