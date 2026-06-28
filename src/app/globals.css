@@ -1245,7 +1245,7 @@ select {
   border-radius: 10px;
   border: 1px solid rgba(6, 43, 102, 0.28);
   background: #fff;
-  overflow: hidden;
+  overflow: visible;
   display: grid;
   height: 6rem;
   grid-template-rows: 1.4rem 3rem 1.6rem;
@@ -1275,8 +1275,8 @@ select {
 
 .player-advancement-badge {
   position: absolute;
-  top: 1.55rem;
-  right: 0.4rem;
+  bottom: 0.5rem;
+  right: -0.35rem;
   min-width: 0.7rem;
   height: 0.7rem;
   border-radius: 999px;
