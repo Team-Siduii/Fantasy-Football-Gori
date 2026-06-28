@@ -146,7 +146,7 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
 
   // Advancement bonus (Round 4+): +5 punten per speler op actief (niet-uitgeschakeld) team
   const ADVANCEMENT_BONUS = 5;
-  const KNOCKOUT_START_ROUND = 4;
+  const KNOCKOUT_START_ROUND = 3;
   if (effectiveRound >= KNOCKOUT_START_ROUND) {
     for (const [, player] of totals) {
       if (!isTeamEliminated(player.teamName)) {

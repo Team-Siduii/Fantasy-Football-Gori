@@ -838,7 +838,7 @@ export default function ManagerMyTeamPage() {
           ? `/api/manager/state?mode=${mode}&_t=${Date.now()}`
           : `/api/manager/state?mode=${mode}&roundNumber=${selectedRound}&_t=${Date.now()}`;
         // Re-fetch spelers met round parameter voor correcte roundPoints per ronde
-        const doRefreshPlayers = !isCurrentRound;
+        const doRefreshPlayers = true;
         const playersUrl = isWkMode
           ? `/api/players?mode=wk&round=${selectedRound}&_t=${Date.now()}`
           : `/api/players?mode=eredivisie&_t=${Date.now()}`;
