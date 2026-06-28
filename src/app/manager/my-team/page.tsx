@@ -14,6 +14,7 @@ import { getTransferLimitForRound } from "@/domain/rules";
 import { byPriceDesc, enrichPlayers, getPlayerRoundPoints, getPlayerTotalPoints, type EnhancedPlayer } from "@/lib/player-derived";
 import { getCountryFlagImageUrl, withCountryFlag } from "@/lib/country-flags";
 import { getInactivePlayer } from "@/lib/inactive-players";
+import { isTeamEliminated } from "@/lib/knockout-phase";
 import { getPlayerCardMeta } from "@/lib/player-card-display";
 import { getCurrentOrNextRound, getLatestPlayedRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
 import { createLatestRequestTracker } from "@/lib/latest-request";
@@ -1006,7 +1007,7 @@ export default function ManagerMyTeamPage() {
   const marketPlayers = useMemo(() => {
     const { lineupIds, benchIds } = toPersistedIds(state);
     return buildMarketPlayers(allPlayers, lineupIds, benchIds, allTeamPlayerIds).filter(
-      (player) => !blockedTransferPlayerIds.includes(player.id),
+      (player) => !blockedTransferPlayerIds.includes(player.id) && !isTeamEliminated(player.club),
     );
   }, [allPlayers, allTeamPlayerIds, blockedTransferPlayerIds, state]);
 
@@ -1585,6 +1586,7 @@ export default function ManagerMyTeamPage() {
                         name={cardMeta.displayName}
                         pointsLabel={cardMeta.priceLabel}
                         scoreBadge={!player.id.startsWith("open-") ? String(getPlayerRoundPoints(player)) : null}
+                        advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 ? "⚡+" + player.advancementPoints : null}
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",
                           pendingSwap?.playerId === player.id ? "player-card--swap-selected" : "",
@@ -1634,6 +1636,7 @@ export default function ManagerMyTeamPage() {
                   name={player.naam}
                   pointsLabel={cardMeta.priceLabel}
                   scoreBadge={!player.id.startsWith("open-") ? String(Math.ceil(getPlayerRoundPoints(player) / 2)) : null}
+                  advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 ? "⚡+" + player.advancementPoints : null}
                   className={[
                     "player-card--bench-row",
                     pendingSellId === player.id ? "player-card--sell" : "",

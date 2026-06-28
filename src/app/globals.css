@@ -1273,6 +1273,27 @@ select {
   z-index: 3;
 }
 
+.player-advancement-badge {
+  position: absolute;
+  top: 0.22rem;
+  right: 1.7rem;
+  min-width: 1.32rem;
+  height: 1.32rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4caf50 0%, #1b5e20 100%);
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 2px 8px rgba(27, 94, 32, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.24rem;
+  font-size: 0.6rem;
+  font-weight: 800;
+  line-height: 1;
+  z-index: 3;
+}
+
 .player-top {
   padding: 0.2rem 0.4rem;
   display: flex;

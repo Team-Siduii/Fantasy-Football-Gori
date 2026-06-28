@@ -10,7 +10,7 @@ import { readTeamViewSnapshotPersistent } from "@/lib/manager-team-state-source"
 import { type ManagerStateScope } from "@/lib/manager-state";
 import { loadPlayerPoints } from "@/lib/player-points-store";
 import { summarizeManagerTeamScoresPersistent } from "@/lib/team-score-state";
-import { buildWkPlayerRoundPointsMap, buildWkPlayerTotalPointsMapThroughRound } from "@/lib/wk-player-scoring";
+import { buildWkPlayerRoundPointsMap, buildWkPlayerTotalPointsMapThroughRound, buildWkPlayerAdvancementPointsMap } from "@/lib/wk-player-scoring";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "s.j.m.duindam@gmail.com": "A",
@@ -67,14 +67,19 @@ export async function GET(request: Request) {
 
   const playerPointsMap = new Map<string, number>();
   const playerTotalPointsMap = new Map<string, number>();
+  const playerAdvancementPointsMap = new Map<string, number>();
   if (scope === "wk") {
     const calculatedRoundPoints = await buildWkPlayerRoundPointsMap();
     const calculatedTotals = await buildWkPlayerTotalPointsMapThroughRound();
+    const calculatedAdvancement = await buildWkPlayerAdvancementPointsMap();
     for (const [fantasyplayerId, roundPoints] of calculatedRoundPoints.entries()) {
       playerPointsMap.set(String(fantasyplayerId), roundPoints);
     }
     for (const [fantasyplayerId, totalPoints] of calculatedTotals.entries()) {
       playerTotalPointsMap.set(String(fantasyplayerId), totalPoints);
+    }
+    for (const [fantasyplayerId, advancementPoints] of calculatedAdvancement.entries()) {
+      playerAdvancementPointsMap.set(String(fantasyplayerId), advancementPoints);
     }
   } else {
     const pointsSnapshot = await loadPlayerPoints(scope);
@@ -101,6 +106,7 @@ export async function GET(request: Request) {
       punten: playerPointsMap.get(String(playerId)) ?? 0,
       totalPoints: playerTotalPointsMap.get(String(playerId)) ?? playerPointsMap.get(String(playerId)) ?? 0,
       roundPoints: playerPointsMap.get(String(playerId)) ?? 0,
+      advancementPoints: playerAdvancementPointsMap.get(String(playerId)) ?? 0,
     };
   };
 

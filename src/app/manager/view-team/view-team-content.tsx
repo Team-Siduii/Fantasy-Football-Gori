@@ -17,6 +17,7 @@ type ViewPlayer = {
   punten: number;
   roundPoints?: number;
   totalPoints?: number;
+  advancementPoints?: number;
 };
 
 type ViewTeamResponse = {
@@ -170,6 +171,7 @@ export default function ViewTeamPageContent() {
                         name={player?.naam ?? "Leeg"}
                         pointsLabel={cardMeta.priceLabel}
                         scoreBadge={player ? String(player.punten) : null}
+                        advancementBadge={player && (player.advancementPoints ?? 0) > 0 ? "⚡+" + player.advancementPoints : null}
                         className={player ? undefined : "player-card--open"}
                       />
                     );
@@ -196,6 +198,7 @@ export default function ViewTeamPageContent() {
                     name={player.naam}
                     pointsLabel={cardMeta.priceLabel}
                     scoreBadge={String(player.punten)}
+                    advancementBadge={(player.advancementPoints ?? 0) > 0 ? "⚡+" + player.advancementPoints : null}
                     className="player-card--bench-row"
                   />
                 );

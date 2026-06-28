@@ -1,4 +1,5 @@
 import { getLatestSyncRound, getWkPlayerEvents, getWkPlayerPointHistory, type WkPlayerEventRow, type WkPlayerPointRow } from "./wk-sync-store";
+import { isTeamEliminated } from "./knockout-phase";
 
 const DEFENDER_ALIASES = new Set(["DEF", "VERDEDIGER", "DEFENDER", "D"]);
 const CLEAN_SHEET_EVENT_CODES = new Set(["CS"]);
@@ -21,6 +22,7 @@ export type CalculatedWkPlayerPoints = {
   value: number;
   roundPoints: number;
   totalPoints: number;
+  advancementPoints: number;
   hasPlayed: boolean;
   numPlayed: number;
   pointEvents: PlayerPointEvent[];
@@ -133,11 +135,24 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
         value: row.value,
         roundPoints,
         totalPoints: previousTotal + roundPoints,
+        advancementPoints: 0,
         hasPlayed: row.has_played,
         numPlayed: row.num_played,
         pointEvents,
         source: "wk-events-v1",
       });
+    }
+  }
+
+  // Advancement bonus (Round 4+): +5 punten per speler op actief (niet-uitgeschakeld) team
+  const ADVANCEMENT_BONUS = 5;
+  const KNOCKOUT_START_ROUND = 4;
+  if (effectiveRound >= KNOCKOUT_START_ROUND) {
+    for (const [fantasyplayerId, player] of totals) {
+      if (!isTeamEliminated(player.teamName)) {
+        player.advancementPoints = ADVANCEMENT_BONUS;
+        player.totalPoints += ADVANCEMENT_BONUS;
+      }
     }
   }
 
@@ -190,4 +205,9 @@ export async function buildWkPlayerTotalPointsMapThroughRound(roundNumber?: numb
 export async function listCalculatedWkPlayerPoints(roundNumber?: number): Promise<CalculatedWkPlayerPoints[]> {
   const calculated = await buildCalculatedWkPlayerPointsMap(roundNumber);
   return Array.from(calculated.values()).sort((a, b) => b.totalPoints - a.totalPoints || a.name.localeCompare(b.name));
+}
+
+export async function buildWkPlayerAdvancementPointsMap(roundNumber?: number): Promise<Map<number, number>> {
+  const calculated = await buildCalculatedWkPlayerPointsMap(roundNumber);
+  return new Map(Array.from(calculated.entries()).map(([fantasyplayerId, summary]) => [fantasyplayerId, summary.advancementPoints]));
 }

@@ -57,6 +57,7 @@ export async function GET(request: Request) {
         punten: calculated?.totalPoints ?? 0,
         totalPoints: calculated?.totalPoints ?? 0,
         roundPoints: calculated?.roundPoints ?? 0,
+        advancementPoints: calculated?.advancementPoints ?? 0,
         pointEvents: calculated?.pointEvents ?? [],
         scoreSource: calculated?.source ?? "wk-events-v1",
       };

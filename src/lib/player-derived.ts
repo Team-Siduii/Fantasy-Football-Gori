@@ -5,6 +5,7 @@ export type EnhancedPlayer = PlayerRecord & {
   inactive?: boolean;
   roundPoints?: number;
   totalPoints?: number;
+  advancementPoints?: number;
 };
 
 export function derivePlayerPoints(player: PlayerRecord & { punten?: number }): number {
