@@ -592,6 +592,11 @@ export default function ManagerMyTeamPage() {
 
   const [formation, setFormation] = useState(formationOptions[0]);
   const [allPlayers, setAllPlayers] = useState<EnhancedPlayer[]>(fallbackPlayers());
+
+  useEffect(() => {
+    allPlayersRef.current = allPlayers;
+  }, [allPlayers]);
+
   const [state, setState] = useState<ZoneState<EnhancedPlayer>>(() =>
     buildBudgetDemoState(fallbackPlayers(), formationOptions[0], getTransferBudgetCapMillions("eredivisie")),
   );
@@ -626,6 +631,7 @@ export default function ManagerMyTeamPage() {
   const hydrated = useRef(false);
   const suppressNextPersist = useRef(false);
   const selectedRoundRef = useRef<number | null>(selectedRound);
+  const allPlayersRef = useRef<EnhancedPlayer[]>(allPlayers);
   const playerRefreshRequestTracker = useRef(createLatestRequestTracker());
   const wkMatchesRequestTracker = useRef(createLatestRequestTracker());
   const roundHydrationRequestTracker = useRef(createLatestRequestTracker());
@@ -890,7 +896,7 @@ export default function ManagerMyTeamPage() {
         const hasRoundPlayers = roundLineupIds.length > 0 || roundBenchIds.length > 0;
 
         // Gebruik verse spelers als we ze net hebben opgehaald, anders de huidige state
-        const currentAllPlayers = refreshedPlayers ?? allPlayers;
+        const currentAllPlayers = refreshedPlayers ?? allPlayersRef.current;
 
         const hydratedState = hasRoundPlayers
             ? buildStateFromSaved(
@@ -899,7 +905,7 @@ export default function ManagerMyTeamPage() {
                 roundLineupIds,
                 roundBenchIds,
               )
-            : { formation: nextFormation, state: buildBudgetDemoState(allPlayers, nextFormation, budgetCapMillions) };
+            : { formation: nextFormation, state: buildBudgetDemoState(allPlayersRef.current, nextFormation, budgetCapMillions) };
 
         suppressNextPersist.current = true;
         setFormation(hydratedState.formation);
@@ -940,7 +946,7 @@ export default function ManagerMyTeamPage() {
     void hydrateRoundState();
 
     return () => controller.abort();
-  }, [allPlayers, budgetCapMillions, currentRound, formationOptions, isWkMode, selectedRound]);
+  }, [budgetCapMillions, currentRound, formationOptions, isWkMode, selectedRound]);
 
   useEffect(() => {
     if (!hydrated.current) {
@@ -1586,7 +1592,7 @@ export default function ManagerMyTeamPage() {
                         name={cardMeta.displayName}
                         pointsLabel={cardMeta.priceLabel}
                         scoreBadge={!player.id.startsWith("open-") ? String(getPlayerRoundPoints(player)) : null}
-                        advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 ? "⚡+" + player.advancementPoints : null}
+                        advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 && selectedRound !== null && selectedRound >= 3 ? "⚡+" + player.advancementPoints : null}
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",
                           pendingSwap?.playerId === player.id ? "player-card--swap-selected" : "",
@@ -1636,7 +1642,7 @@ export default function ManagerMyTeamPage() {
                   name={player.naam}
                   pointsLabel={cardMeta.priceLabel}
                   scoreBadge={!player.id.startsWith("open-") ? String(Math.ceil(getPlayerRoundPoints(player) / 2)) : null}
-                  advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 ? "⚡+" + player.advancementPoints : null}
+                  advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 && selectedRound !== null && selectedRound >= 3 ? "⚡+" + player.advancementPoints : null}
                   className={[
                     "player-card--bench-row",
                     pendingSellId === player.id ? "player-card--sell" : "",
