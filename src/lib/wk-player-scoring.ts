@@ -185,14 +185,19 @@ export async function buildWkPlayerRoundPointsMap(roundNumber?: number): Promise
       continue;
     }
     const pointEvents = roundEvents.get(fantasyplayerId) ?? [];
-    result.set(
-      fantasyplayerId,
-      calculateWkPlayerRoundPointsFromEvents({
-        events: pointEvents,
-        position: row.position,
-        positionNl: row.position_nl,
-      }),
-    );
+    const basePoints = calculateWkPlayerRoundPointsFromEvents({
+      events: pointEvents,
+      position: row.position,
+      positionNl: row.position_nl,
+    });
+    // Advancement bonus (round 3+): +5 for players on non-eliminated teams
+    const ADVANCEMENT_BONUS = 5;
+    const KNOCKOUT_START_ROUND = 3;
+    const advancementPoints =
+      effectiveRound >= KNOCKOUT_START_ROUND && !isTeamEliminated(row.team_name)
+        ? ADVANCEMENT_BONUS
+        : 0;
+    result.set(fantasyplayerId, basePoints + advancementPoints);
   }
   return result;
 }
