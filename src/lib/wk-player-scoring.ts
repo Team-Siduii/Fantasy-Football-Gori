@@ -148,7 +148,7 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
   const ADVANCEMENT_BONUS = 5;
   const KNOCKOUT_START_ROUND = 4;
   if (effectiveRound >= KNOCKOUT_START_ROUND) {
-    for (const [fantasyplayerId, player] of totals) {
+    for (const [, player] of totals) {
       if (!isTeamEliminated(player.teamName)) {
         player.advancementPoints = ADVANCEMENT_BONUS;
         player.totalPoints += ADVANCEMENT_BONUS;
