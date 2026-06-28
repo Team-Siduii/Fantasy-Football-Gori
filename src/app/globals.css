@@ -1275,8 +1275,8 @@ select {
 
 .player-advancement-badge {
   position: absolute;
-  top: 0.1rem;
-  left: 0.15rem;
+  top: 1.55rem;
+  right: 0.4rem;
   min-width: 0.7rem;
   height: 0.7rem;
   border-radius: 999px;
@@ -1293,6 +1293,14 @@ select {
   line-height: 1;
   z-index: 2;
   pointer-events: none;
+}
+
+.player-card--bench-row .player-advancement-badge {
+  position: static;
+  grid-column: 1;
+  justify-self: end;
+  align-self: center;
+  margin-right: 0.15rem;
 }
 
 .player-top {
