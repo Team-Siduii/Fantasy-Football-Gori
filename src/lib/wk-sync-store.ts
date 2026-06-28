@@ -248,10 +248,20 @@ export async function saveWkPlayerEvents(
 
   const client = await p.connect();
   try {
-    // Delete old events for this round before re-inserting
+    // Delete old events for these specific players in this round before re-inserting
     const rounds = [...new Set(events.map((e) => e.round))];
     for (const r of rounds) {
-      await client.query("DELETE FROM wk_player_events WHERE round = $1", [r]);
+      const playerIds = [...new Set(events.filter((e) => e.round === r).map((e) => e.fantasyplayer_id))];
+      // Batch delete: 100 ids per chunk to avoid parameter limit
+      const DEL_CHUNK = 100;
+      for (let d = 0; d < playerIds.length; d += DEL_CHUNK) {
+        const chunk = playerIds.slice(d, d + DEL_CHUNK);
+        const placeholders = chunk.map((_, idx) => `$${idx + 2}`).join(", ");
+        await client.query(
+          `DELETE FROM wk_player_events WHERE round = $1 AND fantasyplayer_id IN (${placeholders})`,
+          [r, ...chunk],
+        );
+      }
     }
 
     // Batch insert: 100 events per chunk
