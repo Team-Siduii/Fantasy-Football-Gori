@@ -144,14 +144,29 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
     }
   }
 
-  // Advancement bonus (Round 4+): +5 punten per speler op actief (niet-uitgeschakeld) team
+  // Advancement bonus per round (knockout progression)
+  // Round 3 (group→knockout): all non-eliminated teams get +5
+  // Round 4+ (knockout rounds): teams with a match win (MW) in that round get +5
   const ADVANCEMENT_BONUS = 5;
   const KNOCKOUT_START_ROUND = 3;
-  if (effectiveRound >= KNOCKOUT_START_ROUND) {
-    for (const [, player] of totals) {
-      if (!isTeamEliminated(player.teamName)) {
-        player.advancementPoints = ADVANCEMENT_BONUS;
+  for (let round = KNOCKOUT_START_ROUND; round <= effectiveRound; round += 1) {
+    const roundEventMap = groupedEvents.get(round) ?? new Map<number, PlayerPointEvent[]>();
+    for (const [fantasyplayerId, player] of totals) {
+      if (isTeamEliminated(player.teamName)) {
+        continue;
+      }
+      if (round === KNOCKOUT_START_ROUND) {
+        // Round 3: all non-eliminated teams advance to knockout
+        player.advancementPoints += ADVANCEMENT_BONUS;
         player.totalPoints += ADVANCEMENT_BONUS;
+      } else {
+        // Round 4+: only teams with a match win (MW) in this round advance
+        const events = roundEventMap.get(fantasyplayerId) ?? [];
+        const hasMatchWin = events.some((e) => e.eventCode === "MW");
+        if (hasMatchWin) {
+          player.advancementPoints += ADVANCEMENT_BONUS;
+          player.totalPoints += ADVANCEMENT_BONUS;
+        }
       }
     }
   }
@@ -190,13 +205,24 @@ export async function buildWkPlayerRoundPointsMap(roundNumber?: number): Promise
       position: row.position,
       positionNl: row.position_nl,
     });
-    // Advancement bonus: +5 for players on non-eliminated teams — only for round 3 (knockout qualification)
+    // Advancement bonus: +5 for players advancing to next knockout round
+    // Round 3 (group→knockout): all non-eliminated teams get +5
+    // Round 4+ (knockout rounds): only teams with a match win (MW) in this round get +5
     const ADVANCEMENT_BONUS = 5;
     const KNOCKOUT_START_ROUND = 3;
-    const advancementPoints =
-      effectiveRound === KNOCKOUT_START_ROUND && !isTeamEliminated(row.team_name)
-        ? ADVANCEMENT_BONUS
-        : 0;
+    let advancementPoints = 0;
+    if (effectiveRound >= KNOCKOUT_START_ROUND && !isTeamEliminated(row.team_name)) {
+      if (effectiveRound === KNOCKOUT_START_ROUND) {
+        // Round 3: all 36 non-eliminated teams advance to knockout
+        advancementPoints = ADVANCEMENT_BONUS;
+      } else {
+        // Round 4+: only teams that won their match (have an MW event) advance
+        const hasMatchWin = pointEvents.some((e) => e.eventCode === "MW");
+        if (hasMatchWin) {
+          advancementPoints = ADVANCEMENT_BONUS;
+        }
+      }
+    }
     result.set(fantasyplayerId, basePoints + advancementPoints);
   }
   return result;
