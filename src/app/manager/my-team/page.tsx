@@ -1592,7 +1592,7 @@ export default function ManagerMyTeamPage() {
                         name={cardMeta.displayName}
                         pointsLabel={cardMeta.priceLabel}
                         scoreBadge={!player.id.startsWith("open-") ? String(getPlayerRoundPoints(player)) : null}
-                        advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 && selectedRound !== null && selectedRound >= 3 ? "⚡+" + player.advancementPoints : null}
+                        advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 && selectedRound !== null && selectedRound === 3 ? "⚡+" + player.advancementPoints : null}
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",
                           pendingSwap?.playerId === player.id ? "player-card--swap-selected" : "",
@@ -1642,7 +1642,7 @@ export default function ManagerMyTeamPage() {
                   name={player.naam}
                   pointsLabel={cardMeta.priceLabel}
                   scoreBadge={!player.id.startsWith("open-") ? String(Math.ceil(getPlayerRoundPoints(player) / 2)) : null}
-                  advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 && selectedRound !== null && selectedRound >= 3 ? "⚡+" + player.advancementPoints : null}
+                  advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 && selectedRound !== null && selectedRound === 3 ? "⚡+" + player.advancementPoints : null}
                   className={[
                     "player-card--bench-row",
                     pendingSellId === player.id ? "player-card--sell" : "",
