@@ -87,8 +87,21 @@ export function isLiveWkMatchStatus(status: string | null | undefined): boolean 
   return !["NS", "SCHEDULED", "PST", "POSTPONED", "CANC", "CANCELLED"].includes(normalized);
 }
 
-export function hasVisibleFixtureScore(fixture: Pick<SeasonFixture, "homeScore" | "awayScore">): boolean {
-  return typeof fixture.homeScore === "number" && typeof fixture.awayScore === "number";
+export function hasVisibleFixtureScore(
+  fixture: Pick<SeasonFixture, "homeScore" | "awayScore" | "kickoffAt">,
+  now: Date = new Date(),
+): boolean {
+  if (typeof fixture.homeScore !== "number" || typeof fixture.awayScore !== "number") {
+    return false;
+  }
+  // Don't show 0-0 for matches that haven't kicked off yet
+  if (fixture.homeScore === 0 && fixture.awayScore === 0) {
+    const kickoffMs = new Date(fixture.kickoffAt).getTime();
+    if (now.getTime() < kickoffMs) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export function getWkMatchLiveMinuteLabel(
