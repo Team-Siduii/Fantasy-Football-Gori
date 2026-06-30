@@ -9,7 +9,7 @@ import { repairManagerTeamFromDraftArtifactsPersistent } from "@/lib/draft-manag
 import { readTeamViewSnapshotPersistent } from "@/lib/manager-team-state-source";
 import { type ManagerStateScope } from "@/lib/manager-state";
 import { loadPlayerPoints } from "@/lib/player-points-store";
-import { summarizeManagerTeamScoresPersistent } from "@/lib/team-score-state";
+import { getManagerRoundScorePersistent, summarizeManagerTeamScoresPersistent } from "@/lib/team-score-state";
 import { buildWkPlayerRoundPointsMap, buildWkPlayerTotalPointsMapThroughRound, buildWkPlayerAdvancementPointsMap } from "@/lib/wk-player-scoring";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
@@ -123,11 +123,21 @@ export async function GET(request: Request) {
   const pendingBuyId = isOwnTeam ? state.pendingBuyId : null;
   const profile = getProfileByEmail(targetEmail);
   const scoreSummary = scope === "wk"
-    ? await summarizeManagerTeamScoresPersistent(scope, targetEmail)
+    ? (
+        Number.isInteger(roundNumber) && roundNumber > 0
+          ? (await getManagerRoundScorePersistent(scope, targetEmail, roundNumber))
+              ?? { totalPoints: 0, roundNumber: 0, lineupPoints: 0, benchPoints: 0, lineupIds: [], benchIds: [], calculatedAt: "", source: "" }
+          : await summarizeManagerTeamScoresPersistent(scope, targetEmail)
+      )
     : {
         totalPoints: lineup.reduce((sum, player) => sum + player.punten, 0) + bench.reduce((sum, player) => sum + player.punten, 0),
         currentRoundPoints: lineup.reduce((sum, player) => sum + player.punten, 0) + bench.reduce((sum, player) => sum + player.punten, 0),
       };
+
+  const teamTotalPoints = "totalPoints" in scoreSummary ? scoreSummary.totalPoints : 0;
+  const teamRoundPoints = Number.isInteger(roundNumber) && roundNumber > 0
+    ? teamTotalPoints
+    : "currentRoundPoints" in scoreSummary ? (scoreSummary as { currentRoundPoints: number }).currentRoundPoints : 0;
 
   return NextResponse.json({
     isOwnTeam,
@@ -142,8 +152,8 @@ export async function GET(request: Request) {
     squadCost,
     pendingSellId,
     pendingBuyId,
-    teamTotalPoints: scoreSummary.totalPoints,
-    teamCurrentRoundPoints: scoreSummary.currentRoundPoints,
+    teamTotalPoints,
+    teamCurrentRoundPoints: teamRoundPoints,
     scoreSource: scope === "wk" ? "team-score-state" : "player-points",
   });
 }
