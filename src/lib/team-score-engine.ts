@@ -8,7 +8,10 @@ import {
   type TeamScoreRoundSnapshot,
   type TeamScoreScope,
 } from "./team-score-state";
-import { buildWkPlayerRoundPointsMap } from "./wk-player-scoring";
+import { buildWkPlayerPointsByCsvId } from "./wk-player-scoring";
+import { parsePlayerCsv } from "@/domain/player-csv";
+import { readFile } from "fs/promises";
+import path from "path";
 
 export type ComputedTeamRoundScore = {
   lineupPoints: number;
@@ -34,6 +37,14 @@ function toStringKeyedMap(input: Map<number, number>) {
   return new Map(Array.from(input.entries()).map(([id, points]) => [String(id), points]));
 }
 
+async function loadWkPlayerPointsByCsvId(roundNumber?: number): Promise<Map<string, number>> {
+  const csvPath = path.join(process.cwd(), "data", "players-wk.csv");
+  const csvContent = await readFile(csvPath, "utf-8");
+  const csvPlayers = parsePlayerCsv(csvContent).players;
+  const matched = await buildWkPlayerPointsByCsvId(csvPlayers, roundNumber);
+  return matched.roundPoints;
+}
+
 export async function recalculateManagerRoundScorePersistent(input: {
   scope: TeamScoreScope;
   managerKey: string;
@@ -42,7 +53,7 @@ export async function recalculateManagerRoundScorePersistent(input: {
   source?: string;
 }): Promise<TeamScoreRoundSnapshot> {
   const snapshot = await readManagerStateForRoundPersistent(input.roundNumber, input.scope, input.managerKey);
-  const pointsById = input.roundPointsByPlayerId ?? toStringKeyedMap(await buildWkPlayerRoundPointsMap(input.roundNumber));
+  const pointsById = input.roundPointsByPlayerId ?? await loadWkPlayerPointsByCsvId(input.roundNumber);
   const computed = computeTeamRoundScore({
     lineupIds: snapshot.lineupIds,
     benchIds: snapshot.benchIds,
@@ -67,7 +78,7 @@ export async function recalculateAllManagerRoundScoresPersistent(input: {
   managerKeys?: string[];
 }) {
   const managerKeys = input.managerKeys ?? await listAcceptedManagerEmails(input.scope);
-  const roundPointsByPlayerId = toStringKeyedMap(await buildWkPlayerRoundPointsMap(input.roundNumber));
+  const roundPointsByPlayerId = await loadWkPlayerPointsByCsvId(input.roundNumber);
   const snapshots: TeamScoreRoundSnapshot[] = [];
   for (const managerKey of managerKeys) {
     snapshots.push(

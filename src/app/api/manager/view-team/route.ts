@@ -10,7 +10,7 @@ import { readTeamViewSnapshotPersistent } from "@/lib/manager-team-state-source"
 import { type ManagerStateScope } from "@/lib/manager-state";
 import { loadPlayerPoints } from "@/lib/player-points-store";
 import { getManagerRoundScorePersistent, summarizeManagerTeamScoresPersistent } from "@/lib/team-score-state";
-import { buildWkPlayerRoundPointsMap, buildWkPlayerTotalPointsMapThroughRound, buildWkPlayerAdvancementPointsMap } from "@/lib/wk-player-scoring";
+import { buildWkPlayerPointsByCsvId } from "@/lib/wk-player-scoring";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "s.j.m.duindam@gmail.com": "A",
@@ -69,17 +69,16 @@ export async function GET(request: Request) {
   const playerTotalPointsMap = new Map<string, number>();
   const playerAdvancementPointsMap = new Map<string, number>();
   if (scope === "wk") {
-    const calculatedRoundPoints = await buildWkPlayerRoundPointsMap();
-    const calculatedTotals = await buildWkPlayerTotalPointsMapThroughRound();
-    const calculatedAdvancement = await buildWkPlayerAdvancementPointsMap();
-    for (const [fantasyplayerId, roundPoints] of calculatedRoundPoints.entries()) {
-      playerPointsMap.set(String(fantasyplayerId), roundPoints);
+    const wkRound = Number.isInteger(roundNumber) && roundNumber > 0 ? roundNumber : undefined;
+    const nameMatched = await buildWkPlayerPointsByCsvId(allPlayers, wkRound);
+    for (const [csvId, pts] of nameMatched.roundPoints.entries()) {
+      playerPointsMap.set(csvId, pts);
     }
-    for (const [fantasyplayerId, totalPoints] of calculatedTotals.entries()) {
-      playerTotalPointsMap.set(String(fantasyplayerId), totalPoints);
+    for (const [csvId, pts] of nameMatched.totalPoints.entries()) {
+      playerTotalPointsMap.set(csvId, pts);
     }
-    for (const [fantasyplayerId, advancementPoints] of calculatedAdvancement.entries()) {
-      playerAdvancementPointsMap.set(String(fantasyplayerId), advancementPoints);
+    for (const [csvId, pts] of nameMatched.advancementPoints.entries()) {
+      playerAdvancementPointsMap.set(csvId, pts);
     }
   } else {
     const pointsSnapshot = await loadPlayerPoints(scope);

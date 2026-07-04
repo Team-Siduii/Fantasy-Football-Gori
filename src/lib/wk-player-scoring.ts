@@ -242,3 +242,40 @@ export async function buildWkPlayerAdvancementPointsMap(roundNumber?: number): P
   const calculated = await buildCalculatedWkPlayerPointsMap(roundNumber);
   return new Map(Array.from(calculated.entries()).map(([fantasyplayerId, summary]) => [fantasyplayerId, summary.advancementPoints]));
 }
+
+function normalizeMatchKey(name: string, team: string) {
+  return `${name.trim().toLowerCase()}|${team.trim().toLowerCase()}`;
+}
+
+export async function buildWkPlayerPointsByCsvId(
+  csvPlayers: Array<{ id: string; naam: string; club: string }>,
+  roundNumber?: number,
+): Promise<{
+  roundPoints: Map<string, number>;
+  totalPoints: Map<string, number>;
+  advancementPoints: Map<string, number>;
+}> {
+  const wkPlayers = await listCalculatedWkPlayerPoints(roundNumber);
+
+  const wkByName = new Map<string, CalculatedWkPlayerPoints>();
+  for (const p of wkPlayers) {
+    const key = normalizeMatchKey(p.name, p.teamName);
+    wkByName.set(key, p);
+  }
+
+  const roundPoints = new Map<string, number>();
+  const totalPoints = new Map<string, number>();
+  const advancementPoints = new Map<string, number>();
+
+  for (const csv of csvPlayers) {
+    const key = normalizeMatchKey(csv.naam, csv.club);
+    const wk = wkByName.get(key);
+    if (wk) {
+      roundPoints.set(csv.id, wk.roundPoints);
+      totalPoints.set(csv.id, wk.totalPoints);
+      advancementPoints.set(csv.id, wk.advancementPoints);
+    }
+  }
+
+  return { roundPoints, totalPoints, advancementPoints };
+}
