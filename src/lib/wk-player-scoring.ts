@@ -257,6 +257,16 @@ export async function buildWkPlayerPointsByCsvId(
 }> {
   const wkPlayers = await listCalculatedWkPlayerPoints(roundNumber);
 
+  // Per-ronde advancement: verschil met vorige ronde
+  let prevWkByName: Map<string, CalculatedWkPlayerPoints> | null = null;
+  if (typeof roundNumber === "number" && roundNumber > 1) {
+    const prevPlayers = await listCalculatedWkPlayerPoints(roundNumber - 1);
+    prevWkByName = new Map();
+    for (const p of prevPlayers) {
+      prevWkByName.set(normalizeMatchKey(p.name, p.teamName), p);
+    }
+  }
+
   const wkByName = new Map<string, CalculatedWkPlayerPoints>();
   for (const p of wkPlayers) {
     const key = normalizeMatchKey(p.name, p.teamName);
@@ -273,7 +283,12 @@ export async function buildWkPlayerPointsByCsvId(
     if (wk) {
       roundPoints.set(csv.id, wk.roundPoints);
       totalPoints.set(csv.id, wk.totalPoints);
-      advancementPoints.set(csv.id, wk.advancementPoints);
+      // Per-ronde advancement = huidig - vorig
+      const prev = prevWkByName?.get(key);
+      const perRoundAdv = prev
+        ? Math.max(0, wk.advancementPoints - prev.advancementPoints)
+        : wk.advancementPoints;
+      advancementPoints.set(csv.id, perRoundAdv);
     }
   }
 
