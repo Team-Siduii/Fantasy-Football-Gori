@@ -33,10 +33,6 @@ export function computeTeamRoundScore(input: {
   };
 }
 
-function toStringKeyedMap(input: Map<number, number>) {
-  return new Map(Array.from(input.entries()).map(([id, points]) => [String(id), points]));
-}
-
 async function loadWkPlayerPointsByCsvId(roundNumber?: number): Promise<Map<string, number>> {
   const csvPath = path.join(process.cwd(), "data", "players-wk.csv");
   const csvContent = await readFile(csvPath, "utf-8");
