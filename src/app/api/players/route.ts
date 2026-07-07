@@ -41,6 +41,7 @@ export async function GET(request: Request) {
       // default 0
     }
 
+    const hasAvailabilitySnapshot = calculatedPlayers.length > 0;
     const calculatedById = new Map<number, (typeof calculatedPlayers)[number]>();
     for (const player of calculatedPlayers) {
       calculatedById.set(player.fantasyplayerId, player);
@@ -54,6 +55,7 @@ export async function GET(request: Request) {
       return {
         ...csv,
         prijs: adjustedPrice,
+        inactive: hasAvailabilitySnapshot ? !calculated : undefined,
         punten: calculated?.totalPoints ?? 0,
         totalPoints: calculated?.totalPoints ?? 0,
         roundPoints: calculated?.roundPoints ?? 0,

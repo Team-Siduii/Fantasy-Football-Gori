@@ -1540,6 +1540,15 @@ select {
   font-size: 0.58rem;
 }
 
+.transfer-row--inactive {
+  background: rgba(223, 228, 237, 0.45);
+  color: #66758f;
+}
+
+.transfer-row--inactive td {
+  color: inherit;
+}
+
 .swap-button {
   position: absolute;
   top: 0.18rem;

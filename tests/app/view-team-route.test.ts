@@ -6,7 +6,7 @@ const repairManagerTeamFromDraftArtifactsPersistent = vi.fn(async () => ({ chang
 const readTeamViewSnapshotPersistent = vi.fn(async () => ({
   formation: "4-3-3",
   lineupIds: ["wk-player-1"],
-  benchIds: [],
+  benchIds: ["wk-player-2"],
   pendingSellId: null,
   pendingBuyId: null,
 }));
@@ -14,10 +14,17 @@ const getAuthenticatedEmail = vi.fn(async () => "s.j.m.duindam@gmail.com");
 const ensureAuthStateFromDb = vi.fn(async () => undefined);
 const getProfileByEmail = vi.fn(() => ({ name: "Simon", teamName: "Simons Team" }));
 const summarizeManagerTeamScoresPersistent = vi.fn(async () => ({ totalPoints: 42, currentRoundPoints: 12 }));
-const buildWkPlayerRoundPointsMap = vi.fn(async () => new Map([["wk-player-1", 0]]));
-const buildWkPlayerTotalPointsMapThroughRound = vi.fn(async () => new Map([["wk-player-1", 42]]));
+const getManagerRoundScorePersistent = vi.fn(async () => ({ totalPoints: 42, roundNumber: 1, lineupPoints: 42, benchPoints: 0, lineupIds: ["wk-player-1"], benchIds: ["wk-player-2"], calculatedAt: "", source: "test" }));
+const buildWkPlayerPointsByCsvId = vi.fn(async () => ({
+  roundPoints: new Map([["wk-player-1", 0]]),
+  totalPoints: new Map([["wk-player-1", 42]]),
+  advancementPoints: new Map<string, number>(),
+}));
 const parsePlayerCsv = vi.fn(() => ({
-  players: [{ id: "wk-player-1", naam: "Speler 1", positie: "MID", club: "NL", prijs: 10 }],
+  players: [
+    { id: "wk-player-1", naam: "Speler 1", positie: "MID", club: "NL", prijs: 10 },
+    { id: "wk-player-2", naam: "Speler 2", positie: "DEF", club: "BE", prijs: 8 },
+  ],
 }));
 const readFile = vi.fn(async () => "id,naam\n1,test");
 
@@ -56,11 +63,11 @@ vi.mock("@/lib/player-points-store", () => ({
 
 vi.mock("@/lib/team-score-state", () => ({
   summarizeManagerTeamScoresPersistent,
+  getManagerRoundScorePersistent,
 }));
 
 vi.mock("@/lib/wk-player-scoring", () => ({
-  buildWkPlayerRoundPointsMap,
-  buildWkPlayerTotalPointsMapThroughRound,
+  buildWkPlayerPointsByCsvId,
 }));
 
 afterEach(() => {
@@ -93,6 +100,9 @@ describe("GET /api/manager/view-team", () => {
     expect(payload.lineup).toHaveLength(1);
     expect(payload.lineup[0]?.punten).toBe(0);
     expect(payload.lineup[0]?.totalPoints).toBe(42);
+    expect(payload.lineup[0]?.inactive).toBe(false);
+    expect(payload.bench).toHaveLength(1);
+    expect(payload.bench[0]?.inactive).toBe(true);
     expect(payload.teamTotalPoints).toBe(42);
   });
 });

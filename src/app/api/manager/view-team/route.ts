@@ -68,17 +68,23 @@ export async function GET(request: Request) {
   const playerPointsMap = new Map<string, number>();
   const playerTotalPointsMap = new Map<string, number>();
   const playerAdvancementPointsMap = new Map<string, number>();
+  let hasAvailabilitySnapshot = false;
+  const activePlayerIds = new Set<string>();
   if (scope === "wk") {
     const wkRound = Number.isInteger(roundNumber) && roundNumber > 0 ? roundNumber : undefined;
     const nameMatched = await buildWkPlayerPointsByCsvId(allPlayers, wkRound);
+    hasAvailabilitySnapshot = nameMatched.totalPoints.size > 0;
     for (const [csvId, pts] of nameMatched.roundPoints.entries()) {
       playerPointsMap.set(csvId, pts);
+      activePlayerIds.add(csvId);
     }
     for (const [csvId, pts] of nameMatched.totalPoints.entries()) {
       playerTotalPointsMap.set(csvId, pts);
+      activePlayerIds.add(csvId);
     }
     for (const [csvId, pts] of nameMatched.advancementPoints.entries()) {
       playerAdvancementPointsMap.set(csvId, pts);
+      activePlayerIds.add(csvId);
     }
   } else {
     const pointsSnapshot = await loadPlayerPoints(scope);
@@ -102,6 +108,7 @@ export async function GET(request: Request) {
     if (!player) return { id: playerId, naam: "Onbekend", positie: "MID", club: "-", prijs: 0, punten: 0 };
     return {
       ...player,
+      inactive: scope === "wk" && hasAvailabilitySnapshot ? !activePlayerIds.has(String(playerId)) : player.inactive,
       punten: playerPointsMap.get(String(playerId)) ?? 0,
       totalPoints: playerTotalPointsMap.get(String(playerId)) ?? playerPointsMap.get(String(playerId)) ?? 0,
       roundPoints: playerPointsMap.get(String(playerId)) ?? 0,

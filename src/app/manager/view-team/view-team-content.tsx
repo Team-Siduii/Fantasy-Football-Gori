@@ -14,6 +14,7 @@ type ViewPlayer = {
   positie: string;
   club: string;
   prijs: number;
+  inactive?: boolean;
   punten: number;
   roundPoints?: number;
   totalPoints?: number;
@@ -246,6 +247,7 @@ export default function ViewTeamPageContent() {
                         pointsLabel={cardMeta.priceLabel}
                         scoreBadge={player ? String(player.punten) : null}
                         advancementBadge={player && (player.advancementPoints ?? 0) > 0 && data?.roundNumber != null && data.roundNumber >= 3 ? "⚡+" + player.advancementPoints : null}
+                        inactive={player?.inactive === true}
                         className={player ? undefined : "player-card--open"}
                       />
                     );
@@ -273,6 +275,7 @@ export default function ViewTeamPageContent() {
                     pointsLabel={cardMeta.priceLabel}
                     scoreBadge={String(player.punten)}
                     advancementBadge={(player.advancementPoints ?? 0) > 0 && data?.roundNumber != null && data.roundNumber >= 3 ? "⚡+" + player.advancementPoints : null}
+                    inactive={player.inactive === true}
                     className="player-card--bench-row"
                   />
                 );
