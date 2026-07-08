@@ -60,7 +60,7 @@ describe("persistent JSON store", () => {
   });
 
   it("reads persisted JSON without attempting schema bootstrap DDL on the read path", async () => {
-    process.env.GORI_DATABASE_URL = "postgres://gori:test@example.com/gori";
+    process.env.GORI_DATABASE_URL = "postgres://gori:***@example.com/gori";
     poolQuery.mockResolvedValueOnce({
       rows: [{ payload: { ok: true } }],
     });
@@ -75,5 +75,39 @@ describe("persistent JSON store", () => {
     expect(poolQuery).toHaveBeenCalledTimes(1);
     expect(poolQuery.mock.calls[0]?.[0]).toContain("SELECT payload FROM gori_fantasy_state");
     expect(poolQuery.mock.calls[0]?.[0]).not.toContain("CREATE TABLE");
+  });
+
+  it("writes persisted JSON without attempting schema bootstrap DDL when the table already exists", async () => {
+    process.env.GORI_DATABASE_URL = "postgres://gori:***@example.com/gori";
+    poolQuery.mockResolvedValueOnce({ rows: [] });
+
+    const store = await loadStore();
+    const payload = { ok: true };
+    const result = await store.writePersistentJson({ store: "auth-state", scope: "global" }, payload);
+
+    expect(result).toEqual(payload);
+    expect(poolQuery).toHaveBeenCalledTimes(1);
+    expect(poolQuery.mock.calls[0]?.[0]).toContain("INSERT INTO gori_fantasy_state");
+    expect(poolQuery.mock.calls[0]?.[0]).not.toContain("CREATE TABLE");
+  });
+
+  it("bootstraps and retries writes only when the backing table is missing", async () => {
+    process.env.GORI_DATABASE_URL = "postgres://gori:***@example.com/gori";
+    const missingTableError = Object.assign(new Error("relation \"gori_fantasy_state\" does not exist"), { code: "42P01" });
+    poolQuery.mockRejectedValueOnce(missingTableError);
+    poolQuery.mockResolvedValueOnce({ rows: [] });
+    poolQuery.mockResolvedValueOnce({ rows: [] });
+    poolQuery.mockResolvedValueOnce({ rows: [] });
+
+    const store = await loadStore();
+    const payload = { ok: true };
+    const result = await store.writePersistentJson({ store: "auth-state", scope: "global" }, payload);
+
+    expect(result).toEqual(payload);
+    expect(poolQuery).toHaveBeenCalledTimes(4);
+    expect(poolQuery.mock.calls[0]?.[0]).toContain("INSERT INTO gori_fantasy_state");
+    expect(poolQuery.mock.calls[1]?.[0]).toContain("CREATE TABLE IF NOT EXISTS gori_fantasy_state");
+    expect(poolQuery.mock.calls[2]?.[0]).toContain("CREATE INDEX IF NOT EXISTS gori_fantasy_state_store_scope_idx");
+    expect(poolQuery.mock.calls[3]?.[0]).toContain("INSERT INTO gori_fantasy_state");
   });
 });

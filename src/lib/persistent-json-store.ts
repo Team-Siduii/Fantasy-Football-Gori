@@ -90,6 +90,21 @@ async function ensureDb() {
   return activePool;
 }
 
+const UPSERT_PERSISTENT_STATE_SQL = `INSERT INTO gori_fantasy_state (state_key, store_name, scope, manager_key, payload, updated_at)
+     VALUES ($1, $2, $3, $4, $5::jsonb, NOW())
+     ON CONFLICT (state_key) DO UPDATE SET
+       payload = EXCLUDED.payload,
+       updated_at = NOW()`;
+
+function shouldAttemptBootstrap(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const maybe = error as { code?: string; message?: string };
+  return maybe.code === "42P01" || maybe.message?.toLowerCase().includes("gori_fantasy_state") === true;
+}
+
 function getReadablePool() {
   return getPool();
 }
@@ -109,7 +124,7 @@ export async function readPersistentJson<T>(input: PersistentStateKeyInput, fall
 }
 
 export async function writePersistentJson<T>(input: PersistentStateKeyInput, payload: T): Promise<T> {
-  const activePool = await ensureDb();
+  const activePool = getPool();
   if (!activePool) {
     return payload;
   }
@@ -117,15 +132,23 @@ export async function writePersistentJson<T>(input: PersistentStateKeyInput, pay
   const scope = normalizeKeySegment(input.scope ?? "global", "global");
   const manager = normalizeKeySegment(input.managerKey, "shared");
   const stateKey = buildPersistentStateKey(input);
-  await activePool.query(
-    `INSERT INTO gori_fantasy_state (state_key, store_name, scope, manager_key, payload, updated_at)
-     VALUES ($1, $2, $3, $4, $5::jsonb, NOW())
-     ON CONFLICT (state_key) DO UPDATE SET
-       payload = EXCLUDED.payload,
-       updated_at = NOW()`,
-    [stateKey, input.store, scope, manager, JSON.stringify(payload)],
-  );
+  const params = [stateKey, input.store, scope, manager, JSON.stringify(payload)];
 
+  try {
+    await activePool.query(UPSERT_PERSISTENT_STATE_SQL, params);
+    return payload;
+  } catch (error) {
+    if (!shouldAttemptBootstrap(error)) {
+      throw error;
+    }
+  }
+
+  const bootstrappedPool = await ensureDb();
+  if (!bootstrappedPool) {
+    return payload;
+  }
+
+  await bootstrappedPool.query(UPSERT_PERSISTENT_STATE_SQL, params);
   return payload;
 }
 
