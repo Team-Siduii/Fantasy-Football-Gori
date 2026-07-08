@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-06-12
+Laatste update: 2026-07-08
 
 ## 1. Productvisie
 Doel van de app:
@@ -176,6 +176,7 @@ Per rol belangrijkste rechten:
 - Persistente `manager-state` readpaths moeten fail-soft zijn: als de onderliggende DB-read of lokale `/tmp` sync tijdelijk faalt, vallen `/manager`, `/api/manager/state` en afgeleide preferred-route reads terug op de laatst leesbare snapshot in plaats van een generieke 500. Gewone reads mogen dus geen verplichte writeback of harde storage-availability vereisen om een manager na login zijn teampagina te laten openen.
 - Persistente Gori write-paths voor account/profile/password-wijzigingen mogen niet standaard request-time schema-DDL vereisen. Normale writes moeten eerst direct upserten naar de bestaande store; alleen wanneer de backing table echt ontbreekt mag een eenmalige bootstrap-retry volgen. Zo blijven `/account`, profiel-updates en wachtwoordwijzigingen werken op prod wanneer de DB-user wel data mag lezen/schrijven maar geen `CREATE TABLE/INDEX` op elke cold start hoort te doen.
 - Voor uitzonderlijke WK-correcties moet een admin een handmatige teamrepair kunnen uitvoeren die in één transactie dezelfde waarheid doorzet naar `manager-state`, de actieve ronde-snapshot, `team-roster-state` en de betreffende `transfer-round` entry. Zo blijft een gecorrigeerde selectie duurzaam consistent en klapt een oude foutieve transfer-resolutie later niet opnieuw terug.
+- Platform-admins hebben een tijdelijke afgeschermde debug-route `/api/admin/database-debug` die alleen na ingelogde admin-auth de niet-geheime DB-identiteit teruggeeft (`host`, `database`, `user`, `sourceEnv`, optioneel `NEON_PROJECT_ID`). De oudere alias `/api/admin/db-debug` blijft alleen als veilige, read-only GET-wrapper bestaan en staat geen ruwe DB-reads of writes meer toe. Daarmee kan live worden vastgesteld welke production Postgres/Neon resource tegen quota of permissiebeperkingen aanloopt zonder secrets of volledige connection strings te tonen.
 - Bankverdeling is vast: altijd 4 bankslots met 1x GK, 1x DEF, 1x MID en 1x FWD
 - Basiselftal-weergave op het veld toont per slot de echte speler op die index (geen naamherhaling binnen een linie); elke speler-id mag maar 1x tegelijk in teamstate voorkomen
 - Pitch in basiselftal gebruikt exact de aangeleverde referentie-afbeelding als achtergrondasset (`/public/images/pitch-reference.jpg`) met sterke zoom-in (`background-size: 200% auto`) zodat het veld close-up in beeld staat
@@ -603,6 +604,7 @@ Waarom zo:
 - 2026-06-19: Team-hydration voor `Mijn team` is verplaatst naar een gedeelde server-side TeamViewModel-projectie (`my-team-view`/`view-team`). Daardoor delen eigen team en bekeken teams exact dezelfde snapshotmapping en verdwijnen client-side verschillen tussen opgeslagen state en gerenderde opstelling.
 - 2026-06-19: WK ronde-navigatie in `Mijn team` gebruikt nu latest-only request guards voor spelers, matchdata en teamsnapshot-hydration. Daardoor kan terugnavigeren naar een nieuwere ronde niet meer per ongeluk de punten van een oudere, later teruggekomen response laten staan.
 - 2026-06-19: De teamsnapshot voor `Mijn team` wordt bij rondewissel direct toegepast zodra `/api/manager/my-team-view` klaar is; transferronde-metadata laadt daarna pas door. Een tragere of falende transfer-round response mag de zichtbare spelerpunten van de gekozen ronde dus niet meer blokkeren.
+- 2026-07-08: Tijdelijke afgeschermde admin-debugroute `/api/admin/database-debug` toegevoegd. De route toont live alleen niet-geheime DB-identiteit (`host`, `database`, `user`, `sourceEnv`, `NEON_PROJECT_ID`) zodat quota-/rechtenissues op production Postgres/Neon exact te herleiden zijn zonder wachtwoorden of volledige connection strings te lekken. Legacy alias `/api/admin/db-debug` is tegelijk gehard naar read-only admin GET en laat geen ruwe state-mutatiewrites meer toe.
 - 2026-05-04: Pitch-achtergrond vanaf nul opnieuw opgebouwd door de laatst aangeleverde referentie-afbeelding direct als asset te gebruiken (`/public/images/pitch-reference.jpg`), zodat veldvisual exact overeenkomt met het voorbeeld; overlays/dieptelijnen verwijderd.
 - 2026-05-04: Pitch-referentiebeeld ingesteld op 200% zoom en visueel aangescherpt via subtiele contrast/saturatie/brightness-filtering op de achtergrondlaag, met ongewijzigde kaart-interactie.
 - 2026-05-04: WK-mode terminologie aangepast: overal in transfermarkt `Club` vervangen door `Land` (incl. `Alle landen`, `Zoek speler/land` en sorteerkolomheader).

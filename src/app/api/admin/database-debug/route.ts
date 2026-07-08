@@ -3,8 +3,6 @@ import { isAdminEmail } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 import { resolveGoriDatabaseDebugInfo } from "@/lib/persistent-json-store";
 
-export const dynamic = "force-dynamic";
-
 export async function GET() {
   const email = await getAuthenticatedEmail();
   if (!email) {
@@ -17,17 +15,5 @@ export async function GET() {
 
   return NextResponse.json({
     database: resolveGoriDatabaseDebugInfo(),
-    route: "db-debug",
-    deprecated: true,
-    canonicalRoute: "/api/admin/database-debug",
   });
-}
-
-export async function POST() {
-  return NextResponse.json(
-    {
-      error: "Gebruik alleen GET op /api/admin/database-debug voor veilige DB-identiteitsdebug.",
-    },
-    { status: 405 },
-  );
 }

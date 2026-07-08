@@ -35,6 +35,63 @@ export function isGoriDatabaseEnabled() {
   return Boolean(resolveGoriDatabaseUrl());
 }
 
+export type GoriDatabaseDebugInfo = {
+  enabled: boolean;
+  disabledByEnv: boolean;
+  sourceEnv: "GORI_DATABASE_URL" | "DATABASE_URL" | "POSTGRES_URL" | null;
+  host: string | null;
+  database: string | null;
+  user: string | null;
+  neonProjectId: string | null;
+};
+
+function resolveGoriDatabaseSourceEnv(): GoriDatabaseDebugInfo["sourceEnv"] {
+  if (process.env.GORI_DISABLE_DATABASE === "1" || process.env.GORI_DISABLE_DATABASE === "true") {
+    return null;
+  }
+  if (process.env.GORI_DATABASE_URL) {
+    return "GORI_DATABASE_URL";
+  }
+  if (process.env.DATABASE_URL) {
+    return "DATABASE_URL";
+  }
+  if (process.env.POSTGRES_URL) {
+    return "POSTGRES_URL";
+  }
+  return null;
+}
+
+export function resolveGoriDatabaseDebugInfo(): GoriDatabaseDebugInfo {
+  const disabledByEnv = process.env.GORI_DISABLE_DATABASE === "1" || process.env.GORI_DISABLE_DATABASE === "true";
+  const sourceEnv = resolveGoriDatabaseSourceEnv();
+  const connectionString = disabledByEnv ? undefined : resolveGoriDatabaseUrl();
+
+  let host = process.env.POSTGRES_HOST ?? null;
+  let database = process.env.POSTGRES_DATABASE || process.env.PGDATABASE || null;
+  let user = process.env.POSTGRES_USER ?? null;
+
+  if (connectionString) {
+    try {
+      const parsed = new URL(connectionString);
+      host = parsed.hostname || host;
+      database = parsed.pathname.replace(/^\//, "") || database;
+      user = parsed.username ? decodeURIComponent(parsed.username) : user;
+    } catch {
+      // Fall back to discrete env vars when the URL cannot be parsed.
+    }
+  }
+
+  return {
+    enabled: Boolean(connectionString),
+    disabledByEnv,
+    sourceEnv,
+    host,
+    database,
+    user,
+    neonProjectId: process.env.NEON_PROJECT_ID ?? null,
+  };
+}
+
 function normalizeKeySegment(value: string | null | undefined, fallback: string) {
   const normalized = value?.trim().toLowerCase();
   return normalized && normalized.length > 0 ? normalized : fallback;
