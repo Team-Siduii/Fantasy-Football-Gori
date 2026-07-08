@@ -142,10 +142,19 @@ export async function readDraftStatePersistent(scope: DraftScope = "eredivisie")
   if (!isGoriDatabaseEnabled()) {
     return fallback;
   }
-  const persisted = await readPersistentJson({ store: "draft-state", scope }, fallback);
-  const normalized = normalizeDraftState(persisted);
-  writeDraftState(normalized, scope);
-  return normalized;
+
+  try {
+    const persisted = await readPersistentJson({ store: "draft-state", scope }, fallback);
+    const normalized = normalizeDraftState(persisted);
+    try {
+      writeDraftState(normalized, scope);
+    } catch {
+      // Keep request-time draft reads fail-soft even if local file sync is unavailable.
+    }
+    return normalized;
+  } catch {
+    return fallback;
+  }
 }
 
 function computeCurrentTurnTeamId(pickSequence: string[], picksCount: number): string | null {

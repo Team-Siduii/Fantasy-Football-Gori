@@ -25,6 +25,15 @@ export function resolveTeamRosterStatePath(scope: TeamRosterScope = "eredivisie"
   return path.join(process.cwd(), "data", scope === "wk" ? "team-roster-state-wk.json" : "team-roster-state.json");
 }
 
+function normalizeTeamRosterState(input: Partial<TeamRosterState>): TeamRosterState {
+  const byTeamId = input.byTeamId ?? {};
+  const normalized: Record<string, string[]> = {};
+  for (const [teamId, playerIds] of Object.entries(byTeamId)) {
+    normalized[teamId] = Array.isArray(playerIds) ? playerIds.filter((id): id is string => typeof id === "string") : [];
+  }
+  return { byTeamId: normalized };
+}
+
 export function readTeamRosterState(scope: TeamRosterScope = "eredivisie"): TeamRosterState {
   const target = resolveTeamRosterStatePath(scope);
   if (!existsSync(target)) {
@@ -33,12 +42,7 @@ export function readTeamRosterState(scope: TeamRosterScope = "eredivisie"): Team
 
   try {
     const parsed = JSON.parse(readFileSync(target, "utf-8")) as Partial<TeamRosterState>;
-    const byTeamId = parsed.byTeamId ?? {};
-    const normalized: Record<string, string[]> = {};
-    for (const [teamId, playerIds] of Object.entries(byTeamId)) {
-      normalized[teamId] = Array.isArray(playerIds) ? playerIds.filter((id): id is string => typeof id === "string") : [];
-    }
-    return { byTeamId: normalized };
+    return normalizeTeamRosterState(parsed);
   } catch {
     return { ...DEFAULT_TEAM_ROSTER_STATE };
   }
@@ -64,9 +68,19 @@ export async function readTeamRosterStatePersistent(scope: TeamRosterScope = "er
   if (!isGoriDatabaseEnabled()) {
     return fallback;
   }
-  const persisted = await readPersistentJson({ store: "team-roster-state", scope }, fallback);
-  saveTeamRosterState(persisted, scope);
-  return persisted;
+
+  try {
+    const persisted = await readPersistentJson({ store: "team-roster-state", scope }, fallback);
+    const normalized = normalizeTeamRosterState(persisted);
+    try {
+      saveTeamRosterState(normalized, scope);
+    } catch {
+      // Keep request-time roster reads fail-soft even if local file sync is unavailable.
+    }
+    return normalized;
+  } catch {
+    return fallback;
+  }
 }
 
 export async function addPlayerToTeamRosterPersistent(teamId: string, playerId: string, scope: TeamRosterScope = "eredivisie") {
