@@ -14,9 +14,11 @@ type ViewPlayer = {
   positie: string;
   club: string;
   prijs: number;
+  isActive?: boolean;
   punten: number;
   roundPoints?: number;
   totalPoints?: number;
+  advancementPoints?: number;
 };
 
 type ViewTeamResponse = {
@@ -169,8 +171,9 @@ export default function ViewTeamPageContent() {
                         club={cardMeta.countryCode}
                         name={player?.naam ?? "Leeg"}
                         pointsLabel={cardMeta.priceLabel}
+                        advancementBadge={player && (player.advancementPoints ?? 0) > 0 && data?.roundNumber != null && data.roundNumber >= 3 ? `⚡+${player.advancementPoints}` : null}
                         scoreBadge={player ? String(player.punten) : null}
-                        className={player ? undefined : "player-card--open"}
+                        className={player ? (player.isActive === false ? "player-card--inactive" : undefined) : "player-card--open"}
                       />
                     );
                   })}
@@ -195,8 +198,9 @@ export default function ViewTeamPageContent() {
                     club={cardMeta.countryCode}
                     name={player.naam}
                     pointsLabel={cardMeta.priceLabel}
+                    advancementBadge={(player.advancementPoints ?? 0) > 0 && data?.roundNumber != null && data.roundNumber >= 3 ? `⚡+${player.advancementPoints}` : null}
                     scoreBadge={String(player.punten)}
-                    className="player-card--bench-row"
+                    className={player.isActive === false ? "player-card--bench-row player-card--inactive" : "player-card--bench-row"}
                   />
                 );
               })

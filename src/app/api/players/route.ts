@@ -31,7 +31,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ count: 0, players: [] }, { headers: NO_CACHE_HEADERS });
     }
 
-    const calculatedPlayers = await listCalculatedWkPlayerPoints(roundSequence);
+    let calculatedPlayers: Awaited<ReturnType<typeof listCalculatedWkPlayerPoints>> = [];
+    let syncStatus: string | undefined;
+    try {
+      calculatedPlayers = await listCalculatedWkPlayerPoints(roundSequence);
+    } catch {
+      syncStatus = "unavailable — WK scoring storage read failed";
+    }
 
     let priceOffset = 0;
     try {
@@ -41,6 +47,7 @@ export async function GET(request: Request) {
       // default 0
     }
 
+    const hasAvailabilitySnapshot = calculatedPlayers.length > 0;
     const calculatedById = new Map<number, (typeof calculatedPlayers)[number]>();
     for (const player of calculatedPlayers) {
       calculatedById.set(player.fantasyplayerId, player);
@@ -54,9 +61,12 @@ export async function GET(request: Request) {
       return {
         ...csv,
         prijs: adjustedPrice,
+        inactive: hasAvailabilitySnapshot ? !calculated : undefined,
+        isActive: Boolean(calculated),
         punten: calculated?.totalPoints ?? 0,
         totalPoints: calculated?.totalPoints ?? 0,
         roundPoints: calculated?.roundPoints ?? 0,
+        advancementPoints: calculated?.advancementPoints ?? 0,
         pointEvents: calculated?.pointEvents ?? [],
         scoreSource: calculated?.source ?? "wk-events-v1",
       };
@@ -65,6 +75,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       count: playersWithPoints.length,
       players: playersWithPoints,
+      syncStatus,
     }, { headers: NO_CACHE_HEADERS });
   }
 

@@ -9,8 +9,8 @@ const repairManagerTeamFromDraftArtifactsPersistent = vi.fn(async () => ({ chang
 const buildManagerTeamViewPersistent = vi.fn(async () => ({
   roundNumber: 2,
   formation: "3-4-3",
-  lineup: [{ id: "wk-player-1", punten: 0, roundPoints: 0, totalPoints: 42 }],
-  bench: [{ id: "wk-player-2", punten: 5, roundPoints: 5, totalPoints: 12 }],
+  lineup: [{ id: "wk-player-1", punten: 0, roundPoints: 0, totalPoints: 42, advancementPoints: 5 }],
+  bench: [{ id: "wk-player-2", punten: 5, roundPoints: 5, totalPoints: 12, advancementPoints: 5 }],
   budgetCap: 100,
   budgetRemaining: 90,
   squadCost: 10,
@@ -72,5 +72,7 @@ describe("GET /api/manager/view-team", () => {
       teamCurrentRoundPoints: 12,
     });
     expect(payload.bench[0].punten).toBe(3);
+    expect(payload.lineup[0].advancementPoints).toBe(5);
+    expect(payload.bench[0].advancementPoints).toBe(5);
   });
 });

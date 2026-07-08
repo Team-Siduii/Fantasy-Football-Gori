@@ -1386,6 +1386,11 @@ export default function ManagerMyTeamPage() {
       return;
     }
 
+    if (player.isActive === false) {
+      setTransferMessage("Deze speler is niet meer actief in de volgende ronde en kan niet gekocht worden.");
+      return;
+    }
+
     const alreadyInSquad = squadPlayers.some((squadPlayer) => squadPlayer.id === player.id);
     if (alreadyInSquad) {
       setTransferMessage("Deze speler zit al in je team.");
@@ -1461,10 +1466,12 @@ export default function ManagerMyTeamPage() {
                         club={cardMeta.countryCode}
                         name={cardMeta.displayName}
                         pointsLabel={cardMeta.priceLabel}
+                        advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 && selectedRound !== null && selectedRound >= 3 ? `⚡+${player.advancementPoints}` : null}
                         scoreBadge={!player.id.startsWith("open-") ? String(getPlayerRoundPoints(player)) : null}
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",
                           pendingSwap?.playerId === player.id ? "player-card--swap-selected" : "",
+                          player.isActive === false ? "player-card--inactive" : "",
                           player.id.startsWith("open-") ? "player-card--open" : "",
                         ]
                           .filter(Boolean)
@@ -1509,11 +1516,13 @@ export default function ManagerMyTeamPage() {
                   club={cardMeta.countryCode}
                   name={player.naam}
                   pointsLabel={cardMeta.priceLabel}
+                  advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 && selectedRound !== null && selectedRound >= 3 ? `⚡+${player.advancementPoints}` : null}
                   scoreBadge={!player.id.startsWith("open-") ? String(Math.ceil(getPlayerRoundPoints(player) / 2)) : null}
                   className={[
                     "player-card--bench-row",
                     pendingSellId === player.id ? "player-card--sell" : "",
                     pendingSwap?.playerId === player.id ? "player-card--swap-selected" : "",
+                    player.isActive === false ? "player-card--inactive" : "",
                     player.id.startsWith("open-") ? "player-card--open" : "",
                   ]
                     .filter(Boolean)
@@ -1758,21 +1767,25 @@ export default function ManagerMyTeamPage() {
               </thead>
               <tbody>
                 {pagedMarket.map((item, index) => (
-                  <tr key={item.id} data-testid={`transfer-row-${index}`}>
+                  <tr
+                    key={item.id}
+                    data-testid={`transfer-row-${index}`}
+                    className={item.isActive === false ? "transfer-row--inactive" : undefined}
+                  >
                     <td><TransferPlayerName player={item} /></td>
                     <td>{item.positie}</td>
                     <td>{item.club}</td>
                     <td>{item.punten}</td>
                     <td>€ {item.prijs.toFixed(2)}M</td>
-                    <td style={{ textAlign: "center" }}>{item.owned ? "❌" : "✅"}</td>
+                    <td style={{ textAlign: "center" }}>{item.owned ? "❌" : item.isActive === false ? "⛔" : "✅"}</td>
                     <td>
                       <button
                         type="button"
                         onClick={() => handlePickIncoming(item)}
-                        disabled={!ownTransferCanBuy || transferBusy || transfersLocked || item.owned}
+                        disabled={!ownTransferCanBuy || transferBusy || transfersLocked || item.owned || item.isActive === false}
                         data-testid={`transfer-pick-${index}`}
                       >
-                        {pendingBuyId === item.id ? "Geselecteerd" : "Koop"}
+                        {item.isActive === false ? "Uitgeschakeld" : pendingBuyId === item.id ? "Geselecteerd" : "Koop"}
                       </button>
                     </td>
                   </tr>

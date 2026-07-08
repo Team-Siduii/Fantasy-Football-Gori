@@ -1273,6 +1273,36 @@ select {
   z-index: 3;
 }
 
+.player-advancement-badge {
+  position: absolute;
+  top: 1.55rem;
+  right: 0.4rem;
+  min-width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+  color: #a5d6a7;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 1px 4px rgba(27, 94, 32, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.1rem;
+  font-size: 0.42rem;
+  font-weight: 700;
+  line-height: 1;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.player-card--bench-row .player-advancement-badge {
+  position: static;
+  grid-column: 1;
+  justify-self: end;
+  align-self: center;
+  margin-right: 0.15rem;
+}
+
 .player-top {
   padding: 0.2rem 0.4rem;
   display: flex;
@@ -1443,6 +1473,23 @@ select {
   color: #5f6f8d;
 }
 
+.player-card--inactive {
+  background: #f2f4f8;
+  border-color: rgba(122, 134, 160, 0.55);
+}
+
+.player-card--inactive .player-top,
+.player-card--inactive .player-name,
+.player-card--inactive .player-points {
+  background: #dfe4ed;
+  color: #66758f;
+}
+
+.player-card--inactive .player-score-badge {
+  background: linear-gradient(135deg, #cbd3df 0%, #97a4ba 100%);
+  color: #233047;
+}
+
 .player-card--bench-row {
   height: auto;
   min-height: 2.5rem;
@@ -1494,6 +1541,15 @@ select {
   min-width: 1.22rem;
   height: 1.22rem;
   font-size: 0.58rem;
+}
+
+.transfer-row--inactive {
+  background: rgba(223, 228, 237, 0.45);
+  color: #66758f;
+}
+
+.transfer-row--inactive td {
+  color: inherit;
 }
 
 .swap-button {

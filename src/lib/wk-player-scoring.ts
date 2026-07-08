@@ -1,8 +1,12 @@
 import { getLatestSyncRound, getWkPlayerEvents, getWkPlayerPointHistory, type WkPlayerEventRow, type WkPlayerPointRow } from "./wk-sync-store";
 
+import { isTeamEliminated } from "./knockout-phase";
+
 const DEFENDER_ALIASES = new Set(["DEF", "VERDEDIGER", "DEFENDER", "D"]);
 const CLEAN_SHEET_EVENT_CODES = new Set(["CS"]);
 const DEFENDER_CLEAN_SHEET_BONUS = 2;
+const ADVANCEMENT_BONUS = 5;
+const KNOCKOUT_START_ROUND = 3;
 
 export type PlayerPointEvent = {
   eventCode: string;
@@ -21,6 +25,7 @@ export type CalculatedWkPlayerPoints = {
   value: number;
   roundPoints: number;
   totalPoints: number;
+  advancementPoints: number;
   hasPlayed: boolean;
   numPlayed: number;
   pointEvents: PlayerPointEvent[];
@@ -84,6 +89,41 @@ function groupEventsByRoundAndPlayer(events: WkPlayerEventRow[]) {
   return grouped;
 }
 
+function buildAdvancingTeamsByRound(events: WkPlayerEventRow[]) {
+  const advancingTeamsByRound = new Map<number, Set<string>>();
+
+  for (const event of events) {
+    if ((event.event_code ?? "").trim().toUpperCase() !== "MW") {
+      continue;
+    }
+    const teams = advancingTeamsByRound.get(event.round) ?? new Set<string>();
+    if (event.team_name) {
+      teams.add(event.team_name);
+    }
+    advancingTeamsByRound.set(event.round, teams);
+  }
+
+  return advancingTeamsByRound;
+}
+
+function calculateWkPlayerRoundAdvancementPoints(input: {
+  round: number;
+  teamName: string;
+  advancingTeamsByRound: Map<number, Set<string>>;
+}) {
+  if (input.round < KNOCKOUT_START_ROUND) {
+    return 0;
+  }
+
+  if (input.round === KNOCKOUT_START_ROUND) {
+    return isTeamEliminated(input.teamName) ? 0 : ADVANCEMENT_BONUS;
+  }
+
+  return input.advancingTeamsByRound.get(input.round)?.has(input.teamName)
+    ? ADVANCEMENT_BONUS
+    : 0;
+}
+
 export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promise<Map<number, CalculatedWkPlayerPoints>> {
   const effectiveRound = typeof maxRound === "number" && Number.isInteger(maxRound) && maxRound > 0
     ? maxRound
@@ -101,40 +141,49 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
   const relevantEvents = events.filter((event) => event.round <= effectiveRound);
   const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(historyRows);
   const groupedEvents = groupEventsByRoundAndPlayer(relevantEvents);
+  const advancingTeamsByRound = buildAdvancingTeamsByRound(relevantEvents);
   const totals = new Map<number, CalculatedWkPlayerPoints>();
+  const allPlayerIds = Array.from(latestByPlayerId.keys());
 
   for (let round = 1; round <= effectiveRound; round += 1) {
     const playerEventsForRound = groupedEvents.get(round) ?? new Map<number, PlayerPointEvent[]>();
-    const playerIds = new Set<number>([
-      ...Array.from(playerEventsForRound.keys()),
-      ...historyRows.filter((row) => row.round === round).map((row) => row.fantasyplayer_id),
-    ]);
 
-    for (const fantasyplayerId of playerIds) {
-      const row = byPlayerRound.get(`${fantasyplayerId}:${round}`) ?? latestByPlayerId.get(fantasyplayerId);
-      if (!row) {
+    for (const fantasyplayerId of allPlayerIds) {
+      const roundRow = byPlayerRound.get(`${fantasyplayerId}:${round}`);
+      const metadata = roundRow ?? latestByPlayerId.get(fantasyplayerId);
+      if (!metadata) {
         continue;
       }
+
       const pointEvents = playerEventsForRound.get(fantasyplayerId) ?? [];
       const roundPoints = calculateWkPlayerRoundPointsFromEvents({
         events: pointEvents,
-        position: row.position,
-        positionNl: row.position_nl,
+        position: metadata.position,
+        positionNl: metadata.position_nl,
       });
-      const previousTotal = totals.get(fantasyplayerId)?.totalPoints ?? 0;
+      const roundAdvancementPoints = calculateWkPlayerRoundAdvancementPoints({
+        round,
+        teamName: metadata.team_name,
+        advancingTeamsByRound,
+      });
+      const previous = totals.get(fantasyplayerId);
+      const previousTotal = previous?.totalPoints ?? 0;
+      const previousAdvancement = previous?.advancementPoints ?? 0;
+
       totals.set(fantasyplayerId, {
         fantasyplayerId,
         round,
-        name: row.name,
-        teamName: row.team_name,
-        teamCode: row.team_code,
-        position: row.position,
-        positionNl: row.position_nl,
-        value: row.value,
+        name: metadata.name,
+        teamName: metadata.team_name,
+        teamCode: metadata.team_code,
+        position: metadata.position,
+        positionNl: metadata.position_nl,
+        value: metadata.value,
         roundPoints,
-        totalPoints: previousTotal + roundPoints,
-        hasPlayed: row.has_played,
-        numPlayed: row.num_played,
+        totalPoints: previousTotal + roundPoints + roundAdvancementPoints,
+        advancementPoints: previousAdvancement + roundAdvancementPoints,
+        hasPlayed: roundRow?.has_played ?? false,
+        numPlayed: roundRow?.num_played ?? previous?.numPlayed ?? metadata.num_played,
         pointEvents,
         source: "wk-events-v1",
       });
@@ -158,27 +207,67 @@ export async function buildWkPlayerRoundPointsMap(roundNumber?: number): Promise
   ]);
   const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(rows);
   const roundEvents = groupEventsByRoundAndPlayer(events).get(effectiveRound) ?? new Map<number, PlayerPointEvent[]>();
-  const playerIds = new Set<number>([
-    ...Array.from(roundEvents.keys()),
-    ...rows.filter((row) => row.round === effectiveRound).map((row) => row.fantasyplayer_id),
-  ]);
+  const advancingTeamsByRound = buildAdvancingTeamsByRound(events);
+  const allPlayerIds = Array.from(latestByPlayerId.keys());
 
   const result = new Map<number, number>();
-  for (const fantasyplayerId of playerIds) {
-    const row = byPlayerRound.get(`${fantasyplayerId}:${effectiveRound}`) ?? latestByPlayerId.get(fantasyplayerId);
-    if (!row) {
+  for (const fantasyplayerId of allPlayerIds) {
+    const roundRow = byPlayerRound.get(`${fantasyplayerId}:${effectiveRound}`);
+    const metadata = roundRow ?? latestByPlayerId.get(fantasyplayerId);
+    if (!metadata) {
+      continue;
+    }
+    const pointEvents = roundEvents.get(fantasyplayerId) ?? [];
+    const basePoints = calculateWkPlayerRoundPointsFromEvents({
+      events: pointEvents,
+      position: metadata.position,
+      positionNl: metadata.position_nl,
+    });
+    const advancementPoints = calculateWkPlayerRoundAdvancementPoints({
+      round: effectiveRound,
+      teamName: metadata.team_name,
+      advancingTeamsByRound,
+    });
+    result.set(fantasyplayerId, basePoints + advancementPoints);
+  }
+  return result;
+}
+
+export async function buildWkPlayerRoundAdvancementPointsMap(roundNumber?: number): Promise<Map<number, number>> {
+  const effectiveRound = typeof roundNumber === "number" && Number.isInteger(roundNumber) && roundNumber > 0
+    ? roundNumber
+    : (await getLatestSyncRound()) ?? 0;
+  if (effectiveRound <= 0) {
+    return new Map();
+  }
+
+  const [rows, events] = await Promise.all([
+    getWkPlayerPointHistory(effectiveRound),
+    getWkPlayerEvents(effectiveRound),
+  ]);
+  const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(rows);
+  const roundEvents = groupEventsByRoundAndPlayer(events).get(effectiveRound) ?? new Map<number, PlayerPointEvent[]>();
+  const advancingTeamsByRound = buildAdvancingTeamsByRound(events);
+  const allPlayerIds = Array.from(latestByPlayerId.keys());
+
+  const result = new Map<number, number>();
+  for (const fantasyplayerId of allPlayerIds) {
+    const roundRow = byPlayerRound.get(`${fantasyplayerId}:${effectiveRound}`);
+    const metadata = roundRow ?? latestByPlayerId.get(fantasyplayerId);
+    if (!metadata) {
       continue;
     }
     const pointEvents = roundEvents.get(fantasyplayerId) ?? [];
     result.set(
       fantasyplayerId,
-      calculateWkPlayerRoundPointsFromEvents({
-        events: pointEvents,
-        position: row.position,
-        positionNl: row.position_nl,
+      calculateWkPlayerRoundAdvancementPoints({
+        round: effectiveRound,
+        teamName: metadata.team_name,
+        advancingTeamsByRound,
       }),
     );
   }
+
   return result;
 }
 

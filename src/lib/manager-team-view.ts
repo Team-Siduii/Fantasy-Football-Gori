@@ -10,12 +10,18 @@ import { type ManagerStateScope } from "./manager-state";
 import { readTeamViewSnapshotPersistent } from "./manager-team-state-source";
 import { loadPlayerPoints } from "./player-points-store";
 import { getManagerRoundScorePersistent, summarizeManagerTeamScoresPersistent } from "./team-score-state";
-import { buildWkPlayerRoundPointsMap, buildWkPlayerTotalPointsMapThroughRound } from "./wk-player-scoring";
+import {
+  buildWkPlayerRoundAdvancementPointsMap,
+  buildWkPlayerRoundPointsMap,
+  buildWkPlayerTotalPointsMapThroughRound,
+  listCalculatedWkPlayerPoints,
+} from "./wk-player-scoring";
 
 export type TeamViewPlayer = PlayerRecord & {
   punten: number;
   roundPoints: number;
   totalPoints: number;
+  advancementPoints: number;
 };
 
 export type ManagerTeamViewModel = {
@@ -38,6 +44,7 @@ function toTeamViewPlayer(player: PlayerRecord & {
   punten?: number;
   roundPoints?: number;
   totalPoints?: number;
+  advancementPoints?: number;
 }): TeamViewPlayer {
   const punten = Number(player.punten ?? 0);
   return {
@@ -45,6 +52,7 @@ function toTeamViewPlayer(player: PlayerRecord & {
     punten,
     roundPoints: Number(player.roundPoints ?? punten),
     totalPoints: Number(player.totalPoints ?? punten),
+    advancementPoints: Number(player.advancementPoints ?? 0),
   };
 }
 
@@ -52,11 +60,19 @@ function normalizeRoundNumber(roundNumber?: number | null): number | null {
   return Number.isInteger(roundNumber) && (roundNumber ?? 0) > 0 ? (roundNumber as number) : null;
 }
 
-async function loadPlayersForScope(scope: ManagerStateScope): Promise<PlayerRecord[]> {
+async function loadPlayersForScope(scope: ManagerStateScope, roundNumber: number | null): Promise<PlayerRecord[]> {
   if (scope === "wk") {
     const wkCsvPath = path.join(process.cwd(), "data", "players-wk.csv");
     const csvContent = await readFile(wkCsvPath, "utf-8");
-    return parsePlayerCsv(csvContent).players;
+    const csvPlayers = parsePlayerCsv(csvContent).players;
+    const calculatedPlayers = await listCalculatedWkPlayerPoints(roundNumber ?? undefined);
+    const hasAvailabilitySnapshot = calculatedPlayers.length > 0;
+    const calculatedIds = new Set(calculatedPlayers.map((player) => String(player.fantasyplayerId)));
+
+    return csvPlayers.map((player) => ({
+      ...player,
+      isActive: hasAvailabilitySnapshot ? calculatedIds.has(String(player.id)) : undefined,
+    }));
   }
 
   const { bootstrapPlayersFromDefaultCsv } = await import("./player-bootstrap");
@@ -68,11 +84,13 @@ async function loadPlayersForScope(scope: ManagerStateScope): Promise<PlayerReco
 async function buildPointsMaps(scope: ManagerStateScope, roundNumber: number | null) {
   const roundPoints = new Map<string, number>();
   const totalPoints = new Map<string, number>();
+  const advancementPoints = new Map<string, number>();
 
   if (scope === "wk") {
-    const [roundMap, totalMap] = await Promise.all([
+    const [roundMap, totalMap, advancementMap] = await Promise.all([
       buildWkPlayerRoundPointsMap(roundNumber ?? undefined),
       buildWkPlayerTotalPointsMapThroughRound(roundNumber ?? undefined),
+      buildWkPlayerRoundAdvancementPointsMap(roundNumber ?? undefined),
     ]);
 
     for (const [fantasyplayerId, points] of Array.from(roundMap.entries())) {
@@ -83,7 +101,11 @@ async function buildPointsMaps(scope: ManagerStateScope, roundNumber: number | n
       totalPoints.set(String(fantasyplayerId), points);
     }
 
-    return { roundPoints, totalPoints, scoreSource: "team-score-state" } as const;
+    for (const [fantasyplayerId, points] of Array.from(advancementMap.entries())) {
+      advancementPoints.set(String(fantasyplayerId), points);
+    }
+
+    return { roundPoints, totalPoints, advancementPoints, scoreSource: "team-score-state" } as const;
   }
 
   const pointsSnapshot = await loadPlayerPoints(scope);
@@ -97,7 +119,7 @@ async function buildPointsMaps(scope: ManagerStateScope, roundNumber: number | n
     }
   }
 
-  return { roundPoints, totalPoints, scoreSource: "player-points" } as const;
+  return { roundPoints, totalPoints, advancementPoints, scoreSource: "player-points" } as const;
 }
 
 export async function buildManagerTeamViewPersistent(input: {
@@ -107,7 +129,7 @@ export async function buildManagerTeamViewPersistent(input: {
 }): Promise<ManagerTeamViewModel> {
   const normalizedRound = normalizeRoundNumber(input.roundNumber);
   const [allPlayers, state, pointMaps] = await Promise.all([
-    loadPlayersForScope(input.scope),
+    loadPlayersForScope(input.scope, normalizedRound),
     readTeamViewSnapshotPersistent({
       scope: input.scope,
       managerEmail: input.managerEmail,
@@ -119,11 +141,13 @@ export async function buildManagerTeamViewPersistent(input: {
   const enrichedPlayers: TeamViewPlayer[] = allPlayers.map((player) => {
     const roundPoints = pointMaps.roundPoints.get(String(player.id)) ?? 0;
     const totalPoints = pointMaps.totalPoints.get(String(player.id)) ?? roundPoints;
+    const advancementPoints = pointMaps.advancementPoints.get(String(player.id)) ?? 0;
     return {
       ...player,
       punten: roundPoints,
       roundPoints,
       totalPoints,
+      advancementPoints,
     };
   });
 
