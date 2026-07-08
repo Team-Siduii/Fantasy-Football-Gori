@@ -31,7 +31,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ count: 0, players: [] }, { headers: NO_CACHE_HEADERS });
     }
 
-    const calculatedPlayers = await listCalculatedWkPlayerPoints(roundSequence);
+    let calculatedPlayers: Awaited<ReturnType<typeof listCalculatedWkPlayerPoints>> = [];
+    let syncStatus: string | undefined;
+    try {
+      calculatedPlayers = await listCalculatedWkPlayerPoints(roundSequence);
+    } catch {
+      syncStatus = "unavailable — WK scoring storage read failed";
+    }
 
     let priceOffset = 0;
     try {
@@ -68,6 +74,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       count: playersWithPoints.length,
       players: playersWithPoints,
+      syncStatus,
     }, { headers: NO_CACHE_HEADERS });
   }
 

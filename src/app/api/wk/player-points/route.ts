@@ -8,24 +8,34 @@ const NO_CACHE_HEADERS = {
 };
 
 export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const scope = (url.searchParams.get("scope") ?? "wk") as "eredivisie" | "wk";
+  try {
+    const url = new URL(request.url);
+    const scope = (url.searchParams.get("scope") ?? "wk") as "eredivisie" | "wk";
 
-  const snapshot = await loadPlayerPoints(scope);
+    const snapshot = await loadPlayerPoints(scope);
 
-  if (!snapshot) {
+    if (!snapshot) {
+      return NextResponse.json({
+        roundSequence: null,
+        players: [],
+        syncedAt: null,
+        lastSync: null,
+      }, { headers: NO_CACHE_HEADERS });
+    }
+
+    return NextResponse.json({
+      roundSequence: snapshot.roundSequence,
+      players: snapshot.players,
+      syncedAt: snapshot.syncedAt,
+      lastSync: snapshot.syncedAt,
+    }, { headers: NO_CACHE_HEADERS });
+  } catch {
     return NextResponse.json({
       roundSequence: null,
       players: [],
       syncedAt: null,
       lastSync: null,
+      syncStatus: "unavailable — player points storage read failed",
     }, { headers: NO_CACHE_HEADERS });
   }
-
-  return NextResponse.json({
-    roundSequence: snapshot.roundSequence,
-    players: snapshot.players,
-    syncedAt: snapshot.syncedAt,
-    lastSync: snapshot.syncedAt,
-  }, { headers: NO_CACHE_HEADERS });
 }

@@ -36,8 +36,15 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("[wk/matches] Error:", error);
     return NextResponse.json(
-      { error: "Failed to read WK matches", count: 0, matches: [] },
-      { status: 500, headers: NO_CACHE_HEADERS },
+      {
+        error: "Failed to read WK matches",
+        count: 0,
+        matches: [],
+        source: "db",
+        syncStatus: "unavailable — database read failed",
+        lastSyncedAt: null,
+      },
+      { headers: NO_CACHE_HEADERS },
     );
   }
 }

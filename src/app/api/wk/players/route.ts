@@ -42,8 +42,18 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("[wk/players] Error:", error);
     return NextResponse.json(
-      { error: "Failed to read WK players from database", count: 0, players: [] },
-      { status: 500, headers: NO_CACHE_HEADERS },
+      {
+        error: "Failed to read WK players from database",
+        count: 0,
+        players: [],
+        teams: [],
+        positions: [],
+        source: "db-events",
+        syncStatus: "unavailable — database read failed",
+        lastSyncRound: await getLatestSyncRound().catch(() => null),
+        lastSyncedAt: null,
+      },
+      { headers: NO_CACHE_HEADERS },
     );
   }
 }
