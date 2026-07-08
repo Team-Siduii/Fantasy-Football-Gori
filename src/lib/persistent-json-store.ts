@@ -90,8 +90,12 @@ async function ensureDb() {
   return activePool;
 }
 
+function getReadablePool() {
+  return getPool();
+}
+
 export async function readPersistentJson<T>(input: PersistentStateKeyInput, fallback: T): Promise<T> {
-  const activePool = await ensureDb();
+  const activePool = getReadablePool();
   if (!activePool) {
     return fallback;
   }

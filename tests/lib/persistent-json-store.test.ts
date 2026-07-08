@@ -1,4 +1,13 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const poolQuery = vi.fn();
+
+vi.mock("pg", () => ({
+  Pool: class MockPool {
+    query = poolQuery;
+    end = vi.fn(async () => undefined);
+  },
+}));
 
 async function loadStore() {
   return import("../../src/lib/persistent-json-store");
@@ -10,7 +19,14 @@ describe("persistent JSON store", () => {
   const originalGoriDatabaseUrl = process.env.GORI_DATABASE_URL;
   const originalDisable = process.env.GORI_DISABLE_DATABASE;
 
-  afterEach(() => {
+  beforeEach(async () => {
+    poolQuery.mockReset();
+    vi.resetModules();
+    const store = await loadStore();
+    store.resetPersistentJsonStoreForTests();
+  });
+
+  afterEach(async () => {
     if (originalDatabaseUrl === undefined) delete process.env.DATABASE_URL;
     else process.env.DATABASE_URL = originalDatabaseUrl;
     if (originalPostgresUrl === undefined) delete process.env.POSTGRES_URL;
@@ -19,6 +35,9 @@ describe("persistent JSON store", () => {
     else process.env.GORI_DATABASE_URL = originalGoriDatabaseUrl;
     if (originalDisable === undefined) delete process.env.GORI_DISABLE_DATABASE;
     else process.env.GORI_DISABLE_DATABASE = originalDisable;
+
+    const store = await loadStore();
+    store.resetPersistentJsonStoreForTests();
   });
 
   it("uses a Gori-specific database env var before shared URLs", async () => {
@@ -38,5 +57,23 @@ describe("persistent JSON store", () => {
     expect(store.buildPersistentStateKey({ store: "manager-state", scope: "eredivisie", managerKey: "Johan@Example.com" })).toBe(
       "gori_fantasy:manager-state:eredivisie:johan@example.com",
     );
+  });
+
+  it("reads persisted JSON without attempting schema bootstrap DDL on the read path", async () => {
+    process.env.GORI_DATABASE_URL = "postgres://gori:test@example.com/gori";
+    poolQuery.mockResolvedValueOnce({
+      rows: [{ payload: { ok: true } }],
+    });
+
+    const store = await loadStore();
+    const result = await store.readPersistentJson(
+      { store: "player-points", scope: "wk" },
+      { ok: false },
+    );
+
+    expect(result).toEqual({ ok: true });
+    expect(poolQuery).toHaveBeenCalledTimes(1);
+    expect(poolQuery.mock.calls[0]?.[0]).toContain("SELECT payload FROM gori_fantasy_state");
+    expect(poolQuery.mock.calls[0]?.[0]).not.toContain("CREATE TABLE");
   });
 });

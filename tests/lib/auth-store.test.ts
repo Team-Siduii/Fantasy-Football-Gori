@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const TEST_PATH = "/tmp/ffg-auth-test.json";
 
@@ -11,6 +11,9 @@ async function loadStore() {
 
 afterEach(() => {
   delete process.env.AUTH_STATE_PATH;
+  delete process.env.GORI_DATABASE_URL;
+  vi.doUnmock("../../src/lib/persistent-json-store");
+  vi.resetModules();
 });
 
 describe("auth-store security", () => {
@@ -75,6 +78,25 @@ describe("auth-store security", () => {
     } else {
       process.env.VERCEL = previousVercel;
     }
+  });
+
+  it("keeps login auth available when the database read path throws", async () => {
+    vi.resetModules();
+    process.env.AUTH_STATE_PATH = TEST_PATH;
+    process.env.GORI_DATABASE_URL = "postgres://gori:test@example.com/gori";
+    vi.doMock("../../src/lib/persistent-json-store", () => ({
+      isGoriDatabaseEnabled: () => true,
+      readPersistentJson: vi.fn(async () => {
+        throw new Error("database read failed");
+      }),
+      writePersistentJson: vi.fn(async (_input, payload) => payload),
+    }));
+
+    const store = await import("../../src/lib/auth-store");
+    store.resetAuthStateForTests();
+
+    await expect(store.ensureAuthStateFromDb()).resolves.toBeUndefined();
+    expect(store.authenticateManager("admin@gori.local", "admin1234")).toBe(true);
   });
 
   it("resets password via token and invalidates used token", async () => {
