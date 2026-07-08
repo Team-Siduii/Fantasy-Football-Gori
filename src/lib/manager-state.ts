@@ -342,40 +342,51 @@ export function readManagerState(scope: ManagerStateScope = "eredivisie", manage
       managerStates?: unknown;
     };
 
-    const state: ManagerState = {
-      ...DEFAULT_STATE,
-      formation: typeof parsed.formation === "string" ? parsed.formation : DEFAULT_STATE.formation,
-      lineupIds: Array.isArray(parsed.lineupIds) ? parsed.lineupIds.filter((id): id is string => typeof id === "string") : [],
-      benchIds: Array.isArray(parsed.benchIds) ? parsed.benchIds.filter((id): id is string => typeof id === "string") : [],
-      pickedTransferId: typeof parsed.pickedTransferId === "string" ? parsed.pickedTransferId : null,
-      pendingSellId: typeof parsed.pendingSellId === "string" ? parsed.pendingSellId : null,
-      pendingBuyId:
-        typeof parsed.pendingBuyId === "string"
-          ? parsed.pendingBuyId
-          : typeof parsed.pickedTransferId === "string"
-            ? parsed.pickedTransferId
-            : null,
-      roundStates: normalizeRoundStates(parsed.roundStates),
-      managerStates: normalizeManagerStates(parsed.managerStates, scope),
-      roundLocks: normalizeRoundLocks(parsed.roundLocks),
-      adminActionLog: normalizeAdminActionLog(parsed.adminActionLog),
-    };
-
-    const personal = resolvePersonalState(state, scope, managerKey);
-
-    return {
-      ...state,
-      formation: personal.formation,
-      lineupIds: personal.lineupIds,
-      benchIds: personal.benchIds,
-      pickedTransferId: personal.pickedTransferId,
-      pendingSellId: personal.pendingSellId,
-      pendingBuyId: personal.pendingBuyId,
-      roundStates: personal.roundStates,
-    };
+    return normalizeManagerStatePayload(parsed, scope, managerKey);
   } catch {
     return { ...DEFAULT_STATE };
   }
+}
+
+function normalizeManagerStatePayload(
+  parsed: Partial<ManagerState> & {
+    roundStates?: unknown;
+    managerStates?: unknown;
+  },
+  scope: ManagerStateScope = "eredivisie",
+  managerKey?: string | null,
+): ManagerState {
+  const state: ManagerState = {
+    ...DEFAULT_STATE,
+    formation: typeof parsed.formation === "string" ? parsed.formation : DEFAULT_STATE.formation,
+    lineupIds: Array.isArray(parsed.lineupIds) ? parsed.lineupIds.filter((id): id is string => typeof id === "string") : [],
+    benchIds: Array.isArray(parsed.benchIds) ? parsed.benchIds.filter((id): id is string => typeof id === "string") : [],
+    pickedTransferId: typeof parsed.pickedTransferId === "string" ? parsed.pickedTransferId : null,
+    pendingSellId: typeof parsed.pendingSellId === "string" ? parsed.pendingSellId : null,
+    pendingBuyId:
+      typeof parsed.pendingBuyId === "string"
+        ? parsed.pendingBuyId
+        : typeof parsed.pickedTransferId === "string"
+          ? parsed.pickedTransferId
+          : null,
+    roundStates: normalizeRoundStates(parsed.roundStates),
+    managerStates: normalizeManagerStates(parsed.managerStates, scope),
+    roundLocks: normalizeRoundLocks(parsed.roundLocks),
+    adminActionLog: normalizeAdminActionLog(parsed.adminActionLog),
+  };
+
+  const personal = resolvePersonalState(state, scope, managerKey);
+
+  return {
+    ...state,
+    formation: personal.formation,
+    lineupIds: personal.lineupIds,
+    benchIds: personal.benchIds,
+    pickedTransferId: personal.pickedTransferId,
+    pendingSellId: personal.pendingSellId,
+    pendingBuyId: personal.pendingBuyId,
+    roundStates: personal.roundStates,
+  };
 }
 
 export function saveManagerState(
@@ -454,13 +465,27 @@ export async function readManagerStatePersistent(
     return fallback;
   }
 
-  // Sync auth-state van DB — anders kan key resolution mislukken
-  // op een cold Vercel lambda met stale file-based auth state.
-  await ensureAuthStateFromDb();
+  try {
+    // Sync auth-state van DB — anders kan key resolution mislukken
+    // op een cold Vercel lambda met stale file-based auth state.
+    await ensureAuthStateFromDb();
 
-  const persisted = await readPersistentJson({ store: "manager-state", scope }, readManagerState(scope));
-  writeManagerStateFile(persisted, scope);
-  return readManagerState(scope, managerKey);
+    const persisted = (await readPersistentJson(
+      { store: "manager-state", scope },
+      readManagerState(scope),
+    )) as Partial<ManagerState> & { roundStates?: unknown; managerStates?: unknown };
+
+    const normalizedCollection = normalizeManagerStatePayload(persisted, scope);
+    try {
+      writeManagerStateFile(normalizedCollection, scope);
+    } catch {
+      // Keep request-time reads fail-soft even if local file sync is temporarily unavailable.
+    }
+
+    return normalizeManagerStatePayload(persisted, scope, managerKey);
+  } catch {
+    return fallback;
+  }
 }
 
 export async function saveManagerStatePersistent(
