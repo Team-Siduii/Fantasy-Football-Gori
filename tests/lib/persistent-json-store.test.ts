@@ -88,6 +88,7 @@ describe("persistent JSON store", () => {
     expect(result).toEqual(payload);
     expect(poolQuery).toHaveBeenCalledTimes(1);
     expect(poolQuery.mock.calls[0]?.[0]).toContain("UPDATE gori_fantasy_state");
+    expect(poolQuery.mock.calls[0]?.[0]).toContain("WHERE state_key = $1::text");
     expect(poolQuery.mock.calls[0]?.[0]).not.toContain("CREATE TABLE");
   });
 
@@ -104,6 +105,7 @@ describe("persistent JSON store", () => {
     expect(poolQuery).toHaveBeenCalledTimes(2);
     expect(poolQuery.mock.calls[0]?.[0]).toContain("UPDATE gori_fantasy_state");
     expect(poolQuery.mock.calls[1]?.[0]).toContain("INSERT INTO gori_fantasy_state");
+    expect(poolQuery.mock.calls[1]?.[0]).toContain("VALUES ($1::text, $2::text, $3::text, $4::text, $5::jsonb, NOW())");
   });
 
   it("bootstraps and retries writes only when the backing table is missing", async () => {

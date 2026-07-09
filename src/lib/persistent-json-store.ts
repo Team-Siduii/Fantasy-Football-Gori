@@ -150,10 +150,10 @@ async function ensureDb() {
 const UPDATE_PERSISTENT_STATE_SQL = `UPDATE gori_fantasy_state
      SET payload = $5::jsonb,
          updated_at = NOW()
-   WHERE state_key = $1`;
+   WHERE state_key = $1::text`;
 
 const INSERT_PERSISTENT_STATE_SQL = `INSERT INTO gori_fantasy_state (state_key, store_name, scope, manager_key, payload, updated_at)
-     VALUES ($1, $2, $3, $4, $5::jsonb, NOW())`;
+     VALUES ($1::text, $2::text, $3::text, $4::text, $5::jsonb, NOW())`;
 
 function shouldAttemptBootstrap(error: unknown) {
   if (!error || typeof error !== "object") {
