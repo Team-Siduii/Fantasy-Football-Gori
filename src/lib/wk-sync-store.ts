@@ -120,6 +120,7 @@ export type WkPlayerEventRow = {
   fantasyplayer_id: number;
   round: number;
   event_code: string;
+  team_name?: string | null;
   points: number;
   minute: number | null;
   synced_at: string;
