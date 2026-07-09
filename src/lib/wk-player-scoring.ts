@@ -86,6 +86,31 @@ function groupEventsByRoundAndPlayer(events: WkPlayerEventRow[]) {
   return grouped;
 }
 
+function buildAdvancingTeamsByRound(input: {
+  events: WkPlayerEventRow[];
+  byPlayerRound: Map<string, WkPlayerPointRow>;
+  latestByPlayerId: Map<number, WkPlayerPointRow>;
+}) {
+  const advancingTeamsByRound = new Map<number, Set<string>>();
+
+  for (const event of input.events) {
+    if ((event.event_code ?? "").trim().toUpperCase() !== "MW") {
+      continue;
+    }
+    const teams = advancingTeamsByRound.get(event.round) ?? new Set<string>();
+    const teamName = event.team_name
+      ?? input.byPlayerRound.get(`${event.fantasyplayer_id}:${event.round}`)?.team_name
+      ?? input.latestByPlayerId.get(event.fantasyplayer_id)?.team_name
+      ?? null;
+    if (teamName) {
+      teams.add(teamName);
+    }
+    advancingTeamsByRound.set(event.round, teams);
+  }
+
+  return advancingTeamsByRound;
+}
+
 export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promise<Map<number, CalculatedWkPlayerPoints>> {
   const effectiveRound = typeof maxRound === "number" && Number.isInteger(maxRound) && maxRound > 0
     ? maxRound
@@ -103,6 +128,11 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
   const relevantEvents = events.filter((event) => event.round <= effectiveRound);
   const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(historyRows);
   const groupedEvents = groupEventsByRoundAndPlayer(relevantEvents);
+  const advancingTeamsByRound = buildAdvancingTeamsByRound({
+    events: relevantEvents,
+    byPlayerRound,
+    latestByPlayerId,
+  });
   const totals = new Map<number, CalculatedWkPlayerPoints>();
 
   for (let round = 1; round <= effectiveRound; round += 1) {
@@ -160,10 +190,9 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
         player.advancementPoints += ADVANCEMENT_BONUS;
         player.totalPoints += ADVANCEMENT_BONUS;
       } else {
-        // Round 4+: only teams with a match win (MW) in this round advance
-        const events = roundEventMap.get(fantasyplayerId) ?? [];
-        const hasMatchWin = events.some((e) => e.eventCode === "MW");
-        if (hasMatchWin) {
+        // Round 4+: any player from a team with a match win (MW) in this round gets the advancement bonus
+        const teamAdvanced = advancingTeamsByRound.get(round)?.has(player.teamName) ?? false;
+        if (teamAdvanced) {
           player.advancementPoints += ADVANCEMENT_BONUS;
           player.totalPoints += ADVANCEMENT_BONUS;
         }
@@ -188,7 +217,13 @@ export async function buildWkPlayerRoundPointsMap(roundNumber?: number): Promise
   ]);
   const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(rows);
   const roundEvents = groupEventsByRoundAndPlayer(events).get(effectiveRound) ?? new Map<number, PlayerPointEvent[]>();
+  const advancingTeamsByRound = buildAdvancingTeamsByRound({
+    events,
+    byPlayerRound,
+    latestByPlayerId,
+  });
   const playerIds = new Set<number>([
+    ...Array.from(latestByPlayerId.keys()),
     ...Array.from(roundEvents.keys()),
     ...rows.filter((row) => row.round === effectiveRound).map((row) => row.fantasyplayer_id),
   ]);
@@ -216,9 +251,9 @@ export async function buildWkPlayerRoundPointsMap(roundNumber?: number): Promise
         // Round 3: all 36 non-eliminated teams advance to knockout
         advancementPoints = ADVANCEMENT_BONUS;
       } else {
-        // Round 4+: only teams that won their match (have an MW event) advance
-        const hasMatchWin = pointEvents.some((e) => e.eventCode === "MW");
-        if (hasMatchWin) {
+        // Round 4+: any player from a team with a match win (MW) in this round gets the advancement bonus
+        const teamAdvanced = advancingTeamsByRound.get(effectiveRound)?.has(row.team_name) ?? false;
+        if (teamAdvanced) {
           advancementPoints = ADVANCEMENT_BONUS;
         }
       }
