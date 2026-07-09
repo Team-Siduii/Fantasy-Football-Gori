@@ -86,10 +86,8 @@ type TransferRoundEntryStatus = {
   sellPlayerId: string | null;
   autoSellPlayerIds: string[];
   buyStatus: "LOCKED" | "PENDING" | "SUBMITTED" | "COMPLETED" | "RETRY_REQUIRED";
-  buyPlayerId: string | null;
-  extraBuyPlayerId: string | null;
-  resolvedTransfer: { soldPlayerId: string; boughtPlayerId: string } | null;
-  extraResolvedTransfer: { soldPlayerId: string; boughtPlayerId: string } | null;
+  buyPlayerIds: string[];
+  resolvedTransfers: Array<{ soldPlayerId: string; boughtPlayerId: string }>;
 };
 
 type TransferRoundResponse = {
@@ -604,8 +602,8 @@ export default function ManagerMyTeamPage() {
   const [error, setError] = useState("");
 
   const [pendingSellId, setPendingSellId] = useState<string | null>(null);
-  const [pendingBuyId, setPendingBuyId] = useState<string | null>(null);
-  const [extraBuySelection, setExtraBuySelection] = useState<string | null>(null);
+  const [sellQueueIds, setSellQueueIds] = useState<string[]>([]);
+  const [buyQueueIds, setBuyQueueIds] = useState<string[]>([]);
   const [transferMessage, setTransferMessage] = useState("");
   const [allTeamPlayerIds, setAllTeamPlayerIds] = useState<Set<string>>(new Set());
   const transfersLocked = useMemo(
@@ -728,7 +726,8 @@ export default function ManagerMyTeamPage() {
         }
         setState(nextState);
         setPendingSellId(savedPendingSellId);
-        setPendingBuyId(managerData.state?.pendingBuyId ?? managerData.state?.pickedTransferId ?? null);
+        setSellQueueIds(savedPendingSellId ? [savedPendingSellId] : []);
+        setBuyQueueIds([]);
 
         const maxAvailable = Math.max(0, ...nextPlayers.map((player) => player.prijs));
         setMaxPrice(maxAvailable);
@@ -922,8 +921,8 @@ export default function ManagerMyTeamPage() {
           setPendingTransferManagers(transferData.pendingManagers);
           setBlockedTransferPlayerIds(transferData.blockedPlayerIds ?? []);
           setPendingSellId(transferData.currentEntry?.sellPlayerId ?? null);
-          setPendingBuyId(transferData.currentEntry?.buyPlayerId ?? null);
-          setExtraBuySelection(transferData.currentEntry?.extraBuyPlayerId ?? null);
+          setSellQueueIds(transferData.currentEntry?.sellPlayerId ? [transferData.currentEntry.sellPlayerId] : []);
+          setBuyQueueIds([]);
           // Sync sellSelection met de opgeslagen keuze
           if (transferData.currentEntry?.sellPlayerId) {
             setSellSelection(transferData.currentEntry.sellPlayerId);
@@ -936,7 +935,8 @@ export default function ManagerMyTeamPage() {
           setPendingTransferManagers([]);
           setBlockedTransferPlayerIds([]);
           setPendingSellId(managerData.state?.pendingSellId ?? null);
-          setPendingBuyId(managerData.state?.pendingBuyId ?? managerData.state?.pickedTransferId ?? null);
+          setSellQueueIds(managerData.state?.pendingSellId ? [managerData.state.pendingSellId] : []);
+          setBuyQueueIds([]);
         }
       } catch {
         // no-op
@@ -984,8 +984,8 @@ export default function ManagerMyTeamPage() {
         lineupIds,
         benchIds,
         pendingSellId,
-        pendingBuyId,
-        pickedTransferId: pendingBuyId,
+        pendingBuyId: null,
+        pickedTransferId: null,
         roundNumber: persistRound,
         propagateToFutureRounds: true,
       }),
@@ -995,7 +995,7 @@ export default function ManagerMyTeamPage() {
     });
 
     return () => controller.abort();
-  }, [formation, isWkMode, pendingBuyId, pendingSellId, state]);
+  }, [formation, isWkMode, pendingSellId, state]);
 
   const pitchRows = useMemo(() => {
     return buildPitchRows(formation, state.lineup);
@@ -1155,11 +1155,25 @@ export default function ManagerMyTeamPage() {
     pendingTransferManagers.length > 0
       ? pendingTransferManagers.map((entry) => entry.teamName || entry.displayName).join(", ")
       : "niemand";
+  const finalizedSellIds = useMemo(
+    () => [
+      ...(currentTransferEntry?.sellPlayerId ? [currentTransferEntry.sellPlayerId] : []),
+      ...(currentTransferEntry?.autoSellPlayerIds ?? []),
+    ],
+    [currentTransferEntry],
+  );
+  const resolvedBuyIds = useMemo(
+    () => currentTransferEntry?.resolvedTransfers.map((transfer) => transfer.boughtPlayerId) ?? [],
+    [currentTransferEntry],
+  );
+  const remainingBuyCapacity = useMemo(
+    () => Math.max(0, finalizedSellIds.length - (currentTransferEntry?.resolvedTransfers.length ?? 0)),
+    [currentTransferEntry, finalizedSellIds],
+  );
 
   async function syncTransferRound(
     action: "submit-sell" | "skip-sell" | "submit-buy",
-    playerId?: string,
-    extraBuyPlayerId?: string,
+    payload?: { playerId?: string; playerIds?: string[] },
   ) {
     if (!selectedRound) {
       setTransferMessage("Geen actieve ronde geselecteerd.");
@@ -1171,26 +1185,27 @@ export default function ManagerMyTeamPage() {
       const response = await fetch(`/api/manager/transfer-round?mode=${isWkMode ? "wk" : "eredivisie"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, roundNumber: selectedRound, playerId, extraBuyPlayerId }),
+        body: JSON.stringify({ action, roundNumber: selectedRound, ...payload }),
       });
-      const payload = (await response.json()) as TransferRoundResponse & { error?: string };
+      const payloadResponse = (await response.json()) as TransferRoundResponse & { error?: string };
       if (!response.ok) {
-        setTransferMessage(payload.error ?? "Transferactie mislukt.");
+        setTransferMessage(payloadResponse.error ?? "Transferactie mislukt.");
         return false;
       }
 
-      setTransferRound(payload.state);
-      setCurrentTransferEntry(payload.currentEntry);
-      setPendingTransferManagers(payload.pendingManagers);
-      setBlockedTransferPlayerIds(payload.blockedPlayerIds ?? []);
-      setPendingSellId(payload.currentEntry?.sellPlayerId ?? null);
-      setPendingBuyId(payload.currentEntry?.buyPlayerId ?? null);
-      setExtraBuySelection(payload.currentEntry?.extraBuyPlayerId ?? null);
-      // Sync sellSelection met de opgeslagen keuze
-      if (payload.currentEntry?.sellPlayerId) {
-        setSellSelection(payload.currentEntry.sellPlayerId);
-      } else if (payload.currentEntry?.sellStatus === "SKIPPED") {
+      setTransferRound(payloadResponse.state);
+      setCurrentTransferEntry(payloadResponse.currentEntry);
+      setPendingTransferManagers(payloadResponse.pendingManagers);
+      setBlockedTransferPlayerIds(payloadResponse.blockedPlayerIds ?? []);
+      setPendingSellId(payloadResponse.currentEntry?.sellPlayerId ?? null);
+      setSellQueueIds(payloadResponse.currentEntry?.sellPlayerId ? [payloadResponse.currentEntry.sellPlayerId] : []);
+      setBuyQueueIds([]);
+      if (payloadResponse.currentEntry?.sellPlayerId) {
+        setSellSelection(payloadResponse.currentEntry.sellPlayerId);
+      } else if (payloadResponse.currentEntry?.sellStatus === "SKIPPED") {
         setSellSelection("skip");
+      } else {
+        setSellSelection("");
       }
 
       const managerStateResponse = await fetch(
@@ -1478,6 +1493,56 @@ export default function ManagerMyTeamPage() {
     setPendingSwap({ zone, index, playerId: clickedPlayer.id });
   }
 
+  function handleAddSellToQueue() {
+    if (!ownTransferCanSell) {
+      setTransferMessage("Je kunt nu geen verkopen aanpassen.");
+      return;
+    }
+    if (!sellSelection || sellSelection === "skip") {
+      setSellQueueIds([]);
+      setPendingSellId(null);
+      setTransferMessage("Je kunt nu verkoop afronden zonder handmatige verkoop.");
+      return;
+    }
+    const player = squadPlayers.find((candidate) => candidate.id === sellSelection);
+    if (!player) {
+      setTransferMessage("Kies eerst een geldige speler om te verkopen.");
+      return;
+    }
+    setSellQueueIds([player.id]);
+    setPendingSellId(player.id);
+    setTransferMessage(`${player.naam} staat klaar om verkocht te worden. Klik op 'Verkoop afronden' om te bevestigen.`);
+  }
+
+  function handleUndoSell(playerId: string) {
+    setSellQueueIds((prev) => prev.filter((id) => id !== playerId));
+    if (pendingSellId === playerId) {
+      setPendingSellId(null);
+    }
+    setTransferMessage("Verkoopkeuze teruggedraaid.");
+  }
+
+  function handleFinalizeSell() {
+    if (sellQueueIds.length === 0) {
+      void syncTransferRound("skip-sell").then((ok) => {
+        if (!ok) return;
+        setTransferMessage(
+          finalizedSellIds.length > 0
+            ? "Verkoopfase afgerond. Je automatische verkopen blijven staan; na alle managers opent de koopfase."
+            : "Verkoopfase afgerond zonder handmatige verkoop.",
+        );
+      });
+      return;
+    }
+
+    const playerId = sellQueueIds[0];
+    const player = squadPlayers.find((candidate) => candidate.id === playerId);
+    void syncTransferRound("submit-sell", { playerId }).then((ok) => {
+      if (!ok) return;
+      setTransferMessage(`Verkoop van ${player?.naam ?? "de speler"} afgerond. Zodra iedereen klaar is opent de koopfase.`);
+    });
+  }
+
   function handlePickIncoming(player: EnhancedPlayer) {
     if (!ownTransferCanBuy) {
       setTransferMessage("Je kunt nu nog geen speler kopen.");
@@ -1490,53 +1555,41 @@ export default function ManagerMyTeamPage() {
     }
 
     const alreadyInSquad = squadPlayers.some((squadPlayer) => squadPlayer.id === player.id);
-    if (alreadyInSquad) {
-      setTransferMessage("Deze speler zit al in je team.");
+    if (alreadyInSquad || resolvedBuyIds.includes(player.id)) {
+      setTransferMessage("Deze speler zit al in je team of is al definitief aan je toegekend.");
       return;
     }
 
-    const canExtraBuy = (currentTransferEntry?.autoSellPlayerIds?.length ?? 0) > 0 || (currentTransferEntry?.sellPlayerId ? true : false);
-
-    // Als extra slot beschikbaar en primary al gevuld → vul extra
-    if (canExtraBuy && pendingBuyId && player.id !== pendingBuyId) {
-      if (extraBuySelection === player.id) {
-        setExtraBuySelection(null);
-        setTransferMessage("");
-      } else {
-        setExtraBuySelection(player.id);
-        setTransferMessage("Klik 'Bevestig aankopen' om beide spelers te kopen.");
+    setBuyQueueIds((prev) => {
+      if (prev.includes(player.id)) {
+        setTransferMessage("Aankoop teruggedraaid.");
+        return prev.filter((id) => id !== player.id);
       }
-      return;
-    }
-
-    // Vul primary slot (of toggle)
-    if (pendingBuyId === player.id) {
-      setPendingBuyId(null);
-      setTransferMessage("");
-    } else {
-      setPendingBuyId(player.id);
-      if (canExtraBuy) {
-        setTransferMessage("Kies nu je tweede speler, of klik 'Bevestig aankopen'.");
+      if (prev.length >= remainingBuyCapacity) {
+        setTransferMessage(`Je kunt maximaal ${remainingBuyCapacity} speler${remainingBuyCapacity === 1 ? "" : "s"} kiezen in deze koopronde.`);
+        return prev;
       }
-    }
+      setTransferMessage(`${player.naam} staat klaar als aankoop. Je kunt hem hieronder nog terugdraaien.`);
+      return [...prev, player.id];
+    });
+  }
+
+  function handleUndoBuy(playerId: string) {
+    setBuyQueueIds((prev) => prev.filter((id) => id !== playerId));
+    setTransferMessage("Aankoop teruggedraaid.");
   }
 
   function handleConfirmBuys() {
-    if (!pendingBuyId) {
-      setTransferMessage("Kies minstens één speler om te kopen.");
-      return;
-    }
-    void syncTransferRound("submit-buy", pendingBuyId, extraBuySelection ?? undefined).then((ok) => {
+    void syncTransferRound("submit-buy", { playerIds: buyQueueIds }).then((ok) => {
       if (!ok) return;
-      setPendingBuyId(null);
-      setExtraBuySelection(null);
+      setBuyQueueIds([]);
 
       if (transferPhase === "AWAITING_RETRY") {
-        setTransferMessage("Nieuwe koopkeuze opgeslagen. Zodra alle verliezende managers opnieuw gekozen hebben, wordt opnieuw beslist.");
+        setTransferMessage("Nieuwe koopkeuze opgeslagen. Alleen managers die een dubbele claim verloren hebben moeten nu nog afronden.");
         return;
       }
 
-      setTransferMessage("Koopkeuze opgeslagen. Zodra iedereen klaar is, wordt de transferfase automatisch afgehandeld.");
+      setTransferMessage("Aankoopfase afgerond. Zodra iedereen klaar is worden dubbele claims automatisch opgelost.");
     });
   }
 
@@ -1696,8 +1749,8 @@ export default function ManagerMyTeamPage() {
             {currentTransferEntry?.buyStatus === "RETRY_REQUIRED" ? (
               <p className="error-text">Een andere lager geklasseerde manager heeft dezelfde speler gekozen. Kies een andere speler.</p>
             ) : null}
-            {currentTransferEntry?.resolvedTransfer ? (
-              <p className="success-text">Jouw transfer is verwerkt voor deze ronde.</p>
+            {currentTransferEntry?.resolvedTransfers && currentTransferEntry.resolvedTransfers.length > 0 ? (
+              <p className="success-text">Jouw afgeronde transfers zijn verwerkt voor deze ronde.</p>
             ) : null}
             {currentTransferEntry && currentTransferEntry.autoSellPlayerIds.length > 0 ? (
               <p className="muted-note" style={{ color: "var(--brand)" }}>
@@ -1723,7 +1776,7 @@ export default function ManagerMyTeamPage() {
                 data-testid="sell-player-select"
                 disabled={!ownTransferCanSell || transferBusy || transfersLocked}
               >
-                <option value="skip">Niemand verkopen</option>
+                <option value="skip">Niemand handmatig verkopen</option>
                 {squadPlayers.map((player) => (
                   <option key={player.id} value={player.id}>
                     {withCountryFlag(player.club, player.naam)} ({player.positie}) - {player.club}
@@ -1732,56 +1785,44 @@ export default function ManagerMyTeamPage() {
               </select>
               {ownTransferCanSell ? (
                 <>
-                  <small className="transfer-hint">Je mag 1 speler verkopen of expliciet kiezen voor geen transfer.</small>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const playerId = sellSelection;
-                      // Ongedaan maken: zelfde speler als al verkocht → skip
-                      if (currentTransferEntry?.sellStatus === "SUBMITTED" && playerId === currentTransferEntry.sellPlayerId) {
-                        void syncTransferRound("skip-sell").then((ok) => {
-                          if (ok) setTransferMessage("Verkoop ongedaan gemaakt.");
-                        });
-                        return;
-                      }
-                      if (playerId === "skip" || !playerId) {
-                        void syncTransferRound("skip-sell").then((ok) => {
-                          if (ok) setTransferMessage("Je hebt gekozen om niemand te verkopen deze ronde.");
-                        });
-                      } else {
-                        const player = squadPlayers.find((p) => p.id === playerId);
-                        if (!player) return;
-                        void syncTransferRound("submit-sell", playerId).then((ok) => {
-                          if (ok) setTransferMessage(`Je hebt ${player.naam} verkocht. We wachten tot alle managers fase 1 hebben afgerond.`);
-                        });
-                      }
-                    }}
-                    disabled={transferBusy || (!sellSelection && currentTransferEntry?.sellStatus !== "SUBMITTED" && currentTransferEntry?.sellStatus !== "SKIPPED")}
-                    style={{ marginTop: 8 }}
-                  >
-                    {(() => {
-                      // Al verkocht → toon ongedaan maken of wijzigen
-                      if (currentTransferEntry?.sellStatus === "SUBMITTED" && currentTransferEntry.sellPlayerId) {
-                        const currentPlayer = squadPlayers.find((p) => p.id === currentTransferEntry.sellPlayerId);
-                        const currentName = currentPlayer ? currentPlayer.naam : "Speler";
-                        if (sellSelection === currentTransferEntry.sellPlayerId) {
-                          return `Verkoop ongedaan maken`;
-                        }
-                        const newPlayer = squadPlayers.find((p) => p.id === sellSelection);
-                        return newPlayer ? `${newPlayer.naam} verkopen` : "Niemand verkopen";
-                      }
-                      // Al geskipt
-                      if (currentTransferEntry?.sellStatus === "SKIPPED") {
-                        if (sellSelection === "skip" || !sellSelection) return "Niemand verkopen ✓";
-                        const player = squadPlayers.find((p) => p.id === sellSelection);
-                        return player ? `${player.naam} verkopen` : "Niemand verkopen";
-                      }
-                      // Geen keuze gemaakt
-                      if (sellSelection === "skip" || !sellSelection) return "Niemand verkopen";
-                      const player = squadPlayers.find((p) => p.id === sellSelection);
-                      return `${player ? player.naam : ""} verkopen`;
-                    })()}
-                  </button>
+                  <small className="transfer-hint">Kies maximaal 1 handmatige verkoop. Automatische verkopen door uitschakeling tellen apart mee.</small>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                    <button
+                      type="button"
+                      onClick={handleAddSellToQueue}
+                      disabled={transferBusy || transfersLocked || !sellSelection}
+                    >
+                      Verkopen toevoegen
+                    </button>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {currentTransferEntry?.autoSellPlayerIds.length ? (
+                        <small className="transfer-hint" style={{ color: "var(--brand)" }}>
+                          Auto-verkocht: {currentTransferEntry.autoSellPlayerIds.map((id) => squadPlayers.find((p) => p.id === id)?.naam ?? `#${id}`).join(", ")}
+                        </small>
+                      ) : null}
+                      {sellQueueIds.length > 0 ? (
+                        sellQueueIds.map((playerId) => {
+                          const playerName = squadPlayers.find((p) => p.id === playerId)?.naam ?? `#${playerId}`;
+                          return (
+                            <span key={playerId} style={{ fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                              <strong>{playerName}</strong>
+                              <button type="button" onClick={() => handleUndoSell(playerId)} disabled={transferBusy}>Undo</button>
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <small className="transfer-hint">Nog geen handmatige verkoop in de wachtrij.</small>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleFinalizeSell}
+                      disabled={transferBusy || transfersLocked}
+                      style={{ fontWeight: 600 }}
+                    >
+                      Verkoop afronden
+                    </button>
+                  </div>
                 </>
               ) : !currentTransferEntry ? (
                 <small className="transfer-hint">
@@ -1789,11 +1830,11 @@ export default function ManagerMyTeamPage() {
                 </small>
               ) : currentTransferEntry.sellStatus === "SKIPPED" ? (
                 <small className="transfer-hint" style={{ color: "var(--brand)" }}>
-                  Je hebt gekozen om niemand te verkopen. Je kunt dit nog wijzigen.
+                  Verkoopfase al afgerond zonder handmatige verkoop.
                 </small>
               ) : currentTransferEntry.sellPlayerId ? (
                 <small className="transfer-hint" style={{ color: "var(--brand)" }}>
-                  Keuze opgeslagen — je kunt nog wijzigen tot de SELL fase sluit.
+                  Verkoopfase afgerond. We wachten op de rest voordat kopen opent.
                 </small>
               ) : null}
             </label>
@@ -1882,25 +1923,30 @@ export default function ManagerMyTeamPage() {
                 Volgende →
               </button>
             </div>
-            {(ownTransferCanBuy && (pendingBuyId || extraBuySelection)) ? (
-              <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 12 }}>
-                {pendingBuyId ? (
-                  <span style={{ fontSize: "0.82rem" }}>
-                    1e koop: <strong>{squadPlayers.find((p) => p.id === pendingBuyId)?.naam ?? allPlayers.find((p) => p.id === pendingBuyId)?.naam ?? `#${pendingBuyId}`}</strong>
-                  </span>
-                ) : null}
-                {extraBuySelection ? (
-                  <span style={{ fontSize: "0.82rem" }}>
-                    2e koop: <strong>{squadPlayers.find((p) => p.id === extraBuySelection)?.naam ?? allPlayers.find((p) => p.id === extraBuySelection)?.naam ?? `#${extraBuySelection}`}</strong>
-                  </span>
-                ) : null}
+            {(ownTransferCanBuy || buyQueueIds.length > 0) ? (
+              <div style={{ marginBottom: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+                {buyQueueIds.length > 0 ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {buyQueueIds.map((playerId) => {
+                      const playerName = squadPlayers.find((p) => p.id === playerId)?.naam ?? allPlayers.find((p) => p.id === playerId)?.naam ?? `#${playerId}`;
+                      return (
+                        <span key={playerId} style={{ fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <strong>{playerName}</strong>
+                          <button type="button" onClick={() => handleUndoBuy(playerId)} disabled={transferBusy}>Undo</button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <small className="transfer-hint">Je mag minder spelers terugkopen dan je verkoopt. Rond ook met 0 aankopen af als je dat wilt.</small>
+                )}
                 <button
                   type="button"
                   onClick={handleConfirmBuys}
-                  disabled={transferBusy || !pendingBuyId}
-                  style={{ padding: "4px 12px", fontWeight: 600 }}
+                  disabled={transferBusy || transfersLocked || !ownTransferCanBuy}
+                  style={{ padding: "4px 12px", fontWeight: 600, alignSelf: "flex-start" }}
                 >
-                  Bevestig aankopen
+                  Aankoop afronden
                 </button>
               </div>
             ) : null}
@@ -1981,7 +2027,7 @@ export default function ManagerMyTeamPage() {
                         disabled={!ownTransferCanBuy || transferBusy || transfersLocked || item.owned || item.inactive}
                         data-testid={`transfer-pick-${index}`}
                       >
-                        {item.inactive ? "Uitgeschakeld" : pendingBuyId === item.id ? "Geselecteerd" : "Koop"}
+                        {item.inactive ? "Uitgeschakeld" : buyQueueIds.includes(item.id) ? "Geselecteerd" : "Kies"}
                       </button>
                     </td>
                   </tr>

@@ -53,8 +53,8 @@ describe("transfer-round", () => {
     state = submitSellChoice(state, "beta", "sold-2");
     state = skipSellChoice(state, "gamma");
 
-    state = submitBuyChoice(state, "alpha", "target-1");
-    state = submitBuyChoice(state, "beta", "target-1");
+    state = submitBuyChoice(state, "alpha", ["target-1"]);
+    state = submitBuyChoice(state, "beta", ["target-1"]);
     expect(allRequiredBuyChoicesSubmitted(state)).toBe(true);
 
     state = resolveSubmittedBuys(state);
@@ -63,8 +63,9 @@ describe("transfer-round", () => {
     const beta = state.entries.find((entry) => entry.managerId === "beta");
 
     expect(beta?.buyStatus).toBe("COMPLETED");
-    expect(beta?.resolvedTransfer).toEqual({ soldPlayerId: "sold-2", boughtPlayerId: "target-1" });
+    expect(beta?.resolvedTransfers).toEqual([{ soldPlayerId: "sold-2", boughtPlayerId: "target-1" }]);
     expect(alpha?.buyStatus).toBe("RETRY_REQUIRED");
+    expect(alpha?.resolvedTransfers).toEqual([]);
     expect(state.phase).toBe("AWAITING_RETRY");
     expect(state.conflicts[0]).toMatchObject({ winnerManagerId: "beta", loserManagerIds: ["alpha"] });
   });
@@ -74,17 +75,48 @@ describe("transfer-round", () => {
     state = submitSellChoice(state, "alpha", "sold-1");
     state = submitSellChoice(state, "beta", "sold-2");
     state = skipSellChoice(state, "gamma");
-    state = submitBuyChoice(state, "alpha", "target-1");
-    state = submitBuyChoice(state, "beta", "target-1");
+    state = submitBuyChoice(state, "alpha", ["target-1"]);
+    state = submitBuyChoice(state, "beta", ["target-1"]);
     state = resolveSubmittedBuys(state);
 
-    state = submitBuyChoice(state, "alpha", "target-2");
+    state = submitBuyChoice(state, "alpha", ["target-2"]);
     state = resolveSubmittedBuys(state);
 
     expect(state.phase).toBe("COMPLETED");
-    expect(state.entries.find((entry) => entry.managerId === "alpha")?.resolvedTransfer).toEqual({
-      soldPlayerId: "sold-1",
-      boughtPlayerId: "target-2",
-    });
+    expect(state.entries.find((entry) => entry.managerId === "alpha")?.resolvedTransfers).toEqual([
+      {
+        soldPlayerId: "sold-1",
+        boughtPlayerId: "target-2",
+      },
+    ]);
+  });
+
+  it("keeps winning buys and retries only the lost duplicate slot", () => {
+    let state = createTransferRoundState(1, participants);
+    state = {
+      ...state,
+      entries: state.entries.map((entry) =>
+        entry.managerId === "alpha"
+          ? { ...entry, autoSellPlayerIds: ["sold-auto-1"] }
+          : entry,
+      ),
+    };
+    state = submitSellChoice(state, "alpha", "sold-manual-1");
+    state = submitSellChoice(state, "beta", "sold-2");
+    state = skipSellChoice(state, "gamma");
+
+    state = submitBuyChoice(state, "alpha", ["target-shared", "target-safe"]);
+    state = submitBuyChoice(state, "beta", ["target-shared"]);
+    state = resolveSubmittedBuys(state);
+
+    const alphaAfterConflict = state.entries.find((entry) => entry.managerId === "alpha");
+    const betaAfterConflict = state.entries.find((entry) => entry.managerId === "beta");
+
+    expect(alphaAfterConflict?.buyStatus).toBe("RETRY_REQUIRED");
+    expect(alphaAfterConflict?.resolvedTransfers).toEqual([
+      { soldPlayerId: "sold-manual-1", boughtPlayerId: "target-safe" },
+    ]);
+    expect(betaAfterConflict?.buyStatus).toBe("COMPLETED");
+    expect(betaAfterConflict?.resolvedTransfers).toEqual([{ soldPlayerId: "sold-2", boughtPlayerId: "target-shared" }]);
   });
 });

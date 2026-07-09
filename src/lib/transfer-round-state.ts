@@ -62,16 +62,34 @@ function normalizeRoundState(raw: Partial<TransferRoundState>, roundNumber: numb
         entry?.buyStatus === "PENDING" || entry?.buyStatus === "SUBMITTED" || entry?.buyStatus === "COMPLETED" || entry?.buyStatus === "RETRY_REQUIRED"
           ? entry.buyStatus
           : "LOCKED",
-      buyPlayerId: typeof entry?.buyPlayerId === "string" ? entry.buyPlayerId : null,
-      extraBuyPlayerId: typeof entry?.extraBuyPlayerId === "string" ? entry.extraBuyPlayerId : null,
-      resolvedTransfer:
-        entry?.resolvedTransfer && typeof entry.resolvedTransfer.soldPlayerId === "string" && typeof entry.resolvedTransfer.boughtPlayerId === "string"
-          ? { soldPlayerId: entry.resolvedTransfer.soldPlayerId, boughtPlayerId: entry.resolvedTransfer.boughtPlayerId }
-          : null,
-      extraResolvedTransfer:
-        entry?.extraResolvedTransfer && typeof entry.extraResolvedTransfer.soldPlayerId === "string" && typeof entry.extraResolvedTransfer.boughtPlayerId === "string"
-          ? { soldPlayerId: entry.extraResolvedTransfer.soldPlayerId, boughtPlayerId: entry.extraResolvedTransfer.boughtPlayerId }
-          : null,
+      buyPlayerIds: Array.isArray(entry?.buyPlayerIds)
+        ? entry.buyPlayerIds.filter((id): id is string => typeof id === "string")
+        : [
+            (entry as { buyPlayerId?: unknown })?.buyPlayerId,
+            (entry as { extraBuyPlayerId?: unknown })?.extraBuyPlayerId,
+          ].filter((id): id is string => typeof id === "string" && id.length > 0),
+      resolvedTransfers: Array.isArray(entry?.resolvedTransfers)
+        ? entry.resolvedTransfers
+            .filter(
+              (transfer): transfer is { soldPlayerId: string; boughtPlayerId: string } =>
+                typeof transfer?.soldPlayerId === "string" && typeof transfer?.boughtPlayerId === "string",
+            )
+            .map((transfer) => ({ soldPlayerId: transfer.soldPlayerId, boughtPlayerId: transfer.boughtPlayerId }))
+        : [
+            (entry as { resolvedTransfer?: unknown })?.resolvedTransfer,
+            (entry as { extraResolvedTransfer?: unknown })?.extraResolvedTransfer,
+          ]
+            .filter(
+              (transfer): transfer is { soldPlayerId: string; boughtPlayerId: string } =>
+                typeof transfer === "object" &&
+                transfer !== null &&
+                typeof (transfer as { soldPlayerId?: unknown }).soldPlayerId === "string" &&
+                typeof (transfer as { boughtPlayerId?: unknown }).boughtPlayerId === "string",
+            )
+            .map((transfer) => ({
+              soldPlayerId: transfer.soldPlayerId,
+              boughtPlayerId: transfer.boughtPlayerId,
+            })),
       updatedAt: typeof entry?.updatedAt === "string" ? entry.updatedAt : null,
     })),
   };

@@ -114,19 +114,27 @@ Per rol belangrijkste rechten:
 
 ### 4.5 Transfers (kern van MVP)
 - Er is een vrije pool met beschikbare spelers
-- Transfers voor poulewedstrijden verlopen in 4 fases per ronde:
-  - Fase 1: elke manager kiest exact 1 speler om te verkopen of kiest expliciet voor `niemand verkopen`
-  - Fase 2: alleen managers die verkocht hebben kiezen 1 vervanger uit de vrije pool
-  - Fase 3: wanneer alle koopkeuzes binnen zijn controleert de app op dubbele claims op dezelfde speler
-  - Fase 4: unieke claims en winnende dubbele claims worden uitgevoerd; verliezende managers moeten vóór de volgende ronde opnieuw een speler kiezen
+- Transfers voor poulewedstrijden verlopen in 4 expliciete fases per ronde:
+  - Fase 1 · verkopen verzamelen: elke manager kiest eerst maximaal 1 handmatige verkoop via dropdown + knop `Verkopen toevoegen`; die keuze verschijnt in een verzamelblok `spelers te verkopen` en kan daar met `Undo` worden teruggedraaid zolang de manager nog niet op `Verkoop afronden` heeft gedrukt
+  - Fase 1a · automatische verkopen: spelers die voor de volgende ronde niet meer actief/beschikbaar zijn (bijv. uitgeschakeld WK-land) worden automatisch aan dezelfde verkooplijst toegevoegd; deze auto-sells tellen niet mee als handmatige transfer, maar moeten wel zichtbaar zijn in de lijst voordat de manager fase 1 afrondt
+  - Fase 2 · kopen verzamelen: pas nadat alle managers fase 1 hebben afgerond opent de koopfase; managers voegen één of meerdere spelers toe aan een verzamelblok `spelers te kopen`, kunnen ook daar `Undo` gebruiken en ronden daarna expliciet af met `Aankoop afronden`
+  - Fase 3 · conflictcontrole: zodra alle managers met open kooprechten hun aankoopfase hebben afgerond controleert de app op dubbele claims op dezelfde vrije speler
+  - Fase 4 · uitkomst/retry: unieke claims en winnende dubbele claims worden direct verwerkt; alleen managers die een dubbele claim verloren hebben gaan naar retry en hoeven alleen voor de verloren koopslot(s) opnieuw te kiezen
+- Aantal verkopen/aankopen per ronde:
+  - Handmatige transferlimiet blijft leidend voor extra verkopen (standaard 1, op bonusrondes 3)
+  - Automatische verkopen door inactiviteit/eliminatie komen daar bovenop en leveren extra koopcapaciteit op
+  - Een manager mag nooit méér spelers kopen dan hij in die ronde heeft verkocht
+  - Een manager mag wél minder spelers kopen dan hij heeft verkocht; de selectie houdt dan bewust open plekken/vacatures over
 - De manager-UI toont per ronde altijd:
   - huidige transferfase
   - welke managers nog op actie wachten
   - welke managers klaar zijn / geen transfer doen
   - of de ingelogde manager opnieuw moet kiezen wegens verloren conflict
+  - de actuele verkooplijst en aankooplijst van de ingelogde manager inclusief undo-acties tot aan afronden van de betreffende fase
 - Simultane transfer op dezelfde vrije speler gebruikt geen first-write-wins meer; prioriteit gaat naar de manager met de lagere positie op de ranglijst
-- Teammutaties worden pas definitief toegepast zodra de transferfase voor die manager is gewonnen/opgelost
+- Bij conflictresolutie blijven niet-botsende winnende aankopen van een manager behouden; alleen de verloren duplicate claim(s) gaan terug naar retry
 - Verkochte spelers komen na fase 1 terug in de vrije pool voor de koopfase van die ronde
+- Teammutaties worden pas definitief toegepast zodra een verkoop is bevestigd en eventuele winnende aankopen/conflicten voor die manager zijn verwerkt; verkochte spelers zonder vervanger laten bewust open slots achter
 - Basisregel blijft: binnen een league kan een speler maar in 1 team zitten
 - Positiebehoud op wissels: spelerwissel tussen basis en bank is alleen toegestaan als de doel-slotpositie gelijk blijft (bijv. MID↔MID, DEF↔DEF)
 - Na draft kan manager vrij transfers doen uit de vrije pool binnen het transferwindow
