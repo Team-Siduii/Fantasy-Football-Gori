@@ -111,4 +111,49 @@ describe("wk-match-schedule", () => {
     expect(merged[0]).toMatchObject({ homeScore: 1, awayScore: 1, status: "X" });
     expect(merged[1]).toMatchObject({ homeScore: 1, awayScore: 1, status: "X" });
   });
+
+  it("replaces knockout placeholder fixtures with synced round matches in round order", () => {
+    const placeholderFixtures: SeasonFixture[] = [
+      {
+        round: 6,
+        home: "Winnaar duel 89",
+        away: "Winnaar duel 90",
+        kickoff: "22:00",
+        kickoffAt: "2026-07-09T22:00:00+02:00",
+      },
+      {
+        round: 6,
+        home: "Winnaar duel 93",
+        away: "Winnaar duel 94",
+        kickoff: "21:00",
+        kickoffAt: "2026-07-10T21:00:00+02:00",
+      },
+    ];
+
+    const syncedMatches: SyncedWkMatchLike[] = [
+      {
+        round: 6,
+        home_team: "Argentinië",
+        away_team: "Zwitserland",
+        home_score: 0,
+        away_score: 0,
+        status: "NS",
+        kickoff_at: "2026-07-09T22:00:00+02:00",
+      },
+      {
+        round: 6,
+        home_team: "Australië",
+        away_team: "Colombia",
+        home_score: 0,
+        away_score: 0,
+        status: "NS",
+        kickoff_at: "2026-07-10T21:00:00+02:00",
+      },
+    ];
+
+    const merged = mergeWorldCupFixturesWithSyncedMatches(placeholderFixtures, syncedMatches);
+
+    expect(merged[0]).toMatchObject({ home: "Argentinië", away: "Zwitserland", status: "NS" });
+    expect(merged[1]).toMatchObject({ home: "Australië", away: "Colombia", status: "NS" });
+  });
 });

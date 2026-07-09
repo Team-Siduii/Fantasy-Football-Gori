@@ -5,11 +5,13 @@ vi.mock("server-only", () => ({}));
 const getLatestSyncRound = vi.fn(async () => 5);
 const getWkPlayerPointHistory = vi.fn(async () => []);
 const getWkPlayerEvents = vi.fn(async () => []);
+const getWkMatches = vi.fn(async () => []);
 
 vi.mock("../../src/lib/wk-sync-store", () => ({
   getLatestSyncRound,
   getWkPlayerPointHistory,
   getWkPlayerEvents,
+  getWkMatches,
 }));
 
 vi.mock("../../src/lib/knockout-phase", () => ({
@@ -56,7 +58,7 @@ describe("wk player scoring", () => {
     expect(points).toBe(6);
   });
 
-  it("keeps awarding round advancement to non-playing players when live MW events lack team_name", async () => {
+  it("keeps awarding round advancement to players whose team advanced without an MW event in that round", async () => {
     getWkPlayerPointHistory.mockResolvedValue([
       {
         fantasyplayer_id: 295,
@@ -123,7 +125,14 @@ describe("wk player scoring", () => {
       { fantasyplayer_id: 240, round: 4, event_code: "MW", points: 3, minute: null },
       { fantasyplayer_id: 240, round: 5, event_code: "MW", points: 3, minute: null },
       { fantasyplayer_id: 456, round: 4, event_code: "MW", points: 3, minute: null },
-      { fantasyplayer_id: 456, round: 5, event_code: "MW", points: 3, minute: null },
+      { fantasyplayer_id: 454, round: 5, event_code: "SSA", points: 4, minute: null },
+      { fantasyplayer_id: 454, round: 5, event_code: "MD", points: 1, minute: null },
+      { fantasyplayer_id: 454, round: 5, event_code: "CS", points: 5, minute: null },
+      { fantasyplayer_id: 457, round: 5, event_code: "MD", points: 1, minute: null },
+    ] as any);
+    getWkMatches.mockResolvedValue([
+      { match_id: 1, round: 6, home_team: 'Noorwegen', away_team: 'Engeland', home_score: 0, away_score: 0, synced_at: '2026-07-09T00:00:00.000Z' },
+      { match_id: 2, round: 6, home_team: 'Argentinië', away_team: 'Zwitserland', home_score: 0, away_score: 0, synced_at: '2026-07-09T00:00:00.000Z' },
     ] as any);
 
     const { wkPlayerScoring } = await loadModules();
@@ -135,11 +144,11 @@ describe("wk player scoring", () => {
     const advancementMap = await wkPlayerScoring.buildWkPlayerAdvancementPointsMap(5);
 
     expect(reece).toMatchObject({ fantasyplayerId: 295, roundPoints: 0, advancementPoints: 15, totalPoints: 15, hasPlayed: false, numPlayed: 2 });
-    expect(kobel).toMatchObject({ fantasyplayerId: 454, roundPoints: 0, advancementPoints: 15, totalPoints: 15, hasPlayed: false, numPlayed: 2 });
-    expect(embolo).toMatchObject({ fantasyplayerId: 457, roundPoints: 0, advancementPoints: 15, totalPoints: 15, hasPlayed: false, numPlayed: 2 });
+    expect(kobel).toMatchObject({ fantasyplayerId: 454, roundPoints: 10, advancementPoints: 15, totalPoints: 25, hasPlayed: false, numPlayed: 2 });
+    expect(embolo).toMatchObject({ fantasyplayerId: 457, roundPoints: 1, advancementPoints: 15, totalPoints: 16, hasPlayed: false, numPlayed: 2 });
     expect(roundPointsMap.get(295)).toBe(5);
-    expect(roundPointsMap.get(454)).toBe(5);
-    expect(roundPointsMap.get(457)).toBe(5);
+    expect(roundPointsMap.get(454)).toBe(15);
+    expect(roundPointsMap.get(457)).toBe(6);
     expect(advancementMap.get(295)).toBe(15);
     expect(advancementMap.get(454)).toBe(15);
     expect(advancementMap.get(457)).toBe(15);

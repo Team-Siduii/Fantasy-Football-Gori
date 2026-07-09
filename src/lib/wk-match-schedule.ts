@@ -40,6 +40,10 @@ function buildFixtureKey(round: number, home: string, away: string): string {
   return `${round}|${normalizeFixtureTeamName(home)}|${normalizeFixtureTeamName(away)}`;
 }
 
+function isKnockoutPlaceholderTeam(teamName: string): boolean {
+  return /^(Winnaar|Verliezer) duel \d+$/i.test(teamName.trim());
+}
+
 export function mergeWorldCupFixturesWithSyncedMatches(
   fixtures: SeasonFixture[],
   matches: SyncedWkMatchLike[],
@@ -52,19 +56,43 @@ export function mergeWorldCupFixturesWithSyncedMatches(
     matches.map((match) => [buildFixtureKey(match.round, match.home_team, match.away_team), match] as const),
   );
 
+  const fallbackMatchesByRound = new Map<number, SyncedWkMatchLike[]>();
+  for (const match of matches) {
+    const current = fallbackMatchesByRound.get(match.round) ?? [];
+    current.push(match);
+    fallbackMatchesByRound.set(match.round, current);
+  }
+
+  const fallbackIndexByRound = new Map<number, number>();
+
   return fixtures.map((fixture) => {
     const match = matchByKey.get(buildFixtureKey(fixture.round, fixture.home, fixture.away));
-    if (!match) {
+    let resolvedMatch = match;
+
+    if (!resolvedMatch && isKnockoutPlaceholderTeam(fixture.home) && isKnockoutPlaceholderTeam(fixture.away)) {
+      const fallbackMatches = fallbackMatchesByRound.get(fixture.round) ?? [];
+      const fallbackIndex = fallbackIndexByRound.get(fixture.round) ?? 0;
+      const candidate = fallbackMatches[fallbackIndex];
+
+      if (candidate) {
+        resolvedMatch = candidate;
+        fallbackIndexByRound.set(fixture.round, fallbackIndex + 1);
+      }
+    }
+
+    if (!resolvedMatch) {
       return fixture;
     }
 
     return {
       ...fixture,
-      kickoffAt: match.kickoff_at ?? fixture.kickoffAt,
-      homeScore: match.home_score ?? fixture.homeScore,
-      awayScore: match.away_score ?? fixture.awayScore,
-      status: match.status || fixture.status,
-      minute: match.minute ?? fixture.minute ?? null,
+      home: resolvedMatch.home_team,
+      away: resolvedMatch.away_team,
+      kickoffAt: resolvedMatch.kickoff_at ?? fixture.kickoffAt,
+      homeScore: resolvedMatch.home_score ?? fixture.homeScore,
+      awayScore: resolvedMatch.away_score ?? fixture.awayScore,
+      status: resolvedMatch.status || fixture.status,
+      minute: resolvedMatch.minute ?? fixture.minute ?? null,
     };
   });
 }

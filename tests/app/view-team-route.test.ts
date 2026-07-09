@@ -15,6 +15,9 @@ const ensureAuthStateFromDb = vi.fn(async () => undefined);
 const getProfileByEmail = vi.fn(() => ({ name: "Simon", teamName: "Simons Team" }));
 const summarizeManagerTeamScoresPersistent = vi.fn(async () => ({ totalPoints: 42, currentRoundPoints: 12 }));
 const getManagerRoundScorePersistent = vi.fn(async () => ({ totalPoints: 42, roundNumber: 1, lineupPoints: 42, benchPoints: 0, lineupIds: ["wk-player-1"], benchIds: ["wk-player-2"], calculatedAt: "", source: "test" }));
+const getWkMatches = vi.fn(async (round?: number) => round === 1
+  ? [{ home_team: "Spelerland 1", away_team: "Anderland" }]
+  : []);
 const buildWkPlayerPointsByCsvId = vi.fn(async () => ({
   roundPoints: new Map([["wk-player-1", 0]]),
   totalPoints: new Map([["wk-player-1", 42]]),
@@ -22,8 +25,8 @@ const buildWkPlayerPointsByCsvId = vi.fn(async () => ({
 }));
 const parsePlayerCsv = vi.fn(() => ({
   players: [
-    { id: "wk-player-1", naam: "Speler 1", positie: "MID", club: "NL", prijs: 10 },
-    { id: "wk-player-2", naam: "Speler 2", positie: "DEF", club: "BE", prijs: 8 },
+    { id: "wk-player-1", naam: "Speler 1", positie: "MID", club: "Spelerland 1", prijs: 10 },
+    { id: "wk-player-2", naam: "Speler 2", positie: "DEF", club: "België", prijs: 8 },
   ],
 }));
 const readFile = vi.fn(async () => "id,naam\n1,test");
@@ -64,6 +67,10 @@ vi.mock("@/lib/player-points-store", () => ({
 vi.mock("@/lib/team-score-state", () => ({
   summarizeManagerTeamScoresPersistent,
   getManagerRoundScorePersistent,
+}));
+
+vi.mock("@/lib/wk-sync-store", () => ({
+  getWkMatches,
 }));
 
 vi.mock("@/lib/wk-player-scoring", () => ({

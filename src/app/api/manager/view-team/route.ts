@@ -10,6 +10,7 @@ import { readTeamViewSnapshotPersistent } from "@/lib/manager-team-state-source"
 import { type ManagerStateScope } from "@/lib/manager-state";
 import { loadPlayerPoints } from "@/lib/player-points-store";
 import { getManagerRoundScorePersistent, summarizeManagerTeamScoresPersistent } from "@/lib/team-score-state";
+import { getWkActiveTeamsForRound, isWkPlayerInactiveForRound } from "../../../../lib/wk-player-availability";
 import { buildWkPlayerPointsByCsvId } from "@/lib/wk-player-scoring";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
@@ -70,6 +71,9 @@ export async function GET(request: Request) {
   const playerAdvancementPointsMap = new Map<string, number>();
   let hasAvailabilitySnapshot = false;
   const activePlayerIds = new Set<string>();
+  const activeTeamsForRound = scope === "wk"
+    ? await getWkActiveTeamsForRound(Number.isInteger(roundNumber) && roundNumber > 0 ? roundNumber : undefined)
+    : null;
   if (scope === "wk") {
     const wkRound = Number.isInteger(roundNumber) && roundNumber > 0 ? roundNumber : undefined;
     const nameMatched = await buildWkPlayerPointsByCsvId(allPlayers, wkRound);
@@ -108,7 +112,12 @@ export async function GET(request: Request) {
     if (!player) return { id: playerId, naam: "Onbekend", positie: "MID", club: "-", prijs: 0, punten: 0 };
     return {
       ...player,
-      inactive: scope === "wk" && hasAvailabilitySnapshot ? !activePlayerIds.has(String(playerId)) : player.inactive,
+      inactive: scope === "wk"
+        ? (
+            isWkPlayerInactiveForRound(player.club, activeTeamsForRound)
+            ?? (hasAvailabilitySnapshot ? !activePlayerIds.has(String(playerId)) : player.inactive)
+          )
+        : player.inactive,
       punten: playerPointsMap.get(String(playerId)) ?? 0,
       totalPoints: playerTotalPointsMap.get(String(playerId)) ?? playerPointsMap.get(String(playerId)) ?? 0,
       roundPoints: playerPointsMap.get(String(playerId)) ?? 0,

@@ -22,10 +22,13 @@ const listCalculatedWkPlayerPoints = vi.fn(async () => ([
   },
 ]));
 const getLeagueAdminConfigPersistent = vi.fn(async () => ({ budget: { priceOffsetMillions: 0 } }));
+const getWkMatches = vi.fn(async (round?: number) => round === 4
+  ? [{ home_team: "Nederland", away_team: "Duitsland" }]
+  : []);
 const parsePlayerCsv = vi.fn(() => ({
   players: [
-    { id: "1", naam: "Actieve speler", positie: "MID", club: "NL", prijs: 10 },
-    { id: "2", naam: "Ontbrekende speler", positie: "DEF", club: "BE", prijs: 8 },
+    { id: "1", naam: "Actieve speler", positie: "MID", club: "Nederland", prijs: 10 },
+    { id: "2", naam: "Ontbrekende speler", positie: "DEF", club: "België", prijs: 8 },
   ],
 }));
 const readFile = vi.fn(async () => "id,naam\n1,test");
@@ -36,6 +39,7 @@ vi.mock("@/lib/player-bootstrap", () => ({ bootstrapPlayersFromDefaultCsv: vi.fn
 vi.mock("@/lib/player-store", () => ({ listPlayers: vi.fn(() => []) }));
 vi.mock("@/lib/league-admin-config", () => ({ getLeagueAdminConfigPersistent }));
 vi.mock("@/lib/wk-player-scoring", () => ({ listCalculatedWkPlayerPoints }));
+vi.mock("@/lib/wk-sync-store", () => ({ getWkMatches }));
 
 afterEach(() => {
   vi.clearAllMocks();

@@ -1,9 +1,11 @@
-import { getLatestSyncRound, getWkPlayerEvents, getWkPlayerPointHistory, type WkPlayerEventRow, type WkPlayerPointRow } from "./wk-sync-store";
+import { getLatestSyncRound, getWkMatches, getWkPlayerEvents, getWkPlayerPointHistory, type WkMatchRow, type WkPlayerEventRow, type WkPlayerPointRow } from "./wk-sync-store";
 import { isTeamEliminated } from "./knockout-phase";
 
 const DEFENDER_ALIASES = new Set(["DEF", "VERDEDIGER", "DEFENDER", "D"]);
 const CLEAN_SHEET_EVENT_CODES = new Set(["CS"]);
 const DEFENDER_CLEAN_SHEET_BONUS = 2;
+const ADVANCEMENT_BONUS = 5;
+const KNOCKOUT_START_ROUND = 3;
 
 export type PlayerPointEvent = {
   eventCode: string;
@@ -88,6 +90,7 @@ function groupEventsByRoundAndPlayer(events: WkPlayerEventRow[]) {
 
 function buildAdvancingTeamsByRound(input: {
   events: WkPlayerEventRow[];
+  matches: WkMatchRow[];
   byPlayerRound: Map<string, WkPlayerPointRow>;
   latestByPlayerId: Map<number, WkPlayerPointRow>;
 }) {
@@ -108,6 +111,21 @@ function buildAdvancingTeamsByRound(input: {
     advancingTeamsByRound.set(event.round, teams);
   }
 
+  for (const match of input.matches) {
+    if (match.round <= KNOCKOUT_START_ROUND) {
+      continue;
+    }
+    const previousRound = match.round - 1;
+    const teams = advancingTeamsByRound.get(previousRound) ?? new Set<string>();
+    if (match.home_team) {
+      teams.add(match.home_team);
+    }
+    if (match.away_team) {
+      teams.add(match.away_team);
+    }
+    advancingTeamsByRound.set(previousRound, teams);
+  }
+
   return advancingTeamsByRound;
 }
 
@@ -120,9 +138,10 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
     return new Map();
   }
 
-  const [historyRows, events] = await Promise.all([
+  const [historyRows, events, matches] = await Promise.all([
     getWkPlayerPointHistory(effectiveRound),
     getWkPlayerEvents(),
+    getWkMatches(),
   ]);
 
   const relevantEvents = events.filter((event) => event.round <= effectiveRound);
@@ -130,6 +149,7 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
   const groupedEvents = groupEventsByRoundAndPlayer(relevantEvents);
   const advancingTeamsByRound = buildAdvancingTeamsByRound({
     events: relevantEvents,
+    matches,
     byPlayerRound,
     latestByPlayerId,
   });
@@ -176,9 +196,7 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
 
   // Advancement bonus per round (knockout progression)
   // Round 3 (group→knockout): all non-eliminated teams get +5
-  // Round 4+ (knockout rounds): teams with a match win (MW) in that round get +5
-  const ADVANCEMENT_BONUS = 5;
-  const KNOCKOUT_START_ROUND = 3;
+  // Round 4+ (knockout rounds): teams that appear in the next round or have an MW event in this round get +5
   for (let round = KNOCKOUT_START_ROUND; round <= effectiveRound; round += 1) {
     const roundEventMap = groupedEvents.get(round) ?? new Map<number, PlayerPointEvent[]>();
     for (const [fantasyplayerId, player] of totals) {
@@ -211,14 +229,16 @@ export async function buildWkPlayerRoundPointsMap(roundNumber?: number): Promise
     return new Map();
   }
 
-  const [rows, events] = await Promise.all([
+  const [rows, events, matches] = await Promise.all([
     getWkPlayerPointHistory(effectiveRound),
     getWkPlayerEvents(effectiveRound),
+    getWkMatches(),
   ]);
   const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(rows);
   const roundEvents = groupEventsByRoundAndPlayer(events).get(effectiveRound) ?? new Map<number, PlayerPointEvent[]>();
   const advancingTeamsByRound = buildAdvancingTeamsByRound({
     events,
+    matches,
     byPlayerRound,
     latestByPlayerId,
   });
@@ -242,9 +262,7 @@ export async function buildWkPlayerRoundPointsMap(roundNumber?: number): Promise
     });
     // Advancement bonus: +5 for players advancing to next knockout round
     // Round 3 (group→knockout): all non-eliminated teams get +5
-    // Round 4+ (knockout rounds): only teams with a match win (MW) in this round get +5
-    const ADVANCEMENT_BONUS = 5;
-    const KNOCKOUT_START_ROUND = 3;
+    // Round 4+ (knockout rounds): teams that appear in the next round or have an MW event in this round get +5
     let advancementPoints = 0;
     if (effectiveRound >= KNOCKOUT_START_ROUND && !isTeamEliminated(row.team_name)) {
       if (effectiveRound === KNOCKOUT_START_ROUND) {
@@ -260,6 +278,54 @@ export async function buildWkPlayerRoundPointsMap(roundNumber?: number): Promise
     }
     result.set(fantasyplayerId, basePoints + advancementPoints);
   }
+  return result;
+}
+
+export async function buildWkPlayerRoundAdvancementPointsMap(roundNumber?: number): Promise<Map<number, number>> {
+  const effectiveRound = typeof roundNumber === "number" && Number.isInteger(roundNumber) && roundNumber > 0
+    ? roundNumber
+    : (await getLatestSyncRound()) ?? 0;
+  if (effectiveRound <= 0) {
+    return new Map();
+  }
+
+  const [rows, events, matches] = await Promise.all([
+    getWkPlayerPointHistory(effectiveRound),
+    getWkPlayerEvents(effectiveRound),
+    getWkMatches(),
+  ]);
+  const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(rows);
+  const advancingTeamsByRound = buildAdvancingTeamsByRound({
+    events,
+    matches,
+    byPlayerRound,
+    latestByPlayerId,
+  });
+  const playerIds = new Set<number>([
+    ...Array.from(latestByPlayerId.keys()),
+    ...rows.filter((row) => row.round === effectiveRound).map((row) => row.fantasyplayer_id),
+  ]);
+
+  const result = new Map<number, number>();
+  for (const fantasyplayerId of playerIds) {
+    const row = byPlayerRound.get(`${fantasyplayerId}:${effectiveRound}`) ?? latestByPlayerId.get(fantasyplayerId);
+    if (!row) {
+      continue;
+    }
+    let advancementPoints = 0;
+    if (effectiveRound >= KNOCKOUT_START_ROUND && !isTeamEliminated(row.team_name)) {
+      if (effectiveRound === KNOCKOUT_START_ROUND) {
+        advancementPoints = ADVANCEMENT_BONUS;
+      } else {
+        const teamAdvanced = advancingTeamsByRound.get(effectiveRound)?.has(row.team_name) ?? false;
+        if (teamAdvanced) {
+          advancementPoints = ADVANCEMENT_BONUS;
+        }
+      }
+    }
+    result.set(fantasyplayerId, advancementPoints);
+  }
+
   return result;
 }
 

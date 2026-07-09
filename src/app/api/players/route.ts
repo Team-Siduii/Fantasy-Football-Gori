@@ -5,6 +5,7 @@ import { parsePlayerCsv } from "@/domain/player-csv";
 import { bootstrapPlayersFromDefaultCsv } from "@/lib/player-bootstrap";
 import { listPlayers } from "@/lib/player-store";
 import { getLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
+import { getWkActiveTeamsForRound, isWkPlayerInactiveForRound } from "../../../lib/wk-player-availability";
 import { listCalculatedWkPlayerPoints } from "@/lib/wk-player-scoring";
 
 const NO_CACHE_HEADERS = {
@@ -48,6 +49,7 @@ export async function GET(request: Request) {
     }
 
     const hasAvailabilitySnapshot = calculatedPlayers.length > 0;
+    const activeTeamsForRound = await getWkActiveTeamsForRound(roundSequence);
     const calculatedById = new Map<number, (typeof calculatedPlayers)[number]>();
     for (const player of calculatedPlayers) {
       calculatedById.set(player.fantasyplayerId, player);
@@ -61,7 +63,8 @@ export async function GET(request: Request) {
       return {
         ...csv,
         prijs: adjustedPrice,
-        inactive: hasAvailabilitySnapshot ? !calculated : undefined,
+        inactive: isWkPlayerInactiveForRound(csv.club, activeTeamsForRound)
+          ?? (hasAvailabilitySnapshot ? !calculated : undefined),
         punten: calculated?.totalPoints ?? 0,
         totalPoints: calculated?.totalPoints ?? 0,
         roundPoints: calculated?.roundPoints ?? 0,
