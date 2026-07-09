@@ -10,7 +10,7 @@ import {
   resolveSubmittedBuys,
   skipSellChoice,
   submitBuyChoice,
-  submitSellChoice,
+  submitSellChoices,
   syncTransferRoundParticipants,
   type TransferRoundParticipant,
   type TransferRoundState,
@@ -34,6 +34,7 @@ import { parsePlayerCsv } from "@/domain/player-csv";
 import { readFile } from "fs/promises";
 import path from "path";
 import { getInactivePlayer } from "@/lib/inactive-players";
+import { isTeamEliminated } from "@/lib/knockout-phase";
 
 function getScopeFromRequest(request: Request): ManagerStateScope {
   const mode = new URL(request.url).searchParams.get("mode");
@@ -169,6 +170,13 @@ function normalizeRequestedBuyIds(body: { playerId?: string; extraBuyPlayerId?: 
   return [body.playerId, body.extraBuyPlayerId].filter((id): id is string => typeof id === "string" && id.length > 0);
 }
 
+function normalizeRequestedSellIds(body: { playerId?: string; playerIds?: string[] }) {
+  if (Array.isArray(body.playerIds)) {
+    return body.playerIds.filter((id): id is string => typeof id === "string" && id.length > 0);
+  }
+  return [body.playerId].filter((id): id is string => typeof id === "string" && id.length > 0);
+}
+
 export async function GET(request: Request) {
   if (!(await isAuthenticatedSession())) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
@@ -264,15 +272,44 @@ export async function POST(request: Request) {
   const action = body.action ?? "";
   try {
     if (action === "submit-sell") {
-      if (!body.playerId) {
+      const requestedSellIds = Array.from(new Set(normalizeRequestedSellIds(body)));
+      if (requestedSellIds.length === 0) {
         return NextResponse.json({ error: "playerId is verplicht" }, { status: 400 });
       }
+
       const managerState = await readManagerStatePersistent(scope, requesterEmail);
       const ownPlayerIds = new Set([...managerState.lineupIds, ...managerState.benchIds]);
-      if (!ownPlayerIds.has(body.playerId)) {
-        return NextResponse.json({ error: "Je kunt alleen een speler uit je eigen team verkopen" }, { status: 400 });
+      if (requestedSellIds.some((playerId) => !ownPlayerIds.has(playerId))) {
+        return NextResponse.json({ error: "Je kunt alleen spelers uit je eigen team verkopen" }, { status: 400 });
       }
-      nextState = submitSellChoice(nextState, currentRequesterEntry.managerId, body.playerId);
+
+      const allPlayers = await loadPlayers(scope);
+      const playerById = new Map(allPlayers.map((player) => [player.id, player]));
+      const inactiveOrEliminatedIds: string[] = [];
+      const regularSellIds: string[] = [];
+
+      for (const playerId of requestedSellIds) {
+        const player = playerById.get(playerId) ?? getInactivePlayer(playerId);
+        const forcedSell = Boolean(getInactivePlayer(playerId)) || Boolean(player && isTeamEliminated(player.club));
+        if (forcedSell) {
+          inactiveOrEliminatedIds.push(playerId);
+        } else {
+          regularSellIds.push(playerId);
+        }
+      }
+
+      if (regularSellIds.length > 1) {
+        return NextResponse.json({ error: "Je kunt maximaal 1 reguliere handmatige verkoop kiezen. Uitgeschakelde spelers mag je extra meenemen." }, { status: 400 });
+      }
+
+      if (regularSellIds.length === 0 && inactiveOrEliminatedIds.length === 0) {
+        return NextResponse.json({ error: "Kies minstens één speler om te verkopen" }, { status: 400 });
+      }
+
+      nextState = submitSellChoices(nextState, currentRequesterEntry.managerId, {
+        sellPlayerId: regularSellIds[0] ?? null,
+        autoSellPlayerIds: inactiveOrEliminatedIds,
+      });
     } else if (action === "skip-sell") {
       nextState = skipSellChoice(nextState, currentRequesterEntry.managerId);
     } else if (action === "submit-buy") {

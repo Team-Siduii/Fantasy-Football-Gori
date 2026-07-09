@@ -234,6 +234,57 @@ export function submitSellChoice(state: TransferRoundState, managerId: string, s
   );
 }
 
+export function submitSellChoices(
+  state: TransferRoundState,
+  managerId: string,
+  sellChoice: { sellPlayerId: string | null; autoSellPlayerIds?: string[] },
+  at?: string,
+) {
+  if (state.phase !== "SELL") {
+    throw new Error("verkopen is alleen mogelijk in de SELL fase");
+  }
+
+  const normalizedAutoSellIds = uniqueIds(
+    (sellChoice.autoSellPlayerIds ?? []).filter(
+      (value): value is string => typeof value === "string" && value.length > 0,
+    ),
+  );
+  const normalizedSellPlayerId =
+    typeof sellChoice.sellPlayerId === "string" && sellChoice.sellPlayerId.length > 0
+      ? sellChoice.sellPlayerId
+      : null;
+
+  if (!normalizedSellPlayerId && normalizedAutoSellIds.length === 0) {
+    throw new Error("speler om te verkopen ontbreekt");
+  }
+
+  const mergedAutoSellIds = normalizedSellPlayerId
+    ? normalizedAutoSellIds.filter((id) => id !== normalizedSellPlayerId)
+    : normalizedAutoSellIds;
+
+  return replaceEntry(
+    state,
+    managerId,
+    (current) => {
+      const nextEntry = {
+        ...current,
+        sellStatus: "SUBMITTED" as TransferSellStatus,
+        sellPlayerId: normalizedSellPlayerId,
+        autoSellPlayerIds: uniqueIds([...current.autoSellPlayerIds, ...mergedAutoSellIds]),
+        buyPlayerIds: [],
+        resolvedTransfers: [],
+        updatedAt: at ?? new Date().toISOString(),
+      };
+
+      return {
+        ...nextEntry,
+        buyStatus: getBuyCount(nextEntry) > 0 ? "PENDING" : "LOCKED",
+      };
+    },
+    at,
+  );
+}
+
 export function skipSellChoice(state: TransferRoundState, managerId: string, at?: string) {
   if (state.phase !== "SELL") {
     throw new Error("verkopen is alleen mogelijk in de SELL fase");

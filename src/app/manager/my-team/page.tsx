@@ -921,7 +921,10 @@ export default function ManagerMyTeamPage() {
           setPendingTransferManagers(transferData.pendingManagers);
           setBlockedTransferPlayerIds(transferData.blockedPlayerIds ?? []);
           setPendingSellId(transferData.currentEntry?.sellPlayerId ?? null);
-          setSellQueueIds(transferData.currentEntry?.sellPlayerId ? [transferData.currentEntry.sellPlayerId] : []);
+          setSellQueueIds([
+            ...(transferData.currentEntry?.sellPlayerId ? [transferData.currentEntry.sellPlayerId] : []),
+            ...(transferData.currentEntry?.autoSellPlayerIds ?? []),
+          ]);
           setBuyQueueIds([]);
           // Sync sellSelection met de opgeslagen keuze
           if (transferData.currentEntry?.sellPlayerId) {
@@ -1162,6 +1165,14 @@ export default function ManagerMyTeamPage() {
     ],
     [currentTransferEntry],
   );
+  const queuedRegularSellCount = useMemo(
+    () =>
+      sellQueueIds.filter((playerId) => {
+        const player = squadPlayers.find((candidate) => candidate.id === playerId);
+        return player ? !player.inactive && !isTeamEliminated(player.club) : false;
+      }).length,
+    [sellQueueIds, squadPlayers],
+  );
   const resolvedBuyIds = useMemo(
     () => currentTransferEntry?.resolvedTransfers.map((transfer) => transfer.boughtPlayerId) ?? [],
     [currentTransferEntry],
@@ -1198,7 +1209,10 @@ export default function ManagerMyTeamPage() {
       setPendingTransferManagers(payloadResponse.pendingManagers);
       setBlockedTransferPlayerIds(payloadResponse.blockedPlayerIds ?? []);
       setPendingSellId(payloadResponse.currentEntry?.sellPlayerId ?? null);
-      setSellQueueIds(payloadResponse.currentEntry?.sellPlayerId ? [payloadResponse.currentEntry.sellPlayerId] : []);
+      setSellQueueIds([
+        ...(payloadResponse.currentEntry?.sellPlayerId ? [payloadResponse.currentEntry.sellPlayerId] : []),
+        ...(payloadResponse.currentEntry?.autoSellPlayerIds ?? []),
+      ]);
       setBuyQueueIds([]);
       if (payloadResponse.currentEntry?.sellPlayerId) {
         setSellSelection(payloadResponse.currentEntry.sellPlayerId);
@@ -1509,15 +1523,38 @@ export default function ManagerMyTeamPage() {
       setTransferMessage("Kies eerst een geldige speler om te verkopen.");
       return;
     }
-    setSellQueueIds([player.id]);
-    setPendingSellId(player.id);
-    setTransferMessage(`${player.naam} staat klaar om verkocht te worden. Klik op 'Verkoop afronden' om te bevestigen.`);
+
+    const isForcedSell = Boolean(player.inactive) || isTeamEliminated(player.club);
+    const alreadyQueued = sellQueueIds.includes(player.id);
+    if (alreadyQueued) {
+      setTransferMessage(`${player.naam} staat al in de verkoopwachtrij.`);
+      return;
+    }
+    if (!isForcedSell && queuedRegularSellCount >= 1) {
+      setTransferMessage("Je kunt maximaal 1 reguliere verkoop kiezen. Uitgeschakelde spelers mag je extra toevoegen.");
+      return;
+    }
+
+    setSellQueueIds((prev) => [...prev, player.id]);
+    if (!isForcedSell) {
+      setPendingSellId(player.id);
+    }
+    setTransferMessage(
+      isForcedSell
+        ? `${player.naam} staat als uitgeschakelde/inactieve speler klaar voor verkoop.`
+        : `${player.naam} staat klaar als reguliere verkoop. Klik op 'Verkoop afronden' om te bevestigen.`,
+    );
   }
 
   function handleUndoSell(playerId: string) {
     setSellQueueIds((prev) => prev.filter((id) => id !== playerId));
     if (pendingSellId === playerId) {
-      setPendingSellId(null);
+      const remainingRegularSellId = sellQueueIds.find((id) => {
+        if (id === playerId) return false;
+        const player = squadPlayers.find((candidate) => candidate.id === id);
+        return player ? !player.inactive && !isTeamEliminated(player.club) : false;
+      });
+      setPendingSellId(remainingRegularSellId ?? null);
     }
     setTransferMessage("Verkoopkeuze teruggedraaid.");
   }
@@ -1535,11 +1572,10 @@ export default function ManagerMyTeamPage() {
       return;
     }
 
-    const playerId = sellQueueIds[0];
-    const player = squadPlayers.find((candidate) => candidate.id === playerId);
-    void syncTransferRound("submit-sell", { playerId }).then((ok) => {
+    const playerNames = sellQueueIds.map((playerId) => squadPlayers.find((candidate) => candidate.id === playerId)?.naam ?? "de speler");
+    void syncTransferRound("submit-sell", { playerIds: sellQueueIds }).then((ok) => {
       if (!ok) return;
-      setTransferMessage(`Verkoop van ${player?.naam ?? "de speler"} afgerond. Zodra iedereen klaar is opent de koopfase.`);
+      setTransferMessage(`Verkoop afgerond voor ${playerNames.join(", ")}. Zodra iedereen klaar is opent de koopfase.`);
     });
   }
 

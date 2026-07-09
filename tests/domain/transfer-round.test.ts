@@ -6,6 +6,7 @@ import {
   skipSellChoice,
   submitBuyChoice,
   submitSellChoice,
+  submitSellChoices,
 } from "../../src/domain/transfer-round";
 
 const participants = [
@@ -89,6 +90,25 @@ describe("transfer-round", () => {
         boughtPlayerId: "target-2",
       },
     ]);
+  });
+
+  it("allows one regular sell plus extra eliminated/inactive sells in the same sell phase", () => {
+    let state = createTransferRoundState(1, participants);
+
+    state = submitSellChoices(state, "alpha", {
+      sellPlayerId: "sold-regular-1",
+      autoSellPlayerIds: ["sold-eliminated-1", "sold-inactive-1"],
+    });
+    state = skipSellChoice(state, "beta");
+    state = skipSellChoice(state, "gamma");
+
+    const alpha = state.entries.find((entry) => entry.managerId === "alpha");
+
+    expect(state.phase).toBe("BUY");
+    expect(alpha?.sellPlayerId).toBe("sold-regular-1");
+    expect(alpha?.autoSellPlayerIds).toEqual(["sold-eliminated-1", "sold-inactive-1"]);
+    expect(alpha?.buyStatus).toBe("PENDING");
+    expect(alpha?.buyPlayerIds).toEqual([]);
   });
 
   it("keeps winning buys and retries only the lost duplicate slot", () => {

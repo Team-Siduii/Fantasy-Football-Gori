@@ -115,7 +115,7 @@ Per rol belangrijkste rechten:
 ### 4.5 Transfers (kern van MVP)
 - Er is een vrije pool met beschikbare spelers
 - Transfers voor poulewedstrijden verlopen in 4 expliciete fases per ronde:
-  - Fase 1 · verkopen verzamelen: elke manager kiest eerst maximaal 1 handmatige verkoop via dropdown + knop `Verkopen toevoegen`; die keuze verschijnt in een verzamelblok `spelers te verkopen` en kan daar met `Undo` worden teruggedraaid zolang de manager nog niet op `Verkoop afronden` heeft gedrukt
+  - Fase 1 · verkopen verzamelen: elke manager kiest eerst maximaal 1 reguliere handmatige verkoop via dropdown + knop `Verkopen toevoegen`; die keuze verschijnt in een verzamelblok `spelers te verkopen` en kan daar met `Undo` worden teruggedraaid zolang de manager nog niet op `Verkoop afronden` heeft gedrukt. Uitgeschakelde/inactieve spelers uit de eigen selectie mogen in dezelfde fase extra aan die verkooplijst worden toegevoegd zonder die ene reguliere verkoop te verbruiken
   - Fase 1a · automatische verkopen: spelers die voor de volgende ronde niet meer actief/beschikbaar zijn (bijv. uitgeschakeld WK-land) worden automatisch aan dezelfde verkooplijst toegevoegd; deze auto-sells tellen niet mee als handmatige transfer, maar moeten wel zichtbaar zijn in de lijst voordat de manager fase 1 afrondt
   - Fase 2 · kopen verzamelen: pas nadat alle managers fase 1 hebben afgerond opent de koopfase; managers voegen één of meerdere spelers toe aan een verzamelblok `spelers te kopen`, kunnen ook daar `Undo` gebruiken en ronden daarna expliciet af met `Aankoop afronden`
   - Fase 3 · conflictcontrole: zodra alle managers met open kooprechten hun aankoopfase hebben afgerond controleert de app op dubbele claims op dezelfde vrije speler
