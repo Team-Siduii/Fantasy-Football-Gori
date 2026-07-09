@@ -1150,7 +1150,7 @@ export default function ManagerMyTeamPage() {
   const isPastRound = selectedRound !== null && currentRound !== null && selectedRound < currentRound;
   const currentTransferLimit = currentRound ? getTransferLimitForRound(currentRound, [...BONUS_ROUNDS]) : 1;
   const transferPhase = transferRound?.phase ?? "SELL";
-  const ownTransferCanSell = transferPhase === "SELL";
+  const ownTransferCanSell = transferPhase === "SELL" && currentTransferEntry?.sellStatus === "PENDING";
   const ownTransferCanBuy =
     (transferPhase === "BUY" || transferPhase === "AWAITING_RETRY") &&
     (currentTransferEntry?.buyStatus === "PENDING" || currentTransferEntry?.buyStatus === "RETRY_REQUIRED" || currentTransferEntry?.buyStatus === "SUBMITTED");
@@ -1158,6 +1158,21 @@ export default function ManagerMyTeamPage() {
     pendingTransferManagers.length > 0
       ? pendingTransferManagers.map((entry) => entry.teamName || entry.displayName).join(", ")
       : "niemand";
+  const pendingTransferCount = pendingTransferManagers.length;
+  const pendingTransferHeading =
+    transferPhase === "SELL"
+      ? "Managers die hun verkoop nog niet hebben afgerond"
+      : transferPhase === "BUY"
+        ? "Managers die hun aankoop nog niet hebben afgerond"
+        : transferPhase === "AWAITING_RETRY"
+          ? "Managers die opnieuw moeten kiezen"
+          : "Openstaande transferacties";
+  const sellPendingManagersLabel =
+    transferPhase === "SELL"
+      ? pendingTransferManagers.length > 0
+        ? pendingTransferManagers.map((entry) => entry.teamName || entry.displayName).join(", ")
+        : "Iedereen heeft zijn verkoop afgerond."
+      : null;
   const finalizedSellIds = useMemo(
     () => [
       ...(currentTransferEntry?.sellPlayerId ? [currentTransferEntry.sellPlayerId] : []),
@@ -1780,7 +1795,8 @@ export default function ManagerMyTeamPage() {
               Fase: <strong>{transferPhase === "SELL" ? "1 · verkopen/skippen" : transferPhase === "BUY" ? "2 · kopen" : transferPhase === "AWAITING_RETRY" ? "4 · verliezers kiezen opnieuw" : "4 · afgerond"}</strong>
             </p>
             <p className="muted-note">
-              Wachten op: <strong>{pendingTransferLabel}</strong>
+              {pendingTransferHeading}: <strong>{pendingTransferLabel}</strong>
+              {pendingTransferCount > 0 ? ` (${pendingTransferCount})` : ""}
             </p>
             {currentTransferEntry?.buyStatus === "RETRY_REQUIRED" ? (
               <p className="error-text">Een andere lager geklasseerde manager heeft dezelfde speler gekozen. Kies een andere speler.</p>
@@ -1822,6 +1838,14 @@ export default function ManagerMyTeamPage() {
               {ownTransferCanSell ? (
                 <>
                   <small className="transfer-hint">Kies maximaal 1 handmatige verkoop. Automatische verkopen door uitschakeling tellen apart mee.</small>
+                  {sellPendingManagersLabel ? (
+                    <div
+                      className="transfer-hint"
+                      style={{ marginTop: 8, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    >
+                      <strong>Managers die hun verkoop nog niet hebben afgerond:</strong> {sellPendingManagersLabel}
+                    </div>
+                  ) : null}
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
                     <button
                       type="button"
