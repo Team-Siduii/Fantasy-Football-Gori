@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     // SCHRIJF met verse pool
     await pool.query(
       `INSERT INTO gori_fantasy_state (state_key, store_name, scope, manager_key, payload, updated_at)
-       VALUES ($1, 'manager-state', $2, 'shared', $3::jsonb, NOW())
+       VALUES ($1::text, 'manager-state', $2::text, 'shared', $3::jsonb, NOW())
        ON CONFLICT (state_key) DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()`,
       [key, scope, JSON.stringify(fullState)]
     );
