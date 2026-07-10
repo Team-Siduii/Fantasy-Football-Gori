@@ -357,6 +357,29 @@ export async function buildWkPlayerPointsByCsvId(
   advancementPoints: Map<string, number>;
 }> {
   const wkPlayers = await listCalculatedWkPlayerPoints(roundNumber);
+  let exactRoundKeys: Set<string> | null = null;
+  if (typeof roundNumber === "number" && roundNumber > 0) {
+    const [historyRows, roundEvents] = await Promise.all([
+      getWkPlayerPointHistory(roundNumber),
+      getWkPlayerEvents(roundNumber),
+    ]);
+    const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(historyRows);
+    exactRoundKeys = new Set(
+      historyRows
+        .filter((row) => row.round === roundNumber)
+        .map((row) => normalizeMatchKey(row.name, row.team_name)),
+    );
+    for (const event of roundEvents) {
+      if (event.round !== roundNumber) {
+        continue;
+      }
+      const metadata = byPlayerRound.get(`${event.fantasyplayer_id}:${roundNumber}`) ?? latestByPlayerId.get(event.fantasyplayer_id);
+      if (!metadata) {
+        continue;
+      }
+      exactRoundKeys.add(normalizeMatchKey(metadata.name, metadata.team_name));
+    }
+  }
 
   // Per-ronde advancement: verschil met vorige ronde
   let prevWkByName: Map<string, CalculatedWkPlayerPoints> | null = null;
@@ -382,14 +405,15 @@ export async function buildWkPlayerPointsByCsvId(
     const key = normalizeMatchKey(csv.naam, csv.club);
     const wk = wkByName.get(key);
     if (wk) {
-      roundPoints.set(csv.id, wk.roundPoints);
+      const hasExactRoundSnapshot = exactRoundKeys ? exactRoundKeys.has(key) : true;
+      roundPoints.set(csv.id, hasExactRoundSnapshot ? wk.roundPoints : 0);
       totalPoints.set(csv.id, wk.totalPoints);
       // Per-ronde advancement = huidig - vorig
       const prev = prevWkByName?.get(key);
       const perRoundAdv = prev
         ? Math.max(0, wk.advancementPoints - prev.advancementPoints)
         : wk.advancementPoints;
-      advancementPoints.set(csv.id, perRoundAdv);
+      advancementPoints.set(csv.id, hasExactRoundSnapshot ? perRoundAdv : 0);
     }
   }
 

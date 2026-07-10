@@ -153,4 +153,50 @@ describe("wk player scoring", () => {
     expect(advancementMap.get(454)).toBe(15);
     expect(advancementMap.get(457)).toBe(15);
   });
+
+  it("keeps historical total points but clears stale round points for players absent from the requested round", async () => {
+    getWkPlayerPointHistory.mockResolvedValue([
+      {
+        fantasyplayer_id: 1301,
+        round: 5,
+        name: "Mostafa Ziko",
+        team_name: "Egypte",
+        team_code: "EGY",
+        position: "MID",
+        position_nl: "Middenvelder",
+        value: 4500000,
+        has_played: true,
+        num_played: 4,
+      },
+      {
+        fantasyplayer_id: 217,
+        round: 6,
+        name: "Lucas Digne",
+        team_name: "Frankrijk",
+        team_code: "FRA",
+        position: "DEF",
+        position_nl: "Verdediger",
+        value: 10000000,
+        has_played: true,
+        num_played: 3,
+      },
+    ] as any);
+    getWkPlayerEvents.mockResolvedValue([
+      { fantasyplayer_id: 1301, round: 5, event_code: "G", points: 8, minute: 67 },
+      { fantasyplayer_id: 217, round: 6, event_code: "CS", points: 3, minute: null, team_name: "Frankrijk" },
+      { fantasyplayer_id: 217, round: 6, event_code: "MW", points: 3, minute: null, team_name: "Frankrijk" },
+    ] as any);
+
+    const { wkPlayerScoring } = await loadModules();
+    const matched = await wkPlayerScoring.buildWkPlayerPointsByCsvId([
+      { id: "1301", naam: "Mostafa Ziko", club: "Egypte" },
+      { id: "217", naam: "Lucas Digne", club: "Frankrijk" },
+    ], 6);
+
+    expect(matched.roundPoints.get("1301") ?? 0).toBe(0);
+    expect(matched.totalPoints.get("1301")).toBe(13);
+    expect(matched.advancementPoints.get("1301") ?? 0).toBe(0);
+    expect(matched.roundPoints.get("217")).toBeGreaterThan(0);
+    expect(matched.totalPoints.get("217")).toBeGreaterThanOrEqual(matched.roundPoints.get("217") ?? 0);
+  });
 });

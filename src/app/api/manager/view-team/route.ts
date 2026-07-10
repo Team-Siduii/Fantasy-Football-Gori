@@ -149,9 +149,16 @@ export async function GET(request: Request) {
         currentRoundPoints: lineup.reduce((sum, player) => sum + player.punten, 0) + bench.reduce((sum, player) => sum + player.punten, 0),
       };
 
-  const teamTotalPoints = "totalPoints" in scoreSummary ? scoreSummary.totalPoints : 0;
-  const teamRoundPoints = Number.isInteger(roundNumber) && roundNumber > 0
-    ? teamTotalPoints
+  const selectedWkRound = scope === "wk" && Number.isInteger(roundNumber) && roundNumber > 0;
+  const computedSelectedRoundPoints = lineup.reduce((sum, player) => sum + (player.punten ?? 0), 0)
+    + bench.reduce((sum, player) => sum + (player.punten ?? 0), 0);
+  const computedSelectedRoundTotalPoints = lineup.reduce((sum, player) => sum + (player.totalPoints ?? player.punten ?? 0), 0)
+    + bench.reduce((sum, player) => sum + Math.ceil((player.totalPoints ?? player.punten ?? 0) / 2), 0);
+  const teamTotalPoints = selectedWkRound
+    ? computedSelectedRoundTotalPoints
+    : "totalPoints" in scoreSummary ? scoreSummary.totalPoints : 0;
+  const teamRoundPoints = selectedWkRound
+    ? computedSelectedRoundPoints
     : "currentRoundPoints" in scoreSummary ? (scoreSummary as { currentRoundPoints: number }).currentRoundPoints : 0;
 
   return NextResponse.json({
