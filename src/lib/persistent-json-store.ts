@@ -147,13 +147,11 @@ async function ensureDb() {
   return activePool;
 }
 
-const UPDATE_PERSISTENT_STATE_SQL = `UPDATE gori_fantasy_state
-     SET payload = $5::jsonb,
-         updated_at = NOW()
-   WHERE state_key = $1::text`;
-
-const INSERT_PERSISTENT_STATE_SQL = `INSERT INTO gori_fantasy_state (state_key, store_name, scope, manager_key, payload, updated_at)
-     VALUES ($1::text, $2::text, $3::text, $4::text, $5::jsonb, NOW())`;
+const UPSERT_PERSISTENT_STATE_SQL = `INSERT INTO gori_fantasy_state (state_key, store_name, scope, manager_key, payload, updated_at)
+     VALUES ($1::text, $2::text, $3::text, $4::text, $5::jsonb, NOW())
+     ON CONFLICT (state_key) DO UPDATE SET
+       payload = EXCLUDED.payload,
+       updated_at = NOW()`;
 
 function shouldAttemptBootstrap(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -193,16 +191,8 @@ export async function writePersistentJson<T>(input: PersistentStateKeyInput, pay
   const stateKey = buildPersistentStateKey(input);
   const params = [stateKey, input.store, scope, manager, JSON.stringify(payload)];
 
-  const runWrite = async (poolToUse: Pool) => {
-    const updated = await poolToUse.query(UPDATE_PERSISTENT_STATE_SQL, params);
-    if ((updated.rowCount ?? 0) > 0) {
-      return;
-    }
-    await poolToUse.query(INSERT_PERSISTENT_STATE_SQL, params);
-  };
-
   try {
-    await runWrite(activePool);
+    await activePool.query(UPSERT_PERSISTENT_STATE_SQL, params);
     return payload;
   } catch (error) {
     if (!shouldAttemptBootstrap(error)) {
@@ -215,7 +205,7 @@ export async function writePersistentJson<T>(input: PersistentStateKeyInput, pay
     return payload;
   }
 
-  await runWrite(bootstrappedPool);
+  await bootstrappedPool.query(UPSERT_PERSISTENT_STATE_SQL, params);
   return payload;
 }
 
