@@ -176,7 +176,9 @@ export async function GET(request: Request) {
 
   const selectedWkRound = scope === "wk" && Number.isInteger(roundNumber) && roundNumber > 0;
   const computedSelectedRoundPoints = lineup.reduce((sum, player) => sum + (player.punten ?? 0), 0)
-    + bench.reduce((sum, player) => sum + (player.punten ?? 0), 0);
+    + lineup.reduce((sum, player) => sum + (player.advancementPoints ?? 0), 0)
+    + bench.reduce((sum, player) => sum + (player.punten ?? 0), 0)
+    + bench.reduce((sum, player) => sum + Math.ceil((player.advancementPoints ?? 0) / 2), 0);
   const computedSelectedRoundTotalPoints = lineup.reduce((sum, player) => sum + (player.totalPoints ?? player.punten ?? 0), 0)
     + bench.reduce((sum, player) => sum + Math.ceil((player.totalPoints ?? player.punten ?? 0) / 2), 0);
   const teamTotalPoints = selectedWkRound

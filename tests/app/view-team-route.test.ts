@@ -117,7 +117,7 @@ describe("GET /api/manager/view-team", () => {
     buildWkPlayerPointsByCsvId.mockResolvedValueOnce({
       roundPoints: new Map([["wk-player-1", 8], ["wk-player-2", 0]]),
       totalPoints: new Map([["wk-player-1", 52], ["wk-player-2", 16]]),
-      advancementPoints: new Map([["wk-player-1", 5], ["wk-player-2", 0]]),
+      advancementPoints: new Map([["wk-player-1", 5], ["wk-player-2", 5]]),
     });
     getManagerRoundScorePersistent.mockResolvedValueOnce({
       totalPoints: 33,
@@ -138,8 +138,8 @@ describe("GET /api/manager/view-team", () => {
     const payload = await response.json();
 
     expect(payload.lineup[0]).toMatchObject({ punten: 8, totalPoints: 52, advancementPoints: 5 });
-    expect(payload.bench[0]).toMatchObject({ punten: 0, totalPoints: 16, advancementPoints: 0 });
-    expect(payload.teamCurrentRoundPoints).toBe(8);
+    expect(payload.bench[0]).toMatchObject({ punten: 0, totalPoints: 16, advancementPoints: 5 });
+    expect(payload.teamCurrentRoundPoints).toBe(16);
     expect(payload.teamTotalPoints).toBe(60);
   });
 });

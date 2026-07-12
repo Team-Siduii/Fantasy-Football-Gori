@@ -38,7 +38,20 @@ async function loadWkPlayerPointsByCsvId(roundNumber?: number): Promise<Map<stri
   const csvContent = await readFile(csvPath, "utf-8");
   const csvPlayers = parsePlayerCsv(csvContent).players;
   const matched = await buildWkPlayerPointsByCsvId(csvPlayers, roundNumber);
-  return matched.roundPoints;
+  const combined = new Map<string, number>();
+  const playerIds = new Set<string>([
+    ...Array.from(matched.roundPoints.keys()),
+    ...Array.from(matched.advancementPoints.keys()),
+  ]);
+
+  for (const playerId of playerIds) {
+    combined.set(
+      playerId,
+      (matched.roundPoints.get(playerId) ?? 0) + (matched.advancementPoints.get(playerId) ?? 0),
+    );
+  }
+
+  return combined;
 }
 
 export async function recalculateManagerRoundScorePersistent(input: {
