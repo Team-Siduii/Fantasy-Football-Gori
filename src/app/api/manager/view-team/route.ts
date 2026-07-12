@@ -22,6 +22,19 @@ const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "ice.eckmund@gmail.com": "A",
 };
 
+type TeamViewPlayer = {
+  id: string;
+  naam: string;
+  positie: string;
+  club: string;
+  prijs: number;
+  punten: number;
+  totalPoints: number;
+  roundPoints: number;
+  advancementPoints: number;
+  inactive?: boolean;
+};
+
 export async function GET(request: Request) {
   const email = await getAuthenticatedEmail();
   if (!email) {
@@ -107,9 +120,21 @@ export async function GET(request: Request) {
     roundNumber,
   });
 
-  const enrichPlayer = (playerId: string) => {
+  const enrichPlayer = (playerId: string): TeamViewPlayer => {
     const player = playerById.get(playerId);
-    if (!player) return { id: playerId, naam: "Onbekend", positie: "MID", club: "-", prijs: 0, punten: 0 };
+    if (!player) {
+      return {
+        id: playerId,
+        naam: "Onbekend",
+        positie: "MID",
+        club: "-",
+        prijs: 0,
+        punten: 0,
+        totalPoints: 0,
+        roundPoints: 0,
+        advancementPoints: 0,
+      };
+    }
     return {
       ...player,
       inactive: scope === "wk"
@@ -125,8 +150,8 @@ export async function GET(request: Request) {
     };
   };
 
-  const lineup = state.lineupIds.map(enrichPlayer);
-  const bench = state.benchIds.map((id) => {
+  const lineup: TeamViewPlayer[] = state.lineupIds.map(enrichPlayer);
+  const bench: TeamViewPlayer[] = state.benchIds.map((id) => {
     const p = enrichPlayer(id);
     return { ...p, punten: Math.ceil(p.punten / 2) };
   });

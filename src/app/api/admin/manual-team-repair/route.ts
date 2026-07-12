@@ -265,14 +265,16 @@ export async function POST(request: Request) {
         sellStatus: overrideSold ? "SUBMITTED" : entry.sellStatus,
         sellPlayerId: overrideSold ?? entry.sellPlayerId,
         buyStatus: overrideBought ? "COMPLETED" : entry.buyStatus,
-        buyPlayerId: overrideBought ?? entry.buyPlayerId,
-        resolvedTransfer:
+        buyPlayerIds: overrideBought ? [] : entry.buyPlayerIds,
+        resolvedTransfers:
           overrideSold && overrideBought
-            ? {
+            ? [
+                {
                 soldPlayerId: overrideSold,
                 boughtPlayerId: overrideBought,
-              }
-            : entry.resolvedTransfer,
+                },
+              ]
+            : entry.resolvedTransfers,
         updatedAt: new Date().toISOString(),
       };
     }),
