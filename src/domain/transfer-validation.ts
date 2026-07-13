@@ -13,6 +13,20 @@ function normalizePosition(position: string): Position | null {
   return normalized === "GK" || normalized === "DEF" || normalized === "MID" || normalized === "FWD" ? normalized : null;
 }
 
+function countPlayersByCountry(players: PlayerRecord[]) {
+  const counts = new Map<string, number>();
+  for (const player of players) {
+    const country = player.club.trim().toLowerCase();
+    if (!country) continue;
+    counts.set(country, (counts.get(country) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function shouldIgnoreCountryCap(input: { scope?: "wk" | "eredivisie"; roundNumber?: number }) {
+  return input.scope === "wk" && (input.roundNumber === 7 || input.roundNumber === 8);
+}
+
 function buildPositionCountsForFormation(formation: string, benchComposition: BenchComposition = BENCH_COMPOSITION): BenchComposition {
   const counts: BenchComposition = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
   for (const row of buildFormationSlots(formation)) {
@@ -38,6 +52,8 @@ export function validateTransferSquad(input: {
   incomingPlayer: PlayerRecord;
   soldPlayerId: string;
   budgetCap: number;
+  scope?: "wk" | "eredivisie";
+  roundNumber?: number;
 }) {
   const withoutSold = input.rosterPlayers.filter((player) => player.id !== input.soldPlayerId);
   const candidatePlayers = [...withoutSold, input.incomingPlayer];
@@ -48,6 +64,14 @@ export function validateTransferSquad(input: {
 
   if (calculateSquadCost(candidatePlayers) > input.budgetCap) {
     throw new Error(`Transfer geblokkeerd: team mag maximaal € ${input.budgetCap.toFixed(1)}M kosten.`);
+  }
+
+  if (!shouldIgnoreCountryCap(input)) {
+    for (const count of countPlayersByCountry(candidatePlayers).values()) {
+      if (count > 2) {
+        throw new Error("maximaal 2 spelers per land toegestaan");
+      }
+    }
   }
 
   const counts: BenchComposition = { GK: 0, DEF: 0, MID: 0, FWD: 0 };

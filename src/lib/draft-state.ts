@@ -326,6 +326,12 @@ function validateDraftPickConstraints(input: {
     throw new Error("maximale transferbudget overschreden");
   }
 
+  for (const count of countPlayersByCountry(candidatePlayers).values()) {
+    if (count > 2) {
+      throw new Error("maximaal 2 spelers per land toegestaan");
+    }
+  }
+
   const actualPositionCounts: DraftBenchComposition = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
 
   for (const player of candidatePlayers) {

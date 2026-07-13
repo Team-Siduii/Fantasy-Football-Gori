@@ -358,6 +358,8 @@ export async function POST(request: Request) {
             incomingPlayer,
             soldPlayerId: unresolvedSoldIds[index] ?? "",
             budgetCap,
+            scope,
+            roundNumber,
           });
         } catch (error) {
           return NextResponse.json({ error: error instanceof Error ? error.message : "Ongeldige transfer" }, { status: 400 });
