@@ -18,6 +18,7 @@ import { isTeamEliminated } from "@/lib/knockout-phase";
 import { getPlayerCardMeta } from "@/lib/player-card-display";
 import { getCurrentOrNextRound, getLatestPlayedRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
 import { createLatestRequestTracker } from "@/lib/latest-request";
+import { shouldShowWkAdvancementBadge } from "@/lib/wk-advancement-badge";
 import { getWkMatchLiveMinuteLabel, mergeWorldCupFixturesWithSyncedMatches, hasVisibleFixtureScore, isLiveWkMatchStatus, type SyncedWkMatchLike } from "@/lib/wk-match-schedule";
 import { hydrateSavedSquadState } from "@/lib/manager-team-hydration";
 import { WORLD_CUP_2026_FIXTURES, isRoundActive } from "@/lib/world-cup-schedule";
@@ -1702,7 +1703,7 @@ export default function ManagerMyTeamPage() {
                         name={cardMeta.displayName}
                         pointsLabel={cardMeta.priceLabel}
                         scoreBadge={!player.id.startsWith("open-") ? String(getPlayerRoundPoints(player)) : null}
-                        advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 && selectedRound !== null && selectedRound === 3 ? "⚡+" + player.advancementPoints : null}
+                        advancementBadge={!player.id.startsWith("open-") && shouldShowWkAdvancementBadge(selectedRound, player.advancementPoints) ? "⚡+" + player.advancementPoints : null}
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",
                           pendingSwap?.playerId === player.id ? "player-card--swap-selected" : "",
@@ -1752,7 +1753,7 @@ export default function ManagerMyTeamPage() {
                   name={player.naam}
                   pointsLabel={cardMeta.priceLabel}
                   scoreBadge={!player.id.startsWith("open-") ? String(Math.ceil(getPlayerRoundPoints(player) / 2)) : null}
-                  advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 && selectedRound !== null && selectedRound === 3 ? "⚡+" + player.advancementPoints : null}
+                  advancementBadge={!player.id.startsWith("open-") && shouldShowWkAdvancementBadge(selectedRound, player.advancementPoints) ? "⚡+" + player.advancementPoints : null}
                   className={[
                     "player-card--bench-row",
                     pendingSellId === player.id ? "player-card--sell" : "",

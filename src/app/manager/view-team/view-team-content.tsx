@@ -7,6 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { PlayerCard } from "@/components/player-card";
 import { buildFormationSlots } from "@/domain/formation";
 import { getPlayerCardMeta } from "@/lib/player-card-display";
+import { shouldShowWkAdvancementBadge } from "@/lib/wk-advancement-badge";
 
 type ViewPlayer = {
   id: string;
@@ -246,7 +247,7 @@ export default function ViewTeamPageContent() {
                         name={player?.naam ?? "Leeg"}
                         pointsLabel={cardMeta.priceLabel}
                         scoreBadge={player ? String(player.punten) : null}
-                        advancementBadge={player && (player.advancementPoints ?? 0) > 0 && data?.roundNumber != null && data.roundNumber >= 3 ? "⚡+" + player.advancementPoints : null}
+                        advancementBadge={player && shouldShowWkAdvancementBadge(data?.roundNumber, player.advancementPoints) ? "⚡+" + player.advancementPoints : null}
                         inactive={player?.inactive === true}
                         className={player ? undefined : "player-card--open"}
                       />
@@ -274,7 +275,7 @@ export default function ViewTeamPageContent() {
                     name={player.naam}
                     pointsLabel={cardMeta.priceLabel}
                     scoreBadge={String(player.punten)}
-                    advancementBadge={(player.advancementPoints ?? 0) > 0 && data?.roundNumber != null && data.roundNumber >= 3 ? "⚡+" + player.advancementPoints : null}
+                    advancementBadge={shouldShowWkAdvancementBadge(data?.roundNumber, player.advancementPoints) ? "⚡+" + player.advancementPoints : null}
                     inactive={player.inactive === true}
                     className="player-card--bench-row"
                   />
