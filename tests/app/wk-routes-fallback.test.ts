@@ -1,9 +1,21 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
+vi.mock("pg", () => ({ Pool: class Pool {} }));
+vi.mock("next/server", () => ({
+  NextResponse: {
+    json: (body: unknown, init?: ResponseInit) => new Response(JSON.stringify(body), {
+      status: init?.status ?? 200,
+      headers: { "content-type": "application/json", ...(init?.headers ?? {}) },
+    }),
+  },
+}));
 
 const getLatestSyncRound = vi.fn(async () => 7);
 const listCalculatedWkPlayerPoints = vi.fn(async () => {
+  throw new Error("db offline");
+});
+const buildWkPlayerPointsByCsvId = vi.fn(async () => {
   throw new Error("db offline");
 });
 const getWkMatches = vi.fn(async () => {
@@ -12,6 +24,8 @@ const getWkMatches = vi.fn(async () => {
 const loadPlayerPoints = vi.fn(async () => {
   throw new Error("db offline");
 });
+const getWkActiveTeamsForRound = vi.fn(async () => null);
+const isWkPlayerInactiveForRound = vi.fn(() => undefined);
 const readFile = vi.fn(async () => "id,naam\n1,test");
 const parsePlayerCsv = vi.fn(() => ({
   players: [{ id: "1", naam: "Speler 1", positie: "MID", club: "NL", prijs: 10 }],
@@ -23,10 +37,12 @@ vi.mock("@/lib/wk-sync-store", () => ({
 }));
 vi.mock("@/lib/wk-player-scoring", () => ({
   listCalculatedWkPlayerPoints,
+  buildWkPlayerPointsByCsvId,
 }));
 vi.mock("@/lib/player-points-store", () => ({
   loadPlayerPoints,
 }));
+vi.mock("../../../lib/wk-player-availability", () => ({ getWkActiveTeamsForRound, isWkPlayerInactiveForRound }));
 vi.mock("fs/promises", () => ({ readFile }));
 vi.mock("@/domain/player-csv", () => ({ parsePlayerCsv }));
 vi.mock("@/lib/player-bootstrap", () => ({ bootstrapPlayersFromDefaultCsv: vi.fn(async () => undefined) }));

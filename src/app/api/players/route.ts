@@ -6,7 +6,7 @@ import { bootstrapPlayersFromDefaultCsv } from "@/lib/player-bootstrap";
 import { listPlayers } from "@/lib/player-store";
 import { getLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
 import { getWkActiveTeamsForRound, isWkPlayerInactiveForRound } from "../../../lib/wk-player-availability";
-import { listCalculatedWkPlayerPoints } from "@/lib/wk-player-scoring";
+import { buildWkPlayerPointsByCsvId, listCalculatedWkPlayerPoints } from "@/lib/wk-player-scoring";
 
 const NO_CACHE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -33,9 +33,17 @@ export async function GET(request: Request) {
     }
 
     let calculatedPlayers: Awaited<ReturnType<typeof listCalculatedWkPlayerPoints>> = [];
+    let matchedByCsvId: Awaited<ReturnType<typeof buildWkPlayerPointsByCsvId>> = {
+      roundPoints: new Map(),
+      totalPoints: new Map(),
+      advancementPoints: new Map(),
+    };
     let syncStatus: string | undefined;
     try {
-      calculatedPlayers = await listCalculatedWkPlayerPoints(roundSequence);
+      [calculatedPlayers, matchedByCsvId] = await Promise.all([
+        listCalculatedWkPlayerPoints(roundSequence),
+        buildWkPlayerPointsByCsvId(csvPlayers, roundSequence),
+      ]);
     } catch {
       syncStatus = "unavailable — WK scoring storage read failed";
     }
@@ -65,10 +73,10 @@ export async function GET(request: Request) {
         prijs: adjustedPrice,
         inactive: isWkPlayerInactiveForRound(csv.club, activeTeamsForRound)
           ?? (hasAvailabilitySnapshot ? !calculated : undefined),
-        punten: calculated?.totalPoints ?? 0,
-        totalPoints: calculated?.totalPoints ?? 0,
-        roundPoints: calculated?.roundPoints ?? 0,
-        advancementPoints: calculated?.advancementPoints ?? 0,
+        punten: calculated?.totalPoints ?? matchedByCsvId.totalPoints.get(csv.id) ?? 0,
+        totalPoints: calculated?.totalPoints ?? matchedByCsvId.totalPoints.get(csv.id) ?? 0,
+        roundPoints: matchedByCsvId.roundPoints.get(csv.id) ?? calculated?.roundPoints ?? 0,
+        advancementPoints: matchedByCsvId.advancementPoints.get(csv.id) ?? 0,
         pointEvents: calculated?.pointEvents ?? [],
         scoreSource: calculated?.source ?? "wk-events-v1",
       };
