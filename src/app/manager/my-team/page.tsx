@@ -268,25 +268,58 @@ function buildStateForFormationWithVacancies(
   return buildStateWithVacancies(players, formation, vacancyCount);
 }
 
+function normalizeIncompleteLineupForFormation(lineup: EnhancedPlayer[], formation: string): EnhancedPlayer[] {
+  const requiredLineup = buildFormationSlots(formation).flat() as Position[];
+  const openSlots = lineup.filter((player) => player.id.startsWith("open-"));
+
+  if (openSlots.length === 0) {
+    return lineup;
+  }
+
+  const byPosition = new Map<Position, EnhancedPlayer[]>([
+    ["GK", []],
+    ["DEF", []],
+    ["MID", []],
+    ["FWD", []],
+  ]);
+
+  for (const player of lineup) {
+    if (player.id.startsWith("open-")) {
+      continue;
+    }
+    const position = player.positie as Position;
+    if (byPosition.has(position)) {
+      byPosition.get(position)?.push(player);
+    }
+  }
+
+  return requiredLineup.map((position) => byPosition.get(position)?.shift() ?? createOpenSlot(position));
+}
+
 function buildStateFromSaved(
   players: EnhancedPlayer[],
   formation: string,
   lineupIds: string[],
   benchIds: string[],
 ): HydratedStateResult {
+  const hydrated = hydrateSavedSquadState({
+    players,
+    formation,
+    lineupIds,
+    benchIds,
+    benchPositions: BENCH_POSITIONS,
+    resolveInactivePlayer: (id) => {
+      const graveyard = getInactivePlayer(id);
+      return graveyard ? { ...graveyard, punten: 0, inactive: true } : null;
+    },
+  });
+
   return {
     formation,
-    state: hydrateSavedSquadState({
-      players,
-      formation,
-      lineupIds,
-      benchIds,
-      benchPositions: BENCH_POSITIONS,
-      resolveInactivePlayer: (id) => {
-        const graveyard = getInactivePlayer(id);
-        return graveyard ? { ...graveyard, punten: 0, inactive: true } : null;
-      },
-    }),
+    state: {
+      lineup: normalizeIncompleteLineupForFormation(hydrated.lineup, formation),
+      bench: hydrated.bench,
+    },
   };
 }
 
