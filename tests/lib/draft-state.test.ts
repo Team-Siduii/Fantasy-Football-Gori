@@ -12,6 +12,11 @@ describe("draft-state persistence", () => {
     process.env.DRAFT_STATE_WK_PATH = "/tmp/ffg-draft-state-wk.test.json";
     process.env.TEAM_ROSTER_STATE_PATH = "/tmp/ffg-team-roster-state.test.json";
     process.env.TEAM_ROSTER_STATE_WK_PATH = "/tmp/ffg-team-roster-state-wk.test.json";
+    vi.doMock("../../src/lib/persistent-json-store", () => ({
+      isGoriDatabaseEnabled: () => false,
+      readPersistentJson: vi.fn(async () => null),
+      writePersistentJson: vi.fn(async (_input, payload) => payload),
+    }));
   });
 
   it("starts a draft and computes current turn from A,A,reverse(A)", async () => {
@@ -183,7 +188,7 @@ describe("draft-state persistence", () => {
     expect(rosterMod.readTeamRosterState().byTeamId.A).toEqual(["gk-1", "gk-2"]);
   });
 
-  it("blocks country stacking above two players from the same country", async () => {
+  it("allows country stacking above two players from the same country", async () => {
     const mod = await import("../../src/lib/draft-state");
     const rosterMod = await import("../../src/lib/team-roster-state");
     mod.resetDraftStateForTests();
@@ -202,8 +207,8 @@ describe("draft-state persistence", () => {
     mod.registerPick({ teamId: "B", playerId: "other-2" });
     mod.registerPick({ teamId: "B", playerId: "other-3" });
 
-    expect(() => mod.registerPick({ teamId: "A", playerId: "ned-3", playerCatalog })).toThrow(/maximaal 2 spelers per land/i);
-    expect(rosterMod.readTeamRosterState().byTeamId.A).toEqual(["ned-1", "ned-2"]);
+    expect(() => mod.registerPick({ teamId: "A", playerId: "ned-3", playerCatalog })).not.toThrow();
+    expect(rosterMod.readTeamRosterState().byTeamId.A).toEqual(["ned-1", "ned-2", "ned-3"]);
   });
 
   it("falls back gracefully when persistent draft reads fail", async () => {

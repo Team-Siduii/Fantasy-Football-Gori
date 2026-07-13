@@ -90,7 +90,7 @@ Per rol belangrijkste rechten:
   - Ronde 3: omgekeerde volgorde (bijv. 5-4-3-2-1)
 - Daarmee kiest de nummer laatst van vorig jaar in 2 van elke 3 rondes als eerste
 - Draft loopt tot elk team 15 spelers heeft
-- Roster-validatie wordt tijdens draft al afgedwongen: picks worden geblokkeerd als de teamwaarde boven de mode-specifieke transferbudget-cap komt, als de geselecteerde linie-aantallen niet meer binnen één toegestane formatie + vaste bankverdeling passen, of als een manager boven maximaal 2 spelers uit hetzelfde land komt.
+- Roster-validatie wordt tijdens draft al afgedwongen: picks worden geblokkeerd als de teamwaarde boven de mode-specifieke transferbudget-cap komt of als de geselecteerde linie-aantallen niet meer binnen één toegestane formatie + vaste bankverdeling passen. Voor WK geldt geen limiet meer op het aantal spelers uit hetzelfde land.
 - Elke geldige draftpick wordt direct in My Team ingevuld; de app kiest automatisch de best passende toegestane formatie op basis van de reeds gekozen spelers en plaatst overige geldige spelers op de bank.
 - Tijdens draft mag manager intern schuiven tussen basis/bank en formatie (voor zover geldig met al gekozen spelers)
 - Tijdens draft mag manager een eerder gekozen speler teruggeven aan de vrije pool
