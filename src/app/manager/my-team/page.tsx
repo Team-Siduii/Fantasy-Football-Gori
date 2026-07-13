@@ -9,7 +9,7 @@ import { reorderAcrossZones, type ZoneName, type ZoneState } from "@/domain/line
 import { buildPitchRows } from "@/domain/pitch-layout";
 import { calculateRemainingBudget, getTransferBudgetCapMillions, isWithinBudget } from "@/domain/team-budget";
 import type { PlayerRecord } from "@/domain/player";
-import { buildMarketPlayers } from "@/domain/transfer-workflow";
+import { buildMarketPlayers, filterTransferMarketPlayers } from "@/domain/transfer-workflow";
 import { getTransferLimitForRound } from "@/domain/rules";
 import { byPriceDesc, enrichPlayers, getPlayerRoundPoints, getPlayerTotalPoints, type EnhancedPlayer } from "@/lib/player-derived";
 import { getCountryFlagImageUrl, withCountryFlag } from "@/lib/country-flags";
@@ -21,6 +21,7 @@ import { createLatestRequestTracker } from "@/lib/latest-request";
 import { shouldShowWkAdvancementBadge } from "@/lib/wk-advancement-badge";
 import { getWkMatchLiveMinuteLabel, mergeWorldCupFixturesWithSyncedMatches, hasVisibleFixtureScore, isLiveWkMatchStatus, type SyncedWkMatchLike } from "@/lib/wk-match-schedule";
 import { hydrateSavedSquadState } from "@/lib/manager-team-hydration";
+import { buildManagerStateRequestUrl } from "@/lib/manager-state-request";
 import { WORLD_CUP_2026_FIXTURES, isRoundActive } from "@/lib/world-cup-schedule";
 
 type Position = "GK" | "DEF" | "MID" | "FWD";
@@ -151,6 +152,10 @@ function TransferPlayerName({ player }: { player: EnhancedPlayer }) {
       <span>{player.naam}</span>
     </span>
   );
+}
+
+function isTransferMarketUnavailable(player: EnhancedPlayer) {
+  return Boolean(player.inactive) || isTeamEliminated(player.club);
 }
 
 function countOpenSlots(state: ZoneState<EnhancedPlayer>) {
@@ -648,9 +653,16 @@ export default function ManagerMyTeamPage() {
               [...new Set(scheduleFixtures.map((fixture) => fixture.round))].sort((a, b) => a - b)[0] ??
               1;
 
+        const initialManagerStateUrl = buildManagerStateRequestUrl({
+          mode: isWkMode ? "wk" : "eredivisie",
+          selectedRound: isWkMode ? initialRound : null,
+          currentRound: isWkMode ? initialRound : null,
+          cacheBust: Date.now(),
+        });
+
         const [playersResponse, managerStateResponse, leagueConfigResponse, ownedIdsResponse] = await Promise.all([
           fetch(`/api/players?mode=${isWkMode ? "wk" : "eredivisie"}${isWkMode ? `&round=${initialRound}` : ""}&_t=${Date.now()}`, { cache: "no-store" }),
-          fetch(`/api/manager/state?mode=${isWkMode ? "wk" : "eredivisie"}&_t=${Date.now()}`, { cache: "no-store" }),
+          fetch(initialManagerStateUrl, { cache: "no-store" }),
           fetch(`/api/admin/league-config?mode=${isWkMode ? "wk" : "eredivisie"}&_t=${Date.now()}`, { cache: "no-store" }),
           isWkMode
             ? fetch(`/api/wk/owned-player-ids?_t=${Date.now()}`, { cache: "no-store" })
@@ -839,10 +851,12 @@ export default function ManagerMyTeamPage() {
     const hydrateRoundState = async () => {
       try {
         const mode = isWkMode ? "wk" : "eredivisie";
-        const isCurrentRound = currentRound !== null && selectedRound === currentRound;
-        const stateUrl = isCurrentRound
-          ? `/api/manager/state?mode=${mode}&_t=${Date.now()}`
-          : `/api/manager/state?mode=${mode}&roundNumber=${selectedRound}&_t=${Date.now()}`;
+        const stateUrl = buildManagerStateRequestUrl({
+          mode,
+          selectedRound,
+          currentRound,
+          cacheBust: Date.now(),
+        });
         // Re-fetch spelers met round parameter voor correcte roundPoints per ronde
         const doRefreshPlayers = true;
         const playersUrl = isWkMode
@@ -1016,8 +1030,9 @@ export default function ManagerMyTeamPage() {
 
   const marketPlayers = useMemo(() => {
     const { lineupIds, benchIds } = toPersistedIds(state);
-    return buildMarketPlayers(allPlayers, lineupIds, benchIds, allTeamPlayerIds).filter(
-      (player) => !blockedTransferPlayerIds.includes(player.id) && !isTeamEliminated(player.club),
+    return filterTransferMarketPlayers(
+      buildMarketPlayers(allPlayers, lineupIds, benchIds, allTeamPlayerIds),
+      blockedTransferPlayerIds,
     );
   }, [allPlayers, allTeamPlayerIds, blockedTransferPlayerIds, state]);
 
@@ -1602,7 +1617,7 @@ export default function ManagerMyTeamPage() {
       return;
     }
 
-    if (player.inactive) {
+    if (isTransferMarketUnavailable(player)) {
       setTransferMessage("Deze speler is niet meer actief in de volgende ronde en kan niet gekocht worden.");
       return;
     }
@@ -2070,30 +2085,33 @@ export default function ManagerMyTeamPage() {
                 </tr>
               </thead>
               <tbody>
-                {pagedMarket.map((item, index) => (
-                  <tr
-                    key={item.id}
-                    data-testid={`transfer-row-${index}`}
-                    className={item.inactive ? "transfer-row--inactive" : undefined}
-                  >
-                    <td><TransferPlayerName player={item} /></td>
-                    <td>{item.positie}</td>
-                    <td>{item.club}</td>
-                    <td>{item.punten}</td>
-                    <td>€ {item.prijs.toFixed(2)}M</td>
-                    <td style={{ textAlign: "center" }}>{item.owned ? "❌" : item.inactive ? "⛔" : "✅"}</td>
-                    <td>
-                      <button
-                        type="button"
-                        onClick={() => handlePickIncoming(item)}
-                        disabled={!ownTransferCanBuy || transferBusy || transfersLocked || item.owned || item.inactive}
-                        data-testid={`transfer-pick-${index}`}
-                      >
-                        {item.inactive ? "Uitgeschakeld" : buyQueueIds.includes(item.id) ? "Geselecteerd" : "Kies"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {pagedMarket.map((item, index) => {
+                  const isUnavailable = isTransferMarketUnavailable(item);
+                  return (
+                    <tr
+                      key={item.id}
+                      data-testid={`transfer-row-${index}`}
+                      className={isUnavailable ? "transfer-row--inactive" : undefined}
+                    >
+                      <td><TransferPlayerName player={item} /></td>
+                      <td>{item.positie}</td>
+                      <td>{item.club}</td>
+                      <td>{item.punten}</td>
+                      <td>€ {item.prijs.toFixed(2)}M</td>
+                      <td style={{ textAlign: "center" }}>{item.owned ? "❌" : isUnavailable ? "⛔" : "✅"}</td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => handlePickIncoming(item)}
+                          disabled={!ownTransferCanBuy || transferBusy || transfersLocked || item.owned || isUnavailable}
+                          data-testid={`transfer-pick-${index}`}
+                        >
+                          {isUnavailable ? "Uitgeschakeld" : buyQueueIds.includes(item.id) ? "Geselecteerd" : "Kies"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             <div className="table-pagination table-pagination--bottom" aria-label="Paginering transfermarkt onder">
