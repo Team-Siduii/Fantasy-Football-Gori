@@ -17,7 +17,7 @@ import { getInactivePlayer } from "@/lib/inactive-players";
 import { isTeamEliminated } from "@/lib/knockout-phase";
 import { getPlayerCardMeta } from "@/lib/player-card-display";
 import { buildManagerIdentityScopeKey, normalizeManagerIdentityEmail } from "@/lib/manager-identity-shared";
-import { getCurrentOrNextRound, getLatestPlayedRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
+import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
 import { createLatestRequestTracker } from "@/lib/latest-request";
 import { shouldShowWkAdvancementBadge } from "@/lib/wk-advancement-badge";
 import { getWkMatchLiveMinuteLabel, mergeWorldCupFixturesWithSyncedMatches, hasVisibleFixtureScore, isLiveWkMatchStatus, type SyncedWkMatchLike } from "@/lib/wk-match-schedule";
@@ -25,7 +25,7 @@ import { hydrateSavedSquadState } from "@/lib/manager-team-hydration";
 import { preservePendingSellVisibility } from "@/lib/pending-sell-visibility";
 import { buildManagerStateRequestUrl } from "@/lib/manager-state-request";
 import { canPersistManagerRoundState } from "@/lib/manager-round-persistence";
-import { WORLD_CUP_2026_FIXTURES, isRoundActive } from "@/lib/world-cup-schedule";
+import { WORLD_CUP_2026_FIXTURES, getPreferredWkRound, isRoundActive } from "@/lib/world-cup-schedule";
 
 type Position = "GK" | "DEF" | "MID" | "FWD";
 
@@ -616,7 +616,7 @@ export default function ManagerMyTeamPage() {
   const managerMode = isWkMode ? "wk" : "eredivisie";
   const formationOptions = useMemo(() => getFormationOptions(), []);
   const currentRound = useMemo(
-    () => isWkMode ? getLatestPlayedRound(activeFixtures, new Date()) : getCurrentOrNextRound(activeFixtures, new Date()),
+    () => isWkMode ? getPreferredWkRound(activeFixtures, new Date()) : getCurrentOrNextRound(activeFixtures, new Date()),
     [activeFixtures, isWkMode],
   );
   const roundNumbers = useMemo(
@@ -736,7 +736,7 @@ export default function ManagerMyTeamPage() {
       try {
         const initialRound =
           isWkMode
-            ? getLatestPlayedRound(scheduleFixtures, new Date())
+            ? getPreferredWkRound(scheduleFixtures, new Date())
             : getCurrentOrNextRound(scheduleFixtures, new Date()) ??
               [...new Set(scheduleFixtures.map((fixture) => fixture.round))].sort((a, b) => a - b)[0] ??
               1;

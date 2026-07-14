@@ -1,4 +1,4 @@
-import type { SeasonFixture } from "@/lib/season-schedule";
+import { getLatestPlayedRound, type SeasonFixture } from "./season-schedule";
 
 // Bron: KPN WK 2026 speelschema (https://www.kpn.com/entertainment/sport/wk-voetbal/speelschema)
 // Ronde-mapping: 1=Speelronde1, 2=Speelronde2, 3=Speelronde3, 4=Zestiende finales, 5=Achtste finales, 6=Kwartfinales, 7=Halve finales, 8=Troostfinale, 9=Finale
@@ -133,4 +133,23 @@ export function isRoundActive(roundNumber: number, now: Date = new Date()): bool
   const lockEnd = lastEnd + POST_MATCH_WINDOW;
 
   return nowMs >= firstKickoff + PRE_KICKOFF_GRACE && nowMs < lockEnd;
+}
+
+/**
+ * WK teamweergaves defaulten naar de actieve ronde zodra die bezig is.
+ * Als er geen actieve ronde is, vallen we terug op de laatst gespeelde ronde.
+ */
+export function getPreferredWkRound(fixtures: SeasonFixture[], now: Date = new Date()): number {
+  const rounds = Array.from(new Set(fixtures.map((fixture) => fixture.round))).sort((a, b) => a - b);
+  if (rounds.length === 0) {
+    return 1;
+  }
+
+  const activeRound = rounds.find((round) => isRoundActive(round, now));
+  if (typeof activeRound === "number") {
+    return activeRound;
+  }
+
+  const latestPlayedRound = getLatestPlayedRound(fixtures, now);
+  return rounds.includes(latestPlayedRound) ? latestPlayedRound : rounds[0];
 }
