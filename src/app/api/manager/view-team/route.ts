@@ -6,6 +6,8 @@ import { getTransferBudgetCapMillions } from "@/domain/team-budget";
 import { ensureAuthStateFromDb, getProfileByEmail } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 import { repairManagerTeamFromDraftArtifactsPersistent } from "@/lib/draft-manager-sync";
+import { getInactivePlayer } from "@/lib/inactive-players";
+import { hydrateSavedSquadState } from "@/lib/manager-team-hydration";
 import { readTeamViewSnapshotPersistent } from "@/lib/manager-team-state-source";
 import { type ManagerStateScope } from "@/lib/manager-state";
 import { loadPlayerPoints } from "@/lib/player-points-store";
@@ -150,11 +152,32 @@ export async function GET(request: Request) {
     };
   };
 
-  const lineup: TeamViewPlayer[] = state.lineupIds.map(enrichPlayer);
-  const bench: TeamViewPlayer[] = state.benchIds.map((id) => {
-    const p = enrichPlayer(id);
-    return { ...p, punten: Math.ceil(p.punten / 2) };
+  const hydrated = hydrateSavedSquadState({
+    players: allPlayers.map((player) => enrichPlayer(player.id)),
+    formation: state.formation,
+    lineupIds: state.lineupIds,
+    benchIds: state.benchIds,
+    benchPositions: ["GK", "DEF", "MID", "FWD"],
+    resolveInactivePlayer: (id) => {
+      const graveyard = getInactivePlayer(id);
+      return graveyard
+        ? {
+            ...graveyard,
+            punten: 0,
+            totalPoints: 0,
+            roundPoints: 0,
+            advancementPoints: 0,
+            inactive: true,
+          }
+        : null;
+    },
   });
+
+  const lineup: TeamViewPlayer[] = hydrated.lineup;
+  const bench: TeamViewPlayer[] = hydrated.bench.map((player) => ({
+    ...player,
+    punten: Math.ceil((player.punten ?? 0) / 2),
+  }));
 
   const budgetCap = getTransferBudgetCapMillions(scope);
   const squadCost = [...lineup, ...bench].reduce((sum, p) => sum + (p.prijs ?? 0), 0);

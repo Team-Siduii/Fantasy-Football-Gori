@@ -58,14 +58,32 @@ function resolveSavedPlayers(
   return resolved;
 }
 
+function rebalanceSquadForFormation(
+  lineupSlots: Array<"GK" | "DEF" | "MID" | "FWD">,
+  savedLineup: EnhancedPlayer[],
+  savedBench: EnhancedPlayer[],
+) {
+  const remaining = [...savedLineup, ...savedBench];
+  const lineup = lineupSlots.map((position) => {
+    const index = remaining.findIndex((player) => player.positie === position);
+    if (index >= 0) {
+      const [matched] = remaining.splice(index, 1);
+      return matched;
+    }
+    return createOpenSlot(position);
+  });
+
+  return { lineup, remaining };
+}
+
 export function hydrateSavedSquadState(input: HydrateSavedSquadInput): HydratedSquadState {
   const byId = new Map(input.players.map((player) => [player.id, player]));
   const savedLineup = resolveSavedPlayers(input.lineupIds, byId, input.resolveInactivePlayer);
   const savedBench = resolveSavedPlayers(input.benchIds, byId, input.resolveInactivePlayer);
 
   const lineupSlots = buildFormationSlots(input.formation).flat() as Array<"GK" | "DEF" | "MID" | "FWD">;
-  const lineup = lineupSlots.map((position, index) => savedLineup[index] ?? createOpenSlot(position));
-  const bench = input.benchPositions.map((position, index) => savedBench[index] ?? createOpenSlot(position));
+  const { lineup, remaining } = rebalanceSquadForFormation(lineupSlots, savedLineup, savedBench);
+  const bench = input.benchPositions.map((position, index) => remaining[index] ?? createOpenSlot(position));
 
   return { lineup, bench };
 }

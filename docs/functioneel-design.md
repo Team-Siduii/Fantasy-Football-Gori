@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-07-12
+Laatste update: 2026-07-14
 
 ## 1. Productvisie
 Doel van de app:
@@ -177,6 +177,7 @@ Per rol belangrijkste rechten:
 - Bij snel of herhaald bladeren tussen WK-speelrondes mag geen oudere async response de nieuwste selectie overschrijven: de pagina toont altijd de punten, opstelling en match-info van de **laatst gekozen** ronde en negeert stale in-flight responses van een eerder aangeklikte ronde.
 - Een pure WK-rondenavigatie mag **nooit** direct een `manager-state` writeback triggeren. Persist naar `/api/manager/state` mag alleen volgen op een echte teammutatie (formatie/opstelling/pending transfer state) en niet op alleen het wisselen van `selectedRound`, zodat de snapshot van een historische ronde niet per ongeluk overschreven wordt met de opstelling van een andere ronde.
 - `Mijn team` leest de renderklare teamsnapshot server-side uit een gedeeld read-model endpoint. De pagina hydrateert dus niet langer zelf lineup/bank opnieuw vanuit losse `players` + `manager-state` responses, maar rendert een server-side geprojecteerde TeamViewModel zodat `Mijn team` en `Bekijk team` dezelfde snapshotlogica delen.
+- De gedeelde squad-hydratie voor WK-teamweergaves is positie-aware over de **volledige opgeslagen selectie**: bij een vervuilde round-snapshot kiest de readlaag eerst voor elk basis-slot de eerstvolgende speler met de juiste positie uit de gecombineerde saved lineup + bank, en plaatst alleen de overgebleven spelers daarna op de bank. Daardoor blijft een geldige formatie leidend in zowel `Mijn team` als `Bekijk team`, ook als een oudere snapshot intern een extra aanvaller in de basis of een middenvelder op de bank had opgeslagen.
 - In WK mode verrijkt de Team-speelrondekaart het statische schema per geselecteerde ronde met gesynchroniseerde `wk_matches` data, zodat live standen tijdens lopende wedstrijden en definitieve uitslagen na afloop direct zichtbaar zijn in hetzelfde programma-overzicht. Gespeelde wedstrijden krijgen een duidelijkere score-hiërarchie (dikgedrukt/groter), terwijl live wedstrijden geen tekstlabel tonen maar via accentkleur, subtiele puls/knippering en wedstrijdminuut visueel opvallen. Naamvarianten tussen schema en bronfeed (zoals `Bosnië-Herzegovina` vs `Bosnië en Herzegovina`, of `Saoedi-Arabië` vs `Saudi-Arabië`) worden als hetzelfde land gematcht zodat uitslagen niet wegvallen door schrijfwijzeverschillen.
 - Als het statische WK-schema voor latere knockoutrondes nog placeholders bevat (zoals `Winnaar duel 89`), vervangt de app die per geselecteerde ronde automatisch met de echte gesynchroniseerde `wk_matches` landen zodra die bronfeed bekend is. Daardoor toont het rondeoverzicht voor bijvoorbeeld ronde 6 meteen de daadwerkelijke kwartfinales in plaats van placeholdernamen.
 - Transfermarkt-filters in MVP: positie, club en maximale transferwaarde (slider)
