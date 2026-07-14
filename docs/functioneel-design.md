@@ -51,6 +51,7 @@ Per rol belangrijkste rechten:
 - MVP testauth voor WK bevat seed-accounts per manager met unieke e-mail + eerste inlogcode, plus een admin-account (`admin@gori.local`)
 - Eerste login werkt met e-mail + inlogcode; daarna maakt de manager verplicht een eigen wachtwoord en teamnaam aan via de accountpagina
 - Elke manager heeft per competitie één canonieke `managerId` als storage-identiteit. E-mail, draftlabel, participant-label, profielnaam en teamnaam zijn alleen aliasen die vóór elke read/write eerst naar dezelfde canonieke manageridentiteit worden geresolved.
+- Login, eerste-account-setup en logout forceren een **harde documentnavigatie** naar de volgende route in plaats van alleen een soft client-side routewissel. Daarmee wordt bij accountwissels altijd een verse auth-boundary + `Mijn team` hydratie geladen en kan een vorige managersessie niet blijven hangen in de UI.
 
 ### 4.2 League management
 - League aanmaken en spelers uitnodigen

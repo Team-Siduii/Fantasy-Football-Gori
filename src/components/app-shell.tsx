@@ -206,6 +206,11 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
   async function handleLogout() {
     setIsMenuOpen(false);
     await fetch("/api/auth/logout", { method: "POST" });
+    if (typeof window !== "undefined") {
+      window.location.assign("/");
+      return;
+    }
+
     router.push("/");
     router.refresh();
   }
