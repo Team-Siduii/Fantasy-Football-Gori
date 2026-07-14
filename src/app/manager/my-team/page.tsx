@@ -22,6 +22,7 @@ import { shouldShowWkAdvancementBadge } from "@/lib/wk-advancement-badge";
 import { getWkMatchLiveMinuteLabel, mergeWorldCupFixturesWithSyncedMatches, hasVisibleFixtureScore, isLiveWkMatchStatus, type SyncedWkMatchLike } from "@/lib/wk-match-schedule";
 import { hydrateSavedSquadState } from "@/lib/manager-team-hydration";
 import { buildManagerStateRequestUrl } from "@/lib/manager-state-request";
+import { canPersistManagerRoundState } from "@/lib/manager-round-persistence";
 import { WORLD_CUP_2026_FIXTURES, isRoundActive } from "@/lib/world-cup-schedule";
 
 type Position = "GK" | "DEF" | "MID" | "FWD";
@@ -668,6 +669,8 @@ export default function ManagerMyTeamPage() {
   const hydrated = useRef(false);
   const suppressNextPersist = useRef(false);
   const selectedRoundRef = useRef<number | null>(selectedRound);
+  const hydratedRoundRef = useRef<number | null>(selectedRound);
+  const roundHydrationInFlightRef = useRef(false);
   const allPlayersRef = useRef<EnhancedPlayer[]>(allPlayers);
   const playerRefreshRequestTracker = useRef(createLatestRequestTracker());
   const wkMatchesRequestTracker = useRef(createLatestRequestTracker());
@@ -774,6 +777,7 @@ export default function ManagerMyTeamPage() {
         setPendingSellId(savedPendingSellId);
         setSellQueueIds(savedPendingSellId ? [savedPendingSellId] : []);
         setBuyQueueIds([]);
+        hydratedRoundRef.current = initialRound;
 
         const maxAvailable = Math.max(0, ...nextPlayers.map((player) => player.prijs));
         setMaxPrice(maxAvailable);
@@ -880,6 +884,8 @@ export default function ManagerMyTeamPage() {
 
     const controller = new AbortController();
     const requestId = roundHydrationRequestTracker.current.begin();
+    roundHydrationInFlightRef.current = true;
+    hydratedRoundRef.current = null;
 
     const hydrateRoundState = async () => {
       try {
@@ -955,6 +961,7 @@ export default function ManagerMyTeamPage() {
             : { formation: nextFormation, state: buildBudgetDemoState(allPlayersRef.current, nextFormation, budgetCapMillions) };
 
         suppressNextPersist.current = true;
+        hydratedRoundRef.current = selectedRound;
         setFormation(hydratedState.formation);
         setState(hydratedState.state);
         // Transfers lock wordt centraal bepaald via useMemo(isRoundActive)
@@ -991,6 +998,10 @@ export default function ManagerMyTeamPage() {
         }
       } catch {
         // no-op
+      } finally {
+        if (roundHydrationRequestTracker.current.isActive(requestId, controller.signal.aborted)) {
+          roundHydrationInFlightRef.current = false;
+        }
       }
     };
 
@@ -1000,29 +1011,22 @@ export default function ManagerMyTeamPage() {
   }, [budgetCapMillions, currentRound, formationOptions, isWkMode, selectedRound]);
 
   useEffect(() => {
-    if (!hydrated.current) {
-      return;
-    }
-
     if (suppressNextPersist.current) {
       suppressNextPersist.current = false;
       return;
     }
 
     const { lineupIds, benchIds } = toPersistedIds(state);
-
-    // Blokkeer persist van lege state — voorkomt dat demo/fallback spelers
-    // per ongeluk de echte state overschrijven tijdens laad-race-conditions.
-    if (lineupIds.length === 0 && benchIds.length === 0) {
-      return;
-    }
-
-    // Alleen echte teammutaties mogen een snapshot wegschrijven.
-    // Een pure rondenavigatie verandert selectedRound wél, maar niet de lineup-state.
-    // Als deze effect ook op selectedRound triggert, kan de vorige ronde-state
-    // per ongeluk in de nieuw gekozen historische ronde worden opgeslagen.
     const persistRound = selectedRoundRef.current;
-    if (persistRound === null) {
+    if (!canPersistManagerRoundState({
+      hydrated: hydrated.current,
+      suppressNextPersist: false,
+      isRoundHydrating: roundHydrationInFlightRef.current,
+      lineupIds,
+      benchIds,
+      persistRound,
+      hydratedRound: hydratedRoundRef.current,
+    })) {
       return;
     }
 
