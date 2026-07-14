@@ -22,6 +22,7 @@ import { createLatestRequestTracker } from "@/lib/latest-request";
 import { shouldShowWkAdvancementBadge } from "@/lib/wk-advancement-badge";
 import { getWkMatchLiveMinuteLabel, mergeWorldCupFixturesWithSyncedMatches, hasVisibleFixtureScore, isLiveWkMatchStatus, type SyncedWkMatchLike } from "@/lib/wk-match-schedule";
 import { hydrateSavedSquadState } from "@/lib/manager-team-hydration";
+import { preservePendingSellVisibility } from "@/lib/pending-sell-visibility";
 import { buildManagerStateRequestUrl } from "@/lib/manager-state-request";
 import { canPersistManagerRoundState } from "@/lib/manager-round-persistence";
 import { WORLD_CUP_2026_FIXTURES, isRoundActive } from "@/lib/world-cup-schedule";
@@ -807,7 +808,7 @@ export default function ManagerMyTeamPage() {
 
         setFormation(hydratedState.formation);
 
-        let nextState = isWithinBudget(
+        const nextState = isWithinBudget(
           [...hydratedState.state.lineup, ...hydratedState.state.bench],
           activeBudgetCap,
         )
@@ -815,16 +816,10 @@ export default function ManagerMyTeamPage() {
           : buildBudgetDemoState(nextPlayers, hydratedState.formation, activeBudgetCap);
 
         const savedPendingSellId = managerData.state?.pendingSellId ?? null;
-        if (savedPendingSellId) {
-          const playersWithoutSold = [...nextState.lineup, ...nextState.bench].filter(
-            (player) => !player.id.startsWith("open-") && player.id !== savedPendingSellId,
-          );
-          const rebuilt = buildStateForFormationWithVacancies(playersWithoutSold, hydratedState.formation, 1);
-          if (rebuilt) {
-            nextState = rebuilt;
-          }
-        }
-        setState(nextState);
+        // Een pending sell is UI-/transfermetadata en geen definitieve teammutatie.
+        // De speler moet dus zichtbaar blijven in Mijn team (gemarkeerd via player-card--sell)
+        // totdat de transfer-round resolutie hem echt uit de round-snapshot verwijdert.
+        setState(preservePendingSellVisibility(nextState, savedPendingSellId));
         setPendingSellId(savedPendingSellId);
         setSellQueueIds(savedPendingSellId ? [savedPendingSellId] : []);
         setBuyQueueIds([]);
