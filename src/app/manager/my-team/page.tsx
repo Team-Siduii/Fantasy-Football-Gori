@@ -16,6 +16,7 @@ import { getCountryFlagImageUrl, withCountryFlag } from "@/lib/country-flags";
 import { getInactivePlayer } from "@/lib/inactive-players";
 import { isTeamEliminated } from "@/lib/knockout-phase";
 import { getPlayerCardMeta } from "@/lib/player-card-display";
+import { buildManagerIdentityScopeKey, normalizeManagerIdentityEmail } from "@/lib/manager-identity-shared";
 import { getCurrentOrNextRound, getLatestPlayedRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
 import { createLatestRequestTracker } from "@/lib/latest-request";
 import { shouldShowWkAdvancementBadge } from "@/lib/wk-advancement-badge";
@@ -63,6 +64,12 @@ type LeagueRuntimeConfigResponse = {
     budget?: {
       teamValueCapMillions?: number;
     };
+  };
+};
+
+type AuthProfileResponse = {
+  profile?: {
+    email?: string | null;
   };
 };
 
@@ -605,6 +612,7 @@ export default function ManagerMyTeamPage() {
   const clubLabel = isWkMode ? "Land" : "Club";
   const clubsLabel = isWkMode ? "landen" : "clubs";
   const searchLabel = isWkMode ? "Zoek speler/land" : "Zoek speler/club";
+  const managerMode = isWkMode ? "wk" : "eredivisie";
   const formationOptions = useMemo(() => getFormationOptions(), []);
   const currentRound = useMemo(
     () => isWkMode ? getLatestPlayedRound(activeFixtures, new Date()) : getCurrentOrNextRound(activeFixtures, new Date()),
@@ -665,6 +673,8 @@ export default function ManagerMyTeamPage() {
   const [marketSortField, setMarketSortField] = useState<MarketSortField>("prijs");
   const [marketSortDirection, setMarketSortDirection] = useState<MarketSortDirection>("desc");
   const [marketPage, setMarketPage] = useState(1);
+  const [managerIdentityEmail, setManagerIdentityEmail] = useState<string | null>(null);
+  const managerIdentityScopeKey = buildManagerIdentityScopeKey(managerMode, managerIdentityEmail);
 
   const hydrated = useRef(false);
   const suppressNextPersist = useRef(false);
@@ -677,7 +687,48 @@ export default function ManagerMyTeamPage() {
   const roundHydrationRequestTracker = useRef(createLatestRequestTracker());
 
   useEffect(() => {
+    let cancelled = false;
+
+    const syncAuthenticatedManager = async () => {
+      try {
+        const response = await fetch("/api/auth/profile", { cache: "no-store" });
+        const data = response.ok
+          ? ((await response.json()) as AuthProfileResponse)
+          : { profile: undefined };
+        if (cancelled) {
+          return;
+        }
+        setManagerIdentityEmail(normalizeManagerIdentityEmail(data.profile?.email));
+      } catch {
+        if (!cancelled) {
+          setManagerIdentityEmail(null);
+        }
+      }
+    };
+
+    const handleWindowFocus = () => {
+      void syncAuthenticatedManager();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void syncAuthenticatedManager();
+      }
+    };
+
+    void syncAuthenticatedManager();
+    window.addEventListener("focus", handleWindowFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleWindowFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
     const load = async () => {
+      hydrated.current = false;
       setLoading(true);
       setError("");
 
@@ -690,16 +741,16 @@ export default function ManagerMyTeamPage() {
               1;
 
         const initialManagerStateUrl = buildManagerStateRequestUrl({
-          mode: isWkMode ? "wk" : "eredivisie",
+          mode: managerMode,
           selectedRound: isWkMode ? initialRound : null,
           currentRound: isWkMode ? initialRound : null,
           cacheBust: Date.now(),
         });
 
         const [playersResponse, managerStateResponse, leagueConfigResponse, ownedIdsResponse] = await Promise.all([
-          fetch(`/api/players?mode=${isWkMode ? "wk" : "eredivisie"}${isWkMode ? `&round=${initialRound}` : ""}&_t=${Date.now()}`, { cache: "no-store" }),
+          fetch(`/api/players?mode=${managerMode}${isWkMode ? `&round=${initialRound}` : ""}&_t=${Date.now()}`, { cache: "no-store" }),
           fetch(initialManagerStateUrl, { cache: "no-store" }),
-          fetch(`/api/admin/league-config?mode=${isWkMode ? "wk" : "eredivisie"}&_t=${Date.now()}`, { cache: "no-store" }),
+          fetch(`/api/admin/league-config?mode=${managerMode}&_t=${Date.now()}`, { cache: "no-store" }),
           isWkMode
             ? fetch(`/api/wk/owned-player-ids?_t=${Date.now()}`, { cache: "no-store" })
             : Promise.resolve({ ok: true, json: async () => ({ ids: [] }) }),
@@ -718,7 +769,7 @@ export default function ManagerMyTeamPage() {
         const leagueConfigData = leagueConfigResponse.ok
           ? ((await leagueConfigResponse.json()) as LeagueRuntimeConfigResponse)
           : { config: undefined };
-        const fallbackBudgetCap = getTransferBudgetCapMillions(isWkMode ? "wk" : "eredivisie");
+        const fallbackBudgetCap = getTransferBudgetCapMillions(managerMode);
         const configBudgetCap = leagueConfigData.config?.budget?.teamValueCapMillions;
         const activeBudgetCap =
           typeof configBudgetCap === "number" && configBudgetCap > 0 ? configBudgetCap : fallbackBudgetCap;
@@ -791,7 +842,7 @@ export default function ManagerMyTeamPage() {
     };
 
     void load();
-  }, [formationOptions, isWkMode, scheduleFixtures]);
+  }, [formationOptions, isWkMode, managerIdentityScopeKey, managerMode, scheduleFixtures]);
 
   useEffect(() => {
     if (!hydrated.current || !isWkMode || !selectedRound) {

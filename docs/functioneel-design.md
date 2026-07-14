@@ -50,6 +50,7 @@ Per rol belangrijkste rechten:
 - Lid worden via invite code/link
 - MVP testauth voor WK bevat seed-accounts per manager met unieke e-mail + eerste inlogcode, plus een admin-account (`admin@gori.local`)
 - Eerste login werkt met e-mail + inlogcode; daarna maakt de manager verplicht een eigen wachtwoord en teamnaam aan via de accountpagina
+- Elke manager heeft per competitie één canonieke `managerId` als storage-identiteit. E-mail, draftlabel, participant-label, profielnaam en teamnaam zijn alleen aliasen die vóór elke read/write eerst naar dezelfde canonieke manageridentiteit worden geresolved.
 
 ### 4.2 League management
 - League aanmaken en spelers uitnodigen
@@ -90,7 +91,7 @@ Per rol belangrijkste rechten:
   - Ronde 3: omgekeerde volgorde (bijv. 5-4-3-2-1)
 - Daarmee kiest de nummer laatst van vorig jaar in 2 van elke 3 rondes als eerste
 - Draft loopt tot elk team 15 spelers heeft
-- Roster-validatie wordt tijdens draft al afgedwongen: picks worden geblokkeerd als de teamwaarde boven de mode-specifieke transferbudget-cap komt, als de geselecteerde linie-aantallen niet meer binnen één toegestane formatie + vaste bankverdeling passen, of als een manager boven maximaal 2 spelers uit hetzelfde land komt.
+- Roster-validatie wordt tijdens draft al afgedwongen: picks worden geblokkeerd als de teamwaarde boven de mode-specifieke transferbudget-cap komt of als de geselecteerde linie-aantallen niet meer binnen één toegestane formatie + vaste bankverdeling passen. Voor WK geldt een landenlimiet alleen in ronde 7 en 8; buiten die rondes mag draft-/teamvalidatie dus niet globaal blokkeren op een vaste landencap.
 - Elke geldige draftpick wordt direct in My Team ingevuld; de app kiest automatisch de best passende toegestane formatie op basis van de reeds gekozen spelers en plaatst overige geldige spelers op de bank.
 - Tijdens draft mag manager intern schuiven tussen basis/bank en formatie (voor zover geldig met al gekozen spelers)
 - Tijdens draft mag manager een eerder gekozen speler teruggeven aan de vrije pool
@@ -179,6 +180,7 @@ Per rol belangrijkste rechten:
 - Bij snel of herhaald bladeren tussen WK-speelrondes mag geen oudere async response de nieuwste selectie overschrijven: de pagina toont altijd de punten, opstelling en match-info van de **laatst gekozen** ronde en negeert stale in-flight responses van een eerder aangeklikte ronde.
 - Een pure WK-rondenavigatie mag **nooit** direct een `manager-state` writeback triggeren. Persist naar `/api/manager/state` mag alleen volgen op een echte teammutatie (formatie/opstelling/pending transfer state) en niet op alleen het wisselen van `selectedRound`, zodat de snapshot van een historische ronde niet per ongeluk overschreven wordt met de opstelling van een andere ronde.
 - `Mijn team` leest de renderklare teamsnapshot server-side uit een gedeeld read-model endpoint. De pagina hydrateert dus niet langer zelf lineup/bank opnieuw vanuit losse `players` + `manager-state` responses, maar rendert een server-side geprojecteerde TeamViewModel zodat `Mijn team` en `Bekijk team` dezelfde snapshotlogica delen.
+- Auth-boundary wissels (logout -> login als andere manager, of setup -> actieve managersessie) forceren een harde documentnavigatie en `Mijn team` revalideert de sessie-identiteit via `/api/auth/profile` bij load/focus. Daardoor mag een eerder gehydrateerde Simon-clientstate nooit blijven hangen wanneer dezelfde browser daarna als Emiel `Mijn team` opent.
 - De gedeelde squad-hydratie voor WK-teamweergaves is positie-aware over de **volledige opgeslagen selectie**: bij een vervuilde round-snapshot kiest de readlaag eerst voor elk basis-slot de eerstvolgende speler met de juiste positie uit de gecombineerde saved lineup + bank, en plaatst alleen de overgebleven spelers daarna op de bank. Daardoor blijft een geldige formatie leidend in zowel `Mijn team` als `Bekijk team`, ook als een oudere snapshot intern een extra aanvaller in de basis of een middenvelder op de bank had opgeslagen.
 - In WK mode verrijkt de Team-speelrondekaart het statische schema per geselecteerde ronde met gesynchroniseerde `wk_matches` data, zodat live standen tijdens lopende wedstrijden en definitieve uitslagen na afloop direct zichtbaar zijn in hetzelfde programma-overzicht. Gespeelde wedstrijden krijgen een duidelijkere score-hiërarchie (dikgedrukt/groter), terwijl live wedstrijden geen tekstlabel tonen maar via accentkleur, subtiele puls/knippering en wedstrijdminuut visueel opvallen. Naamvarianten tussen schema en bronfeed (zoals `Bosnië-Herzegovina` vs `Bosnië en Herzegovina`, of `Saoedi-Arabië` vs `Saudi-Arabië`) worden als hetzelfde land gematcht zodat uitslagen niet wegvallen door schrijfwijzeverschillen.
 - Als het statische WK-schema voor latere knockoutrondes nog placeholders bevat (zoals `Winnaar duel 89`), vervangt de app die per geselecteerde ronde automatisch met de echte gesynchroniseerde `wk_matches` landen zodra die bronfeed bekend is. Daardoor toont het rondeoverzicht voor bijvoorbeeld ronde 6 meteen de daadwerkelijke kwartfinales in plaats van placeholdernamen.
@@ -258,7 +260,7 @@ FR-005: Drop+add wordt als 1 transactie verwerkt (geen half-voltooide teamstatus
 FR-006: Binnen een league blijft exclusiviteit leidend: geen dubbele spelerstoewijzing over teams.
 FR-007: Volledige audittrail van picks, drops, adds en sync-runs.
 FR-008 (fase 2): deterministische conflictresolutie voor gelijktijdige claims.
-FR-009: Roster-validatie dwingt tijdens draft geldige teamopbouw af: een manager kan geen pick doen boven het mode-specifieke maximale transferbudget, geen linie-aantallen kiezen die buiten één geldige formatie + vaste bankverdeling vallen en maximaal 2 spelers per land selecteren; bij iedere geldige pick wordt My Team direct automatisch gevuld met de best passende formatie en bij draft-einde geldt exact 15 spelers met bankverdeling (1K/1V/1M/1A).
+FR-009: Roster-validatie dwingt tijdens draft geldige teamopbouw af: een manager kan geen pick doen boven het mode-specifieke maximale transferbudget en geen linie-aantallen kiezen die buiten één geldige formatie + vaste bankverdeling vallen; bij iedere geldige pick wordt My Team direct automatisch gevuld met de best passende formatie en bij draft-einde geldt exact 15 spelers met bankverdeling (1K/1V/1M/1A). Voor WK geldt een landenlimiet alleen in ronde 7 en 8 en dus niet als globale draftblokkade voor alle rondes.
 FR-010: Basisopstelling bevat exact 1 keeper en een geldige veldformatie uit de toegestane set.
 FR-011: Transferlimiet is standaard 1 per ronde, met precies 3 vooraf ingestelde bonusrondes met limiet 3.
 FR-012: Team kan geen transfer bevestigen die budget overschrijdt.
@@ -365,12 +367,14 @@ FR-095: Admin-config toont de bekende manager-deelnemers met status `In afwachti
 FR-096: Oefendraftbeheer is zichtbaar als vaste kaart in de draftkamer met link naar `/instellingen`, zodat de admin niet hoeft te zoeken in een ingeklapt detailpaneel om een volledige draft te starten.
 FR-097: Runtime-state voor Gori Fantasy ondersteunt database-backed opslag via `GORI_DATABASE_URL` (fallback `DATABASE_URL`/`POSTGRES_URL`) met app-namespace `gori_fantasy`; draft-state, team-rosters, manager-state, team-score-state en league-admin-config blijven gescheiden per store en competitie-mode (`eredivisie|wk`), terwijl manager-state intern canoniek per `managerId` wordt opgeslagen met alias-compatibiliteit voor legacy e-mailrecords, zodat RxAruba/andere apps en Gori-modes geen state mengen.
 FR-098: Instellingen bevat een admin health-check voor manager/account integrity per mode; de checker signaleert ontbrekende auth-accounts, participant↔auth email drift en legacy email-keyed manager-state records, en kan via een repair/backfill actie manager-state opnieuw canoniek onder `managerId` wegschrijven.
+FR-098a: `manager-state`, `team-roster-state`, draft-sync, transfer-round writes en admin repair-routes moeten vóór iedere persist/read-operatie dezelfde canonieke managerresolutie toepassen. Daardoor wijzen managerwissels, aangepaste participant-labels en legacy aliaskeys altijd naar één en dezelfde managerrecordset.
 FR-099: `Mijn competitie`/league-ranking gebruikt geaccepteerde league-deelnemers als bron in plaats van alleen vaste manager-presets; geaccepteerde deelnemers met een echte manageridentiteit of subpoule-koppeling blijven daardoor zichtbaar, ook wanneer hun auth-account rol `admin` heeft voor coördinatietaken. Puur technische admin-accounts zonder managerrol en zonder subpoule-koppeling blijven buiten de ranglijst.
 FR-100: WK-spelerpunten voor UI, rankings en teamweergaves komen uitsluitend uit de persistente applicatie-datalaag (`team-score-state` + berekende player read-models) en niet rechtstreeks uit live WKCoach totalen.
 FR-101: WK-punten worden per speler per ronde opnieuw berekend vanuit persistente WKCoach `point_events`; eigen regels, waaronder extra clean-sheet-correctie voor verdedigers, overschrijven daarbij de ruwe bronpunten.
 FR-102: Behaalde teampunten worden per manager en per ronde als aparte snapshots opgeslagen met gebruikte lineup/bank op dat moment, zodat eerdere rondes niet veranderen wanneer het team later door transfers of opstellingswissels verandert.
 FR-103: Zodra een volgende speelronde actief is, worden oudere transferrondes met onafgeronde pending/submit-states server-side genormaliseerd naar een afgesloten historische toestand; afgeronde transfers blijven zichtbaar, maar oude rondes tonen geen hangende pending-managers meer.
 FR-104: De admin-route voor handmatige WK-teamreparaties resolveert het doelrecord in `team-roster-state` via de canonieke manageridentiteit/aliasen van de gekozen manager; een repair voor manager A mag dus nooit het rosterrecord van een andere manager overschrijven enkel omdat die key hardcoded of toevallig aanwezig is.
+FR-105: Auth-boundary overgangen tussen managersessies gebruiken een harde documentnavigatie en WK `Mijn team` revalideert de actuele sessie-identiteit via `/api/auth/profile` bij load/focus; daardoor moet dezelfde browser na Simon -> logout -> Emiel altijd Emiels eigen teamsnapshot opnieuw hydrateren in plaats van een eerder geladen managersnapshot te hergebruiken.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -535,6 +539,9 @@ Waarom zo:
 - [ ] `Mijn competitie` toont alle geaccepteerde managers uit de actieve league, inclusief een geaccepteerde coördinator/admin-manager zoals Simon, maar sluit een puur technisch admin-account zonder managerrol/subpoule uit.
 - [ ] Een handmatige WK-teamrepair werkt manager-specifiek door in `manager-state`, roundsnapshot, `team-roster-state` en `transfer-round` zonder het rosterrecord van een andere manager te overschrijven via een hardcoded of verkeerde teamkey.
 - [ ] In WK `Mijn team` mag bladeren van ronde 6 naar ronde 7 de oude client-opstelling van ronde 6 niet naar ronde 7 terugschrijven; na navigatie blijft de voor ronde 7 opgeslagen formatie + lineup zichtbaar, ook na late API-responses of mobiele refreshes.
+- [ ] Na logout van Simon en login als Emiel in dezelfde browser forceert de app een harde auth-boundary refresh en hydrateert `Mijn team` opnieuw vanuit Emiels sessie-identiteit; de pagina mag dan geen eerder geladen Simon-state of gemixte teamweergave tonen.
+- [ ] Als dezelfde manager via e-mail, draftlabel, participant-label of runtime profielnaam wordt aangesproken, landen reads/writes steeds op exact dezelfde canonieke `managerId` in `manager-state`, `team-roster-state` en transfer-round state.
+- [ ] Legacy aliaskeys in roster/manager-state worden bij eerstvolgende write gemerged naar de canonieke managerkey zonder dat onbekende team-ids of andere managers overschreven raken.
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -575,9 +582,12 @@ Waarom zo:
 - [x] Manager-state gebruikt op Vercel standaard `/tmp/manager-state*.json` wanneer geen expliciete env-paden zijn gezet, zodat serverless writes niet naar de read-only projectbundel gaan.
 - [x] WK draftpicks worden direct naar de gekoppelde manager-state van de WK Team-pagina gesynchroniseerd; terugzetten van een speler ruimt het teamoverzicht ook op. Een nieuwe/reset oefendraft leegt eerst bestaande draftrosters en gekoppelde teamoverzichten voor de betreffende mode.
 - [x] Admin kan per mode competitienaam, draft-rondes en deelnemersstatus beheren; de zichtbare oefendraftkaart gebruikt alleen geaccepteerde deelnemers als draftvolgorde.
+- [x] WK landenlimiet bevestigd: deze geldt alleen voor ronde 7 en 8 en niet als algemene draft- of alle-rondes cap.
 
 ## 13. Besluitenlog
+- 2026-07-14: Auth-boundary wissels tussen managersessies gebruiken voortaan harde documentnavigatie; WK `Mijn team` revalideert de sessie-identiteit via `/api/auth/profile` zodat Simon->Emiel in dezelfde browser nooit meer een stale eerdere managersnapshot mag tonen.
 - 2026-07-14: WK `Mijn team` round-persistence gehard tegen client-side navigatieraces: tijdens rondenavigatie mag een oude zichtbare opstelling niet meer naar de nieuw gekozen ronde worden teruggeschreven; writes blijven geblokkeerd tot de geselecteerde ronde volledig is gehydrateerd en bewezen is dat de zichtbare state bij die ronde hoort.
+- 2026-07-14: Canonieke manager-identiteit verder doorgetrokken over auth, participant-config, draft-sync, `team-roster-state`, `manager-state`, transfer-round writes en admin repairs. `managerId` is de enige persistente waarheid; e-mail/teamnaam/labels blijven aliasen die alleen nog vóór read/write-resolutie gebruikt worden.
 - 2026-05-16: Repo + Vercel + baseline workflow opgezet.
 - 2026-04-16: Functioneel design document gestart.
 - 2026-04-16: Productfocus aangescherpt naar: draft + unieke spelers + transferwindow/waiver.

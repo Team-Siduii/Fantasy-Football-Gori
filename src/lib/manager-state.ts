@@ -1,9 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { isGoriDatabaseEnabled, readPersistentJson, writePersistentJson } from "./persistent-json-store";
-import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
-import { ensureAuthStateFromDb, getAuthAccountByEmail, getAuthAccountById, listManagerAccounts } from "./auth-store";
-import { getLeagueAdminConfig, type LeagueMode } from "./league-admin-config";
+import { ensureAuthStateFromDb } from "./auth-store";
+import { resolveCanonicalManagerId, normalizeManagerIdentityValue } from "./manager-identity";
 
 export type RoundLock = {
   roundNumber: number;
@@ -185,101 +184,8 @@ function mergePersonalState(current: ManagerPersonalState | undefined, incoming:
   };
 }
 
-type CanonicalManagerIdentity = {
-  canonicalKey: string;
-  aliases: Set<string>;
-};
-
-function normalizeAliasValue(value: string) {
-  return value.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-function addAlias(target: Set<string>, value?: string | null) {
-  if (typeof value !== "string") {
-    return;
-  }
-
-  const normalized = normalizeAliasValue(value);
-  if (normalized) {
-    target.add(normalized);
-  }
-}
-
-function buildCanonicalManagerIdentities(scope: ManagerStateScope): CanonicalManagerIdentity[] {
-  const byCanonical = new Map<string, CanonicalManagerIdentity>();
-  const ensure = (managerId: string) => {
-    const canonicalKey = normalizeAliasValue(managerId);
-    const existing = byCanonical.get(canonicalKey);
-    if (existing) {
-      return existing;
-    }
-
-    const created: CanonicalManagerIdentity = {
-      canonicalKey,
-      aliases: new Set<string>([canonicalKey]),
-    };
-    byCanonical.set(canonicalKey, created);
-    return created;
-  };
-
-  for (const preset of AUTH_TEST_ACCOUNT_PRESETS.filter((candidate) => candidate.role === "manager")) {
-    const identity = ensure(preset.id);
-    addAlias(identity.aliases, preset.id);
-    addAlias(identity.aliases, preset.label);
-    addAlias(identity.aliases, preset.name);
-    addAlias(identity.aliases, preset.teamName);
-    addAlias(identity.aliases, preset.email);
-  }
-
-  for (const account of listManagerAccounts()) {
-    const identity = ensure(account.id);
-    addAlias(identity.aliases, account.id);
-    addAlias(identity.aliases, account.profile.name);
-    addAlias(identity.aliases, account.profile.teamName);
-    addAlias(identity.aliases, account.profile.email);
-  }
-
-  const config = getLeagueAdminConfig(scope as LeagueMode);
-  for (const participant of config.participants) {
-    const identity = ensure(participant.managerId);
-    addAlias(identity.aliases, participant.managerId);
-    addAlias(identity.aliases, participant.label);
-    addAlias(identity.aliases, participant.email);
-  }
-
-  return Array.from(byCanonical.values());
-}
-
 function resolveCanonicalManagerKey(scope: ManagerStateScope, managerKey?: string | null): string | null {
-  if (!managerKey) {
-    return null;
-  }
-
-  const normalized = normalizeAliasValue(managerKey);
-  if (!normalized) {
-    return null;
-  }
-
-  const directAuthAccount = getAuthAccountById(normalized);
-  if (directAuthAccount?.role === "manager") {
-    return normalizeAliasValue(directAuthAccount.id);
-  }
-
-  const directParticipant = getLeagueAdminConfig(scope as LeagueMode).participants.find(
-    (participant) => normalizeAliasValue(participant.managerId) === normalized,
-  );
-  if (directParticipant) {
-    return normalizeAliasValue(directParticipant.managerId);
-  }
-
-  const directAuthEmail = getAuthAccountByEmail(normalized);
-  if (directAuthEmail?.role === "manager") {
-    return normalizeAliasValue(directAuthEmail.id);
-  }
-
-  const identities = buildCanonicalManagerIdentities(scope);
-  const matched = identities.find((identity) => identity.aliases.has(normalized));
-  return matched?.canonicalKey ?? normalized;
+  return resolveCanonicalManagerId(scope, managerKey);
 }
 
 function normalizeManagerStates(
@@ -296,7 +202,11 @@ function normalizeManagerStates(
       continue;
     }
 
-    const canonicalKey = resolveCanonicalManagerKey(scope, managerKey) ?? normalizeAliasValue(managerKey);
+    const canonicalKey = resolveCanonicalManagerKey(scope, managerKey) ?? normalizeManagerIdentityValue(managerKey);
+    if (!canonicalKey) {
+      continue;
+    }
+
     const nextState = toPersonalState(raw as Partial<ManagerPersonalState>);
     normalized[canonicalKey] = mergePersonalState(normalized[canonicalKey], nextState);
   }

@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { isGoriDatabaseEnabled, readPersistentJson, writePersistentJson } from "./persistent-json-store";
+import { resolveCanonicalManagerId } from "./manager-identity";
 
 export type TeamRosterState = {
   byTeamId: Record<string, string[]>;
@@ -29,9 +30,15 @@ function normalizeTeamRosterState(input: Partial<TeamRosterState>): TeamRosterSt
   const byTeamId = input.byTeamId ?? {};
   const normalized: Record<string, string[]> = {};
   for (const [teamId, playerIds] of Object.entries(byTeamId)) {
-    normalized[teamId] = Array.isArray(playerIds) ? playerIds.filter((id): id is string => typeof id === "string") : [];
+    const canonicalTeamId = resolveCanonicalManagerId("eredivisie", teamId) ?? resolveCanonicalManagerId("wk", teamId) ?? teamId;
+    const nextPlayerIds = Array.isArray(playerIds) ? playerIds.filter((id): id is string => typeof id === "string") : [];
+    normalized[canonicalTeamId] = Array.from(new Set([...(normalized[canonicalTeamId] ?? []), ...nextPlayerIds]));
   }
   return { byTeamId: normalized };
+}
+
+function resolveRosterTeamKey(scope: TeamRosterScope, teamId: string) {
+  return resolveCanonicalManagerId(scope, teamId) ?? teamId.trim();
 }
 
 export function readTeamRosterState(scope: TeamRosterScope = "eredivisie"): TeamRosterState {
@@ -51,16 +58,17 @@ export function readTeamRosterState(scope: TeamRosterScope = "eredivisie"): Team
 export function saveTeamRosterState(next: TeamRosterState, scope: TeamRosterScope = "eredivisie"): TeamRosterState {
   const target = resolveTeamRosterStatePath(scope);
   mkdirSync(path.dirname(target), { recursive: true });
-  writeFileSync(target, JSON.stringify(next, null, 2), "utf-8");
-  return next;
+  const normalized = normalizeTeamRosterState(next);
+  writeFileSync(target, JSON.stringify(normalized, null, 2), "utf-8");
+  return normalized;
 }
 
 async function writeTeamRosterStatePersistent(next: TeamRosterState, scope: TeamRosterScope = "eredivisie") {
-  saveTeamRosterState(next, scope);
+  const normalized = saveTeamRosterState(next, scope);
   if (isGoriDatabaseEnabled()) {
-    await writePersistentJson({ store: "team-roster-state", scope }, next);
+    await writePersistentJson({ store: "team-roster-state", scope }, normalized);
   }
-  return next;
+  return normalized;
 }
 
 export async function readTeamRosterStatePersistent(scope: TeamRosterScope = "eredivisie"): Promise<TeamRosterState> {
@@ -85,9 +93,10 @@ export async function readTeamRosterStatePersistent(scope: TeamRosterScope = "er
 
 export async function addPlayerToTeamRosterPersistent(teamId: string, playerId: string, scope: TeamRosterScope = "eredivisie") {
   const state = await readTeamRosterStatePersistent(scope);
-  const current = state.byTeamId[teamId] ?? [];
+  const rosterTeamKey = resolveRosterTeamKey(scope, teamId);
+  const current = state.byTeamId[rosterTeamKey] ?? [];
   if (!current.includes(playerId)) {
-    state.byTeamId[teamId] = [...current, playerId];
+    state.byTeamId[rosterTeamKey] = [...current, playerId];
     await writeTeamRosterStatePersistent(state, scope);
   }
   return readTeamRosterStatePersistent(scope);
@@ -95,8 +104,16 @@ export async function addPlayerToTeamRosterPersistent(teamId: string, playerId: 
 
 export async function removePlayerFromTeamRosterPersistent(teamId: string, playerId: string, scope: TeamRosterScope = "eredivisie") {
   const state = await readTeamRosterStatePersistent(scope);
-  const current = state.byTeamId[teamId] ?? [];
-  state.byTeamId[teamId] = current.filter((id) => id !== playerId);
+  const rosterTeamKey = resolveRosterTeamKey(scope, teamId);
+  const current = state.byTeamId[rosterTeamKey] ?? [];
+  state.byTeamId[rosterTeamKey] = current.filter((id) => id !== playerId);
+  await writeTeamRosterStatePersistent(state, scope);
+  return readTeamRosterStatePersistent(scope);
+}
+
+export async function setTeamRosterForManagerPersistent(teamId: string, playerIds: string[], scope: TeamRosterScope = "eredivisie") {
+  const state = await readTeamRosterStatePersistent(scope);
+  state.byTeamId[resolveRosterTeamKey(scope, teamId)] = Array.from(new Set(playerIds.filter((id): id is string => typeof id === "string" && id.trim().length > 0)));
   await writeTeamRosterStatePersistent(state, scope);
   return readTeamRosterStatePersistent(scope);
 }
@@ -107,9 +124,10 @@ export async function resetTeamRosterStatePersistent(scope: TeamRosterScope = "e
 
 export function addPlayerToTeamRoster(teamId: string, playerId: string, scope: TeamRosterScope = "eredivisie") {
   const state = readTeamRosterState(scope);
-  const current = state.byTeamId[teamId] ?? [];
+  const rosterTeamKey = resolveRosterTeamKey(scope, teamId);
+  const current = state.byTeamId[rosterTeamKey] ?? [];
   if (!current.includes(playerId)) {
-    state.byTeamId[teamId] = [...current, playerId];
+    state.byTeamId[rosterTeamKey] = [...current, playerId];
     saveTeamRosterState(state, scope);
   }
   return readTeamRosterState(scope);
@@ -117,8 +135,16 @@ export function addPlayerToTeamRoster(teamId: string, playerId: string, scope: T
 
 export function removePlayerFromTeamRoster(teamId: string, playerId: string, scope: TeamRosterScope = "eredivisie") {
   const state = readTeamRosterState(scope);
-  const current = state.byTeamId[teamId] ?? [];
-  state.byTeamId[teamId] = current.filter((id) => id !== playerId);
+  const rosterTeamKey = resolveRosterTeamKey(scope, teamId);
+  const current = state.byTeamId[rosterTeamKey] ?? [];
+  state.byTeamId[rosterTeamKey] = current.filter((id) => id !== playerId);
+  saveTeamRosterState(state, scope);
+  return readTeamRosterState(scope);
+}
+
+export function setTeamRosterForManager(teamId: string, playerIds: string[], scope: TeamRosterScope = "eredivisie") {
+  const state = readTeamRosterState(scope);
+  state.byTeamId[resolveRosterTeamKey(scope, teamId)] = Array.from(new Set(playerIds.filter((id): id is string => typeof id === "string" && id.trim().length > 0)));
   saveTeamRosterState(state, scope);
   return readTeamRosterState(scope);
 }

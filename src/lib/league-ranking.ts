@@ -4,6 +4,7 @@ import { parsePlayerCsv } from "../domain/player-csv";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
 import { ensureAuthStateFromDb, getAuthAccountByEmail, getProfileByEmail } from "./auth-store";
 import { getLeagueAdminConfigPersistent } from "./league-admin-config";
+import { resolveCanonicalManagerId } from "./manager-identity";
 import { readManagerStatePersistent, type ManagerStateScope } from "./manager-state";
 import { summarizeManagerTeamScoresPersistent, getManagerRoundScorePersistent } from "./team-score-state";
 import { loadPlayerPoints } from "./player-points-store";
@@ -154,9 +155,11 @@ export async function buildLeagueRankingSnapshot(scope: ManagerStateScope, reque
       currentRoundPoints = totalPoints;
     }
 
+    const canonicalManagerId = resolveCanonicalManagerId(scope, managerEmail) ?? managerEmail.split("@")[0];
+
     rankingSeed.push({
-      managerId: managerEmail.split("@")[0],
-      displayName: profile?.name ?? managerEmail.split("@")[0],
+      managerId: canonicalManagerId,
+      displayName: profile?.name ?? canonicalManagerId,
       teamName,
       email: managerEmail,
       subpoule: SUBPOULE_BY_EMAIL[managerEmail] ?? "A",

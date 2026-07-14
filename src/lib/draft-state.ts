@@ -15,6 +15,7 @@ import {
   type TeamRosterScope,
 } from "./team-roster-state";
 import { isGoriDatabaseEnabled, readPersistentJson, writePersistentJson } from "./persistent-json-store";
+import { resolveCanonicalManagerId } from "./manager-identity";
 
 export type DraftScope = TeamRosterScope;
 
@@ -161,6 +162,10 @@ function computeCurrentTurnTeamId(pickSequence: string[], picksCount: number): s
   return pickSequence[picksCount] ?? null;
 }
 
+function canonicalizeDraftTeamId(scope: DraftScope, teamId: string | null | undefined) {
+  return resolveCanonicalManagerId(scope, teamId) ?? (typeof teamId === "string" ? teamId.trim() : "");
+}
+
 export function startDraft(input: {
   leagueId: string;
   teamOrder: string[];
@@ -172,7 +177,7 @@ export function startDraft(input: {
   const next = buildStartedDraftState(input);
   const scope = input.scope ?? "eredivisie";
   resetTeamRosterState(scope);
-  for (const teamId of input.teamOrder) {
+  for (const teamId of next.teamOrder) {
     syncDraftRosterToManagerTeam({ teamId, playerIds: [], scope });
   }
   return writeDraftState(next, scope);
@@ -230,7 +235,7 @@ export async function startDraftPersistent(input: {
   const next = buildStartedDraftState(input);
   const scope = input.scope ?? "eredivisie";
   await resetTeamRosterStatePersistent(scope);
-  for (const teamId of input.teamOrder) {
+  for (const teamId of next.teamOrder) {
     await syncDraftRosterToManagerTeamPersistent({ teamId, playerIds: [], scope });
   }
   return writeDraftStatePersistent(next, scope);
@@ -357,13 +362,14 @@ export function registerPick(input: {
   benchComposition?: DraftBenchComposition;
 }): DraftState {
   const scope = input.scope ?? "eredivisie";
+  const canonicalTeamId = canonicalizeDraftTeamId(scope, input.teamId);
   const current = readDraftState(scope);
-  const next = buildRegisteredPickState(current, input);
+  const next = buildRegisteredPickState(current, { ...input, teamId: canonicalTeamId, scope });
 
-  const rosterState = addPlayerToTeamRoster(input.teamId, input.playerId, scope);
+  const rosterState = addPlayerToTeamRoster(canonicalTeamId, input.playerId, scope);
   syncDraftRosterToManagerTeam({
-    teamId: input.teamId,
-    playerIds: rosterState.byTeamId[input.teamId] ?? [],
+    teamId: canonicalTeamId,
+    playerIds: rosterState.byTeamId[canonicalTeamId] ?? [],
     scope,
     playerCatalog: input.playerCatalog,
   });
@@ -377,16 +383,20 @@ function buildRegisteredPickState(
     teamId: string;
     playerId: string;
     at?: string;
+    scope?: DraftScope;
     playerCatalog?: DraftPickValidationPlayer[];
     budgetCap?: number;
     formationOptions?: string[];
     benchComposition?: DraftBenchComposition;
   },
 ): DraftState {
+  const scope = input.scope ?? "eredivisie";
+  const canonicalTeamId = canonicalizeDraftTeamId(scope, input.teamId);
   if (current.status !== "ACTIVE") {
     throw new Error("draft is not active");
   }
-  if (current.currentTurnTeamId !== input.teamId) {
+  const currentTurnTeamId = canonicalizeDraftTeamId(scope, current.currentTurnTeamId);
+  if (current.currentTurnTeamId && currentTurnTeamId !== canonicalTeamId) {
     throw new Error("not this team's turn");
   }
   if (current.picks.some((pick) => pick.playerId === input.playerId)) {
@@ -396,7 +406,7 @@ function buildRegisteredPickState(
 
   validateDraftPickConstraints({
     current,
-    teamId: input.teamId,
+    teamId: canonicalTeamId,
     playerId: input.playerId,
     playerCatalog: input.playerCatalog,
     budgetCap: input.budgetCap,
@@ -406,7 +416,7 @@ function buildRegisteredPickState(
 
   const pickNumber = current.picks.length + 1;
   const at = input.at ?? new Date().toISOString();
-  const nextPicks = [...current.picks, { pickNumber, teamId: input.teamId, playerId: input.playerId, pickedAt: at }];
+  const nextPicks = [...current.picks, { pickNumber, teamId: canonicalTeamId, playerId: input.playerId, pickedAt: at }];
   const status: DraftStatus = nextPicks.length >= current.totalPicks ? "COMPLETED" : "ACTIVE";
 
   return {
@@ -416,7 +426,7 @@ function buildRegisteredPickState(
     currentTurnTeamId: status === "COMPLETED" ? null : computeCurrentTurnTeamId(current.pickSequence, nextPicks.length),
     events: [
       ...current.events,
-      { type: "PLAYER_PICKED", at, actorId: input.teamId, payload: { pickNumber, playerId: input.playerId } },
+      { type: "PLAYER_PICKED", at, actorId: canonicalTeamId, payload: { pickNumber, playerId: input.playerId } },
     ],
   };
 }
@@ -432,13 +442,14 @@ export async function registerPickPersistent(input: {
   benchComposition?: DraftBenchComposition;
 }): Promise<DraftState> {
   const scope = input.scope ?? "eredivisie";
+  const canonicalTeamId = canonicalizeDraftTeamId(scope, input.teamId);
   const current = await readDraftStatePersistent(scope);
-  const next = buildRegisteredPickState(current, input);
+  const next = buildRegisteredPickState(current, { ...input, teamId: canonicalTeamId, scope });
 
-  const rosterState = await addPlayerToTeamRosterPersistent(input.teamId, input.playerId, scope);
+  const rosterState = await addPlayerToTeamRosterPersistent(canonicalTeamId, input.playerId, scope);
   await syncDraftRosterToManagerTeamPersistent({
-    teamId: input.teamId,
-    playerIds: rosterState.byTeamId[input.teamId] ?? [],
+    teamId: canonicalTeamId,
+    playerIds: rosterState.byTeamId[canonicalTeamId] ?? [],
     scope,
     playerCatalog: input.playerCatalog,
   });
@@ -454,13 +465,14 @@ export function returnPickedPlayerToPool(input: {
   scope?: DraftScope;
 }): DraftState {
   const scope = input.scope ?? "eredivisie";
+  const canonicalTeamId = canonicalizeDraftTeamId(scope, input.teamId);
   const current = readDraftState(scope);
-  const next = buildReturnedPickState(current, input);
+  const next = buildReturnedPickState(current, { ...input, teamId: canonicalTeamId, scope });
 
-  const rosterState = removePlayerFromTeamRoster(input.teamId, input.playerId, scope);
+  const rosterState = removePlayerFromTeamRoster(canonicalTeamId, input.playerId, scope);
   syncDraftRosterToManagerTeam({
-    teamId: input.teamId,
-    playerIds: rosterState.byTeamId[input.teamId] ?? [],
+    teamId: canonicalTeamId,
+    playerIds: rosterState.byTeamId[canonicalTeamId] ?? [],
     scope,
   });
 
@@ -474,9 +486,12 @@ function buildReturnedPickState(
     playerId: string;
     reason: string;
     at?: string;
+    scope?: DraftScope;
   },
 ): DraftState {
-  const pickIndex = current.picks.findIndex((pick) => pick.teamId === input.teamId && pick.playerId === input.playerId);
+  const scope = input.scope ?? "eredivisie";
+  const canonicalTeamId = canonicalizeDraftTeamId(scope, input.teamId);
+  const pickIndex = current.picks.findIndex((pick) => pick.teamId === canonicalTeamId && pick.playerId === input.playerId);
 
   if (pickIndex === -1) {
     throw new Error("pick not found");
@@ -497,7 +512,7 @@ function buildReturnedPickState(
       {
         type: "PLAYER_RETURNED",
         at,
-        actorId: input.teamId,
+        actorId: canonicalTeamId,
         payload: { playerId: input.playerId, reason: input.reason },
       },
     ],
@@ -512,13 +527,14 @@ export async function returnPickedPlayerToPoolPersistent(input: {
   scope?: DraftScope;
 }): Promise<DraftState> {
   const scope = input.scope ?? "eredivisie";
+  const canonicalTeamId = canonicalizeDraftTeamId(scope, input.teamId);
   const current = await readDraftStatePersistent(scope);
-  const next = buildReturnedPickState(current, input);
+  const next = buildReturnedPickState(current, { ...input, teamId: canonicalTeamId, scope });
 
-  const rosterState = await removePlayerFromTeamRosterPersistent(input.teamId, input.playerId, scope);
+  const rosterState = await removePlayerFromTeamRosterPersistent(canonicalTeamId, input.playerId, scope);
   await syncDraftRosterToManagerTeamPersistent({
-    teamId: input.teamId,
-    playerIds: rosterState.byTeamId[input.teamId] ?? [],
+    teamId: canonicalTeamId,
+    playerIds: rosterState.byTeamId[canonicalTeamId] ?? [],
     scope,
   });
 

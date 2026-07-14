@@ -12,8 +12,8 @@ import {
   saveManagerStateForRoundPersistent,
   type ManagerStateScope,
 } from "@/lib/manager-state";
-import { resolveDraftTeamManagerEmailPersistent } from "@/lib/draft-manager-sync";
-import { readTeamRosterStatePersistent } from "@/lib/team-roster-state";
+import { resolveCanonicalManagerId } from "@/lib/manager-identity";
+import { setTeamRosterForManagerPersistent } from "@/lib/team-roster-state";
 import { readTransferRoundPersistent, saveTransferRoundPersistent } from "@/lib/transfer-round-state";
 
 type PlayerCatalogEntry = {
@@ -32,26 +32,6 @@ function normalizeEmail(value: string) {
 
 function getScopeFromMode(mode: unknown): ManagerStateScope {
   return mode === "wk" ? "wk" : "eredivisie";
-}
-
-async function resolveRosterKeyForManager(
-  rosterByTeamId: Record<string, string[]>,
-  managerEmail: string,
-  scope: ManagerStateScope,
-) {
-  const directMatch = Object.keys(rosterByTeamId).find((key) => normalizeEmail(key) === managerEmail);
-  if (directMatch) {
-    return directMatch;
-  }
-
-  for (const key of Object.keys(rosterByTeamId)) {
-    const resolvedEmail = await resolveDraftTeamManagerEmailPersistent(key, scope);
-    if (resolvedEmail && normalizeEmail(resolvedEmail) === managerEmail) {
-      return key;
-    }
-  }
-
-  return null;
 }
 
 function normalizeDraftPosition(position: string): DraftPosition | null {
@@ -238,14 +218,9 @@ export async function POST(request: Request) {
     managerEmail,
   );
 
-  const rosterState = await readTeamRosterStatePersistent(scope);
-  const rosterKey = await resolveRosterKeyForManager(rosterState.byTeamId, managerEmail, scope);
-  if (!rosterKey) {
-    return NextResponse.json({ error: "Team-roster state voor manager niet gevonden" }, { status: 404 });
-  }
-  rosterState.byTeamId[rosterKey] = nextRosterIds;
-  const { writePersistentJson } = await import("@/lib/persistent-json-store");
-  await writePersistentJson({ store: "team-roster-state", scope }, rosterState);
+  const canonicalManagerId = resolveCanonicalManagerId(scope, managerEmail) ?? managerEmail;
+  await setTeamRosterForManagerPersistent(canonicalManagerId, nextRosterIds, scope);
+  const rosterKey = canonicalManagerId;
 
   const transferRound = await readTransferRoundPersistent(roundNumber, scope);
   if (!transferRound) {
