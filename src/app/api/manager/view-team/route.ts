@@ -173,11 +173,38 @@ export async function GET(request: Request) {
     },
   });
 
-  const lineup: TeamViewPlayer[] = hydrated.lineup;
-  const bench: TeamViewPlayer[] = hydrated.bench.map((player) => ({
-    ...player,
-    punten: Math.ceil((player.punten ?? 0) / 2),
-  }));
+  const toTeamViewPlayer = (player: {
+    id: string;
+    naam: string;
+    positie: string;
+    club: string;
+    prijs: number;
+    punten?: number;
+    totalPoints?: number;
+    roundPoints?: number;
+    advancementPoints?: number;
+    inactive?: boolean;
+  }): TeamViewPlayer => ({
+    id: player.id,
+    naam: player.naam,
+    positie: player.positie,
+    club: player.club,
+    prijs: player.prijs,
+    inactive: player.inactive,
+    punten: player.punten ?? 0,
+    totalPoints: player.totalPoints ?? player.punten ?? 0,
+    roundPoints: player.roundPoints ?? player.punten ?? 0,
+    advancementPoints: player.advancementPoints ?? 0,
+  });
+
+  const lineup: TeamViewPlayer[] = hydrated.lineup.map((player) => toTeamViewPlayer(player));
+  const bench: TeamViewPlayer[] = hydrated.bench.map((player) => {
+    const normalized = toTeamViewPlayer(player);
+    return {
+      ...normalized,
+      punten: Math.ceil(normalized.punten / 2),
+    };
+  });
 
   const budgetCap = getTransferBudgetCapMillions(scope);
   const squadCost = [...lineup, ...bench].reduce((sum, p) => sum + (p.prijs ?? 0), 0);
