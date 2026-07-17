@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getLatestSyncRound } from "@/lib/wk-sync-store";
 import { listCalculatedWkPlayerPoints } from "@/lib/wk-player-scoring";
 
+function normalizeMatchKey(name: string, team: string) {
+  return `${name.trim().toLowerCase()}|${team.trim().toLowerCase()}`;
+}
+
 const NO_CACHE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
   "Pragma": "no-cache",
@@ -15,8 +19,25 @@ export async function GET(request: Request) {
     const roundSequence = roundParam ? Number(roundParam) : undefined;
     const latestSyncRound = await getLatestSyncRound();
     const players = await listCalculatedWkPlayerPoints(roundSequence);
+    let responsePlayers = players;
 
-    if (players.length === 0) {
+    if (roundSequence && roundSequence > 1) {
+      const previousRoundPlayers = await listCalculatedWkPlayerPoints(roundSequence - 1);
+      const previousByKey = new Map(
+        previousRoundPlayers.map((player) => [normalizeMatchKey(player.name, player.teamName), player]),
+      );
+      responsePlayers = players.map((player) => {
+        const previous = previousByKey.get(normalizeMatchKey(player.name, player.teamName));
+        return {
+          ...player,
+          advancementPoints: previous
+            ? Math.max(0, player.advancementPoints - previous.advancementPoints)
+            : player.advancementPoints,
+        };
+      });
+    }
+
+    if (responsePlayers.length === 0) {
       return NextResponse.json({
         count: 0,
         players: [],
@@ -26,12 +47,12 @@ export async function GET(request: Request) {
       }, { headers: NO_CACHE_HEADERS });
     }
 
-    const teams = [...new Set(players.map((p) => p.teamName))].sort();
-    const positions = [...new Set(players.map((p) => p.positionNl))].sort();
+    const teams = [...new Set(responsePlayers.map((p) => p.teamName))].sort();
+    const positions = [...new Set(responsePlayers.map((p) => p.positionNl))].sort();
 
     return NextResponse.json({
-      count: players.length,
-      players,
+      count: responsePlayers.length,
+      players: responsePlayers,
       teams,
       positions,
       source: "db-events",
