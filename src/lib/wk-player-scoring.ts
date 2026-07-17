@@ -95,6 +95,11 @@ function buildAdvancingTeamsByRound(input: {
   latestByPlayerId: Map<number, WkPlayerPointRow>;
 }) {
   const advancingTeamsByRound = new Map<number, Set<string>>();
+  const matchCountByRound = new Map<number, number>();
+
+  for (const match of input.matches) {
+    matchCountByRound.set(match.round, (matchCountByRound.get(match.round) ?? 0) + 1);
+  }
 
   for (const event of input.events) {
     if ((event.event_code ?? "").trim().toUpperCase() !== "MW") {
@@ -116,6 +121,12 @@ function buildAdvancingTeamsByRound(input: {
       continue;
     }
     const previousRound = match.round - 1;
+    const previousRoundMatchCount = matchCountByRound.get(previousRound) ?? 0;
+    const nextRoundMatchCount = matchCountByRound.get(match.round) ?? 0;
+    const canUseNextRoundFallback = previousRoundMatchCount === 0 || nextRoundMatchCount < previousRoundMatchCount;
+    if (!canUseNextRoundFallback) {
+      continue;
+    }
     const teams = advancingTeamsByRound.get(previousRound) ?? new Set<string>();
     if (match.home_team) {
       teams.add(match.home_team);
