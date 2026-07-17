@@ -167,6 +167,19 @@ function isTransferMarketUnavailable(player: EnhancedPlayer) {
   return Boolean(player.inactive) || isTeamEliminated(player.club);
 }
 
+function resolveTransferPlayer(
+  playerId: string,
+  groups: Array<EnhancedPlayer[]>,
+): EnhancedPlayer | null {
+  for (const group of groups) {
+    const hit = group.find((player) => player.id === playerId);
+    if (hit) {
+      return hit;
+    }
+  }
+  return null;
+}
+
 function countOpenSlots(state: ZoneState<EnhancedPlayer>) {
   return [...state.lineup, ...state.bench].filter((player) => player.id.startsWith("open-")).length;
 }
@@ -1283,15 +1296,20 @@ export default function ManagerMyTeamPage() {
   const queuedRegularSellCount = useMemo(
     () =>
       sellQueueIds.filter((playerId) => {
-        const player = squadPlayers.find((candidate) => candidate.id === playerId);
+        const player = findTransferPlayer(playerId);
         return player ? !player.inactive && !isTeamEliminated(player.club) : false;
       }).length,
-    [sellQueueIds, squadPlayers],
+    [allPlayers, marketPlayers, sellQueueIds, squadPlayers],
   );
   const resolvedBuyIds = useMemo(
     () => currentTransferEntry?.resolvedTransfers.map((transfer) => transfer.boughtPlayerId) ?? [],
     [currentTransferEntry],
   );
+  const sellSelectKey = `sell-select-${sellQueueIds.join("-") || "empty"}`;
+  const findTransferPlayer = (playerId: string) => resolveTransferPlayer(playerId, [squadPlayers, allPlayers, marketPlayers]);
+  const queuedSellPlayers = sellQueueIds
+    .map((playerId) => findTransferPlayer(playerId))
+    .filter((player): player is EnhancedPlayer => player !== null);
   const remainingBuyCapacity = useMemo(
     () => Math.max(0, finalizedSellIds.length - (currentTransferEntry?.resolvedTransfers.length ?? 0)),
     [currentTransferEntry, finalizedSellIds],
@@ -1633,7 +1651,7 @@ export default function ManagerMyTeamPage() {
       setTransferMessage("Je kunt nu verkoop afronden zonder handmatige verkoop.");
       return;
     }
-    const player = squadPlayers.find((candidate) => candidate.id === sellSelection);
+    const player = findTransferPlayer(sellSelection);
     if (!player) {
       setTransferMessage("Kies eerst een geldige speler om te verkopen.");
       return;
@@ -1654,6 +1672,7 @@ export default function ManagerMyTeamPage() {
     if (!isForcedSell) {
       setPendingSellId(player.id);
     }
+    setSellSelection("");
     setTransferMessage(
       isForcedSell
         ? `${player.naam} staat als uitgeschakelde/inactieve speler klaar voor verkoop.`
@@ -1666,7 +1685,7 @@ export default function ManagerMyTeamPage() {
     if (pendingSellId === playerId) {
       const remainingRegularSellId = sellQueueIds.find((id) => {
         if (id === playerId) return false;
-        const player = squadPlayers.find((candidate) => candidate.id === id);
+        const player = findTransferPlayer(id);
         return player ? !player.inactive && !isTeamEliminated(player.club) : false;
       });
       setPendingSellId(remainingRegularSellId ?? null);
@@ -1687,7 +1706,7 @@ export default function ManagerMyTeamPage() {
       return;
     }
 
-    const playerNames = sellQueueIds.map((playerId) => squadPlayers.find((candidate) => candidate.id === playerId)?.naam ?? "de speler");
+    const playerNames = sellQueueIds.map((playerId) => findTransferPlayer(playerId)?.naam ?? "de speler");
     void syncTransferRound("submit-sell", { playerIds: sellQueueIds }).then((ok) => {
       if (!ok) return;
       setTransferMessage(`Verkoop afgerond voor ${playerNames.join(", ")}. Zodra iedereen klaar is opent de koopfase.`);
@@ -1921,6 +1940,7 @@ export default function ManagerMyTeamPage() {
             <label className="col-4">
               1) Verkoop speler
               <select
+                key={sellSelectKey}
                 value={sellSelection}
                 onChange={(event) => {
                   setSellSelection(event.target.value);
@@ -1957,15 +1977,15 @@ export default function ManagerMyTeamPage() {
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {currentTransferEntry?.autoSellPlayerIds.length ? (
                         <small className="transfer-hint" style={{ color: "var(--brand)" }}>
-                          Auto-verkocht: {currentTransferEntry.autoSellPlayerIds.map((id) => squadPlayers.find((p) => p.id === id)?.naam ?? `#${id}`).join(", ")}
+                          Auto-verkocht: {currentTransferEntry.autoSellPlayerIds.map((id) => findTransferPlayer(id)?.naam ?? `#${id}`).join(", ")}
                         </small>
                       ) : null}
-                      {sellQueueIds.length > 0 ? (
-                        sellQueueIds.map((playerId) => {
-                          const playerName = squadPlayers.find((p) => p.id === playerId)?.naam ?? `#${playerId}`;
+                      {queuedSellPlayers.length > 0 ? (
+                        queuedSellPlayers.map((player, index) => {
+                          const playerId = sellQueueIds[index] ?? player.id;
                           return (
                             <span key={playerId} style={{ fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: 6 }}>
-                              <strong>{playerName}</strong>
+                              <strong>{player.naam}</strong>
                               <button type="button" onClick={() => handleUndoSell(playerId)} disabled={transferBusy}>Undo</button>
                             </span>
                           );
