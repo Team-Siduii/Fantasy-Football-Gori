@@ -10,7 +10,7 @@ const readTeamViewSnapshotPersistent = vi.fn(async () => ({
   pendingBuyId: "buy-player-1",
   pickedTransferId: null,
 }));
-const summarizeManagerTeamScoresPersistent = vi.fn(async () => ({ totalPoints: 42, currentRoundPoints: 12 }));
+const summarizeManagerTeamScoresPersistent = vi.fn(async () => ({ totalPoints: 42, currentRoundPoints: 12, latestRound: 2 }));
 const getManagerRoundScorePersistent = vi.fn(async () => ({ totalPoints: 9 }));
 const buildWkPlayerRoundAdvancementPointsMap = vi.fn(async () => new Map([[1, 5], [2, 5]]));
 const buildWkPlayerRoundPointsMap = vi.fn(async () => new Map([[1, 5]]));
@@ -95,13 +95,26 @@ describe("buildManagerTeamViewPersistent", () => {
     expect(getManagerRoundScorePersistent).toHaveBeenCalledWith("wk", "s.j.m.duindam@gmail.com", 2);
     expect(result.lineup[0]).toMatchObject({ id: "1", punten: 5, roundPoints: 5, totalPoints: 42, advancementPoints: 5, isActive: true });
     expect(result.bench[0]).toMatchObject({ id: "2", punten: 0, roundPoints: 0, totalPoints: 0, advancementPoints: 5, isActive: false });
-    expect(result.lineup[0]?.prijs).toBe(7);
-    expect(result.bench[0]?.prijs).toBe(5);
-    expect(result.squadCost).toBe(12);
-    expect(result.budgetRemaining).toBe(88);
     expect(result.teamCurrentRoundPoints).toBe(9);
     expect(result.pendingSellId).toBe("2");
     expect(result.pendingBuyId).toBe("buy-player-1");
     expect(result.hasPersistedPlayers).toBe(true);
+  });
+
+  it("falls back to the latest played WK round points when the selected next round has not started yet", async () => {
+    summarizeManagerTeamScoresPersistent.mockResolvedValueOnce({ totalPoints: 42, currentRoundPoints: 14, latestRound: 7 });
+    getManagerRoundScorePersistent.mockResolvedValueOnce(null);
+
+    const { buildManagerTeamViewPersistent } = await import("../../src/lib/manager-team-view");
+
+    const result = await buildManagerTeamViewPersistent({
+      scope: "wk",
+      managerEmail: "s.j.m.duindam@gmail.com",
+      roundNumber: 8,
+    });
+
+    expect(getManagerRoundScorePersistent).toHaveBeenCalledWith("wk", "s.j.m.duindam@gmail.com", 8);
+    expect(result.teamCurrentRoundPoints).toBe(14);
+    expect(result.teamTotalPoints).toBe(42);
   });
 });

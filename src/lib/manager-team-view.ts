@@ -192,7 +192,11 @@ export async function buildManagerTeamViewPersistent(input: {
       pendingSellId: state.pendingSellId,
       pendingBuyId: state.pendingBuyId ?? state.pickedTransferId,
       teamTotalPoints: scoreSummary.totalPoints,
-      teamCurrentRoundPoints: selectedRoundScore?.totalPoints ?? scoreSummary.currentRoundPoints,
+      teamCurrentRoundPoints:
+        selectedRoundScore?.totalPoints
+        ?? ((scoreSummary.latestRound ?? 0) > 0 && normalizedRound !== null && normalizedRound > (scoreSummary.latestRound ?? 0)
+          ? scoreSummary.currentRoundPoints
+          : 0),
       scoreSource: pointMaps.scoreSource,
       hasPersistedPlayers,
     };
