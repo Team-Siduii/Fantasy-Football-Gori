@@ -402,4 +402,165 @@ describe("draft roster to manager team sync", () => {
     expect(repairedState.roundStates["1"]?.lineupIds).toEqual(repairedState.lineupIds);
     expect(repairedState.roundStates["1"]?.benchIds).toEqual(repairedState.benchIds);
   });
+
+  it("prefers a playable underfilled WK roster over stale 15-man draft fallback state", async () => {
+    const { draft, roster, manager, sync, league } = await loadModules();
+    draft.resetDraftStateForTests("wk");
+    roster.resetTeamRosterStateForTests("wk");
+    manager.resetManagerStateForTests("wk");
+    league.resetLeagueAdminConfigForTests("wk");
+
+    league.updateLeagueAdminConfig(
+      {
+        participants: [{ managerId: "ice-eckmund", label: "Ice Eckmund", email: "ice.eckmund@gmail.com", status: "ACCEPTED" }],
+      },
+      "wk",
+    );
+
+    const draftPlayerIds = ["437", "383", "320", "301", "673", "396", "451", "557", "238", "312", "182", "831", "1324", "244", "337"];
+    const rosterPlayerIds = ["320", "301", "238", "337", "287", "291", "290", "350", "229", "431", "619", "232", "233"];
+
+    draft.startDraft({
+      leagueId: "wk-2026-ice",
+      teamOrder: ["Ice Eckmund", "Dummy Team"],
+      totalRounds: 15,
+      startedBy: "admin-1",
+      scope: "wk",
+    });
+
+    let draftIndex = 0;
+    let dummyIndex = 0;
+    while (draftIndex < draftPlayerIds.length) {
+      const currentTurnTeamId = draft.readDraftState("wk").currentTurnTeamId;
+      if (currentTurnTeamId === "Ice Eckmund") {
+        draft.registerPick({ teamId: "Ice Eckmund", playerId: draftPlayerIds[draftIndex]!, scope: "wk" });
+        draftIndex += 1;
+      } else {
+        draft.registerPick({ teamId: "Dummy Team", playerId: `wk-dummy-${dummyIndex + 1}`, scope: "wk" });
+        dummyIndex += 1;
+      }
+    }
+
+    roster.saveTeamRosterState(
+      {
+        byTeamId: {
+          "Ice Eckmund": rosterPlayerIds,
+        },
+      },
+      "wk",
+    );
+
+    manager.saveManagerState(
+      {
+        formation: "4-3-3",
+        lineupIds: draftPlayerIds.slice(0, 11),
+        benchIds: draftPlayerIds.slice(11),
+        roundStates: {
+          "7": {
+            formation: "4-3-3",
+            lineupIds: draftPlayerIds.slice(0, 11),
+            benchIds: draftPlayerIds.slice(11),
+            pickedTransferId: null,
+            pendingSellId: null,
+            pendingBuyId: null,
+          },
+        },
+      },
+      "wk",
+      "ice.eckmund@gmail.com",
+    );
+
+    const repaired = await sync.repairManagerTeamFromDraftArtifactsPersistent({
+      managerEmail: "ice.eckmund@gmail.com",
+      scope: "wk",
+    });
+
+    const repairedState = manager.readManagerState("wk", "ice.eckmund@gmail.com");
+    expect(repaired?.changed).toBe(true);
+    expect((repaired as { repairedFrom?: string } | null)?.repairedFrom).toBe("team-roster");
+    expect(repairedState.formation).toBe("4-3-3");
+    expect(repairedState.lineupIds).toEqual(["287", "320", "301", "291", "290", "337", "350", "229", "238", "232", "233"]);
+    expect(repairedState.benchIds).toEqual(["431", "619"]);
+    expect(repairedState.roundStates["7"]?.lineupIds).toEqual(repairedState.lineupIds);
+    expect(repairedState.roundStates["7"]?.benchIds).toEqual(repairedState.benchIds);
+  });
+
+  it("keeps a playable underfilled WK manager state instead of re-expanding it back to draft picks", async () => {
+    const { draft, roster, manager, sync, league } = await loadModules();
+    draft.resetDraftStateForTests("wk");
+    roster.resetTeamRosterStateForTests("wk");
+    manager.resetManagerStateForTests("wk");
+    league.resetLeagueAdminConfigForTests("wk");
+
+    league.updateLeagueAdminConfig(
+      {
+        participants: [{ managerId: "ice-eckmund", label: "Ice Eckmund", email: "ice.eckmund@gmail.com", status: "ACCEPTED" }],
+      },
+      "wk",
+    );
+
+    const draftPlayerIds = ["437", "383", "320", "301", "673", "396", "451", "557", "238", "312", "182", "831", "1324", "244", "337"];
+    const repairedLineupIds = ["287", "320", "301", "291", "290", "337", "350", "229", "238", "232", "233"];
+    const repairedBenchIds = ["431", "619"];
+
+    draft.startDraft({
+      leagueId: "wk-2026-ice-stable",
+      teamOrder: ["Ice Eckmund", "Dummy Team"],
+      totalRounds: 15,
+      startedBy: "admin-1",
+      scope: "wk",
+    });
+
+    let draftIndex = 0;
+    let dummyIndex = 0;
+    while (draftIndex < draftPlayerIds.length) {
+      const currentTurnTeamId = draft.readDraftState("wk").currentTurnTeamId;
+      if (currentTurnTeamId === "Ice Eckmund") {
+        draft.registerPick({ teamId: "Ice Eckmund", playerId: draftPlayerIds[draftIndex]!, scope: "wk" });
+        draftIndex += 1;
+      } else {
+        draft.registerPick({ teamId: "Dummy Team", playerId: `wk-dummy-${dummyIndex + 1}`, scope: "wk" });
+        dummyIndex += 1;
+      }
+    }
+
+    roster.saveTeamRosterState(
+      {
+        byTeamId: {
+          "Ice Eckmund": [...repairedLineupIds, ...repairedBenchIds],
+        },
+      },
+      "wk",
+    );
+
+    manager.saveManagerState(
+      {
+        formation: "4-3-3",
+        lineupIds: repairedLineupIds,
+        benchIds: repairedBenchIds,
+        roundStates: {
+          "7": {
+            formation: "4-3-3",
+            lineupIds: repairedLineupIds,
+            benchIds: repairedBenchIds,
+            pickedTransferId: null,
+            pendingSellId: null,
+            pendingBuyId: null,
+          },
+        },
+      },
+      "wk",
+      "ice.eckmund@gmail.com",
+    );
+
+    const repaired = await sync.repairManagerTeamFromDraftArtifactsPersistent({
+      managerEmail: "ice.eckmund@gmail.com",
+      scope: "wk",
+    });
+
+    const repairedState = manager.readManagerState("wk", "ice.eckmund@gmail.com");
+    expect(repaired?.changed).toBe(false);
+    expect(repairedState.lineupIds).toEqual(repairedLineupIds);
+    expect(repairedState.benchIds).toEqual(repairedBenchIds);
+  });
 });
