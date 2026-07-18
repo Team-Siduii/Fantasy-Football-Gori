@@ -396,6 +396,7 @@ export function LeagueConfigEditor() {
                     type="number"
                     step={0.5}
                     value={config.budget.priceOffsetMillions}
+                    disabled={mode === "wk"}
                     onChange={(event) => {
                       const parsed = Number(event.target.value);
                       setConfig({
@@ -407,6 +408,9 @@ export function LeagueConfigEditor() {
                       });
                     }}
                   />
+                  {mode === "wk" ? (
+                    <small className="muted-note">WK gebruikt overal vast importwaarde min €3.0M, dus deze waarde staat bewust op slot.</small>
+                  ) : null}
                 </label>
 
                 <label className="field col-12">

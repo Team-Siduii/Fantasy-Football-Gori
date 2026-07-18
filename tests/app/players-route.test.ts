@@ -52,6 +52,7 @@ describe("GET /api/players", () => {
     expect(payload.players[0]?.punten).toBe(18);
     expect(payload.players[0]?.roundPoints).toBe(0);
     expect(payload.players[0]?.totalPoints).toBe(18);
+    expect(payload.players[0]?.prijs).toBe(7);
     expect(payload.players[0]?.isActive).toBe(true);
     expect(payload.players[1]?.isActive).toBe(false);
   });

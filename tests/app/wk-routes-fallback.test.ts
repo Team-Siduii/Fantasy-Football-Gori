@@ -99,6 +99,7 @@ describe("WK API fallback behavior when database-backed reads fail", () => {
     expect(payload.players[0]).toMatchObject({
       id: "1",
       naam: "Speler 1",
+      prijs: 7,
       punten: 0,
       totalPoints: 0,
       roundPoints: 0,

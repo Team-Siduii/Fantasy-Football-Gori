@@ -1275,13 +1275,11 @@ export default function ManagerMyTeamPage() {
                 ]
                   .filter(Boolean)
                   .join(" ");
-                const stageLabel = isWkMode && selectedRound === 8 && fixture.stageLabel
-                  ? `${fixture.stageLabel} (${fixture.home} - ${fixture.away})`
-                  : null;
+                const stageLabel = isWkMode && selectedRound === 8 && fixture.stageLabel ? fixture.stageLabel : null;
 
                 return (
                   <Fragment key={`${fixture.kickoffAt}-${fixture.home}-${fixture.away}`}>
-                    {stageLabel && fixtureIndex > 0 ? <li className="round-fixture-divider">Finale / Troostfinale</li> : null}
+                    {stageLabel && fixtureIndex > 0 ? <li className="round-fixture-divider" aria-hidden="true" /> : null}
                     {stageLabel ? <li className="round-fixture-stage-label">{stageLabel}</li> : null}
                     <li className="round-fixture-row">
                       <span className="fixture-team fixture-team--home">

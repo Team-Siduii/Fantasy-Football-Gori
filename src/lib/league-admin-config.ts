@@ -10,6 +10,7 @@ import {
 import type { LeagueTableTieBreaker, KnockoutTiePolicy } from "../domain/competition-engine";
 import { createDefaultRoleAssignments, type LeagueRoleAssignments } from "../domain/roles-permissions";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
+import { WK_TRANSFER_PRICE_OFFSET_MILLIONS } from "./wk-price";
 
 export type LeagueMode = "eredivisie" | "wk";
 
@@ -173,7 +174,7 @@ function defaultConfig(mode: LeagueMode): LeagueAdminConfig {
     },
     budget: {
       teamValueCapMillions: defaultBudgetCapForMode(mode),
-      priceOffsetMillions: mode === "wk" ? 3 : 0,
+      priceOffsetMillions: mode === "wk" ? WK_TRANSFER_PRICE_OFFSET_MILLIONS : 0,
     },
     competition: {
       name: defaultCompetitionNameForMode(mode),
@@ -217,9 +218,11 @@ function normalize(input: Partial<LeagueAdminConfig>, mode: LeagueMode): LeagueA
           ? input.budget.teamValueCapMillions
           : base.budget.teamValueCapMillions,
       priceOffsetMillions:
-        typeof input.budget?.priceOffsetMillions === "number" && Number.isFinite(input.budget.priceOffsetMillions)
-          ? input.budget.priceOffsetMillions
-          : base.budget.priceOffsetMillions,
+        mode === "wk"
+          ? WK_TRANSFER_PRICE_OFFSET_MILLIONS
+          : typeof input.budget?.priceOffsetMillions === "number" && Number.isFinite(input.budget.priceOffsetMillions)
+            ? input.budget.priceOffsetMillions
+            : base.budget.priceOffsetMillions,
     },
     competition: {
       name:

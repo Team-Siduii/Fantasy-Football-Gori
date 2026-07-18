@@ -4,10 +4,10 @@ import path from "path";
 import { parsePlayerCsv } from "@/domain/player-csv";
 import { bootstrapPlayersFromDefaultCsv } from "@/lib/player-bootstrap";
 import { listPlayers } from "@/lib/player-store";
-import { getLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
 import { listCalculatedWkPlayerPoints } from "@/lib/wk-player-scoring";
 import { getWkMatches } from "@/lib/wk-sync-store";
 import { applyWkPlayerAvailabilityAndPoints } from "../../../lib/wk-availability";
+import { applyWkTransferPriceOffsetMillions } from "../../../lib/wk-price";
 
 const NO_CACHE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -45,18 +45,10 @@ export async function GET(request: Request) {
       syncStatus = "unavailable — WK scoring storage read failed";
     }
 
-    let priceOffset = 0;
-    try {
-      const leagueConfig = await getLeagueAdminConfigPersistent("wk");
-      priceOffset = leagueConfig.budget.priceOffsetMillions ?? 0;
-    } catch {
-      // default 0
-    }
-
     const playersWithPoints = applyWkPlayerAvailabilityAndPoints({
       csvPlayers: csvPlayers.map((csv) => ({
         ...csv,
-        prijs: Math.max(0, csv.prijs - priceOffset),
+        prijs: applyWkTransferPriceOffsetMillions(csv.prijs),
       })),
       calculatedPlayers,
       matches: wkMatches,
