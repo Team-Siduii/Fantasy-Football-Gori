@@ -40,6 +40,7 @@ import { readFile } from "fs/promises";
 import path from "path";
 import { getWkMatches } from "@/lib/wk-sync-store";
 import { applyWkPlayerAvailabilityAndPoints } from "../../../../lib/wk-availability";
+import { applyWkTransferPriceOffsetMillions } from "../../../../lib/wk-price";
 
 function getScopeFromRequest(request: Request): ManagerStateScope {
   const mode = new URL(request.url).searchParams.get("mode");
@@ -57,7 +58,10 @@ async function loadPlayers(scope: ManagerStateScope, roundNumber?: number | null
     const wkCsvPath = path.join(process.cwd(), "data", "players-wk.csv");
     try {
       const csvContent = await readFile(wkCsvPath, "utf-8");
-      const csvPlayers = parsePlayerCsv(csvContent).players;
+      const csvPlayers = parsePlayerCsv(csvContent).players.map((player) => ({
+        ...player,
+        prijs: applyWkTransferPriceOffsetMillions(player.prijs),
+      }));
       const matches = await getWkMatches();
       return applyWkPlayerAvailabilityAndPoints({
         csvPlayers,

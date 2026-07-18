@@ -15,6 +15,7 @@ import { getLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
 import { bootstrapPlayersFromDefaultCsv } from "@/lib/player-bootstrap";
 import { listPlayers } from "@/lib/player-store";
 import { readTeamRosterStatePersistent } from "@/lib/team-roster-state";
+import { applyWkTransferPriceOffsetMillions } from "@/lib/wk-price";
 
 function resolveDraftScope(request: Request) {
   const url = new URL(request.url);
@@ -25,7 +26,10 @@ async function loadDraftPlayerCatalog(scope: "eredivisie" | "wk") {
   if (scope === "wk") {
     try {
       const csvContent = await readFile(path.join(process.cwd(), "data", "players-wk.csv"), "utf-8");
-      return parsePlayerCsv(csvContent).players;
+      return parsePlayerCsv(csvContent).players.map((player) => ({
+        ...player,
+        prijs: applyWkTransferPriceOffsetMillions(player.prijs),
+      }));
     } catch {
       return [];
     }

@@ -18,6 +18,7 @@ import {
 } from "./wk-player-scoring";
 import { getWkMatches } from "./wk-sync-store";
 import { applyWkPlayerAvailabilityAndPoints } from "./wk-availability";
+import { applyWkTransferPriceOffsetMillions } from "./wk-price";
 
 export type TeamViewPlayer = PlayerRecord & {
   punten: number;
@@ -66,7 +67,10 @@ async function loadPlayersForScope(scope: ManagerStateScope, roundNumber: number
   if (scope === "wk") {
     const wkCsvPath = path.join(process.cwd(), "data", "players-wk.csv");
     const csvContent = await readFile(wkCsvPath, "utf-8");
-    const csvPlayers = parsePlayerCsv(csvContent).players;
+    const csvPlayers = parsePlayerCsv(csvContent).players.map((player) => ({
+      ...player,
+      prijs: applyWkTransferPriceOffsetMillions(player.prijs),
+    }));
     const [calculatedPlayers, matches] = await Promise.all([
       listCalculatedWkPlayerPoints(roundNumber ?? undefined),
       getWkMatches(),

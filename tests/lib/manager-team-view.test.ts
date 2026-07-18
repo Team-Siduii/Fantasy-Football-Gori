@@ -95,6 +95,10 @@ describe("buildManagerTeamViewPersistent", () => {
     expect(getManagerRoundScorePersistent).toHaveBeenCalledWith("wk", "s.j.m.duindam@gmail.com", 2);
     expect(result.lineup[0]).toMatchObject({ id: "1", punten: 5, roundPoints: 5, totalPoints: 42, advancementPoints: 5, isActive: true });
     expect(result.bench[0]).toMatchObject({ id: "2", punten: 0, roundPoints: 0, totalPoints: 0, advancementPoints: 5, isActive: false });
+    expect(result.lineup[0]?.prijs).toBe(7);
+    expect(result.bench[0]?.prijs).toBe(5);
+    expect(result.squadCost).toBe(12);
+    expect(result.budgetRemaining).toBe(88);
     expect(result.teamCurrentRoundPoints).toBe(9);
     expect(result.pendingSellId).toBe("2");
     expect(result.pendingBuyId).toBe("buy-player-1");

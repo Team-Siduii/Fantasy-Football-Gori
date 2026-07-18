@@ -8,6 +8,7 @@ import { readManagerStatePersistent, type ManagerStateScope } from "./manager-st
 import { summarizeManagerTeamScoresPersistent } from "./team-score-state";
 import { loadPlayerPoints } from "./player-points-store";
 import { WORLD_CUP_2026_FIXTURES } from "./world-cup-schedule";
+import { applyWkTransferPriceOffsetMillions } from "./wk-price";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "s.j.m.duindam@gmail.com": "A",
@@ -39,7 +40,10 @@ async function loadPlayers(scope: ManagerStateScope) {
     const wkCsvPath = path.join(process.cwd(), "data", "players-wk.csv");
     try {
       const csvContent = await readFile(wkCsvPath, "utf-8");
-      return parsePlayerCsv(csvContent).players;
+      return parsePlayerCsv(csvContent).players.map((player) => ({
+        ...player,
+        prijs: applyWkTransferPriceOffsetMillions(player.prijs),
+      }));
     } catch {
       return [];
     }
