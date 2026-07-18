@@ -4,9 +4,8 @@ import { parsePlayerCsv } from "../domain/player-csv";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
 import { ensureAuthStateFromDb, getAuthAccountByEmail, getProfileByEmail } from "./auth-store";
 import { getLeagueAdminConfigPersistent } from "./league-admin-config";
-import { resolveCanonicalManagerId } from "./manager-identity";
 import { readManagerStatePersistent, type ManagerStateScope } from "./manager-state";
-import { summarizeManagerTeamScoresPersistent, getManagerRoundScorePersistent } from "./team-score-state";
+import { summarizeManagerTeamScoresPersistent } from "./team-score-state";
 import { loadPlayerPoints } from "./player-points-store";
 import { WORLD_CUP_2026_FIXTURES } from "./world-cup-schedule";
 
@@ -23,32 +22,16 @@ const DEFAULT_BUDGET_CAP = 100;
 
 function getCurrentRoundWk(): number {
   const now = new Date();
-  const MATCH_DURATION = 2.5 * 60 * 60 * 1000; // 2.5h
-
-  // Check of er een round actief is (minstens 1 wedstrijd bezig)
-  const activeRounds = new Set<number>();
-  const completedRounds = new Set<number>();
-
+  const roundsWithFinishedMatches = new Set<number>();
   for (const fixture of WORLD_CUP_2026_FIXTURES) {
-    const kickoff = new Date(fixture.kickoffAt).getTime();
-    const matchEnd = kickoff + MATCH_DURATION;
-
-    if (now.getTime() >= kickoff && now.getTime() < matchEnd) {
-      activeRounds.add(fixture.round);
-    }
-    if (matchEnd <= now.getTime()) {
-      completedRounds.add(fixture.round);
+    const kickoff = new Date(fixture.kickoffAt);
+    const matchEnd = new Date(kickoff.getTime() + 2 * 60 * 60 * 1000);
+    if (matchEnd < now) {
+      roundsWithFinishedMatches.add(fixture.round);
     }
   }
-
-  // Als er een actieve round is, return die
-  if (activeRounds.size > 0) {
-    return Math.min(...activeRounds);
-  }
-
-  // Anders: de laatste volledig afgelopen round
-  if (completedRounds.size === 0) return 0;
-  return Math.max(...completedRounds);
+  if (roundsWithFinishedMatches.size === 0) return 0;
+  return Math.max(...roundsWithFinishedMatches);
 }
 
 async function loadPlayers(scope: ManagerStateScope) {
@@ -140,31 +123,21 @@ export async function buildLeagueRankingSnapshot(scope: ManagerStateScope, reque
       }
     }
 
-    let totalPoints = 0;
-    let currentRoundPoints = 0;
-
-    if (scope === "wk") {
-      const summary = await summarizeManagerTeamScoresPersistent(scope, managerEmail);
-      totalPoints = summary.totalPoints;
-      if (currentRound > 0) {
-        const roundScore = await getManagerRoundScorePersistent(scope, managerEmail, currentRound);
-        currentRoundPoints = roundScore?.totalPoints ?? 0;
-      }
-    } else {
-      totalPoints = squadIds.reduce((sum, playerId) => sum + (eredivisiePointsById.get(playerId) ?? 0), 0);
-      currentRoundPoints = totalPoints;
-    }
-
-    const canonicalManagerId = resolveCanonicalManagerId(scope, managerEmail) ?? managerEmail.split("@")[0];
+    const scoreSummary = scope === "wk"
+      ? await summarizeManagerTeamScoresPersistent(scope, managerEmail)
+      : {
+          totalPoints: squadIds.reduce((sum, playerId) => sum + (eredivisiePointsById.get(playerId) ?? 0), 0),
+          currentRoundPoints: squadIds.reduce((sum, playerId) => sum + (eredivisiePointsById.get(playerId) ?? 0), 0),
+        };
 
     rankingSeed.push({
-      managerId: canonicalManagerId,
-      displayName: profile?.name ?? canonicalManagerId,
+      managerId: managerEmail.split("@")[0],
+      displayName: profile?.name ?? managerEmail.split("@")[0],
       teamName,
       email: managerEmail,
       subpoule: SUBPOULE_BY_EMAIL[managerEmail] ?? "A",
-      totalPoints: Math.round(totalPoints * 10) / 10,
-      currentRoundPoints: Math.round(currentRoundPoints * 10) / 10,
+      totalPoints: Math.round((scoreSummary.totalPoints ?? 0) * 10) / 10,
+      currentRoundPoints: Math.round((scoreSummary.currentRoundPoints ?? 0) * 10) / 10,
       budgetRemaining: Math.round(Math.max(0, budgetCap - squadCost) * 10) / 10,
     });
   }

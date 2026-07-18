@@ -6,8 +6,9 @@ import {
   saveManagerStatePersistent,
   type ManagerStateScope,
 } from "@/lib/manager-state";
-import { repairManagerTeamFromDraftArtifactsPersistent } from "@/lib/draft-manager-sync";
 import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
+import { ensureAuthStateFromDb } from "@/lib/auth-store";
+import { repairManagerTeamFromDraftArtifactsPersistent } from "@/lib/draft-manager-sync";
 import { isRoundActive } from "@/lib/world-cup-schedule";
 
 const NO_CACHE_HEADERS = {
@@ -27,15 +28,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
 
+  await ensureAuthStateFromDb();
+
   const managerKey = await getAuthenticatedEmail();
+  if (!managerKey) {
+    return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
+  }
   const scope = getScopeFromRequest(request);
+  if (scope === "wk") {
+    await repairManagerTeamFromDraftArtifactsPersistent({ managerEmail: managerKey, scope });
+  }
   console.log("[STATE-API]", managerKey, "scope:", scope);
   const roundNumberParam = new URL(request.url).searchParams.get("roundNumber");
   const roundNumber = roundNumberParam ? Number(roundNumberParam) : null;
-
-  if (scope === "wk" && managerKey) {
-    await repairManagerTeamFromDraftArtifactsPersistent({ managerEmail: managerKey, scope });
-  }
 
   if (roundNumber && Number.isInteger(roundNumber) && roundNumber > 0) {
     const state = await readManagerStateForRoundPersistent(roundNumber, scope, managerKey);
@@ -52,6 +57,8 @@ export async function PUT(request: Request) {
   if (!(await isAuthenticatedSession())) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
+
+  await ensureAuthStateFromDb();
 
   const managerKey = await getAuthenticatedEmail();
 
@@ -84,9 +91,8 @@ export async function PUT(request: Request) {
   const scope = getScopeFromRequest(request);
 
   // Blokkeer lineage/bank-wijzigingen tijdens een actieve speelronde
-  // ADMIN OVERRIDE — tijdelijk uitgezet
   const hasRoundNumber = Number.isInteger(body.roundNumber) && (body.roundNumber as number) > 0;
-  if (false && hasRoundNumber && isRoundActive(body.roundNumber as number)) {
+  if (hasRoundNumber && isRoundActive(body.roundNumber as number)) {
     return NextResponse.json(
       { error: "Opstellen is gesloten — de speelronde is bezig" },
       { status: 423, headers: NO_CACHE_HEADERS },

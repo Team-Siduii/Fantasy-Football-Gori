@@ -1,4 +1,13 @@
-import { getLatestSyncRound, getWkMatches, getWkPlayerEvents, getWkPlayerPointHistory, type WkMatchRow, type WkPlayerEventRow, type WkPlayerPointRow } from "./wk-sync-store";
+import {
+  getLatestSyncRound,
+  getWkMatches,
+  getWkPlayerEvents,
+  getWkPlayerPointHistory,
+  type WkMatchRow,
+  type WkPlayerEventRow,
+  type WkPlayerPointRow,
+} from "./wk-sync-store";
+
 import { isTeamEliminated } from "./knockout-phase";
 
 const DEFENDER_ALIASES = new Set(["DEF", "VERDEDIGER", "DEFENDER", "D"]);
@@ -88,6 +97,30 @@ function groupEventsByRoundAndPlayer(events: WkPlayerEventRow[]) {
   return grouped;
 }
 
+function normalizeTeamName(value: string | null | undefined) {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^\p{Letter}\p{Number}]+/gu, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function isPlaceholderKnockoutLabel(value: string | null | undefined) {
+  const normalized = normalizeTeamName(value);
+  return normalized.startsWith("winnaar duel") || normalized.startsWith("verliezer duel") || normalized.startsWith("nummer ");
+}
+
+function mergeAdvancingTeam(advancingTeamsByRound: Map<number, Set<string>>, round: number, teamName: string | null | undefined) {
+  if (!teamName || isPlaceholderKnockoutLabel(teamName)) {
+    return;
+  }
+
+  const teams = advancingTeamsByRound.get(round) ?? new Set<string>();
+  teams.add(teamName);
+  advancingTeamsByRound.set(round, teams);
+}
+
 function buildAdvancingTeamsByRound(input: {
   events: WkPlayerEventRow[];
   matches: WkMatchRow[];
@@ -95,49 +128,52 @@ function buildAdvancingTeamsByRound(input: {
   latestByPlayerId: Map<number, WkPlayerPointRow>;
 }) {
   const advancingTeamsByRound = new Map<number, Set<string>>();
-  const matchCountByRound = new Map<number, number>();
-
-  for (const match of input.matches) {
-    matchCountByRound.set(match.round, (matchCountByRound.get(match.round) ?? 0) + 1);
-  }
+  const explicitAdvancementRounds = new Set<number>();
 
   for (const event of input.events) {
     if ((event.event_code ?? "").trim().toUpperCase() !== "MW") {
       continue;
     }
-    const teams = advancingTeamsByRound.get(event.round) ?? new Set<string>();
+    explicitAdvancementRounds.add(event.round);
     const teamName = event.team_name
       ?? input.byPlayerRound.get(`${event.fantasyplayer_id}:${event.round}`)?.team_name
       ?? input.latestByPlayerId.get(event.fantasyplayer_id)?.team_name
       ?? null;
-    if (teamName) {
-      teams.add(teamName);
-    }
-    advancingTeamsByRound.set(event.round, teams);
+    mergeAdvancingTeam(advancingTeamsByRound, event.round, teamName);
   }
 
   for (const match of input.matches) {
     if (match.round <= KNOCKOUT_START_ROUND) {
       continue;
     }
+
     const previousRound = match.round - 1;
-    const previousRoundMatchCount = matchCountByRound.get(previousRound) ?? 0;
-    const nextRoundMatchCount = matchCountByRound.get(match.round) ?? 0;
-    const canUseNextRoundFallback = previousRoundMatchCount === 0 || nextRoundMatchCount < previousRoundMatchCount;
-    if (!canUseNextRoundFallback) {
+    if (explicitAdvancementRounds.has(previousRound)) {
       continue;
     }
-    const teams = advancingTeamsByRound.get(previousRound) ?? new Set<string>();
-    if (match.home_team) {
-      teams.add(match.home_team);
-    }
-    if (match.away_team) {
-      teams.add(match.away_team);
-    }
-    advancingTeamsByRound.set(previousRound, teams);
+    mergeAdvancingTeam(advancingTeamsByRound, previousRound, match.home_team);
+    mergeAdvancingTeam(advancingTeamsByRound, previousRound, match.away_team);
   }
 
   return advancingTeamsByRound;
+}
+
+function calculateWkPlayerRoundAdvancementPoints(input: {
+  round: number;
+  teamName: string;
+  advancingTeamsByRound: Map<number, Set<string>>;
+}) {
+  if (input.round < KNOCKOUT_START_ROUND) {
+    return 0;
+  }
+
+  if (input.round === KNOCKOUT_START_ROUND) {
+    return isTeamEliminated(input.teamName) ? 0 : ADVANCEMENT_BONUS;
+  }
+
+  return input.advancingTeamsByRound.get(input.round)?.has(input.teamName)
+    ? ADVANCEMENT_BONUS
+    : 0;
 }
 
 export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promise<Map<number, CalculatedWkPlayerPoints>> {
@@ -165,67 +201,50 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
     latestByPlayerId,
   });
   const totals = new Map<number, CalculatedWkPlayerPoints>();
+  const allPlayerIds = Array.from(latestByPlayerId.keys());
 
   for (let round = 1; round <= effectiveRound; round += 1) {
     const playerEventsForRound = groupedEvents.get(round) ?? new Map<number, PlayerPointEvent[]>();
-    const playerIds = new Set<number>([
-      ...Array.from(playerEventsForRound.keys()),
-      ...historyRows.filter((row) => row.round === round).map((row) => row.fantasyplayer_id),
-    ]);
 
-    for (const fantasyplayerId of playerIds) {
-      const row = byPlayerRound.get(`${fantasyplayerId}:${round}`) ?? latestByPlayerId.get(fantasyplayerId);
-      if (!row) {
+    for (const fantasyplayerId of allPlayerIds) {
+      const roundRow = byPlayerRound.get(`${fantasyplayerId}:${round}`);
+      const metadata = roundRow ?? latestByPlayerId.get(fantasyplayerId);
+      if (!metadata) {
         continue;
       }
+
       const pointEvents = playerEventsForRound.get(fantasyplayerId) ?? [];
       const roundPoints = calculateWkPlayerRoundPointsFromEvents({
         events: pointEvents,
-        position: row.position,
-        positionNl: row.position_nl,
+        position: metadata.position,
+        positionNl: metadata.position_nl,
       });
-      const previousTotal = totals.get(fantasyplayerId)?.totalPoints ?? 0;
+      const roundAdvancementPoints = calculateWkPlayerRoundAdvancementPoints({
+        round,
+        teamName: metadata.team_name,
+        advancingTeamsByRound,
+      });
+      const previous = totals.get(fantasyplayerId);
+      const previousTotal = previous?.totalPoints ?? 0;
+      const previousAdvancement = previous?.advancementPoints ?? 0;
+
       totals.set(fantasyplayerId, {
         fantasyplayerId,
         round,
-        name: row.name,
-        teamName: row.team_name,
-        teamCode: row.team_code,
-        position: row.position,
-        positionNl: row.position_nl,
-        value: row.value,
+        name: metadata.name,
+        teamName: metadata.team_name,
+        teamCode: metadata.team_code,
+        position: metadata.position,
+        positionNl: metadata.position_nl,
+        value: metadata.value,
         roundPoints,
-        totalPoints: previousTotal + roundPoints,
-        advancementPoints: 0,
-        hasPlayed: row.has_played,
-        numPlayed: row.num_played,
+        totalPoints: previousTotal + roundPoints + roundAdvancementPoints,
+        advancementPoints: previousAdvancement + roundAdvancementPoints,
+        hasPlayed: roundRow?.has_played ?? false,
+        numPlayed: roundRow?.num_played ?? previous?.numPlayed ?? metadata.num_played,
         pointEvents,
         source: "wk-events-v1",
       });
-    }
-  }
-
-  // Advancement bonus per round (knockout progression)
-  // Round 3 (group→knockout): all non-eliminated teams get +5
-  // Round 4+ (knockout rounds): teams that appear in the next round or have an MW event in this round get +5
-  for (let round = KNOCKOUT_START_ROUND; round <= effectiveRound; round += 1) {
-    const roundEventMap = groupedEvents.get(round) ?? new Map<number, PlayerPointEvent[]>();
-    for (const [fantasyplayerId, player] of totals) {
-      if (isTeamEliminated(player.teamName)) {
-        continue;
-      }
-      if (round === KNOCKOUT_START_ROUND) {
-        // Round 3: all non-eliminated teams advance to knockout
-        player.advancementPoints += ADVANCEMENT_BONUS;
-        player.totalPoints += ADVANCEMENT_BONUS;
-      } else {
-        // Round 4+: any player from a team with a match win (MW) in this round gets the advancement bonus
-        const teamAdvanced = advancingTeamsByRound.get(round)?.has(player.teamName) ?? false;
-        if (teamAdvanced) {
-          player.advancementPoints += ADVANCEMENT_BONUS;
-          player.totalPoints += ADVANCEMENT_BONUS;
-        }
-      }
     }
   }
 
@@ -253,40 +272,26 @@ export async function buildWkPlayerRoundPointsMap(roundNumber?: number): Promise
     byPlayerRound,
     latestByPlayerId,
   });
-  const playerIds = new Set<number>([
-    ...Array.from(latestByPlayerId.keys()),
-    ...Array.from(roundEvents.keys()),
-    ...rows.filter((row) => row.round === effectiveRound).map((row) => row.fantasyplayer_id),
-  ]);
+  const allPlayerIds = Array.from(latestByPlayerId.keys());
 
   const result = new Map<number, number>();
-  for (const fantasyplayerId of playerIds) {
-    const row = byPlayerRound.get(`${fantasyplayerId}:${effectiveRound}`) ?? latestByPlayerId.get(fantasyplayerId);
-    if (!row) {
+  for (const fantasyplayerId of allPlayerIds) {
+    const roundRow = byPlayerRound.get(`${fantasyplayerId}:${effectiveRound}`);
+    const metadata = roundRow ?? latestByPlayerId.get(fantasyplayerId);
+    if (!metadata) {
       continue;
     }
     const pointEvents = roundEvents.get(fantasyplayerId) ?? [];
     const basePoints = calculateWkPlayerRoundPointsFromEvents({
       events: pointEvents,
-      position: row.position,
-      positionNl: row.position_nl,
+      position: metadata.position,
+      positionNl: metadata.position_nl,
     });
-    // Advancement bonus: +5 for players advancing to next knockout round
-    // Round 3 (group→knockout): all non-eliminated teams get +5
-    // Round 4+ (knockout rounds): teams that appear in the next round or have an MW event in this round get +5
-    let advancementPoints = 0;
-    if (effectiveRound >= KNOCKOUT_START_ROUND && !isTeamEliminated(row.team_name)) {
-      if (effectiveRound === KNOCKOUT_START_ROUND) {
-        // Round 3: all 36 non-eliminated teams advance to knockout
-        advancementPoints = ADVANCEMENT_BONUS;
-      } else {
-        // Round 4+: any player from a team with a match win (MW) in this round gets the advancement bonus
-        const teamAdvanced = advancingTeamsByRound.get(effectiveRound)?.has(row.team_name) ?? false;
-        if (teamAdvanced) {
-          advancementPoints = ADVANCEMENT_BONUS;
-        }
-      }
-    }
+    const advancementPoints = calculateWkPlayerRoundAdvancementPoints({
+      round: effectiveRound,
+      teamName: metadata.team_name,
+      advancingTeamsByRound,
+    });
     result.set(fantasyplayerId, basePoints + advancementPoints);
   }
   return result;
@@ -306,35 +311,31 @@ export async function buildWkPlayerRoundAdvancementPointsMap(roundNumber?: numbe
     getWkMatches(),
   ]);
   const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(rows);
+  const roundEvents = groupEventsByRoundAndPlayer(events).get(effectiveRound) ?? new Map<number, PlayerPointEvent[]>();
   const advancingTeamsByRound = buildAdvancingTeamsByRound({
     events,
     matches,
     byPlayerRound,
     latestByPlayerId,
   });
-  const playerIds = new Set<number>([
-    ...Array.from(latestByPlayerId.keys()),
-    ...rows.filter((row) => row.round === effectiveRound).map((row) => row.fantasyplayer_id),
-  ]);
+  const allPlayerIds = Array.from(latestByPlayerId.keys());
 
   const result = new Map<number, number>();
-  for (const fantasyplayerId of playerIds) {
-    const row = byPlayerRound.get(`${fantasyplayerId}:${effectiveRound}`) ?? latestByPlayerId.get(fantasyplayerId);
-    if (!row) {
+  for (const fantasyplayerId of allPlayerIds) {
+    const roundRow = byPlayerRound.get(`${fantasyplayerId}:${effectiveRound}`);
+    const metadata = roundRow ?? latestByPlayerId.get(fantasyplayerId);
+    if (!metadata) {
       continue;
     }
-    let advancementPoints = 0;
-    if (effectiveRound >= KNOCKOUT_START_ROUND && !isTeamEliminated(row.team_name)) {
-      if (effectiveRound === KNOCKOUT_START_ROUND) {
-        advancementPoints = ADVANCEMENT_BONUS;
-      } else {
-        const teamAdvanced = advancingTeamsByRound.get(effectiveRound)?.has(row.team_name) ?? false;
-        if (teamAdvanced) {
-          advancementPoints = ADVANCEMENT_BONUS;
-        }
-      }
-    }
-    result.set(fantasyplayerId, advancementPoints);
+    const pointEvents = roundEvents.get(fantasyplayerId) ?? [];
+    result.set(
+      fantasyplayerId,
+      calculateWkPlayerRoundAdvancementPoints({
+        round: effectiveRound,
+        teamName: metadata.team_name,
+        advancingTeamsByRound,
+      }),
+    );
   }
 
   return result;
@@ -348,85 +349,4 @@ export async function buildWkPlayerTotalPointsMapThroughRound(roundNumber?: numb
 export async function listCalculatedWkPlayerPoints(roundNumber?: number): Promise<CalculatedWkPlayerPoints[]> {
   const calculated = await buildCalculatedWkPlayerPointsMap(roundNumber);
   return Array.from(calculated.values()).sort((a, b) => b.totalPoints - a.totalPoints || a.name.localeCompare(b.name));
-}
-
-export async function buildWkPlayerAdvancementPointsMap(roundNumber?: number): Promise<Map<number, number>> {
-  const calculated = await buildCalculatedWkPlayerPointsMap(roundNumber);
-  return new Map(Array.from(calculated.entries()).map(([fantasyplayerId, summary]) => [fantasyplayerId, summary.advancementPoints]));
-}
-
-function normalizeMatchKey(name: string, team: string) {
-  return `${name.trim().toLowerCase()}|${team.trim().toLowerCase()}`;
-}
-
-export async function buildWkPlayerPointsByCsvId(
-  csvPlayers: Array<{ id: string; naam: string; club: string }>,
-  roundNumber?: number,
-): Promise<{
-  roundPoints: Map<string, number>;
-  totalPoints: Map<string, number>;
-  advancementPoints: Map<string, number>;
-}> {
-  const wkPlayers = await listCalculatedWkPlayerPoints(roundNumber);
-  let exactRoundKeys: Set<string> | null = null;
-  if (typeof roundNumber === "number" && roundNumber > 0) {
-    const [historyRows, roundEvents] = await Promise.all([
-      getWkPlayerPointHistory(roundNumber),
-      getWkPlayerEvents(roundNumber),
-    ]);
-    const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(historyRows);
-    exactRoundKeys = new Set(
-      historyRows
-        .filter((row) => row.round === roundNumber)
-        .map((row) => normalizeMatchKey(row.name, row.team_name)),
-    );
-    for (const event of roundEvents) {
-      if (event.round !== roundNumber) {
-        continue;
-      }
-      const metadata = byPlayerRound.get(`${event.fantasyplayer_id}:${roundNumber}`) ?? latestByPlayerId.get(event.fantasyplayer_id);
-      if (!metadata) {
-        continue;
-      }
-      exactRoundKeys.add(normalizeMatchKey(metadata.name, metadata.team_name));
-    }
-  }
-
-  // Per-ronde advancement: verschil met vorige ronde
-  let prevWkByName: Map<string, CalculatedWkPlayerPoints> | null = null;
-  if (typeof roundNumber === "number" && roundNumber > 1) {
-    const prevPlayers = await listCalculatedWkPlayerPoints(roundNumber - 1);
-    prevWkByName = new Map();
-    for (const p of prevPlayers) {
-      prevWkByName.set(normalizeMatchKey(p.name, p.teamName), p);
-    }
-  }
-
-  const wkByName = new Map<string, CalculatedWkPlayerPoints>();
-  for (const p of wkPlayers) {
-    const key = normalizeMatchKey(p.name, p.teamName);
-    wkByName.set(key, p);
-  }
-
-  const roundPoints = new Map<string, number>();
-  const totalPoints = new Map<string, number>();
-  const advancementPoints = new Map<string, number>();
-
-  for (const csv of csvPlayers) {
-    const key = normalizeMatchKey(csv.naam, csv.club);
-    const wk = wkByName.get(key);
-    if (wk) {
-      const hasExactRoundSnapshot = exactRoundKeys ? exactRoundKeys.has(key) : true;
-      roundPoints.set(csv.id, hasExactRoundSnapshot ? wk.roundPoints : 0);
-      totalPoints.set(csv.id, wk.totalPoints);
-      // Per-ronde advancement = huidig - vorig
-      const prev = prevWkByName?.get(key);
-      const perRoundAdv = prev
-        ? Math.max(0, wk.advancementPoints - prev.advancementPoints)
-        : wk.advancementPoints;
-      advancementPoints.set(csv.id, hasExactRoundSnapshot ? perRoundAdv : 0);
-    }
-  }
-
-  return { roundPoints, totalPoints, advancementPoints };
 }

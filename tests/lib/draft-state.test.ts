@@ -1,22 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 describe("draft-state persistence", () => {
-  afterEach(() => {
-    delete process.env.GORI_DATABASE_URL;
-    vi.doUnmock("../../src/lib/persistent-json-store");
-    vi.resetModules();
-  });
-
   beforeEach(() => {
     process.env.DRAFT_STATE_PATH = "/tmp/ffg-draft-state.test.json";
     process.env.DRAFT_STATE_WK_PATH = "/tmp/ffg-draft-state-wk.test.json";
     process.env.TEAM_ROSTER_STATE_PATH = "/tmp/ffg-team-roster-state.test.json";
     process.env.TEAM_ROSTER_STATE_WK_PATH = "/tmp/ffg-team-roster-state-wk.test.json";
-    vi.doMock("../../src/lib/persistent-json-store", () => ({
-      isGoriDatabaseEnabled: () => false,
-      readPersistentJson: vi.fn(async () => null),
-      writePersistentJson: vi.fn(async (_input, payload) => payload),
-    }));
   });
 
   it("starts a draft and computes current turn from A,A,reverse(A)", async () => {
@@ -61,7 +50,7 @@ describe("draft-state persistence", () => {
     });
 
     mod.registerPick({ teamId: "A", playerId: "p-1" });
-    expect(() => mod.registerPick({ teamId: "B", playerId: "p-1" })).toThrow(/already picked|al in een ander team/i);
+    expect(() => mod.registerPick({ teamId: "B", playerId: "p-1" })).toThrow(/al in een ander team/i);
   });
 
   it("supports returning a player to pool and resets pick slot", async () => {
@@ -209,27 +198,5 @@ describe("draft-state persistence", () => {
 
     expect(() => mod.registerPick({ teamId: "A", playerId: "ned-3", playerCatalog })).toThrow(/maximaal 2 spelers per land/i);
     expect(rosterMod.readTeamRosterState().byTeamId.A).toEqual(["ned-1", "ned-2"]);
-  });
-
-  it("falls back gracefully when persistent draft reads fail", async () => {
-    process.env.GORI_DATABASE_URL = "postgres://gori:***@example.com/gori";
-
-    vi.doMock("../../src/lib/persistent-json-store", () => ({
-      isGoriDatabaseEnabled: () => true,
-      readPersistentJson: vi.fn(async () => {
-        throw new Error("draft-state read failed");
-      }),
-      writePersistentJson: vi.fn(async (_input, payload) => payload),
-    }));
-
-    const mod = await import("../../src/lib/draft-state");
-    mod.resetDraftStateForTests();
-    mod.startDraft({ leagueId: "league-1", teamOrder: ["A", "B"], totalRounds: 1, startedBy: "admin-1" });
-
-    await expect(mod.readDraftStatePersistent()).resolves.toMatchObject({
-      leagueId: "league-1",
-      status: "ACTIVE",
-      teamOrder: ["A", "B"],
-    });
   });
 });

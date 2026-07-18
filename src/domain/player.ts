@@ -4,5 +4,5 @@ export type PlayerRecord = {
   club: string;
   positie: string;
   prijs: number;
-  inactive?: boolean;
+  isActive?: boolean;
 };

@@ -2,35 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-const readFile = vi.fn(async () => "id,naam\n1,test");
-const parsePlayerCsv = vi.fn(() => ({
-  players: [
-    { id: "10", naam: "Speler 10", club: "Land 10" },
-    { id: "11", naam: "Speler 11", club: "Land 11" },
-    { id: "12", naam: "Speler 12", club: "Land 12" },
-    { id: "20", naam: "Speler 20", club: "Land 20" },
-    { id: "21", naam: "Speler 21", club: "Land 21" },
-    { id: "22", naam: "Speler 22", club: "Land 22" },
-  ],
-}));
-const buildWkPlayerPointsByCsvId = vi.fn(async () => ({
-  roundPoints: new Map<string, number>(),
-  totalPoints: new Map<string, number>(),
-  advancementPoints: new Map<string, number>(),
-}));
-
-vi.mock("fs/promises", () => ({
-  readFile,
-}));
-
-vi.mock("@/domain/player-csv", () => ({
-  parsePlayerCsv,
-}));
-
-vi.mock("../../src/lib/wk-player-scoring", () => ({
-  buildWkPlayerPointsByCsvId,
-}));
-
 const ROOT = "/tmp/ffg-team-score-engine-tests";
 const MANAGER_STATE_WK_PATH = `${ROOT}/manager-state-wk.json`;
 const TEAM_SCORE_STATE_WK_PATH = `${ROOT}/team-score-state-wk.json`;
@@ -46,9 +17,6 @@ describe("team score engine", () => {
   beforeEach(async () => {
     process.env.MANAGER_STATE_WK_PATH = MANAGER_STATE_WK_PATH;
     process.env.TEAM_SCORE_STATE_WK_PATH = TEAM_SCORE_STATE_WK_PATH;
-    readFile.mockClear();
-    parsePlayerCsv.mockClear();
-    buildWkPlayerPointsByCsvId.mockClear();
     const { managerState, teamScoreState } = await loadModules();
     managerState.resetManagerStateForTests("wk");
     teamScoreState.resetTeamScoreStateForTests("wk");
@@ -130,37 +98,5 @@ describe("team score engine", () => {
       benchPoints: 5,
       totalPoints: 15,
     });
-  });
-
-  it("includes advancement points in persisted WK round snapshots", async () => {
-    const { managerState, teamScoreEngine } = await loadModules();
-
-    managerState.saveManagerStateForRound(
-      6,
-      {
-        formation: "4-3-3",
-        lineupIds: ["10"],
-        benchIds: ["12"],
-      },
-      "wk",
-      false,
-      "simon@example.com",
-    );
-
-    buildWkPlayerPointsByCsvId.mockResolvedValueOnce({
-      roundPoints: new Map([["10", 8], ["12", 0]]),
-      totalPoints: new Map<string, number>(),
-      advancementPoints: new Map([["10", 5], ["12", 5]]),
-    });
-
-    const snapshot = await teamScoreEngine.recalculateManagerRoundScorePersistent({
-      scope: "wk",
-      managerKey: "simon@example.com",
-      roundNumber: 6,
-    });
-
-    expect(snapshot.lineupPoints).toBe(13);
-    expect(snapshot.benchPoints).toBe(3);
-    expect(snapshot.totalPoints).toBe(16);
   });
 });

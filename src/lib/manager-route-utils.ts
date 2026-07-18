@@ -11,6 +11,10 @@ const MODE_SWITCH_ROUTES: Record<string, string> = {
   "/manager/world-cup/view-team": "/manager/view-team",
 };
 
+export function hasModeSwitchRoute(pathname: string) {
+  return pathname in MODE_SWITCH_ROUTES;
+}
+
 export function countPlayers(lineupIds: string[] = [], benchIds: string[] = []) {
   return [...lineupIds, ...benchIds].filter((id) => typeof id === "string" && id.trim().length > 0).length;
 }

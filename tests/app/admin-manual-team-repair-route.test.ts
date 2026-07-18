@@ -6,10 +6,6 @@ const isAuthenticatedSession = vi.fn(async () => true);
 const getAuthenticatedEmail = vi.fn(async () => "admin@gori.local");
 const ensureAuthStateFromDb = vi.fn(async () => undefined);
 const isAdminEmail = vi.fn((email: string) => email === "admin@gori.local");
-const resolveCanonicalManagerId = vi.fn((scope: string, managerKey: string) => {
-  if (scope === "wk" && managerKey === "ice.eckmund@gmail.com") return "ice-eckmund";
-  return managerKey;
-});
 const readManagerStatePersistent = vi.fn(async () => ({
   formation: "4-3-3",
   lineupIds: ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11"],
@@ -17,10 +13,15 @@ const readManagerStatePersistent = vi.fn(async () => ({
 }));
 const saveManagerStatePersistent = vi.fn(async () => undefined);
 const saveManagerStateForRoundPersistent = vi.fn(async () => undefined);
-const setTeamRosterForManagerPersistent = vi.fn(async (_teamId: string, playerIds: string[]) => ({
+const resolveDraftTeamManagerEmailPersistent = vi.fn(async (teamId: string) => {
+  if (teamId === "Ice Palace FC") return "ice.eckmund@gmail.com";
+  if (teamId === "Thomas") return "thomas@example.com";
+  return null;
+});
+const readTeamRosterStatePersistent = vi.fn(async () => ({
   byTeamId: {
-    "ice-eckmund": playerIds,
-    "thomas-bart": ["old-thomas"],
+    Thomas: ["old-thomas"],
+    "Ice Palace FC": ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13", "p14"],
   },
 }));
 const readTransferRoundPersistent = vi.fn(async () => ({
@@ -46,6 +47,7 @@ const readTransferRoundPersistent = vi.fn(async () => ({
   ],
 }));
 const saveTransferRoundPersistent = vi.fn(async () => undefined);
+const writePersistentJson = vi.fn(async () => undefined);
 const readFile = vi.fn(async () => "id,positie\np1,GK\np2,DEF\np3,DEF\np4,DEF\np5,DEF\np6,MID\np7,MID\np8,MID\np9,FWD\np10,FWD\np11,FWD\np12,GK\np13,DEF\np14,MID\n");
 const parsePlayerCsv = vi.fn(() => ({
   players: [
@@ -79,16 +81,17 @@ vi.mock("@/lib/manager-state", () => ({
   saveManagerStatePersistent,
   saveManagerStateForRoundPersistent,
 }));
-vi.mock("@/lib/manager-identity", () => ({ resolveCanonicalManagerId }));
-vi.mock("@/lib/team-roster-state", () => ({ setTeamRosterForManagerPersistent }));
+vi.mock("@/lib/draft-manager-sync", () => ({ resolveDraftTeamManagerEmailPersistent }));
+vi.mock("@/lib/team-roster-state", () => ({ readTeamRosterStatePersistent }));
 vi.mock("@/lib/transfer-round-state", () => ({ readTransferRoundPersistent, saveTransferRoundPersistent }));
+vi.mock("@/lib/persistent-json-store", () => ({ writePersistentJson }));
 
 afterEach(() => {
   vi.clearAllMocks();
 });
 
 describe("POST /api/admin/manual-team-repair", () => {
-  it("writes the repaired roster under the canonical managerId instead of a drifting alias", async () => {
+  it("updates the matched manager roster key instead of overwriting Thomas", async () => {
     const { POST } = await import("../../src/app/api/admin/manual-team-repair/route");
 
     const response = await POST(
@@ -109,12 +112,43 @@ describe("POST /api/admin/manual-team-repair", () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(resolveCanonicalManagerId).toHaveBeenCalledWith("wk", "ice.eckmund@gmail.com");
-    expect(setTeamRosterForManagerPersistent).toHaveBeenCalledWith(
-      "ice-eckmund",
-      ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13", "p14"],
-      "wk",
+    expect(resolveDraftTeamManagerEmailPersistent).toHaveBeenCalledWith("Thomas", "wk");
+    expect(resolveDraftTeamManagerEmailPersistent).toHaveBeenCalledWith("Ice Palace FC", "wk");
+    expect(writePersistentJson).toHaveBeenCalledWith(
+      { store: "team-roster-state", scope: "wk" },
+      {
+        byTeamId: {
+          Thomas: ["old-thomas"],
+          "Ice Palace FC": ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13", "p14"],
+        },
+      },
     );
-    expect(payload.rosterKey).toBe("ice-eckmund");
+    expect(payload.rosterKey).toBe("Ice Palace FC");
+  });
+
+  it("returns 404 when no roster key can be resolved for the manager", async () => {
+    resolveDraftTeamManagerEmailPersistent.mockResolvedValueOnce("thomas@example.com").mockResolvedValueOnce(null);
+
+    const { POST } = await import("../../src/app/api/admin/manual-team-repair/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/admin/manual-team-repair", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "wk",
+          managerEmail: "ice.eckmund@gmail.com",
+          roundNumber: 6,
+          lineupIds: ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11"],
+          benchIds: ["p12", "p13", "p14"],
+          formation: "4-3-3",
+        }),
+      }),
+    );
+
+    const payload = await response.json();
+    expect(response.status).toBe(404);
+    expect(payload.error).toContain("Team-roster state");
+    expect(writePersistentJson).not.toHaveBeenCalled();
   });
 });

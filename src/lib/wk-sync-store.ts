@@ -77,9 +77,21 @@ async function ensureSchema() {
   return p;
 }
 
+function getReadablePool(): Pool | null {
+  return getPool();
+}
+
 export async function isWkStoreAvailable(): Promise<boolean> {
-  const p = await ensureSchema();
+  const p = getReadablePool();
   return p !== null;
+}
+
+export function resetWkSyncStoreForTests() {
+  dbReady = false;
+  if (pool) {
+    void pool.end();
+    pool = null;
+  }
 }
 
 // ── Types ───────────────────────────────────────────────────────────
@@ -249,20 +261,10 @@ export async function saveWkPlayerEvents(
 
   const client = await p.connect();
   try {
-    // Delete old events for these specific players in this round before re-inserting
+    // Delete old events for this round before re-inserting
     const rounds = [...new Set(events.map((e) => e.round))];
     for (const r of rounds) {
-      const playerIds = [...new Set(events.filter((e) => e.round === r).map((e) => e.fantasyplayer_id))];
-      // Batch delete: 100 ids per chunk to avoid parameter limit
-      const DEL_CHUNK = 100;
-      for (let d = 0; d < playerIds.length; d += DEL_CHUNK) {
-        const chunk = playerIds.slice(d, d + DEL_CHUNK);
-        const placeholders = chunk.map((_, idx) => `$${idx + 2}`).join(", ");
-        await client.query(
-          `DELETE FROM wk_player_events WHERE round = $1 AND fantasyplayer_id IN (${placeholders})`,
-          [r, ...chunk],
-        );
-      }
+      await client.query("DELETE FROM wk_player_events WHERE round = $1", [r]);
     }
 
     // Batch insert: 100 events per chunk
@@ -295,7 +297,7 @@ export async function saveWkPlayerEvents(
 export async function getWkPlayerPoints(
   round?: number,
 ): Promise<WkPlayerPointRow[]> {
-  const p = await ensureSchema();
+  const p = getReadablePool();
   if (!p) return [];
 
   if (round) {
@@ -313,7 +315,7 @@ export async function getWkPlayerPoints(
 }
 
 export async function getWkPlayerPointHistory(maxRound?: number): Promise<WkPlayerPointRow[]> {
-  const p = await ensureSchema();
+  const p = getReadablePool();
   if (!p) return [];
 
   if (typeof maxRound === "number" && Number.isInteger(maxRound) && maxRound > 0) {
@@ -334,7 +336,7 @@ export async function getWkPlayerEvents(
   round?: number,
   fantasyplayerId?: number,
 ): Promise<WkPlayerEventRow[]> {
-  const p = await ensureSchema();
+  const p = getReadablePool();
   if (!p) return [];
 
   let query = "SELECT * FROM wk_player_events WHERE 1=1";
@@ -358,7 +360,7 @@ export async function getWkPlayerEvents(
 export async function getWkMatches(
   round?: number,
 ): Promise<WkMatchRow[]> {
-  const p = await ensureSchema();
+  const p = getReadablePool();
   if (!p) return [];
 
   if (round) {
@@ -376,7 +378,7 @@ export async function getWkMatches(
 }
 
 export async function getLatestSyncRound(): Promise<number | null> {
-  const p = await ensureSchema();
+  const p = getReadablePool();
   if (!p) return null;
 
   const r = await p.query<{ max_round: number }>(

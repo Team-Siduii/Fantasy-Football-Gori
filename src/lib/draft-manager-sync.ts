@@ -1,8 +1,8 @@
-import { buildFormationSlots, getFormationOptions } from "../domain/formation";
-import type { PlayerRecord } from "../domain/player";
-import { parsePlayerCsv } from "../domain/player-csv";
 import { readFile } from "fs/promises";
-import path from "path";
+import * as path from "path";
+import { buildFormationSlots, getFormationOptions } from "../domain/formation";
+import { parsePlayerCsv } from "../domain/player-csv";
+import type { PlayerRecord } from "../domain/player";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
 import { getAuthAccountByEmail, listManagerProfiles } from "./auth-store";
 import { getLeagueAdminConfig, getLeagueAdminConfigPersistent, type LeagueMode } from "./league-admin-config";
@@ -20,6 +20,7 @@ const LINEUP_SIZE = 11;
 const SQUAD_SIZE = 15;
 
 type DraftPosition = "GK" | "DEF" | "MID" | "FWD";
+const BENCH_POSITIONS: DraftPosition[] = ["GK", "DEF", "MID", "FWD"];
 type DraftPlayerCatalogEntry = Pick<PlayerRecord, "id" | "positie">;
 type ManagerIdentity = {
   aliases: Set<string>;
@@ -143,6 +144,38 @@ function findRosterMatch(
   );
 }
 
+function findRosterMatches(
+  rosters: Record<string, string[]>,
+  identity: ManagerIdentity,
+  scope: ManagerStateScope,
+): Array<[string, string[]]> {
+  return Object.entries(rosters).filter(
+    ([teamId]) => teamIdMatchesManagerIdentity(teamId, identity) || teamIdResolvesToManagerIdentity(teamId, identity, scope),
+  );
+}
+
+export async function readRosterPlayerIdsForManagerPersistent(input: {
+  managerEmail: string;
+  scope: ManagerStateScope;
+}) {
+  const managerEmail = normalizeEmail(input.managerEmail);
+  if (!managerEmail) {
+    return [] as string[];
+  }
+
+  const rosters = (await readTeamRosterStatePersistent(input.scope)).byTeamId;
+  const identity = buildManagerIdentity(managerEmail, input.scope);
+  const matches = findRosterMatches(rosters, identity, input.scope);
+
+  return Array.from(
+    new Set(
+      matches.flatMap(([, playerIds]) =>
+        playerIds.filter((playerId) => typeof playerId === "string" && playerId.trim().length > 0),
+      ),
+    ),
+  );
+}
+
 export function resolveDraftTeamManagerEmail(teamId: string, scope: ManagerStateScope = "eredivisie"): string | null {
   const target = normalize(teamId);
   if (!target) {
@@ -226,7 +259,7 @@ function buildAutoFormationTeamState(playerIds: string[], playerCatalog: DraftPl
     }
   }
 
-  const options = getFormationOptions();
+  const options = [DEFAULT_FORMATION, ...getFormationOptions().filter((option) => option !== DEFAULT_FORMATION)];
   let bestFormation = options[0] ?? DEFAULT_FORMATION;
   let bestLineupCount = -1;
 
@@ -237,20 +270,6 @@ function buildAutoFormationTeamState(playerIds: string[], playerCatalog: DraftPl
         slotCounts[slot] += 1;
       }
     }
-
-    // Check of de bank (1 GK, 1 DEF, 1 MID, 1 FWD) gevuld kan worden
-    const benchNeeded: Record<DraftPosition, number> = { GK: 1, DEF: 1, MID: 1, FWD: 1 };
-    const totalNeeded: Record<DraftPosition, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
-    for (const pos of (Object.keys(slotCounts) as DraftPosition[])) {
-      totalNeeded[pos] = slotCounts[pos] + (benchNeeded[pos] ?? 0);
-    }
-
-    const canFillAll = (Object.keys(totalNeeded) as DraftPosition[]).every(
-      (pos) => idsByPosition[pos].length >= totalNeeded[pos],
-    );
-
-    if (!canFillAll) continue; // Sla formaties over die de bench niet kunnen vullen
-
     const lineupCount = (Object.keys(slotCounts) as DraftPosition[]).reduce(
       (sum, position) => sum + Math.min(slotCounts[position], idsByPosition[position].length),
       0,
@@ -277,27 +296,77 @@ function buildAutoFormationTeamState(playerIds: string[], playerCatalog: DraftPl
     lineupIds.push(playerId);
   }
 
-  // Vul de bank met precies 1 GK, 1 DEF, 1 MID, 1 FWD
   const benchIds: string[] = [];
-  const benchPositions: DraftPosition[] = ["GK", "DEF", "MID", "FWD"];
-  for (const pos of benchPositions) {
-    const next = idsByPosition[pos].find((id) => !used.has(id));
+  for (const position of BENCH_POSITIONS) {
+    const next = idsByPosition[position].find((id) => !used.has(id));
     if (next) {
       used.add(next);
       benchIds.push(next);
     }
   }
 
-  // Eventuele overgebleven spelers die nog niet in lineup of bench zitten
-  for (const pos of benchPositions) {
+  for (const playerId of unknownIds) {
     if (benchIds.length >= SQUAD_SIZE - lineupIds.length) break;
-    const extra = idsByPosition[pos].find((id) => !used.has(id));
-    if (extra) {
-      used.add(extra);
-      benchIds.push(extra);
+    if (used.has(playerId)) continue;
+    used.add(playerId);
+    benchIds.push(playerId);
+  }
+
+  for (const playerId of uniquePlayerIds) {
+    if (benchIds.length >= SQUAD_SIZE - lineupIds.length) break;
+    if (used.has(playerId)) continue;
+    used.add(playerId);
+    benchIds.push(playerId);
+  }
+
+  return { formation: bestFormation, lineupIds, benchIds };
+}
+
+async function loadDraftPlayerCatalogPersistent(scope: ManagerStateScope): Promise<DraftPlayerCatalogEntry[]> {
+  if (scope === "wk") {
+    const wkCsvPath = path.join(process.cwd(), "data", "players-wk.csv");
+    try {
+      const csvContent = await readFile(wkCsvPath, "utf-8");
+      return parsePlayerCsv(csvContent).players.map((player) => ({ id: player.id, positie: player.positie }));
+    } catch {
+      return [];
     }
   }
-  return { formation: bestFormation, lineupIds, benchIds };
+
+  const { bootstrapPlayersFromDefaultCsv } = await import("./player-bootstrap");
+  const { listPlayers } = await import("./player-store");
+  await bootstrapPlayersFromDefaultCsv();
+  return listPlayers().map((player) => ({ id: player.id, positie: player.positie }));
+}
+
+function hasValidSavedShape(input: {
+  formation: string;
+  lineupIds: string[];
+  benchIds: string[];
+  playerCatalog: DraftPlayerCatalogEntry[];
+}) {
+  if (input.lineupIds.length !== LINEUP_SIZE || input.benchIds.length !== BENCH_POSITIONS.length) {
+    return false;
+  }
+
+  const playersById = new Map(input.playerCatalog.map((player) => [player.id, player]));
+  const expectedLineupPositions = buildFormationSlots(input.formation).flat();
+
+  for (let index = 0; index < expectedLineupPositions.length; index += 1) {
+    const player = playersById.get(input.lineupIds[index] ?? "");
+    if (normalizeDraftPosition(player?.positie ?? "") !== expectedLineupPositions[index]) {
+      return false;
+    }
+  }
+
+  for (let index = 0; index < BENCH_POSITIONS.length; index += 1) {
+    const player = playersById.get(input.benchIds[index] ?? "");
+    if (normalizeDraftPosition(player?.positie ?? "") !== BENCH_POSITIONS[index]) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function buildManagerTeamState(playerIds: string[], formation = DEFAULT_FORMATION, playerCatalog?: DraftPlayerCatalogEntry[]) {
@@ -339,19 +408,6 @@ function buildManagerTeamStateWithRoundSnapshots(
   };
 }
 
-async function loadPersistentPlayerCatalog(scope: ManagerStateScope): Promise<DraftPlayerCatalogEntry[] | undefined> {
-  if (scope !== "wk") {
-    return undefined;
-  }
-
-  try {
-    const csvContent = await readFile(path.join(process.cwd(), "data", "players-wk.csv"), "utf-8");
-    return parsePlayerCsv(csvContent).players.map((player) => ({ id: player.id, positie: player.positie }));
-  } catch {
-    return undefined;
-  }
-}
-
 export function syncPlayerIdsToManagerTeam(input: {
   managerEmail: string;
   playerIds: string[];
@@ -385,7 +441,6 @@ export async function syncPlayerIdsToManagerTeamPersistent(input: {
   }
 
   const current = await readManagerStatePersistent(input.scope, managerEmail);
-  const playerCatalog = input.playerCatalog ?? (await loadPersistentPlayerCatalog(input.scope));
 
   // Alleen initialiseren als de state leeg is (nog geen spelers).
   // Zodra een manager spelers heeft (uit draft of transfers) NIET overschrijven.
@@ -395,7 +450,7 @@ export async function syncPlayerIdsToManagerTeamPersistent(input: {
   }
 
   const state = await saveManagerStatePersistent(
-    buildManagerTeamStateWithRoundSnapshots(input.playerIds, current, playerCatalog),
+    buildManagerTeamStateWithRoundSnapshots(input.playerIds, current, input.playerCatalog),
     input.scope,
     managerEmail,
   );
@@ -486,7 +541,6 @@ export async function syncManagerTeamFromDraftRosterPersistent(input: { managerE
 
   const [, playerIds] = match;
   const current = await readManagerStatePersistent(input.scope, managerEmail);
-  const playerCatalog = await loadPersistentPlayerCatalog(input.scope);
 
   // Alleen initialiseren als de state leeg is (nog geen spelers).
   // Zodra een manager spelers heeft (uit draft of transfers) NIET overschrijven —
@@ -496,7 +550,7 @@ export async function syncManagerTeamFromDraftRosterPersistent(input: { managerE
     return { managerEmail, state: current, changed: false };
   }
 
-  const next = buildManagerTeamStateWithRoundSnapshots(playerIds, current, playerCatalog);
+  const next = buildManagerTeamStateWithRoundSnapshots(playerIds, current);
   const nextIds = [...next.lineupIds, ...next.benchIds];
 
   if (currentIds.join("\u0000") === nextIds.join("\u0000")) {
@@ -505,6 +559,29 @@ export async function syncManagerTeamFromDraftRosterPersistent(input: { managerE
 
   const state = await saveManagerStatePersistent(next, input.scope, managerEmail);
   return { managerEmail, state, changed: true };
+}
+
+function shouldForceRepairFromCandidate(currentIds: string[], candidateIds: string[]) {
+  return currentIds.length > 0 && currentIds.length < SQUAD_SIZE && candidateIds.length >= SQUAD_SIZE && candidateIds.length > currentIds.length;
+}
+
+async function forceRepairManagerTeamPersistent(input: {
+  managerEmail: string;
+  scope: ManagerStateScope;
+  playerIds: string[];
+}) {
+  const current = await readManagerStatePersistent(input.scope, input.managerEmail);
+  const playerCatalog = await loadDraftPlayerCatalogPersistent(input.scope);
+  const next = buildManagerTeamStateWithRoundSnapshots(input.playerIds, current, playerCatalog);
+  const nextIds = [...next.lineupIds, ...next.benchIds];
+  const currentIds = [...current.lineupIds, ...current.benchIds];
+
+  if (currentIds.join("\u0000") === nextIds.join("\u0000")) {
+    return { managerEmail: input.managerEmail, state: current, changed: false };
+  }
+
+  const state = await saveManagerStatePersistent(next, input.scope, input.managerEmail);
+  return { managerEmail: input.managerEmail, state, changed: true };
 }
 
 export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
@@ -518,24 +595,41 @@ export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
 
   const current = await readManagerStatePersistent(input.scope, managerEmail);
   const currentIds = [...current.lineupIds, ...current.benchIds];
+  const playerCatalog = await loadDraftPlayerCatalogPersistent(input.scope);
+  const currentShapeInvalid =
+    currentIds.length > 0 &&
+    hasValidSavedShape({
+      formation: current.formation,
+      lineupIds: current.lineupIds,
+      benchIds: current.benchIds,
+      playerCatalog,
+    }) === false;
+  const rosters = (await readTeamRosterStatePersistent(input.scope)).byTeamId;
+  const identity = buildManagerIdentity(managerEmail, input.scope);
+  const rosterMatch = findRosterMatch(rosters, identity, input.scope);
+  const rosterPlayerIds = rosterMatch?.[1] ?? [];
 
-  // Alleen repareren als het team volledig leeg is (nooit geïnitialiseerd).
-  // Zodra er spelers in staan, heeft de manager transfers/aanpassingen gedaan
-  // en mag géén enkele automatische repair de boel overschrijven.
-  if (currentIds.length > 0) {
-    return { managerEmail, state: current, changed: false };
-  }
-
-  // Team is leeg — probeer te vullen via roster, dan draft
-  {
+  if (currentIds.length === 0) {
     const rosterRepair = await syncManagerTeamFromDraftRosterPersistent(input);
     if (rosterRepair) {
       return { ...rosterRepair, repairedFrom: "team-roster" as const };
     }
+  } else if (currentShapeInvalid && rosterPlayerIds.length >= SQUAD_SIZE) {
+    const forcedRosterRepair = await forceRepairManagerTeamPersistent({
+      managerEmail,
+      playerIds: rosterPlayerIds,
+      scope: input.scope,
+    });
+    return { ...forcedRosterRepair, repairedFrom: "team-roster" as const };
+  } else if (shouldForceRepairFromCandidate(currentIds, rosterPlayerIds)) {
+    const forcedRosterRepair = await forceRepairManagerTeamPersistent({
+      managerEmail,
+      playerIds: rosterPlayerIds,
+      scope: input.scope,
+    });
+    return { ...forcedRosterRepair, repairedFrom: "team-roster" as const };
   }
 
-  const identity = buildManagerIdentity(managerEmail, input.scope);
-  const playerCatalog = await loadPersistentPlayerCatalog(input.scope);
   const { readDraftStatePersistent } = await import("./draft-state");
   const draft = await readDraftStatePersistent(input.scope);
   const draftPlayerIds = draft.picks
@@ -546,14 +640,34 @@ export async function repairManagerTeamFromDraftArtifactsPersistent(input: {
     return null;
   }
 
-  {
+  if (currentIds.length === 0) {
     const result = await syncPlayerIdsToManagerTeamPersistent({
       managerEmail,
       playerIds: draftPlayerIds,
-      playerCatalog,
       scope: input.scope,
+      playerCatalog,
     });
 
     return result ? { ...result, changed: true, repairedFrom: "draft-picks" as const } : null;
   }
+
+  if (currentShapeInvalid && draftPlayerIds.length >= SQUAD_SIZE) {
+    const forcedDraftRepair = await forceRepairManagerTeamPersistent({
+      managerEmail,
+      playerIds: draftPlayerIds,
+      scope: input.scope,
+    });
+    return { ...forcedDraftRepair, repairedFrom: "draft-picks" as const };
+  }
+
+  if (shouldForceRepairFromCandidate(currentIds, draftPlayerIds)) {
+    const forcedDraftRepair = await forceRepairManagerTeamPersistent({
+      managerEmail,
+      playerIds: draftPlayerIds,
+      scope: input.scope,
+    });
+    return { ...forcedDraftRepair, repairedFrom: "draft-picks" as const };
+  }
+
+  return { managerEmail, state: current, changed: false };
 }

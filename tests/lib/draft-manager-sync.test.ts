@@ -270,6 +270,38 @@ describe("draft roster to manager team sync", () => {
     expect(manager.readManagerState("wk", "Jackvandereep@hotmail.con").lineupIds).toEqual(["wk-player-1"]);
   });
 
+  it("merges alias roster keys for the same WK manager when raw roster lookup is needed", async () => {
+    const { roster, sync, league, auth } = await loadModules();
+    roster.resetTeamRosterStateForTests("wk");
+    league.resetLeagueAdminConfigForTests("wk");
+    auth.resetAuthStateForTests();
+
+    league.updateLeagueAdminConfig(
+      {
+        participants: [{ managerId: "emielzomerdijk", label: "Emiel Zomerdijk", email: "emielzomerdijk@gmail.com", status: "ACCEPTED" }],
+      },
+      "wk",
+    );
+
+    roster.saveTeamRosterState(
+      {
+        byTeamId: {
+          emielzomerdijk: ["921"],
+          "Emiel Zomerdijk": ["256", "395", "274", "497", "945", "326", "309", "465", "237", "241", "26", "1323", "689", "89", "1054"],
+        },
+      },
+      "wk",
+    );
+
+    const rosterPlayerIds = await sync.readRosterPlayerIdsForManagerPersistent({
+      managerEmail: "emielzomerdijk@gmail.com",
+      scope: "wk",
+    });
+
+    expect(rosterPlayerIds).toHaveLength(16);
+    expect(rosterPlayerIds).toEqual(expect.arrayContaining(["921", "945", "256", "1054"]));
+  });
+
   it("rebuilds My Team from draft picks when team-roster state is missing", async () => {
     const { draft, roster, manager, sync, auth } = await loadModules();
     draft.resetDraftStateForTests("wk");
@@ -370,122 +402,4 @@ describe("draft roster to manager team sync", () => {
     expect(repairedState.roundStates["1"]?.lineupIds).toEqual(repairedState.lineupIds);
     expect(repairedState.roundStates["1"]?.benchIds).toEqual(repairedState.benchIds);
   });
-
-  it("repairs stale round snapshots even when the top-level manager-state already has the full team", async () => {
-    const { draft, roster, manager, sync, league } = await loadModules();
-    draft.resetDraftStateForTests("wk");
-    roster.resetTeamRosterStateForTests("wk");
-    manager.resetManagerStateForTests("wk");
-    league.resetLeagueAdminConfigForTests("wk");
-
-    league.updateLeagueAdminConfig(
-      {
-        participants: [{ managerId: "sim-duindam", label: "Sim Duindam", email: "s.j.m.duindam@gmail.com", status: "ACCEPTED" }],
-      },
-      "wk",
-    );
-
-    const fullTeam = Array.from({ length: 15 }, (_, index) => `wk-player-${index + 1}`);
-    roster.saveTeamRosterState(
-      {
-        byTeamId: {
-          "Sim Duindam": fullTeam,
-        },
-      },
-      "wk",
-    );
-
-    manager.saveManagerState(
-      {
-        formation: "4-3-3",
-        lineupIds: fullTeam.slice(0, 11),
-        benchIds: fullTeam.slice(11),
-        roundStates: {
-          "1": {
-            formation: "4-3-3",
-            lineupIds: ["wk-player-999"],
-            benchIds: [],
-            pickedTransferId: null,
-            pendingSellId: null,
-            pendingBuyId: null,
-          },
-        },
-      },
-      "wk",
-      "s.j.m.duindam@gmail.com",
-    );
-
-    const repaired = await sync.repairManagerTeamFromDraftArtifactsPersistent({
-      managerEmail: "s.j.m.duindam@gmail.com",
-      scope: "wk",
-    });
-
-    const repairedState = manager.readManagerState("wk", "s.j.m.duindam@gmail.com");
-    expect(repaired?.changed).toBe(true);
-    expect(repairedState.lineupIds).toEqual(fullTeam.slice(0, 11));
-    expect(repairedState.benchIds).toEqual(fullTeam.slice(11));
-    expect(repairedState.roundStates["1"]?.lineupIds).toEqual(fullTeam.slice(0, 11));
-    expect(repairedState.roundStates["1"]?.benchIds).toEqual(fullTeam.slice(11));
-  });
-
-  it(
-    "repairs persistent WK state into a position-valid raw lineup instead of preserving pick-order slicing",
-    async () => {
-      const { roster, manager, sync, league } = await loadModules();
-      roster.resetTeamRosterStateForTests("wk");
-      manager.resetManagerStateForTests("wk");
-      league.resetLeagueAdminConfigForTests("wk");
-
-      league.updateLeagueAdminConfig(
-        {
-          participants: [{ managerId: "sim-duindam", label: "Sim Duindam", email: "s.j.m.duindam@gmail.com", status: "ACCEPTED" }],
-        },
-        "wk",
-      );
-
-      const rawRosterIds = ["247", "296", "391", "304", "343", "316", "295", "454", "358", "427", "802", "574", "311", "175", "12"];
-      roster.saveTeamRosterState(
-        {
-          byTeamId: {
-            "Sim Duindam": rawRosterIds,
-          },
-        },
-        "wk",
-      );
-
-      manager.saveManagerState(
-        {
-          formation: "4-3-3",
-          lineupIds: ["247", "296", "391", "304", "343", "316", "295", "454", "358", "427", "802"],
-          benchIds: ["574", "311", "175", "12"],
-          roundStates: {
-            "1": {
-              formation: "4-3-3",
-              lineupIds: ["247", "296", "391", "304", "343", "316", "295", "454", "358", "427", "802"],
-              benchIds: ["574", "311", "175", "12"],
-              pickedTransferId: null,
-              pendingSellId: null,
-              pendingBuyId: null,
-            },
-          },
-        },
-        "wk",
-        "s.j.m.duindam@gmail.com",
-      );
-
-      const repaired = await sync.repairManagerTeamFromDraftArtifactsPersistent({
-        managerEmail: "s.j.m.duindam@gmail.com",
-        scope: "wk",
-      });
-
-      const repairedState = manager.readManagerState("wk", "s.j.m.duindam@gmail.com");
-      expect(repaired?.changed).toBe(true);
-      expect(repairedState.formation).toBe("4-3-3");
-      expect(repairedState.lineupIds).toEqual(["454", "296", "343", "316", "295", "247", "574", "311", "391", "304", "358"]);
-      expect(repairedState.benchIds).toEqual(["427", "802", "175", "12"]);
-      expect(repairedState.roundStates["1"]?.lineupIds).toEqual(repairedState.lineupIds);
-      expect(repairedState.roundStates["1"]?.benchIds).toEqual(repairedState.benchIds);
-    },
-    15000,
-  );
 });

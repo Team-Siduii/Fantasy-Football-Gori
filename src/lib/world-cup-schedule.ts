@@ -1,4 +1,4 @@
-import { getLatestPlayedRound, type SeasonFixture } from "./season-schedule";
+import type { SeasonFixture } from "@/lib/season-schedule";
 
 // Bron: KPN WK 2026 speelschema (https://www.kpn.com/entertainment/sport/wk-voetbal/speelschema)
 // Ronde-mapping: 1=Speelronde1, 2=Speelronde2, 3=Speelronde3, 4=Zestiende finales, 5=Achtste finales, 6=Kwartfinales, 7=Halve finales, 8=Troostfinale, 9=Finale
@@ -75,22 +75,22 @@ export const WORLD_CUP_2026_FIXTURES: SeasonFixture[] = [
   { round: 3, dateLabel: "Zondag 28 juni 2026", kickoff: "01:30", kickoffAt: "2026-06-28T01:30:00+02:00", home: "Congo", away: "Oezbekistan" },
   { round: 3, dateLabel: "Zondag 28 juni 2026", kickoff: "04:00", kickoffAt: "2026-06-28T04:00:00+02:00", home: "Algerije", away: "Oostenrijk" },
   { round: 3, dateLabel: "Zondag 28 juni 2026", kickoff: "04:00", kickoffAt: "2026-06-28T04:00:00+02:00", home: "Jordanië", away: "Argentinië" },
-  { round: 4, dateLabel: "Zondag 28 juni 2026", kickoff: "21:00", kickoffAt: "2026-06-28T21:00:00+02:00", home: "Zuid-Afrika", away: "Canada" },
-  { round: 4, dateLabel: "Maandag 29 juni 2026", kickoff: "19:00", kickoffAt: "2026-06-29T19:00:00+02:00", home: "Brazilië", away: "Japan" },
-  { round: 4, dateLabel: "Maandag 29 juni 2026", kickoff: "22:30", kickoffAt: "2026-06-29T22:30:00+02:00", home: "Duitsland", away: "Paraguay" },
-  { round: 4, dateLabel: "Dinsdag 30 juni 2026", kickoff: "03:00", kickoffAt: "2026-06-30T03:00:00+02:00", home: "Nederland", away: "Marokko" },
-  { round: 4, dateLabel: "Dinsdag 30 juni 2026", kickoff: "19:00", kickoffAt: "2026-06-30T19:00:00+02:00", home: "Ivoorkust", away: "Noorwegen" },
-  { round: 4, dateLabel: "Dinsdag 30 juni 2026", kickoff: "23:00", kickoffAt: "2026-06-30T23:00:00+02:00", home: "Frankrijk", away: "Zweden" },
-  { round: 4, dateLabel: "Woensdag 1 juli 2026", kickoff: "03:00", kickoffAt: "2026-07-01T03:00:00+02:00", home: "Mexico", away: "Ecuador" },
-  { round: 4, dateLabel: "Woensdag 1 juli 2026", kickoff: "18:00", kickoffAt: "2026-07-01T18:00:00+02:00", home: "Engeland", away: "DR Congo" },
-  { round: 4, dateLabel: "Woensdag 1 juli 2026", kickoff: "22:00", kickoffAt: "2026-07-01T22:00:00+02:00", home: "België", away: "Senegal" },
-  { round: 4, dateLabel: "Donderdag 2 juli 2026", kickoff: "02:00", kickoffAt: "2026-07-02T02:00:00+02:00", home: "Verenigde Staten", away: "Bosnië en Herzegovina" },
-  { round: 4, dateLabel: "Donderdag 2 juli 2026", kickoff: "21:00", kickoffAt: "2026-07-02T21:00:00+02:00", home: "Spanje", away: "Oostenrijk" },
-  { round: 4, dateLabel: "Vrijdag 3 juli 2026", kickoff: "01:00", kickoffAt: "2026-07-03T01:00:00+02:00", home: "Portugal", away: "Kroatië" },
-  { round: 4, dateLabel: "Vrijdag 3 juli 2026", kickoff: "05:00", kickoffAt: "2026-07-03T05:00:00+02:00", home: "Zwitserland", away: "Algerije" },
-  { round: 4, dateLabel: "Vrijdag 3 juli 2026", kickoff: "20:00", kickoffAt: "2026-07-03T20:00:00+02:00", home: "Australië", away: "Egypte" },
-  { round: 4, dateLabel: "Zaterdag 4 juli 2026", kickoff: "00:00", kickoffAt: "2026-07-04T00:00:00+02:00", home: "Argentinië", away: "Kaapverdië" },
-  { round: 4, dateLabel: "Zaterdag 4 juli 2026", kickoff: "03:30", kickoffAt: "2026-07-04T03:30:00+02:00", home: "Colombia", away: "Ghana" },
+  { round: 4, dateLabel: "Zondag 28 juni 2026", kickoff: "21:00", kickoffAt: "2026-06-28T21:00:00+02:00", home: "Nummer 2 Poule A", away: "Nummer 2 Poule B" },
+  { round: 4, dateLabel: "Maandag 29 juni 2026", kickoff: "19:00", kickoffAt: "2026-06-29T19:00:00+02:00", home: "Winnaar Poule C", away: "Nummer 2 Poule F" },
+  { round: 4, dateLabel: "Maandag 29 juni 2026", kickoff: "22:30", kickoffAt: "2026-06-29T22:30:00+02:00", home: "Winnaar Poule E", away: "Nummer 3 Poule AB/C/D/F" },
+  { round: 4, dateLabel: "Dinsdag 30 juni 2026", kickoff: "03:00", kickoffAt: "2026-06-30T03:00:00+02:00", home: "Winnaar Poule F", away: "Nummer 2 Poule C" },
+  { round: 4, dateLabel: "Dinsdag 30 juni 2026", kickoff: "19:00", kickoffAt: "2026-06-30T19:00:00+02:00", home: "Nummer 2 Poule E", away: "Nummer 2 Poule I" },
+  { round: 4, dateLabel: "Dinsdag 30 juni 2026", kickoff: "23:00", kickoffAt: "2026-06-30T23:00:00+02:00", home: "Winnaar Poule I", away: "Nummer 3 Poule C/D/F/G/H" },
+  { round: 4, dateLabel: "Woensdag 1 juli 2026", kickoff: "03:00", kickoffAt: "2026-07-01T03:00:00+02:00", home: "Winnaar Poule A", away: "Nummer 3 Poule C/E/F/H/I" },
+  { round: 4, dateLabel: "Woensdag 1 juli 2026", kickoff: "18:00", kickoffAt: "2026-07-01T18:00:00+02:00", home: "Winnaar Poule L", away: "Nummer 3 Poule E/H/I/J/K" },
+  { round: 4, dateLabel: "Woensdag 1 juli 2026", kickoff: "22:00", kickoffAt: "2026-07-01T22:00:00+02:00", home: "Winnaar Poule G", away: "Nummer 3 Poule A/E/H/I/J" },
+  { round: 4, dateLabel: "Donderdag 2 juli 2026", kickoff: "02:00", kickoffAt: "2026-07-02T02:00:00+02:00", home: "Winnaar Poule D", away: "Nummer 3 Poule B/E/F/I/J" },
+  { round: 4, dateLabel: "Donderdag 2 juli 2026", kickoff: "21:00", kickoffAt: "2026-07-02T21:00:00+02:00", home: "Winnaar Poule H", away: "Nummer 2 Poule J" },
+  { round: 4, dateLabel: "Vrijdag 3 juli 2026", kickoff: "01:00", kickoffAt: "2026-07-03T01:00:00+02:00", home: "Nummer 2 Poule K", away: "Nummer 2 Poule L" },
+  { round: 4, dateLabel: "Vrijdag 3 juli 2026", kickoff: "05:00", kickoffAt: "2026-07-03T05:00:00+02:00", home: "Winnaar Poule B", away: "Nummer 3 Poule E/F/G/I/J" },
+  { round: 4, dateLabel: "Vrijdag 3 juli 2026", kickoff: "20:00", kickoffAt: "2026-07-03T20:00:00+02:00", home: "Nummer 2 Poule D", away: "Nummer 2 Poule G" },
+  { round: 4, dateLabel: "Zaterdag 4 juli 2026", kickoff: "00:00", kickoffAt: "2026-07-04T00:00:00+02:00", home: "Winnaar Poule J", away: "Nummer 2 Poule H" },
+  { round: 4, dateLabel: "Zaterdag 4 juli 2026", kickoff: "03:30", kickoffAt: "2026-07-04T03:30:00+02:00", home: "Winnaar Poule K", away: "Nummer 3 Poule D/E/I/J/L" },
   { round: 5, dateLabel: "Zaterdag 4 juli 2026", kickoff: "19:00", kickoffAt: "2026-07-04T19:00:00+02:00", home: "Winnaar duel 73", away: "Winnaar duel 75" },
   { round: 5, dateLabel: "Zaterdag 4 juli 2026", kickoff: "23:00", kickoffAt: "2026-07-04T23:00:00+02:00", home: "Winnaar duel 74", away: "Winnaar duel 77" },
   { round: 5, dateLabel: "Zondag 5 juli 2026", kickoff: "22:00", kickoffAt: "2026-07-05T22:00:00+02:00", home: "Winnaar duel 76", away: "Winnaar duel 78" },
@@ -120,36 +120,16 @@ export function isRoundActive(roundNumber: number, now: Date = new Date()): bool
   const nowMs = now.getTime();
   const MATCH_DURATION = 2.5 * 60 * 60 * 1000; // 2.5 uur
   const POST_MATCH_WINDOW = 6 * 60 * 60 * 1000; // 6 uur
-  const PRE_KICKOFF_GRACE = 2 * 60 * 1000; // 2 min — wedstrijden starten zelden exact op de minuut
 
   const roundFixtures = WORLD_CUP_2026_FIXTURES.filter((f) => f.round === roundNumber);
   if (roundFixtures.length === 0) return false;
 
-  // Eerste aftrap van de ronde (minus 2 min grace)
+  // Eerste aftrap van de ronde
   const firstKickoff = Math.min(...roundFixtures.map((f) => new Date(f.kickoffAt).getTime()));
 
   // Laatste wedstrijd eindigt (geschat) + 6u window
   const lastEnd = Math.max(...roundFixtures.map((f) => new Date(f.kickoffAt).getTime() + MATCH_DURATION));
   const lockEnd = lastEnd + POST_MATCH_WINDOW;
 
-  return nowMs >= firstKickoff + PRE_KICKOFF_GRACE && nowMs < lockEnd;
-}
-
-/**
- * WK teamweergaves defaulten naar de actieve ronde zodra die bezig is.
- * Als er geen actieve ronde is, vallen we terug op de laatst gespeelde ronde.
- */
-export function getPreferredWkRound(fixtures: SeasonFixture[], now: Date = new Date()): number {
-  const rounds = Array.from(new Set(fixtures.map((fixture) => fixture.round))).sort((a, b) => a - b);
-  if (rounds.length === 0) {
-    return 1;
-  }
-
-  const activeRound = rounds.find((round) => isRoundActive(round, now));
-  if (typeof activeRound === "number") {
-    return activeRound;
-  }
-
-  const latestPlayedRound = getLatestPlayedRound(fixtures, now);
-  return rounds.includes(latestPlayedRound) ? latestPlayedRound : rounds[0];
+  return nowMs >= firstKickoff && nowMs < lockEnd;
 }

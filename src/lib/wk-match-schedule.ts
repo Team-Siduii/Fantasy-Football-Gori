@@ -28,9 +28,6 @@ function normalizeFixtureTeamName(input: string | null | undefined): string {
     case "saudi arabie":
     case "saudi arabia":
       return "saudi arabia";
-    case "congo":
-    case "dr congo":
-      return "congo";
     default:
       return normalized;
   }
@@ -40,8 +37,9 @@ function buildFixtureKey(round: number, home: string, away: string): string {
   return `${round}|${normalizeFixtureTeamName(home)}|${normalizeFixtureTeamName(away)}`;
 }
 
-function isKnockoutPlaceholderTeam(teamName: string): boolean {
-  return /^(Winnaar|Verliezer) duel \d+$/i.test(teamName.trim());
+function isPlaceholderKnockoutLabel(value: string | null | undefined): boolean {
+  const normalized = normalizeFixtureTeamName(value);
+  return normalized.startsWith("winnaar duel") || normalized.startsWith("verliezer duel") || normalized.startsWith("nummer ");
 }
 
 export function mergeWorldCupFixturesWithSyncedMatches(
@@ -56,43 +54,65 @@ export function mergeWorldCupFixturesWithSyncedMatches(
     matches.map((match) => [buildFixtureKey(match.round, match.home_team, match.away_team), match] as const),
   );
 
-  const fallbackMatchesByRound = new Map<number, SyncedWkMatchLike[]>();
+  const roundMatchesByRound = new Map<number, SyncedWkMatchLike[]>();
   for (const match of matches) {
-    const current = fallbackMatchesByRound.get(match.round) ?? [];
-    current.push(match);
-    fallbackMatchesByRound.set(match.round, current);
+    const list = roundMatchesByRound.get(match.round) ?? [];
+    list.push(match);
+    roundMatchesByRound.set(match.round, list);
   }
 
-  const fallbackIndexByRound = new Map<number, number>();
+  const placeholderRoundFixtureIndexes = new Map<SeasonFixture, number>();
+  const placeholderRoundFixturesByRound = new Map<number, SeasonFixture[]>();
+  for (const fixture of fixtures) {
+    if (!isPlaceholderKnockoutLabel(fixture.home) && !isPlaceholderKnockoutLabel(fixture.away)) {
+      continue;
+    }
+    const list = placeholderRoundFixturesByRound.get(fixture.round) ?? [];
+    placeholderRoundFixtureIndexes.set(fixture, list.length);
+    list.push(fixture);
+    placeholderRoundFixturesByRound.set(fixture.round, list);
+  }
 
   return fixtures.map((fixture) => {
-    const match = matchByKey.get(buildFixtureKey(fixture.round, fixture.home, fixture.away));
-    let resolvedMatch = match;
-
-    if (!resolvedMatch && isKnockoutPlaceholderTeam(fixture.home) && isKnockoutPlaceholderTeam(fixture.away)) {
-      const fallbackMatches = fallbackMatchesByRound.get(fixture.round) ?? [];
-      const fallbackIndex = fallbackIndexByRound.get(fixture.round) ?? 0;
-      const candidate = fallbackMatches[fallbackIndex];
-
-      if (candidate) {
-        resolvedMatch = candidate;
-        fallbackIndexByRound.set(fixture.round, fallbackIndex + 1);
-      }
+    const exactMatch = matchByKey.get(buildFixtureKey(fixture.round, fixture.home, fixture.away));
+    if (exactMatch) {
+      return {
+        ...fixture,
+        home: exactMatch.home_team || fixture.home,
+        away: exactMatch.away_team || fixture.away,
+        kickoffAt: exactMatch.kickoff_at ?? fixture.kickoffAt,
+        homeScore: exactMatch.home_score ?? fixture.homeScore,
+        awayScore: exactMatch.away_score ?? fixture.awayScore,
+        status: exactMatch.status || fixture.status,
+        minute: exactMatch.minute ?? fixture.minute ?? null,
+      };
     }
 
-    if (!resolvedMatch) {
+    if (!isPlaceholderKnockoutLabel(fixture.home) && !isPlaceholderKnockoutLabel(fixture.away)) {
+      return fixture;
+    }
+
+    const roundMatches = roundMatchesByRound.get(fixture.round) ?? [];
+    const roundPlaceholderFixtures = placeholderRoundFixturesByRound.get(fixture.round) ?? [];
+    if (roundMatches.length === 0 || roundMatches.length !== roundPlaceholderFixtures.length) {
+      return fixture;
+    }
+
+    const placeholderIndex = placeholderRoundFixtureIndexes.get(fixture);
+    const replacementMatch = typeof placeholderIndex === "number" ? roundMatches[placeholderIndex] : null;
+    if (!replacementMatch) {
       return fixture;
     }
 
     return {
       ...fixture,
-      home: resolvedMatch.home_team,
-      away: resolvedMatch.away_team,
-      kickoffAt: resolvedMatch.kickoff_at ?? fixture.kickoffAt,
-      homeScore: resolvedMatch.home_score ?? fixture.homeScore,
-      awayScore: resolvedMatch.away_score ?? fixture.awayScore,
-      status: resolvedMatch.status || fixture.status,
-      minute: resolvedMatch.minute ?? fixture.minute ?? null,
+      home: replacementMatch.home_team || fixture.home,
+      away: replacementMatch.away_team || fixture.away,
+      kickoffAt: replacementMatch.kickoff_at ?? fixture.kickoffAt,
+      homeScore: replacementMatch.home_score ?? fixture.homeScore,
+      awayScore: replacementMatch.away_score ?? fixture.awayScore,
+      status: replacementMatch.status || fixture.status,
+      minute: replacementMatch.minute ?? fixture.minute ?? null,
     };
   });
 }
@@ -115,21 +135,8 @@ export function isLiveWkMatchStatus(status: string | null | undefined): boolean 
   return !["NS", "SCHEDULED", "PST", "POSTPONED", "CANC", "CANCELLED"].includes(normalized);
 }
 
-export function hasVisibleFixtureScore(
-  fixture: Pick<SeasonFixture, "homeScore" | "awayScore" | "kickoffAt">,
-  now: Date = new Date(),
-): boolean {
-  if (typeof fixture.homeScore !== "number" || typeof fixture.awayScore !== "number") {
-    return false;
-  }
-  // Don't show 0-0 for matches that haven't kicked off yet
-  if (fixture.homeScore === 0 && fixture.awayScore === 0) {
-    const kickoffMs = new Date(fixture.kickoffAt).getTime();
-    if (now.getTime() < kickoffMs) {
-      return false;
-    }
-  }
-  return true;
+export function hasVisibleFixtureScore(fixture: Pick<SeasonFixture, "homeScore" | "awayScore">): boolean {
+  return typeof fixture.homeScore === "number" && typeof fixture.awayScore === "number";
 }
 
 export function getWkMatchLiveMinuteLabel(

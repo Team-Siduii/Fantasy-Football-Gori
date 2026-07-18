@@ -32,12 +32,11 @@ function normalizePrice(prijsRaw: string): number {
     throw new Error(`Ongeldige prijs: ${prijsRaw}`);
   }
 
-  // Convert from cents to millions if needed (value ≥ 100000)
-  // WKCoach prijs minus 3M, floor van €0.5M
   if (parsed >= 100000) {
-    return Math.max(0.5, parsed / 1_000_000 - 3);
+    return parsed / 1_000_000;
   }
-  return Math.max(0.5, parsed - 3);
+
+  return parsed;
 }
 
 function normalizePosition(input: string): string {

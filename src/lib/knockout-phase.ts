@@ -20,6 +20,6 @@ export function isTeamEliminated(club: string): boolean {
   return ELIMINATED_TEAMS.has(club);
 }
 
-export function isPlayerEliminated(club: string): boolean {
+export function isPlayerEliminated(club: string, _playerId?: string): boolean {
   return isTeamEliminated(club);
 }

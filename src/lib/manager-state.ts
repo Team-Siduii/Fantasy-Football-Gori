@@ -1,8 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { isGoriDatabaseEnabled, readPersistentJson, writePersistentJson } from "./persistent-json-store";
-import { ensureAuthStateFromDb } from "./auth-store";
-import { resolveCanonicalManagerId, normalizeManagerIdentityValue } from "./manager-identity";
+import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
+import { getAuthAccountByEmail, getAuthAccountById, listManagerAccounts } from "./auth-store";
+import { getLeagueAdminConfig, type LeagueMode } from "./league-admin-config";
 
 export type RoundLock = {
   roundNumber: number;
@@ -184,8 +185,108 @@ function mergePersonalState(current: ManagerPersonalState | undefined, incoming:
   };
 }
 
+type CanonicalManagerIdentity = {
+  canonicalKey: string;
+  aliases: Set<string>;
+};
+
+function normalizeAliasValue(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function addAlias(target: Set<string>, value?: string | null) {
+  if (typeof value !== "string") {
+    return;
+  }
+
+  const normalized = normalizeAliasValue(value);
+  if (normalized) {
+    target.add(normalized);
+  }
+}
+
+function buildCanonicalManagerIdentities(scope: ManagerStateScope): CanonicalManagerIdentity[] {
+  const byCanonical = new Map<string, CanonicalManagerIdentity>();
+  const ensure = (managerId: string) => {
+    const canonicalKey = normalizeAliasValue(managerId);
+    const existing = byCanonical.get(canonicalKey);
+    if (existing) {
+      return existing;
+    }
+
+    const created: CanonicalManagerIdentity = {
+      canonicalKey,
+      aliases: new Set<string>([canonicalKey]),
+    };
+    byCanonical.set(canonicalKey, created);
+    return created;
+  };
+
+  for (const account of listManagerAccounts()) {
+    const identity = ensure(account.id);
+    addAlias(identity.aliases, account.id);
+    addAlias(identity.aliases, account.profile.name);
+    addAlias(identity.aliases, account.profile.teamName);
+    addAlias(identity.aliases, account.profile.email);
+  }
+
+  const config = getLeagueAdminConfig(scope as LeagueMode);
+  for (const participant of config.participants) {
+    const identity = ensure(participant.managerId);
+    addAlias(identity.aliases, participant.managerId);
+    addAlias(identity.aliases, participant.label);
+    addAlias(identity.aliases, participant.email);
+  }
+
+  for (const preset of AUTH_TEST_ACCOUNT_PRESETS.filter((candidate) => candidate.role === "manager")) {
+    const identity = ensure(preset.id);
+    addAlias(identity.aliases, preset.id);
+    addAlias(identity.aliases, preset.label);
+    addAlias(identity.aliases, preset.name);
+    addAlias(identity.aliases, preset.teamName);
+    addAlias(identity.aliases, preset.email);
+  }
+
+  return Array.from(byCanonical.values());
+}
+
 function resolveCanonicalManagerKey(scope: ManagerStateScope, managerKey?: string | null): string | null {
-  return resolveCanonicalManagerId(scope, managerKey);
+  if (!managerKey) {
+    return null;
+  }
+
+  const normalized = normalizeAliasValue(managerKey);
+  if (!normalized) {
+    return null;
+  }
+
+  const directAuthAccount = getAuthAccountById(normalized);
+  if (directAuthAccount?.role === "manager") {
+    return normalizeAliasValue(directAuthAccount.id);
+  }
+
+  const directParticipant = getLeagueAdminConfig(scope as LeagueMode).participants.find(
+    (participant) => normalizeAliasValue(participant.managerId) === normalized,
+  );
+  if (directParticipant) {
+    return normalizeAliasValue(directParticipant.managerId);
+  }
+
+  const participantByEmail = getLeagueAdminConfig(scope as LeagueMode).participants.find(
+    (participant) => normalizeAliasValue(participant.email) === normalized,
+  );
+  if (participantByEmail) {
+    return normalizeAliasValue(participantByEmail.managerId);
+  }
+
+  const directAuthEmail = getAuthAccountByEmail(normalized);
+  if (directAuthEmail?.role === "manager") {
+    return normalizeAliasValue(directAuthEmail.id);
+  }
+
+  const identities = buildCanonicalManagerIdentities(scope);
+  const matched = identities.find((identity) => identity.aliases.has(normalized));
+  return matched?.canonicalKey ?? normalized;
 }
 
 function normalizeManagerStates(
@@ -202,11 +303,7 @@ function normalizeManagerStates(
       continue;
     }
 
-    const canonicalKey = resolveCanonicalManagerKey(scope, managerKey) ?? normalizeManagerIdentityValue(managerKey);
-    if (!canonicalKey) {
-      continue;
-    }
-
+    const canonicalKey = resolveCanonicalManagerKey(scope, managerKey) ?? normalizeAliasValue(managerKey);
     const nextState = toPersonalState(raw as Partial<ManagerPersonalState>);
     normalized[canonicalKey] = mergePersonalState(normalized[canonicalKey], nextState);
   }
@@ -214,7 +311,7 @@ function normalizeManagerStates(
   return normalized;
 }
 
-export function normalizeManagerKey(scope: ManagerStateScope = "eredivisie", managerKey?: string | null): string | null {
+function normalizeManagerKey(scope: ManagerStateScope = "eredivisie", managerKey?: string | null): string | null {
   if (!managerKey) {
     return null;
   }
@@ -376,10 +473,6 @@ export async function readManagerStatePersistent(
   }
 
   try {
-    // Sync auth-state van DB — anders kan key resolution mislukken
-    // op een cold Vercel lambda met stale file-based auth state.
-    await ensureAuthStateFromDb();
-
     const persisted = (await readPersistentJson(
       { store: "manager-state", scope },
       readManagerState(scope),
@@ -422,25 +515,17 @@ export function readManagerStateForRound(
   return pickRoundSnapshot(state, roundNumber);
 }
 
-function snapshotHasPlayers(snapshot: RoundSnapshot): boolean {
-  return snapshot.lineupIds.length + snapshot.benchIds.length > 0;
-}
-
 function pickRoundSnapshot(state: ManagerState, roundNumber: number): RoundSnapshot {
   const entries = Object.entries(state.roundStates)
     .map(([key, snapshot]) => ({ round: Number(key), snapshot }))
     .filter((entry) => Number.isInteger(entry.round) && entry.round > 0 && entry.round <= roundNumber)
     .sort((a, b) => b.round - a.round);
 
-  const topLevelSnapshot = toRoundSnapshot(state);
-
-  for (const entry of entries) {
-    if (snapshotHasPlayers(entry.snapshot)) {
-      return entry.snapshot;
-    }
+  if (entries.length > 0) {
+    return entries[0].snapshot;
   }
 
-  return topLevelSnapshot;
+  return toRoundSnapshot(state);
 }
 
 export async function readManagerStateForRoundPersistent(
@@ -463,19 +548,11 @@ export function saveManagerStateForRound(
   const snapshot = toRoundSnapshot({ ...state, ...nextState });
   const nextRoundStates = buildNextRoundStates(state.roundStates, roundNumber, snapshot, propagateToFutureRounds);
 
-  // Update de live formatie ALLEEN als die expliciet gewijzigd is in deze request.
-  const existingFormation =
-    typeof nextState.formation === "string" && nextState.formation !== state.formation
-      ? nextState.formation
-      : state.formation;
-
   return saveManagerState(
     {
-      ...state,
       ...nextState,
       ...snapshot,
       roundStates: nextRoundStates,
-      formation: existingFormation,
     },
     scope,
     managerKey,
@@ -514,20 +591,11 @@ export async function saveManagerStateForRoundPersistent(
   const snapshot = toRoundSnapshot({ ...state, ...nextState });
   const nextRoundStates = buildNextRoundStates(state.roundStates, roundNumber, snapshot, propagateToFutureRounds);
 
-  // Update de live formatie ALLEEN als die expliciet gewijzigd is in deze request.
-  // Als er geen formation of dezelfde formation wordt meegestuurd, behouden we de bestaande.
-  const existingFormation =
-    typeof nextState.formation === "string" && nextState.formation !== state.formation
-      ? nextState.formation
-      : state.formation;
-
   return saveManagerStatePersistent(
     {
-      ...state,
       ...nextState,
       ...snapshot,
       roundStates: nextRoundStates,
-      formation: existingFormation,
     },
     scope,
     managerKey,

@@ -469,6 +469,7 @@ export async function ensureAuthStateFromDb(): Promise<void> {
   } catch {
     return;
   }
+
   // Merge in new accounts from presets that don't exist yet in DB
   // Also repair mustSetup accounts that still have an old random salt
   const existingIds = new Set(persisted.accounts.map((a) => a.id));

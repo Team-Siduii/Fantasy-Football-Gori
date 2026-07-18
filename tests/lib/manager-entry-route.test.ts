@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveModeFallbackPath, resolvePreferredManagerRouteFromCounts } from "../../src/lib/manager-route-utils";
+import { resolveModeFallbackPath, resolvePreferredManagerRouteFromCounts } from "../../src/lib/manager-entry-route";
 
 describe("manager entry route", () => {
   it("opens WK when only WK has a populated team", () => {
@@ -15,14 +15,21 @@ describe("manager entry route", () => {
     expect(resolvePreferredManagerRouteFromCounts({ eredivisieCount: 0, wkCount: 0 })).toBe("/manager/my-team");
   });
 
-  it("redirects a WK-only manager from empty eredivisie routes to the WK mirror route", () => {
+  it("redirects direct Eredivisie team routes to WK when only WK is populated", () => {
     expect(resolveModeFallbackPath({ currentPath: "/manager/my-team", eredivisieCount: 0, wkCount: 15 })).toBe("/manager/world-cup");
-    expect(resolveModeFallbackPath({ currentPath: "/draft", eredivisieCount: 0, wkCount: 15 })).toBe("/manager/world-cup/draft");
     expect(resolveModeFallbackPath({ currentPath: "/manager/league", eredivisieCount: 0, wkCount: 15 })).toBe("/manager/world-cup/league");
+    expect(resolveModeFallbackPath({ currentPath: "/draft", eredivisieCount: 0, wkCount: 15 })).toBe("/manager/world-cup/draft");
+    expect(resolveModeFallbackPath({ currentPath: "/manager/view-team", eredivisieCount: 0, wkCount: 15 })).toBe("/manager/world-cup/view-team");
   });
 
-  it("does not redirect when the current mode already has players", () => {
-    expect(resolveModeFallbackPath({ currentPath: "/manager/my-team", eredivisieCount: 15, wkCount: 15 })).toBeNull();
+  it("redirects direct WK routes back to Eredivisie when only Eredivisie is populated", () => {
+    expect(resolveModeFallbackPath({ currentPath: "/manager/world-cup", eredivisieCount: 15, wkCount: 0 })).toBe("/manager/my-team");
+    expect(resolveModeFallbackPath({ currentPath: "/manager/world-cup/league", eredivisieCount: 15, wkCount: 0 })).toBe("/manager/league");
+    expect(resolveModeFallbackPath({ currentPath: "/manager/world-cup/view-team", eredivisieCount: 15, wkCount: 0 })).toBe("/manager/view-team");
+  });
+
+  it("does not redirect when the current mode already has data or the path is mode-neutral", () => {
     expect(resolveModeFallbackPath({ currentPath: "/manager/world-cup", eredivisieCount: 0, wkCount: 15 })).toBeNull();
+    expect(resolveModeFallbackPath({ currentPath: "/instellingen", eredivisieCount: 0, wkCount: 15 })).toBeNull();
   });
 });

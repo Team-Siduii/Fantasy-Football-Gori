@@ -8,8 +8,8 @@ import {
   saveWkPlayerEvents,
   saveWkMatches,
 } from "@/lib/wk-sync-store";
+import { recalculateAllManagerRoundScoresPersistent } from "@/lib/team-score-engine";
 import { WORLD_CUP_2026_FIXTURES } from "@/lib/world-cup-schedule";
-import { backfillAllManagerScoresThroughLatestRoundPersistent } from "@/lib/team-score-engine";
 
 const NO_CACHE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -115,9 +115,43 @@ export async function GET(request: Request) {
 
     const syncedAt = new Date().toISOString();
     let playersCount = 0;
+    let matchesCount = 0;
     let eventsCount = 0;
+    let recalculatedManagersCount = 0;
 
-    // ── 1. Sync player points via search_all (with point_events!) ──
+    // ── 1. Sync WK match states (kickoff, live score, final score) ──
+    console.log("[sync-points] Starting WKCoach matches fetch...");
+    let matches = [] as Awaited<ReturnType<typeof fetchWkcoachMatches>>;
+    try {
+      matches = await fetchWkcoachMatches({
+        email,
+        password,
+        roundSequence,
+      });
+      console.log("[sync-points] WKCoach matches fetch done: " + matches.length + " matches");
+    } catch (fetchErr) {
+      console.error("[sync-points] WKCoach matches fetch FAILED:", String(fetchErr));
+      return NextResponse.json(
+        { error: "WKCoach matches fetch failed", details: String(fetchErr) },
+        { status: 502, headers: NO_CACHE_HEADERS },
+      );
+    }
+
+    if (matches.length > 0) {
+      try {
+        await saveWkMatches(matches);
+        matchesCount = matches.length;
+        console.log("[sync-points] Matches saved");
+      } catch (dbErr) {
+        console.error("[sync-points] DB save matches FAILED:", String(dbErr));
+        return NextResponse.json(
+          { error: "Database save failed (matches)", details: String(dbErr) },
+          { status: 502, headers: NO_CACHE_HEADERS },
+        );
+      }
+    }
+
+    // ── 2. Sync player points via search_all (with point_events!) ──
     if (fullSync) {
       console.log("[sync-points] Starting WKCoach API fetch...");
       let allPlayers: Awaited<ReturnType<typeof fetchWkcoachAllPlayersWithPoints>>;
@@ -204,59 +238,10 @@ export async function GET(request: Request) {
       }
     }
 
-    // ── 2. Sync match results ──
-    console.log("[sync-points] Fetching match results...");
-    let matches: Awaited<ReturnType<typeof fetchWkcoachMatches>>;
-    try {
-      matches = await fetchWkcoachMatches({
-        email,
-        password,
-        roundSequence,
-      });
-      console.log("[sync-points] Match fetch done: " + matches.length + " matches");
-    } catch (matchFetchErr) {
-      console.error("[sync-points] Match fetch FAILED:", String(matchFetchErr));
-      // Non-fatal — still return player sync results
-      matches = [];
-    }
-
-    let syncedMatches = 0;
-    if (matches.length > 0) {
-      try {
-        await saveWkMatches(
-          matches.map((m) => ({
-            match_id: m.id,
-            round: roundSequence,
-            home_team: m.home_team.full_name,
-            away_team: m.away_team.full_name,
-            home_team_code: m.home_team.codename,
-            away_team_code: m.away_team.codename,
-            home_score: m.home_score != null && m.home_score >= 0 ? m.home_score : null,
-            away_score: m.away_score != null && m.away_score >= 0 ? m.away_score : null,
-            status: m.status,
-            kickoff_at: m.start_date_str ?? null,
-          })),
-        );
-        console.log("[sync-points] Matches saved");
-        syncedMatches = matches.length;
-      } catch (matchDbErr) {
-        console.error("[sync-points] DB save matches FAILED:", String(matchDbErr));
-        // Non-fatal
-      }
-    }
-
-    // ── 3. Recalculate team scores (all rounds) ──
-    let recalculatedManagers = 0;
-    let recalculatedRounds = 0;
-    try {
-      console.log("[sync-points] Backfilling team scores through round " + roundSequence + "...");
-      const recalcResult = await backfillAllManagerScoresThroughLatestRoundPersistent("wk");
-      recalculatedManagers = recalcResult.recalculatedManagersCount;
-      recalculatedRounds = recalcResult.recalculatedRounds;
-      console.log("[sync-points] Team scores backfilled: " + recalculatedManagers + " managers x " + recalculatedRounds + " rounds");
-    } catch (recalcErr) {
-      console.error("[sync-points] Team score backfill FAILED:", String(recalcErr));
-      // Non-fatal — still return sync results
+    if (playersCount > 0 || eventsCount > 0) {
+      recalculatedManagersCount = (
+        await recalculateAllManagerRoundScoresPersistent({ scope: "wk", roundNumber: roundSequence })
+      ).length;
     }
 
     return NextResponse.json(
@@ -266,9 +251,8 @@ export async function GET(request: Request) {
         syncedAt,
         playersCount,
         eventsCount,
-        matchesCount: syncedMatches,
-        recalculatedManagers,
-        recalculatedRounds,
+        matchesCount,
+        recalculatedManagersCount,
         lastSync: syncedAt,
       },
       { headers: NO_CACHE_HEADERS },

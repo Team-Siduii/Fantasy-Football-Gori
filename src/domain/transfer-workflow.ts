@@ -13,14 +13,6 @@ function byId(players: PlayerRecord[]) {
 
 export type MarketPlayer = PlayerRecord & { punten: number; owned?: boolean };
 
-export function filterTransferMarketPlayers<T extends { id: string }>(
-  players: T[],
-  blockedPlayerIds: string[],
-): T[] {
-  const blockedIds = new Set(blockedPlayerIds.map(String));
-  return players.filter((player) => !blockedIds.has(String(player.id)));
-}
-
 export function buildMarketPlayers<T extends PlayerRecord & { punten?: number }>(
   players: T[],
   lineupIds: string[],

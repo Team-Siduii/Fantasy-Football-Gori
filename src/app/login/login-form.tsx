@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 export default function LoginForm({ nextPath }: { nextPath: string }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -27,9 +29,14 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
         return;
       }
 
-      if (typeof window !== "undefined") {
-        window.location.assign(data.requiresSetup ? "/account" : nextPath);
+      if (data.requiresSetup) {
+        router.push("/account");
+        router.refresh();
+        return;
       }
+
+      router.push(nextPath);
+      router.refresh();
     } finally {
       setLoading(false);
     }

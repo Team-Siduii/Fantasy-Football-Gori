@@ -1,19 +1,10 @@
-import { readFile } from "fs/promises";
-import path from "path";
 import { NextResponse } from "next/server";
-import { parsePlayerCsv } from "@/domain/player-csv";
-import { getTransferBudgetCapMillions } from "@/domain/team-budget";
+
 import { ensureAuthStateFromDb, getProfileByEmail } from "@/lib/auth-store";
 import { getAuthenticatedEmail } from "@/lib/auth-session";
 import { repairManagerTeamFromDraftArtifactsPersistent } from "@/lib/draft-manager-sync";
-import { getInactivePlayer } from "@/lib/inactive-players";
-import { hydrateSavedSquadState } from "@/lib/manager-team-hydration";
-import { readTeamViewSnapshotPersistent } from "@/lib/manager-team-state-source";
+import { buildManagerTeamViewPersistent } from "@/lib/manager-team-view";
 import { type ManagerStateScope } from "@/lib/manager-state";
-import { loadPlayerPoints } from "@/lib/player-points-store";
-import { getManagerRoundScorePersistent, summarizeManagerTeamScoresPersistent } from "@/lib/team-score-state";
-import { getWkActiveTeamsForRound, isWkPlayerInactiveForRound } from "../../../../lib/wk-player-availability";
-import { buildWkPlayerPointsByCsvId } from "@/lib/wk-player-scoring";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "s.j.m.duindam@gmail.com": "A",
@@ -22,19 +13,6 @@ const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "jackvandereep@hotmail.com": "A",
   "emielzomerdijk@gmail.com": "A",
   "ice.eckmund@gmail.com": "A",
-};
-
-type TeamViewPlayer = {
-  id: string;
-  naam: string;
-  positie: string;
-  club: string;
-  prijs: number;
-  punten: number;
-  totalPoints: number;
-  roundPoints: number;
-  advancementPoints: number;
-  inactive?: boolean;
 };
 
 export async function GET(request: Request) {
@@ -61,201 +39,33 @@ export async function GET(request: Request) {
   const roundNumber = Number(url.searchParams.get("roundNumber") ?? "");
   const isOwnTeam = email === targetEmail;
 
-  let allPlayers;
-  if (scope === "wk") {
-    const wkCsvPath = path.join(process.cwd(), "data", "players-wk.csv");
-    try {
-      const csvContent = await readFile(wkCsvPath, "utf-8");
-      allPlayers = parsePlayerCsv(csvContent).players;
-    } catch {
-      return NextResponse.json({ error: "Spelersdata niet beschikbaar" }, { status: 500 });
-    }
-  } else {
-    const { bootstrapPlayersFromDefaultCsv } = await import("@/lib/player-bootstrap");
-    const { listPlayers } = await import("@/lib/player-store");
-    await bootstrapPlayersFromDefaultCsv();
-    allPlayers = listPlayers();
-  }
-
-  const playerById = new Map(allPlayers.map((p) => [p.id, p]));
-
   await repairManagerTeamFromDraftArtifactsPersistent({ managerEmail: targetEmail, scope });
 
-  const playerPointsMap = new Map<string, number>();
-  const playerTotalPointsMap = new Map<string, number>();
-  const playerAdvancementPointsMap = new Map<string, number>();
-  let hasAvailabilitySnapshot = false;
-  const activePlayerIds = new Set<string>();
-  const activeTeamsForRound = scope === "wk"
-    ? await getWkActiveTeamsForRound(Number.isInteger(roundNumber) && roundNumber > 0 ? roundNumber : undefined)
-    : null;
-  if (scope === "wk") {
-    const wkRound = Number.isInteger(roundNumber) && roundNumber > 0 ? roundNumber : undefined;
-    const nameMatched = await buildWkPlayerPointsByCsvId(allPlayers, wkRound);
-    hasAvailabilitySnapshot = nameMatched.totalPoints.size > 0;
-    for (const [csvId, pts] of nameMatched.roundPoints.entries()) {
-      playerPointsMap.set(csvId, pts);
-      activePlayerIds.add(csvId);
-    }
-    for (const [csvId, pts] of nameMatched.totalPoints.entries()) {
-      playerTotalPointsMap.set(csvId, pts);
-      activePlayerIds.add(csvId);
-    }
-    for (const [csvId, pts] of nameMatched.advancementPoints.entries()) {
-      playerAdvancementPointsMap.set(csvId, pts);
-      activePlayerIds.add(csvId);
-    }
-  } else {
-    const pointsSnapshot = await loadPlayerPoints(scope);
-    if (pointsSnapshot) {
-      for (const pp of pointsSnapshot.players) {
-        if (pp.fantasyplayerId) {
-          playerPointsMap.set(String(pp.fantasyplayerId), pp.totalPoints);
-        }
-      }
-    }
-  }
-
-  const state = await readTeamViewSnapshotPersistent({
+  const teamView = await buildManagerTeamViewPersistent({
     scope,
     managerEmail: targetEmail,
     roundNumber,
   });
-
-  const enrichPlayer = (playerId: string): TeamViewPlayer => {
-    const player = playerById.get(playerId);
-    if (!player) {
-      return {
-        id: playerId,
-        naam: "Onbekend",
-        positie: "MID",
-        club: "-",
-        prijs: 0,
-        punten: 0,
-        totalPoints: 0,
-        roundPoints: 0,
-        advancementPoints: 0,
-      };
-    }
-    return {
-      ...player,
-      inactive: scope === "wk"
-        ? (
-            isWkPlayerInactiveForRound(player.club, activeTeamsForRound)
-            ?? (hasAvailabilitySnapshot ? !activePlayerIds.has(String(playerId)) : player.inactive)
-          )
-        : player.inactive,
-      punten: playerPointsMap.get(String(playerId)) ?? 0,
-      totalPoints: playerTotalPointsMap.get(String(playerId)) ?? playerPointsMap.get(String(playerId)) ?? 0,
-      roundPoints: playerPointsMap.get(String(playerId)) ?? 0,
-      advancementPoints: playerAdvancementPointsMap.get(String(playerId)) ?? 0,
-    };
-  };
-
-  const hydrated = hydrateSavedSquadState({
-    players: allPlayers.map((player) => enrichPlayer(player.id)),
-    formation: state.formation,
-    lineupIds: state.lineupIds,
-    benchIds: state.benchIds,
-    benchPositions: ["GK", "DEF", "MID", "FWD"],
-    resolveInactivePlayer: (id) => {
-      const graveyard = getInactivePlayer(id);
-      return graveyard
-        ? {
-            ...graveyard,
-            punten: 0,
-            totalPoints: 0,
-            roundPoints: 0,
-            advancementPoints: 0,
-            inactive: true,
-          }
-        : null;
-    },
-  });
-
-  const toTeamViewPlayer = (player: {
-    id: string;
-    naam: string;
-    positie: string;
-    club: string;
-    prijs: number;
-    punten?: number;
-    totalPoints?: number;
-    roundPoints?: number;
-    advancementPoints?: number;
-    inactive?: boolean;
-  }): TeamViewPlayer => ({
-    id: player.id,
-    naam: player.naam,
-    positie: player.positie,
-    club: player.club,
-    prijs: player.prijs,
-    inactive: player.inactive,
-    punten: player.punten ?? 0,
-    totalPoints: player.totalPoints ?? player.punten ?? 0,
-    roundPoints: player.roundPoints ?? player.punten ?? 0,
-    advancementPoints: player.advancementPoints ?? 0,
-  });
-
-  const lineup: TeamViewPlayer[] = hydrated.lineup.map((player) => toTeamViewPlayer(player));
-  const bench: TeamViewPlayer[] = hydrated.bench.map((player) => {
-    const normalized = toTeamViewPlayer(player);
-    return {
-      ...normalized,
-      punten: Math.ceil(normalized.punten / 2),
-    };
-  });
-
-  const budgetCap = getTransferBudgetCapMillions(scope);
-  const squadCost = [...lineup, ...bench].reduce((sum, p) => sum + (p.prijs ?? 0), 0);
-  const budgetRemaining = Math.max(0, budgetCap - squadCost);
-  const pendingSellId = isOwnTeam ? state.pendingSellId : null;
-  const pendingBuyId = isOwnTeam ? state.pendingBuyId : null;
   const profile = getProfileByEmail(targetEmail);
-  const scoreSummary = scope === "wk"
-    ? (
-        Number.isInteger(roundNumber) && roundNumber > 0
-          ? (await getManagerRoundScorePersistent(scope, targetEmail, roundNumber))
-              ?? { totalPoints: 0, roundNumber: 0, lineupPoints: 0, benchPoints: 0, lineupIds: [], benchIds: [], calculatedAt: "", source: "" }
-          : await summarizeManagerTeamScoresPersistent(scope, targetEmail)
-      )
-    : {
-        totalPoints: lineup.reduce((sum, player) => sum + player.punten, 0) + bench.reduce((sum, player) => sum + player.punten, 0),
-        currentRoundPoints: lineup.reduce((sum, player) => sum + player.punten, 0) + bench.reduce((sum, player) => sum + player.punten, 0),
-      };
-
-  const selectedWkRound = scope === "wk" && Number.isInteger(roundNumber) && roundNumber > 0;
-  const computedSelectedRoundPoints = lineup.reduce(
-    (sum, player) => sum + (player.roundPoints ?? player.punten ?? 0) + (player.advancementPoints ?? 0),
-    0,
-  ) + bench.reduce(
-    (sum, player) => sum + Math.ceil(((player.roundPoints ?? player.punten ?? 0) + (player.advancementPoints ?? 0)) / 2),
-    0,
-  );
-  const computedSelectedRoundTotalPoints = lineup.reduce((sum, player) => sum + (player.totalPoints ?? player.punten ?? 0), 0)
-    + bench.reduce((sum, player) => sum + Math.ceil((player.totalPoints ?? player.punten ?? 0) / 2), 0);
-  const teamTotalPoints = selectedWkRound
-    ? computedSelectedRoundTotalPoints
-    : "totalPoints" in scoreSummary ? scoreSummary.totalPoints : 0;
-  const teamRoundPoints = selectedWkRound
-    ? computedSelectedRoundPoints
-    : "currentRoundPoints" in scoreSummary ? (scoreSummary as { currentRoundPoints: number }).currentRoundPoints : 0;
 
   return NextResponse.json({
     isOwnTeam,
     teamName: profile?.teamName ?? "Onbekend team",
     managerName: profile?.name ?? targetEmail.split("@")[0],
-    roundNumber: scope === "wk" && Number.isInteger(roundNumber) && roundNumber > 0 ? roundNumber : null,
-    formation: state.formation,
-    lineup,
-    bench,
-    budgetCap,
-    budgetRemaining,
-    squadCost,
-    pendingSellId,
-    pendingBuyId,
-    teamTotalPoints,
-    teamCurrentRoundPoints: teamRoundPoints,
-    scoreSource: scope === "wk" ? "team-score-state" : "player-points",
+    roundNumber: teamView.roundNumber,
+    formation: teamView.formation,
+    lineup: teamView.lineup,
+    bench: teamView.bench.map((player) => ({
+      ...player,
+      punten: Math.ceil(player.punten / 2),
+    })),
+    budgetCap: teamView.budgetCap,
+    budgetRemaining: teamView.budgetRemaining,
+    squadCost: teamView.squadCost,
+    pendingSellId: isOwnTeam ? teamView.pendingSellId : null,
+    pendingBuyId: isOwnTeam ? teamView.pendingBuyId : null,
+    teamTotalPoints: teamView.teamTotalPoints,
+    teamCurrentRoundPoints: teamView.teamCurrentRoundPoints,
+    scoreSource: teamView.scoreSource,
   });
 }

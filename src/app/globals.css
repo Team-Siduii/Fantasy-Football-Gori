@@ -1473,18 +1473,21 @@ select {
   color: #5f6f8d;
 }
 
-/* Uitgeschakelde speler (niet meer in WK dataset — land uitgeschakeld / roster gewijzigd) */
 .player-card--inactive {
-  filter: grayscale(0.75);
-  opacity: 0.55;
-  pointer-events: auto;
+  background: #f2f4f8;
+  border-color: rgba(122, 134, 160, 0.55);
 }
 
-.player-card--inactive .player-name::after {
-  content: " (uitgeschakeld)";
-  font-size: 0.65rem;
-  color: #a0a0a0;
-  font-style: italic;
+.player-card--inactive .player-top,
+.player-card--inactive .player-name,
+.player-card--inactive .player-points {
+  background: #dfe4ed;
+  color: #66758f;
+}
+
+.player-card--inactive .player-score-badge {
+  background: linear-gradient(135deg, #cbd3df 0%, #97a4ba 100%);
+  color: #233047;
 }
 
 .player-card--bench-row {
@@ -1624,6 +1627,100 @@ select {
   display: grid;
   align-content: end;
   gap: 0.35rem;
+}
+
+.transfer-queue-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.transfer-queue-summary article {
+  border: 1px solid #d9e4f5;
+  border-radius: 14px;
+  background: #f8fbff;
+  padding: 0.7rem 0.8rem;
+}
+
+.transfer-queue-summary span,
+.transfer-queue-copy span {
+  display: block;
+  color: #6d7788;
+  font-size: 0.78rem;
+}
+
+.transfer-queue-summary strong,
+.transfer-queue-copy strong {
+  display: block;
+  color: #12315f;
+}
+
+.transfer-retry-banner {
+  margin: 0;
+}
+
+.transfer-finalized-sells {
+  border: 1px solid #d9e4f5;
+  border-radius: 14px;
+  background: #f8fbff;
+  padding: 0.8rem;
+}
+
+.transfer-finalized-sells-label {
+  display: block;
+  color: #12315f;
+  font-size: 0.82rem;
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+}
+
+.transfer-finalized-sells-list {
+  margin-top: 0;
+}
+
+.transfer-finalized-sells-list li {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.transfer-queue-list {
+  list-style: none;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.transfer-queue-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: center;
+  border: 1px solid #d9e4f5;
+  border-radius: 12px;
+  background: #f8fbff;
+  padding: 0.6rem 0.75rem;
+}
+
+.transfer-queue-index {
+  min-width: 2rem;
+  color: #0a3d91;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.transfer-queue-copy {
+  min-width: 0;
+}
+
+.transfer-queue-remove {
+  min-height: 36px;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #c7d8f3;
+  background: #ffffff;
+  color: #0a3d91;
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .transfer-status-wrap .success-text {
@@ -1844,14 +1941,16 @@ select {
   }
 
   .transfer-controls label {
-    gap: 0.42rem;
-    font-size: 0.92rem;
-    color: #243149;
+    gap: 0.2rem;
   }
 
   .transfer-controls input,
   .transfer-controls select {
-    font-size: 0.95rem;
+    min-height: 42px;
+  }
+
+  .transfer-queue-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .round-schedule-head {

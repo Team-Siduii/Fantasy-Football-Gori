@@ -112,7 +112,7 @@ describe("wk-match-schedule", () => {
     expect(merged[1]).toMatchObject({ homeScore: 1, awayScore: 1, status: "X" });
   });
 
-  it("replaces knockout placeholder fixtures with synced round matches in round order", () => {
+  it("replaces knockout placeholders with synced real-country matches when the round data is authoritative", () => {
     const placeholderFixtures: SeasonFixture[] = [
       {
         round: 6,
@@ -120,6 +120,7 @@ describe("wk-match-schedule", () => {
         away: "Winnaar duel 90",
         kickoff: "22:00",
         kickoffAt: "2026-07-09T22:00:00+02:00",
+        dateLabel: "Donderdag 9 juli 2026",
       },
       {
         round: 6,
@@ -127,33 +128,46 @@ describe("wk-match-schedule", () => {
         away: "Winnaar duel 94",
         kickoff: "21:00",
         kickoffAt: "2026-07-10T21:00:00+02:00",
+        dateLabel: "Vrijdag 10 juli 2026",
       },
     ];
 
     const syncedMatches: SyncedWkMatchLike[] = [
       {
         round: 6,
-        home_team: "Argentinië",
-        away_team: "Zwitserland",
-        home_score: 0,
+        home_team: "Frankrijk",
+        away_team: "Marokko",
+        home_score: 2,
         away_score: 0,
-        status: "NS",
+        status: "X",
         kickoff_at: "2026-07-09T22:00:00+02:00",
       },
       {
         round: 6,
-        home_team: "Australië",
-        away_team: "Colombia",
-        home_score: 0,
-        away_score: 0,
-        status: "NS",
+        home_team: "Spanje",
+        away_team: "België",
+        home_score: 2,
+        away_score: 1,
+        status: "X",
         kickoff_at: "2026-07-10T21:00:00+02:00",
       },
     ];
 
     const merged = mergeWorldCupFixturesWithSyncedMatches(placeholderFixtures, syncedMatches);
 
-    expect(merged[0]).toMatchObject({ home: "Argentinië", away: "Zwitserland", status: "NS" });
-    expect(merged[1]).toMatchObject({ home: "Australië", away: "Colombia", status: "NS" });
+    expect(merged[0]).toMatchObject({
+      home: "Frankrijk",
+      away: "Marokko",
+      homeScore: 2,
+      awayScore: 0,
+      status: "X",
+    });
+    expect(merged[1]).toMatchObject({
+      home: "Spanje",
+      away: "België",
+      homeScore: 2,
+      awayScore: 1,
+      status: "X",
+    });
   });
 });

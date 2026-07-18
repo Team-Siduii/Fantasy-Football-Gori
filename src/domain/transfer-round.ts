@@ -16,13 +16,12 @@ export type TransferRoundManagerEntry = {
   rankingPosition: number;
   sellStatus: TransferSellStatus;
   sellPlayerId: string | null;
-  /** Spelers die automatisch verkocht zijn (WK verlaten / inactive) */
   autoSellPlayerIds: string[];
   buyStatus: TransferBuyStatus;
-  /** Alleen de momenteel ingediende, nog niet definitief opgeloste aankopen */
   buyPlayerIds: string[];
-  /** Gewonnen/opgeloste verkopen->aankopen voor deze manager */
+  buyPlayerId: string | null;
   resolvedTransfers: ResolvedTransfer[];
+  resolvedTransfer: ResolvedTransfer | null;
   updatedAt: string | null;
 };
 
@@ -41,20 +40,10 @@ export type TransferRoundState = {
   updatedAt: string;
 };
 
-export type TransferRoundParticipant = Pick<TransferRoundManagerEntry, "managerId" | "email" | "displayName" | "teamName" | "subpoule" | "rankingPosition">;
-
-function cloneEntry(entry: TransferRoundManagerEntry): TransferRoundManagerEntry {
-  return {
-    ...entry,
-    autoSellPlayerIds: [...entry.autoSellPlayerIds],
-    buyPlayerIds: [...entry.buyPlayerIds],
-    resolvedTransfers: entry.resolvedTransfers.map((transfer) => ({ ...transfer })),
-  };
-}
-
-function sortEntries(entries: TransferRoundManagerEntry[]) {
-  return [...entries].sort((a, b) => a.rankingPosition - b.rankingPosition || a.teamName.localeCompare(b.teamName));
-}
+export type TransferRoundParticipant = Pick<
+  TransferRoundManagerEntry,
+  "managerId" | "email" | "displayName" | "teamName" | "subpoule" | "rankingPosition"
+>;
 
 function uniqueIds(ids: string[]) {
   const seen = new Set<string>();
@@ -67,12 +56,33 @@ function uniqueIds(ids: string[]) {
   return result;
 }
 
+function withCompatibilityFields(entry: Omit<TransferRoundManagerEntry, "buyPlayerId" | "resolvedTransfer">): TransferRoundManagerEntry {
+  return {
+    ...entry,
+    buyPlayerId: entry.buyPlayerIds[0] ?? null,
+    resolvedTransfer: entry.resolvedTransfers[0] ?? null,
+  };
+}
+
+function cloneEntry(entry: TransferRoundManagerEntry): TransferRoundManagerEntry {
+  return withCompatibilityFields({
+    ...entry,
+    autoSellPlayerIds: [...(entry.autoSellPlayerIds ?? [])],
+    buyPlayerIds: [...(entry.buyPlayerIds ?? [])],
+    resolvedTransfers: (entry.resolvedTransfers ?? []).map((transfer) => ({ ...transfer })),
+  });
+}
+
+function sortEntries(entries: TransferRoundManagerEntry[]) {
+  return [...entries].sort((a, b) => a.rankingPosition - b.rankingPosition || a.teamName.localeCompare(b.teamName));
+}
+
 export function getSoldPlayerIds(entry: TransferRoundManagerEntry) {
-  return uniqueIds([...(entry.sellPlayerId ? [entry.sellPlayerId] : []), ...entry.autoSellPlayerIds]);
+  return uniqueIds([...(entry.sellPlayerId ? [entry.sellPlayerId] : []), ...(entry.autoSellPlayerIds ?? [])]);
 }
 
 export function getResolvedSoldPlayerIds(entry: TransferRoundManagerEntry) {
-  return new Set(entry.resolvedTransfers.map((transfer) => transfer.soldPlayerId));
+  return new Set((entry.resolvedTransfers ?? []).map((transfer) => transfer.soldPlayerId));
 }
 
 export function getUnresolvedSoldPlayerIds(entry: TransferRoundManagerEntry) {
@@ -88,7 +98,11 @@ export function getRemainingBuyCapacity(entry: TransferRoundManagerEntry): numbe
   return Math.max(0, getUnresolvedSoldPlayerIds(entry).length);
 }
 
-export function createTransferRoundState(roundNumber: number, participants: TransferRoundParticipant[], at?: string): TransferRoundState {
+export function createTransferRoundState(
+  roundNumber: number,
+  participants: TransferRoundParticipant[],
+  at?: string,
+): TransferRoundState {
   const now = at ?? new Date().toISOString();
   return {
     roundNumber,
@@ -96,16 +110,18 @@ export function createTransferRoundState(roundNumber: number, participants: Tran
     conflicts: [],
     updatedAt: now,
     entries: sortEntries(
-      participants.map((participant) => ({
-        ...participant,
-        sellStatus: "PENDING",
-        sellPlayerId: null,
-        autoSellPlayerIds: [],
-        buyStatus: "LOCKED",
-        buyPlayerIds: [],
-        resolvedTransfers: [],
-        updatedAt: null,
-      })),
+      participants.map((participant) =>
+        withCompatibilityFields({
+          ...participant,
+          sellStatus: "PENDING",
+          sellPlayerId: null,
+          autoSellPlayerIds: [],
+          buyStatus: "LOCKED",
+          buyPlayerIds: [],
+          resolvedTransfers: [],
+          updatedAt: null,
+        }),
+      ),
     ),
   };
 }
@@ -118,32 +134,33 @@ export function syncTransferRoundParticipants(
   const now = at ?? new Date().toISOString();
   const existingByManagerId = new Map(state.entries.map((entry) => [entry.managerId, entry]));
   const existingByEmail = new Map(state.entries.map((entry) => [entry.email.toLowerCase(), entry]));
+
   const nextEntries = participants.map((participant) => {
     let existing = existingByManagerId.get(participant.managerId);
     if (!existing) {
       existing = existingByEmail.get((participant.email ?? "").toLowerCase()) ?? undefined;
     }
     if (!existing) {
-      return {
+      return withCompatibilityFields({
         ...participant,
-        sellStatus: "PENDING" as TransferSellStatus,
+        sellStatus: "PENDING",
         sellPlayerId: null,
         autoSellPlayerIds: [],
-        buyStatus: "LOCKED" as TransferBuyStatus,
+        buyStatus: "LOCKED",
         buyPlayerIds: [],
         resolvedTransfers: [],
         updatedAt: null,
-      };
+      });
     }
 
-    return {
+    return withCompatibilityFields({
       ...cloneEntry(existing),
       displayName: participant.displayName,
       teamName: participant.teamName,
       email: participant.email,
       subpoule: participant.subpoule,
       rankingPosition: participant.rankingPosition,
-    };
+    });
   });
 
   return recomputeTransferRoundState({
@@ -171,67 +188,12 @@ function replaceEntry(
   return recomputeTransferRoundState({
     ...state,
     updatedAt: now,
-    entries: state.entries.map((entry) => (entry.managerId === managerId ? updater(cloneEntry(entry)) : cloneEntry(entry))),
+    entries: state.entries.map((entry) => (entry.managerId === managerId ? withCompatibilityFields(updater(cloneEntry(entry))) : cloneEntry(entry))),
   });
 }
 
-/**
- * Past auto-sells toe voor inactive spelers die niet al handmatig verkocht zijn.
- */
-export function applyAutoSells(
-  state: TransferRoundState,
-  getInactivePlayerIds: (ids: string[]) => string[],
-  getTeamPlayerIds: (managerId: string) => string[],
-  at?: string,
-): TransferRoundState {
-  if (state.phase !== "SELL") return state;
-
-  let next = state;
-  for (const entry of next.entries) {
-    const teamIds = getTeamPlayerIds(entry.managerId);
-    const inactiveIds = getInactivePlayerIds(teamIds);
-    if (inactiveIds.length === 0) continue;
-
-    const newAutoSells = inactiveIds.filter((id) => id !== entry.sellPlayerId && !entry.autoSellPlayerIds.includes(id));
-    if (newAutoSells.length === 0) continue;
-
-    next = replaceEntry(
-      next,
-      entry.managerId,
-      (current) => ({
-        ...current,
-        autoSellPlayerIds: uniqueIds([...current.autoSellPlayerIds, ...newAutoSells]),
-        buyStatus: current.sellStatus === "PENDING" ? current.buyStatus : "PENDING",
-        updatedAt: at ?? new Date().toISOString(),
-      }),
-      at,
-    );
-  }
-  return next;
-}
-
 export function submitSellChoice(state: TransferRoundState, managerId: string, sellPlayerId: string, at?: string) {
-  if (state.phase !== "SELL") {
-    throw new Error("verkopen is alleen mogelijk in de SELL fase");
-  }
-  if (!sellPlayerId) {
-    throw new Error("speler om te verkopen ontbreekt");
-  }
-
-  return replaceEntry(
-    state,
-    managerId,
-    (current) => ({
-      ...current,
-      sellStatus: "SUBMITTED",
-      sellPlayerId,
-      buyStatus: getBuyCount({ ...current, sellPlayerId }) > 0 ? "PENDING" : "LOCKED",
-      buyPlayerIds: [],
-      resolvedTransfers: [],
-      updatedAt: at ?? new Date().toISOString(),
-    }),
-    at,
-  );
+  return submitSellChoices(state, managerId, { sellPlayerId }, at);
 }
 
 export function submitSellChoices(
@@ -250,9 +212,7 @@ export function submitSellChoices(
     ),
   );
   const normalizedSellPlayerId =
-    typeof sellChoice.sellPlayerId === "string" && sellChoice.sellPlayerId.length > 0
-      ? sellChoice.sellPlayerId
-      : null;
+    typeof sellChoice.sellPlayerId === "string" && sellChoice.sellPlayerId.length > 0 ? sellChoice.sellPlayerId : null;
 
   if (!normalizedSellPlayerId && normalizedAutoSellIds.length === 0) {
     throw new Error("speler om te verkopen ontbreekt");
@@ -266,20 +226,21 @@ export function submitSellChoices(
     state,
     managerId,
     (current) => {
-      const nextEntry = {
+      const nextEntry = withCompatibilityFields({
         ...current,
-        sellStatus: "SUBMITTED" as TransferSellStatus,
+        sellStatus: "SUBMITTED",
         sellPlayerId: normalizedSellPlayerId,
-        autoSellPlayerIds: uniqueIds([...current.autoSellPlayerIds, ...mergedAutoSellIds]),
+        autoSellPlayerIds: uniqueIds([...(current.autoSellPlayerIds ?? []), ...mergedAutoSellIds]),
+        buyStatus: "LOCKED",
         buyPlayerIds: [],
         resolvedTransfers: [],
         updatedAt: at ?? new Date().toISOString(),
-      };
+      });
 
-      return {
+      return withCompatibilityFields({
         ...nextEntry,
         buyStatus: getBuyCount(nextEntry) > 0 ? "PENDING" : "LOCKED",
-      };
+      });
     },
     at,
   );
@@ -293,20 +254,26 @@ export function skipSellChoice(state: TransferRoundState, managerId: string, at?
   return replaceEntry(
     state,
     managerId,
-    (current) => ({
-      ...current,
-      sellStatus: "SKIPPED",
-      sellPlayerId: null,
-      buyStatus: current.autoSellPlayerIds.length > 0 ? "PENDING" : "LOCKED",
-      buyPlayerIds: [],
-      resolvedTransfers: [],
-      updatedAt: at ?? new Date().toISOString(),
-    }),
+    (current) =>
+      withCompatibilityFields({
+        ...current,
+        sellStatus: "SKIPPED",
+        sellPlayerId: null,
+        buyStatus: (current.autoSellPlayerIds ?? []).length > 0 ? "PENDING" : "LOCKED",
+        buyPlayerIds: [],
+        resolvedTransfers: [],
+        updatedAt: at ?? new Date().toISOString(),
+      }),
     at,
   );
 }
 
-export function submitBuyChoice(state: TransferRoundState, managerId: string, buyPlayerIds: string[], at?: string) {
+export function submitBuyChoice(
+  state: TransferRoundState,
+  managerId: string,
+  buyPlayerInput: string | string[],
+  at?: string,
+) {
   const entry = getEntryOrThrow(state, managerId);
   if (!(state.phase === "BUY" || state.phase === "AWAITING_RETRY")) {
     throw new Error("koopfase is nog niet geopend");
@@ -314,11 +281,12 @@ export function submitBuyChoice(state: TransferRoundState, managerId: string, bu
   if (!(entry.buyStatus === "PENDING" || entry.buyStatus === "RETRY_REQUIRED" || entry.buyStatus === "SUBMITTED")) {
     throw new Error("deze manager hoeft nu geen aankoop te kiezen");
   }
-  if (!entry.sellPlayerId && entry.autoSellPlayerIds.length === 0) {
+  if (!entry.sellPlayerId && (entry.autoSellPlayerIds ?? []).length === 0) {
     throw new Error("er is nog geen verkoop geregistreerd");
   }
 
-  const normalized = uniqueIds((buyPlayerIds ?? []).filter((value): value is string => typeof value === "string" && value.length > 0));
+  const inputIds = Array.isArray(buyPlayerInput) ? buyPlayerInput : [buyPlayerInput];
+  const normalized = uniqueIds(inputIds.filter((value): value is string => typeof value === "string" && value.length > 0));
   const remainingCapacity = getRemainingBuyCapacity(entry);
   if (normalized.length > remainingCapacity) {
     throw new Error(`je kunt maximaal ${remainingCapacity} speler${remainingCapacity === 1 ? "" : "s"} kopen in deze stap`);
@@ -327,12 +295,13 @@ export function submitBuyChoice(state: TransferRoundState, managerId: string, bu
   return replaceEntry(
     state,
     managerId,
-    (current) => ({
-      ...current,
-      buyStatus: "SUBMITTED",
-      buyPlayerIds: normalized,
-      updatedAt: at ?? new Date().toISOString(),
-    }),
+    (current) =>
+      withCompatibilityFields({
+        ...current,
+        buyStatus: "SUBMITTED",
+        buyPlayerIds: normalized,
+        updatedAt: at ?? new Date().toISOString(),
+      }),
     at,
   );
 }
@@ -347,7 +316,7 @@ function resolveConflicts(entries: TransferRoundManagerEntry[]) {
   const groups = new Map<string, BuyClaim[]>();
   for (const entry of entries) {
     if (entry.buyStatus !== "SUBMITTED") continue;
-    for (const playerId of entry.buyPlayerIds) {
+    for (const playerId of entry.buyPlayerIds ?? []) {
       const current = groups.get(playerId) ?? [];
       current.push({ managerId: entry.managerId, rankingPosition: entry.rankingPosition, playerId });
       groups.set(playerId, current);
@@ -393,7 +362,7 @@ export function resolveSubmittedBuys(state: TransferRoundState, at?: string) {
     const winningBuyIds: string[] = [];
     let lostAny = false;
 
-    for (const playerId of current.buyPlayerIds) {
+    for (const playerId of current.buyPlayerIds ?? []) {
       const winnerManagerId = winningManagerByPlayerId.get(playerId);
       if (!winnerManagerId || winnerManagerId === current.managerId) {
         winningBuyIds.push(playerId);
@@ -411,18 +380,79 @@ export function resolveSubmittedBuys(state: TransferRoundState, at?: string) {
       boughtPlayerId,
     }));
 
-    return {
+    return withCompatibilityFields({
       ...current,
       buyStatus: lostAny ? "RETRY_REQUIRED" : "COMPLETED",
       buyPlayerIds: [],
-      resolvedTransfers: [...current.resolvedTransfers, ...appendedTransfers],
+      resolvedTransfers: [...(current.resolvedTransfers ?? []), ...appendedTransfers],
       updatedAt: now,
-    };
+    });
   });
 
   return recomputeTransferRoundState({
     ...state,
     conflicts,
+    entries: nextEntries,
+    updatedAt: now,
+  });
+}
+
+export function finalizeExpiredTransferRound(state: TransferRoundState, at?: string) {
+  const now = at ?? new Date().toISOString();
+  let nextState = state;
+
+  if (nextState.phase === "BUY" && allRequiredBuyChoicesSubmitted(nextState)) {
+    nextState = resolveSubmittedBuys(nextState, now);
+  } else if (nextState.phase === "AWAITING_RETRY" && allRetryChoicesSubmitted(nextState)) {
+    nextState = resolveSubmittedBuys(nextState, now);
+  }
+
+  const nextEntries: TransferRoundManagerEntry[] = nextState.entries.map((entry) => {
+    const current = cloneEntry(entry);
+
+    if ((current.resolvedTransfers ?? []).length > 0) {
+      return current;
+    }
+
+    if (current.sellStatus === "PENDING") {
+      return withCompatibilityFields({
+        ...current,
+        sellStatus: "SKIPPED",
+        sellPlayerId: null,
+        autoSellPlayerIds: [],
+        buyStatus: "LOCKED",
+        buyPlayerIds: [],
+        resolvedTransfers: [],
+        updatedAt: now,
+      });
+    }
+
+    if (current.sellStatus === "SKIPPED") {
+      return withCompatibilityFields({
+        ...current,
+        buyStatus: "LOCKED",
+        buyPlayerIds: [],
+        resolvedTransfers: [],
+        updatedAt: current.buyStatus === "LOCKED" ? current.updatedAt : now,
+      });
+    }
+
+    if (current.sellStatus === "SUBMITTED" && current.buyStatus !== "COMPLETED") {
+      return withCompatibilityFields({
+        ...current,
+        buyStatus: "LOCKED",
+        buyPlayerIds: [],
+        resolvedTransfers: [],
+        updatedAt: now,
+      });
+    }
+
+    return current;
+  });
+
+  return recomputeTransferRoundState({
+    ...nextState,
+    conflicts: nextState.phase === "COMPLETED" ? nextState.conflicts : [],
     entries: nextEntries,
     updatedAt: now,
   });
@@ -450,7 +480,7 @@ export function recomputeTransferRoundState(state: TransferRoundState): Transfer
   return {
     ...state,
     phase,
-    entries: sortEntries(state.entries),
+    entries: sortEntries(state.entries).map((entry) => withCompatibilityFields(cloneEntry(entry))),
   };
 }
 

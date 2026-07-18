@@ -101,24 +101,3 @@ export function getCurrentOrNextRound(fixtures: SeasonFixture[], now: Date): num
 
   return sorted[sorted.length - 1]?.round ?? null;
 }
-
-/**
- * Returns the latest round that has at least one finished match.
- * A match is considered finished 2.5h after kickoff.
- * Falls back to round 1 if no matches have finished yet.
- */
-export function getLatestPlayedRound(fixtures: SeasonFixture[], now: Date = new Date()): number {
-  const nowMs = now.getTime();
-  const MATCH_DURATION = 2.5 * 60 * 60 * 1000; // 2.5h
-
-  let latestPlayed = 0;
-  for (const fixture of fixtures) {
-    const kickoff = new Date(fixture.kickoffAt).getTime();
-    const matchEnd = kickoff + MATCH_DURATION;
-    if (matchEnd <= nowMs && fixture.round > latestPlayed) {
-      latestPlayed = fixture.round;
-    }
-  }
-
-  return latestPlayed > 0 ? latestPlayed : 1;
-}

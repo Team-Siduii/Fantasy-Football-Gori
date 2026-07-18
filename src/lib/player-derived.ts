@@ -2,7 +2,6 @@ import type { PlayerRecord } from "@/domain/player";
 
 export type EnhancedPlayer = PlayerRecord & {
   punten: number;
-  inactive?: boolean;
   roundPoints?: number;
   totalPoints?: number;
   advancementPoints?: number;
