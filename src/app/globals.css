@@ -2840,8 +2840,14 @@ select {
   color: var(--muted);
 }
 
-.league-summary__round {
+.league-summary__round-nav {
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.league-summary__round {
   background: var(--brand);
   color: #fff;
   padding: 0.15rem 0.55rem;
@@ -2849,6 +2855,14 @@ select {
   font-weight: 700;
   font-size: 0.7rem;
   letter-spacing: 0.03em;
+}
+
+.league-summary__round-nav .league-summary__round {
+  margin-left: 0;
+}
+
+.league-summary > .league-summary__round {
+  margin-left: auto;
 }
 
 /* Header row */
