@@ -6,6 +6,8 @@ import { bootstrapPlayersFromDefaultCsv } from "@/lib/player-bootstrap";
 import { listPlayers } from "@/lib/player-store";
 import { getLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
 import { listCalculatedWkPlayerPoints } from "@/lib/wk-player-scoring";
+import { getWkMatches } from "@/lib/wk-sync-store";
+import { applyWkPlayerAvailabilityAndPoints } from "../../../lib/wk-availability";
 
 const NO_CACHE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -32,9 +34,13 @@ export async function GET(request: Request) {
     }
 
     let calculatedPlayers: Awaited<ReturnType<typeof listCalculatedWkPlayerPoints>> = [];
+    let wkMatches: Awaited<ReturnType<typeof getWkMatches>> = [];
     let syncStatus: string | undefined;
     try {
-      calculatedPlayers = await listCalculatedWkPlayerPoints(roundSequence);
+      [calculatedPlayers, wkMatches] = await Promise.all([
+        listCalculatedWkPlayerPoints(roundSequence),
+        getWkMatches(),
+      ]);
     } catch {
       syncStatus = "unavailable — WK scoring storage read failed";
     }
@@ -47,29 +53,14 @@ export async function GET(request: Request) {
       // default 0
     }
 
-    const hasAvailabilitySnapshot = calculatedPlayers.length > 0;
-    const calculatedById = new Map<number, (typeof calculatedPlayers)[number]>();
-    for (const player of calculatedPlayers) {
-      calculatedById.set(player.fantasyplayerId, player);
-    }
-
-    const playersWithPoints = csvPlayers.map((csv) => {
-      const playerId = parseInt(csv.id, 10);
-      const calculated = calculatedById.get(playerId);
-      const adjustedPrice = Math.max(0, csv.prijs - priceOffset);
-
-      return {
+    const playersWithPoints = applyWkPlayerAvailabilityAndPoints({
+      csvPlayers: csvPlayers.map((csv) => ({
         ...csv,
-        prijs: adjustedPrice,
-        inactive: hasAvailabilitySnapshot ? !calculated : undefined,
-        isActive: Boolean(calculated),
-        punten: calculated?.totalPoints ?? 0,
-        totalPoints: calculated?.totalPoints ?? 0,
-        roundPoints: calculated?.roundPoints ?? 0,
-        advancementPoints: calculated?.advancementPoints ?? 0,
-        pointEvents: calculated?.pointEvents ?? [],
-        scoreSource: calculated?.source ?? "wk-events-v1",
-      };
+        prijs: Math.max(0, csv.prijs - priceOffset),
+      })),
+      calculatedPlayers,
+      matches: wkMatches,
+      roundNumber: roundSequence,
     });
 
     return NextResponse.json({

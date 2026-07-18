@@ -38,6 +38,8 @@ import { readTransferRoundPersistent, saveTransferRoundPersistent } from "@/lib/
 import { parsePlayerCsv } from "@/domain/player-csv";
 import { readFile } from "fs/promises";
 import path from "path";
+import { getWkMatches } from "@/lib/wk-sync-store";
+import { applyWkPlayerAvailabilityAndPoints } from "../../../../lib/wk-availability";
 
 function getScopeFromRequest(request: Request): ManagerStateScope {
   const mode = new URL(request.url).searchParams.get("mode");
@@ -50,12 +52,18 @@ function getRoundNumberFromRequest(request: Request) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
-async function loadPlayers(scope: ManagerStateScope): Promise<PlayerRecord[]> {
+async function loadPlayers(scope: ManagerStateScope, roundNumber?: number | null): Promise<PlayerRecord[]> {
   if (scope === "wk") {
     const wkCsvPath = path.join(process.cwd(), "data", "players-wk.csv");
     try {
       const csvContent = await readFile(wkCsvPath, "utf-8");
-      return parsePlayerCsv(csvContent).players;
+      const csvPlayers = parsePlayerCsv(csvContent).players;
+      const matches = await getWkMatches();
+      return applyWkPlayerAvailabilityAndPoints({
+        csvPlayers,
+        matches,
+        roundNumber,
+      });
     } catch {
       return [];
     }
@@ -273,7 +281,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Je kunt alleen spelers uit je eigen team verkopen" }, { status: 400 });
     }
 
-    const knownPlayers = new Map((await loadPlayers(scope)).map((player) => [player.id, player]));
+    const knownPlayers = new Map((await loadPlayers(scope, roundNumber)).map((player) => [player.id, player]));
     const forcedSellIds = requestedPlayerIds.filter((playerId) => {
       const player = knownPlayers.get(playerId) as (PlayerRecord & { inactive?: boolean; isActive?: boolean }) | undefined;
       return player?.inactive === true || player?.isActive === false;
@@ -320,7 +328,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const allPlayers = await loadPlayers(scope);
+    const allPlayers = await loadPlayers(scope, roundNumber);
     const playerById = new Map(allPlayers.map((player) => [player.id, player]));
     for (const playerId of requestedPlayerIds) {
       if (!playerById.has(playerId)) {

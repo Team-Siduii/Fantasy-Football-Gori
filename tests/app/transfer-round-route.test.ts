@@ -76,6 +76,7 @@ const removePlayerFromTeamRosterPersistent = vi.fn(async () => undefined);
 const addPlayerToTeamRosterPersistent = vi.fn(async () => undefined);
 const getInactivePlayer = vi.fn((playerId: string) => (playerId === "auto-1" ? { id: "auto-1", naam: "Auto Sell" } : null));
 const isTeamEliminated = vi.fn(() => false);
+const getWkMatches = vi.fn(async () => []);
 
 vi.mock("@/lib/auth-session", () => ({
   isAuthenticatedSession,
@@ -131,6 +132,9 @@ vi.mock("@/lib/inactive-players", () => ({
 }));
 vi.mock("@/lib/knockout-phase", () => ({
   isTeamEliminated,
+}));
+vi.mock("@/lib/wk-sync-store", () => ({
+  getWkMatches,
 }));
 
 afterEach(() => {

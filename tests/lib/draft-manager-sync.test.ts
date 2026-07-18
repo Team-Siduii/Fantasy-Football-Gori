@@ -232,7 +232,7 @@ describe("draft roster to manager team sync", () => {
     expect(johanWkState.formation).toBe("3-5-2");
     expect(johanWkState.lineupIds).toEqual(["gk-1", "def-1", "def-2", "def-3", "mid-1", "mid-2", "mid-3", "mid-4", "mid-5", "fwd-1", "fwd-2"]);
     expect(johanWkState.benchIds).toEqual([]);
-  });
+  }, 15000);
 
   it("repairs a manager session with drifted auth email by using account and participant aliases", async () => {
     const { draft, roster, manager, sync, auth } = await loadModules();

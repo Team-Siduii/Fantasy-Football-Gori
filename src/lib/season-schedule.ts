@@ -5,6 +5,7 @@ export type SeasonFixture = {
   kickoffAt: string;
   home: string;
   away: string;
+  stageLabel?: string;
   homeScore?: number;
   awayScore?: number;
   status?: string;

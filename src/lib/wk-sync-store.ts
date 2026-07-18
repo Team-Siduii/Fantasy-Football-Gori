@@ -1,5 +1,6 @@
 import { resolveGoriDatabaseUrl } from "./persistent-json-store";
 import { Pool } from "pg";
+import { normalizeWkCompetitionRound } from "./wk-rounds";
 
 // ── Database ────────────────────────────────────────────────────────
 
@@ -384,7 +385,8 @@ export async function getLatestSyncRound(): Promise<number | null> {
   const r = await p.query<{ max_round: number }>(
     "SELECT MAX(round) as max_round FROM wk_player_points",
   );
-  return r.rows[0]?.max_round ?? null;
+  const maxRound = r.rows[0]?.max_round ?? null;
+  return typeof maxRound === "number" ? normalizeWkCompetitionRound(maxRound) : null;
 }
 
 // ── Puntentelling vertaalslag ──────────────────────────────────────

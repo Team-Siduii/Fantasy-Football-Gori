@@ -15,6 +15,7 @@ const getManagerRoundScorePersistent = vi.fn(async () => ({ totalPoints: 9 }));
 const buildWkPlayerRoundAdvancementPointsMap = vi.fn(async () => new Map([[1, 5], [2, 5]]));
 const buildWkPlayerRoundPointsMap = vi.fn(async () => new Map([[1, 5]]));
 const buildWkPlayerTotalPointsMapThroughRound = vi.fn(async () => new Map([[1, 42]]));
+const getWkMatches = vi.fn(async () => []);
 const listCalculatedWkPlayerPoints = vi.fn(async () => ([{
   fantasyplayerId: 1,
   round: 2,
@@ -54,6 +55,10 @@ vi.mock("../../src/lib/wk-player-scoring", () => ({
   buildWkPlayerRoundPointsMap,
   buildWkPlayerTotalPointsMapThroughRound,
   listCalculatedWkPlayerPoints,
+}));
+
+vi.mock("../../src/lib/wk-sync-store", () => ({
+  getWkMatches,
 }));
 
 vi.mock("../../src/domain/player-csv", () => ({

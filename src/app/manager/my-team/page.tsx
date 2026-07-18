@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PlayerCard } from "@/components/player-card";
@@ -1262,7 +1262,7 @@ export default function ManagerMyTeamPage() {
         <div className="round-fixtures-grid">
           {fixtureColumns.map((column, columnIndex) => (
             <ul key={`fixture-column-${columnIndex}`} className="round-fixture-column">
-              {column.map((fixture) => {
+              {column.map((fixture, fixtureIndex) => {
                 const fixtureHasVisibleScore = hasVisibleFixtureScore(fixture);
                 const showFixtureScore = isWkMode ? fixtureHasVisibleScore : isPastRound;
                 const fixtureIsLive = fixtureHasVisibleScore && isLiveWkMatchStatus(fixture.status);
@@ -1275,40 +1275,48 @@ export default function ManagerMyTeamPage() {
                 ]
                   .filter(Boolean)
                   .join(" ");
+                const stageLabel = isWkMode && selectedRound === 8 && fixture.stageLabel
+                  ? `${fixture.stageLabel} (${fixture.home} - ${fixture.away})`
+                  : null;
 
                 return (
-                <li key={`${fixture.kickoffAt}-${fixture.home}-${fixture.away}`} className="round-fixture-row">
-                  <span className="fixture-team fixture-team--home">
-                    <span className="fixture-team-code">{toClubCode(fixture.home)}</span>
-                    <span className={`team-shirt team-shirt--${toShirtClass(fixture.home)}`} aria-hidden="true" />
-                  </span>
-                  <span className={fixtureTimeClassName}>
-                    {showFixtureScore ? (
-                      <>
-                        <strong className="fixture-score">
-                          {fixture.homeScore ?? "-"} - {fixture.awayScore ?? "-"}
-                        </strong>
-                        {fixtureIsLive && liveMinuteLabel ? (
-                          <small className="fixture-live-minute" aria-label={`Wedstrijd bezig: ${liveMinuteLabel}`}>
-                            {liveMinuteLabel}
-                          </small>
-                        ) : null}
-                        {isWkMode ? <small>{getFixturePouleLabel(fixture, wkGroupLookup) ?? "Knock-out"}</small> : null}
-                      </>
-                    ) : (
-                      <>
-                        {toDutchDayAbbreviation(fixture.kickoffAt)} {fixture.kickoff}
-                        <small>{toShortDate(fixture.kickoffAt)}</small>
-                        {isWkMode ? <small>{getFixturePouleLabel(fixture, wkGroupLookup) ?? "Knock-out"}</small> : null}
-                      </>
-                    )}
-                  </span>
-                  <span className="fixture-team fixture-team--away">
-                    <span className="fixture-team-code">{toClubCode(fixture.away)}</span>
-                    <span className={`team-shirt team-shirt--${toShirtClass(fixture.away)}`} aria-hidden="true" />
-                  </span>
-                </li>
-              )})}
+                  <Fragment key={`${fixture.kickoffAt}-${fixture.home}-${fixture.away}`}>
+                    {stageLabel && fixtureIndex > 0 ? <li className="round-fixture-divider">Finale / Troostfinale</li> : null}
+                    {stageLabel ? <li className="round-fixture-stage-label">{stageLabel}</li> : null}
+                    <li className="round-fixture-row">
+                      <span className="fixture-team fixture-team--home">
+                        <span className="fixture-team-code">{toClubCode(fixture.home)}</span>
+                        <span className={`team-shirt team-shirt--${toShirtClass(fixture.home)}`} aria-hidden="true" />
+                      </span>
+                      <span className={fixtureTimeClassName}>
+                        {showFixtureScore ? (
+                          <>
+                            <strong className="fixture-score">
+                              {fixture.homeScore ?? "-"} - {fixture.awayScore ?? "-"}
+                            </strong>
+                            {fixtureIsLive && liveMinuteLabel ? (
+                              <small className="fixture-live-minute" aria-label={`Wedstrijd bezig: ${liveMinuteLabel}`}>
+                                {liveMinuteLabel}
+                              </small>
+                            ) : null}
+                            {isWkMode ? <small>{getFixturePouleLabel(fixture, wkGroupLookup) ?? "Knock-out"}</small> : null}
+                          </>
+                        ) : (
+                          <>
+                            {toDutchDayAbbreviation(fixture.kickoffAt)} {fixture.kickoff}
+                            <small>{toShortDate(fixture.kickoffAt)}</small>
+                            {isWkMode ? <small>{getFixturePouleLabel(fixture, wkGroupLookup) ?? "Knock-out"}</small> : null}
+                          </>
+                        )}
+                      </span>
+                      <span className="fixture-team fixture-team--away">
+                        <span className="fixture-team-code">{toClubCode(fixture.away)}</span>
+                        <span className={`team-shirt team-shirt--${toShirtClass(fixture.away)}`} aria-hidden="true" />
+                      </span>
+                    </li>
+                  </Fragment>
+                );
+              })}
             </ul>
           ))}
         </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getWkMatches } from "@/lib/wk-sync-store";
+import { normalizeWkCompetitionRound } from "../../../../lib/wk-rounds";
 
 const NO_CACHE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -13,13 +14,16 @@ export async function GET(request: Request) {
     const roundParam = url.searchParams.get("round");
     const round = roundParam ? Number(roundParam) : undefined;
 
-    const matches = await getWkMatches(round);
+    const rawMatches = await getWkMatches();
+    const matches = typeof round === "number" && Number.isInteger(round) && round > 0
+      ? rawMatches.filter((match) => normalizeWkCompetitionRound(match.round) === round)
+      : rawMatches;
 
     return NextResponse.json({
       count: matches.length,
       matches: matches.map((m) => ({
         matchId: m.match_id,
-        round: m.round,
+        round: normalizeWkCompetitionRound(m.round),
         homeTeam: m.home_team,
         awayTeam: m.away_team,
         homeTeamCode: m.home_team_code,

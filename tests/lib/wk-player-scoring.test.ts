@@ -353,4 +353,109 @@ describe("wk player scoring", () => {
     expect(roundPointsMap.get(203)).toBe(8);
     expect(roundPointsMap.get(204)).toBe(8);
   });
+
+  it("halves all troostfinale points and rounds the winner advancement bonus to 3 inside shared round 8", async () => {
+    getLatestSyncRound.mockResolvedValueOnce(8);
+    getWkPlayerPointHistory.mockResolvedValue([
+      {
+        fantasyplayer_id: 301,
+        round: 8,
+        name: "Bukayo Saka",
+        team_name: "Engeland",
+        team_code: "ENG",
+        position: "MID",
+        position_nl: "Middenvelder",
+        value: 12000000,
+        has_played: true,
+        num_played: 8,
+      },
+      {
+        fantasyplayer_id: 302,
+        round: 8,
+        name: "Aurélien Tchouaméni",
+        team_name: "Frankrijk",
+        team_code: "FRA",
+        position: "MID",
+        position_nl: "Middenvelder",
+        value: 11000000,
+        has_played: true,
+        num_played: 8,
+      },
+      {
+        fantasyplayer_id: 303,
+        round: 7,
+        name: "Lionel Messi",
+        team_name: "Argentinië",
+        team_code: "ARG",
+        position: "FWD",
+        position_nl: "Aanvaller",
+        value: 15000000,
+        has_played: true,
+        num_played: 7,
+      },
+      {
+        fantasyplayer_id: 303,
+        round: 9,
+        name: "Lionel Messi",
+        team_name: "Argentinië",
+        team_code: "ARG",
+        position: "FWD",
+        position_nl: "Aanvaller",
+        value: 15000000,
+        has_played: true,
+        num_played: 8,
+      },
+    ] as any);
+    getWkPlayerEvents.mockResolvedValue([
+      { fantasyplayer_id: 301, round: 8, event_code: "GL", points: 5, minute: 55 },
+      { fantasyplayer_id: 301, round: 8, event_code: "MW", points: 3, minute: null },
+      { fantasyplayer_id: 302, round: 8, event_code: "GL", points: 5, minute: 61 },
+      { fantasyplayer_id: 303, round: 9, event_code: "GL", points: 5, minute: 80 },
+      { fantasyplayer_id: 303, round: 9, event_code: "MW", points: 3, minute: null },
+    ] as any);
+    getWkMatches.mockResolvedValue([
+      {
+        match_id: 201,
+        round: 8,
+        home_team: "Engeland",
+        away_team: "Frankrijk",
+        home_team_code: "ENG",
+        away_team_code: "FRA",
+        home_score: 2,
+        away_score: 1,
+        status: "F",
+        minute: null,
+        kickoff_at: "2026-07-18T19:00:00Z",
+        synced_at: "2026-07-18T22:00:00Z",
+      },
+      {
+        match_id: 202,
+        round: 9,
+        home_team: "Argentinië",
+        away_team: "Spanje",
+        home_team_code: "ARG",
+        away_team_code: "ESP",
+        home_score: 1,
+        away_score: 0,
+        status: "F",
+        minute: null,
+        kickoff_at: "2026-07-19T19:00:00Z",
+        synced_at: "2026-07-19T22:00:00Z",
+      },
+    ] as any);
+
+    const { wkPlayerScoring } = await loadModules();
+    const roundPointsMap = await wkPlayerScoring.buildWkPlayerRoundPointsMap(8);
+    const roundAdvancementMap = await wkPlayerScoring.buildWkPlayerRoundAdvancementPointsMap(8);
+    const calculated = await wkPlayerScoring.buildCalculatedWkPlayerPointsMap(8);
+
+    expect(roundAdvancementMap.get(301)).toBe(3);
+    expect(roundAdvancementMap.get(302)).toBe(0);
+    expect(roundAdvancementMap.get(303)).toBe(5);
+    expect(roundPointsMap.get(301)).toBe(7);
+    expect(roundPointsMap.get(302)).toBe(2.5);
+    expect(roundPointsMap.get(303)).toBe(13);
+    expect(calculated.get(301)).toMatchObject({ round: 8, roundPoints: 4, teamName: "Engeland" });
+    expect(calculated.get(303)).toMatchObject({ round: 8, roundPoints: 8, teamName: "Argentinië" });
+  });
 });

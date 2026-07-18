@@ -9,11 +9,17 @@ import {
 } from "./wk-sync-store";
 
 import { isTeamEliminated } from "./knockout-phase";
+import {
+  expandWkCompetitionRoundForRawReads,
+  isPlaceholderKnockoutLabel,
+  normalizeWkCompetitionRound,
+} from "./wk-rounds";
 
 const DEFENDER_ALIASES = new Set(["DEF", "VERDEDIGER", "DEFENDER", "D"]);
 const CLEAN_SHEET_EVENT_CODES = new Set(["CS"]);
 const DEFENDER_CLEAN_SHEET_BONUS = 2;
 const ADVANCEMENT_BONUS = 5;
+const THIRD_PLACE_ADVANCEMENT_BONUS = 3;
 const KNOCKOUT_START_ROUND = 3;
 
 export type PlayerPointEvent = {
@@ -61,31 +67,55 @@ export function calculateWkPlayerRoundPointsFromEvents(input: {
   return basePoints + cleanSheetBonus;
 }
 
-function buildMetadataMaps(rows: WkPlayerPointRow[]) {
+function hasLegacyFinalRound(matches: WkMatchRow[]) {
+  return matches.some((match) => match.round >= 9);
+}
+
+function getLogicalRound(rawRound: number, useSharedFinalRound: boolean) {
+  return useSharedFinalRound ? normalizeWkCompetitionRound(rawRound) : rawRound;
+}
+
+function scaleEventPoints(rawRound: number, points: number, useSharedFinalRound: boolean) {
+  if (useSharedFinalRound && rawRound === 8) {
+    return points / 2;
+  }
+  return points;
+}
+
+function buildMetadataMaps(rows: WkPlayerPointRow[], useSharedFinalRound: boolean) {
   const latestByPlayerId = new Map<number, WkPlayerPointRow>();
   const byPlayerRound = new Map<string, WkPlayerPointRow>();
+
   for (const row of rows) {
-    byPlayerRound.set(`${row.fantasyplayer_id}:${row.round}`, row);
+    const logicalRound = getLogicalRound(row.round, useSharedFinalRound);
+    const roundKey = `${row.fantasyplayer_id}:${logicalRound}`;
+    const existingRoundRow = byPlayerRound.get(roundKey);
+    if (!existingRoundRow || row.round >= existingRoundRow.round) {
+      byPlayerRound.set(roundKey, row);
+    }
+
     const current = latestByPlayerId.get(row.fantasyplayer_id);
     if (!current || row.round >= current.round) {
       latestByPlayerId.set(row.fantasyplayer_id, row);
     }
   }
+
   return { latestByPlayerId, byPlayerRound };
 }
 
-function groupEventsByRoundAndPlayer(events: WkPlayerEventRow[]) {
+function groupEventsByRoundAndPlayer(events: WkPlayerEventRow[], useSharedFinalRound: boolean) {
   const grouped = new Map<number, Map<number, PlayerPointEvent[]>>();
   for (const event of events) {
-    const byPlayer = grouped.get(event.round) ?? new Map<number, PlayerPointEvent[]>();
+    const logicalRound = getLogicalRound(event.round, useSharedFinalRound);
+    const byPlayer = grouped.get(logicalRound) ?? new Map<number, PlayerPointEvent[]>();
     const playerEvents = byPlayer.get(event.fantasyplayer_id) ?? [];
     playerEvents.push({
       eventCode: event.event_code,
-      points: event.points,
+      points: scaleEventPoints(event.round, event.points, useSharedFinalRound),
       minute: event.minute,
     });
     byPlayer.set(event.fantasyplayer_id, playerEvents);
-    grouped.set(event.round, byPlayer);
+    grouped.set(logicalRound, byPlayer);
   }
 
   for (const byPlayer of grouped.values()) {
@@ -97,49 +127,89 @@ function groupEventsByRoundAndPlayer(events: WkPlayerEventRow[]) {
   return grouped;
 }
 
-function normalizeTeamName(value: string | null | undefined) {
-  return (value ?? "")
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/[^\p{Letter}\p{Number}]+/gu, " ")
-    .trim()
-    .toLowerCase();
-}
-
-function isPlaceholderKnockoutLabel(value: string | null | undefined) {
-  const normalized = normalizeTeamName(value);
-  return normalized.startsWith("winnaar duel") || normalized.startsWith("verliezer duel") || normalized.startsWith("nummer ");
-}
-
-function mergeAdvancingTeam(advancingTeamsByRound: Map<number, Set<string>>, round: number, teamName: string | null | undefined) {
+function setRoundTeamBonus(map: Map<number, Map<string, number>>, round: number, teamName: string | null | undefined, bonus: number) {
   if (!teamName || isPlaceholderKnockoutLabel(teamName)) {
     return;
   }
 
-  const teams = advancingTeamsByRound.get(round) ?? new Set<string>();
-  teams.add(teamName);
-  advancingTeamsByRound.set(round, teams);
+  const byTeam = map.get(round) ?? new Map<string, number>();
+  byTeam.set(teamName, Math.max(byTeam.get(teamName) ?? 0, bonus));
+  map.set(round, byTeam);
 }
 
-function buildAdvancingTeamsByRound(input: {
+function resolveMatchWinner(match: WkMatchRow) {
+  if (match.home_score == null || match.away_score == null) {
+    return null;
+  }
+  if (match.home_score > match.away_score) {
+    return match.home_team;
+  }
+  if (match.away_score > match.home_score) {
+    return match.away_team;
+  }
+  return null;
+}
+
+function buildAdvancementBonusByRoundAndTeam(input: {
   events: WkPlayerEventRow[];
   matches: WkMatchRow[];
   byPlayerRound: Map<string, WkPlayerPointRow>;
   latestByPlayerId: Map<number, WkPlayerPointRow>;
+  useSharedFinalRound: boolean;
 }) {
-  const advancingTeamsByRound = new Map<number, Set<string>>();
+  const bonusByRound = new Map<number, Map<string, number>>();
   const explicitAdvancementRounds = new Set<number>();
 
   for (const event of input.events) {
     if ((event.event_code ?? "").trim().toUpperCase() !== "MW") {
       continue;
     }
-    explicitAdvancementRounds.add(event.round);
+
+    const logicalRound = getLogicalRound(event.round, input.useSharedFinalRound);
+    explicitAdvancementRounds.add(logicalRound);
     const teamName = event.team_name
-      ?? input.byPlayerRound.get(`${event.fantasyplayer_id}:${event.round}`)?.team_name
+      ?? input.byPlayerRound.get(`${event.fantasyplayer_id}:${logicalRound}`)?.team_name
       ?? input.latestByPlayerId.get(event.fantasyplayer_id)?.team_name
       ?? null;
-    mergeAdvancingTeam(advancingTeamsByRound, event.round, teamName);
+    const bonus = input.useSharedFinalRound && event.round === 8
+      ? THIRD_PLACE_ADVANCEMENT_BONUS
+      : ADVANCEMENT_BONUS;
+    setRoundTeamBonus(bonusByRound, logicalRound, teamName, bonus);
+  }
+
+  if (input.useSharedFinalRound) {
+    for (const match of input.matches) {
+      if (match.round <= KNOCKOUT_START_ROUND) {
+        continue;
+      }
+      if (match.round === 8) {
+        continue;
+      }
+
+      const previousLogicalRound = match.round === 9 ? 7 : getLogicalRound(match.round - 1, true);
+      if (explicitAdvancementRounds.has(previousLogicalRound)) {
+        continue;
+      }
+      setRoundTeamBonus(bonusByRound, previousLogicalRound, match.home_team, ADVANCEMENT_BONUS);
+      setRoundTeamBonus(bonusByRound, previousLogicalRound, match.away_team, ADVANCEMENT_BONUS);
+    }
+
+    if (!explicitAdvancementRounds.has(8)) {
+      for (const match of input.matches) {
+        const winner = resolveMatchWinner(match);
+        if (!winner) {
+          continue;
+        }
+        if (match.round === 8) {
+          setRoundTeamBonus(bonusByRound, 8, winner, THIRD_PLACE_ADVANCEMENT_BONUS);
+        }
+        if (match.round === 9) {
+          setRoundTeamBonus(bonusByRound, 8, winner, ADVANCEMENT_BONUS);
+        }
+      }
+    }
+
+    return bonusByRound;
   }
 
   for (const match of input.matches) {
@@ -151,17 +221,17 @@ function buildAdvancingTeamsByRound(input: {
     if (explicitAdvancementRounds.has(previousRound)) {
       continue;
     }
-    mergeAdvancingTeam(advancingTeamsByRound, previousRound, match.home_team);
-    mergeAdvancingTeam(advancingTeamsByRound, previousRound, match.away_team);
+    setRoundTeamBonus(bonusByRound, previousRound, match.home_team, ADVANCEMENT_BONUS);
+    setRoundTeamBonus(bonusByRound, previousRound, match.away_team, ADVANCEMENT_BONUS);
   }
 
-  return advancingTeamsByRound;
+  return bonusByRound;
 }
 
 function calculateWkPlayerRoundAdvancementPoints(input: {
   round: number;
   teamName: string;
-  advancingTeamsByRound: Map<number, Set<string>>;
+  bonusByRound: Map<number, Map<string, number>>;
 }) {
   if (input.round < KNOCKOUT_START_ROUND) {
     return 0;
@@ -171,9 +241,25 @@ function calculateWkPlayerRoundAdvancementPoints(input: {
     return isTeamEliminated(input.teamName) ? 0 : ADVANCEMENT_BONUS;
   }
 
-  return input.advancingTeamsByRound.get(input.round)?.has(input.teamName)
-    ? ADVANCEMENT_BONUS
-    : 0;
+  return input.bonusByRound.get(input.round)?.get(input.teamName) ?? 0;
+}
+
+async function loadWkScoringInputs(effectiveRound: number) {
+  const rawCeiling = expandWkCompetitionRoundForRawReads(effectiveRound) ?? effectiveRound;
+  const [historyRows, events, matches] = await Promise.all([
+    getWkPlayerPointHistory(rawCeiling),
+    getWkPlayerEvents(),
+    getWkMatches(),
+  ]);
+  const useSharedFinalRound = hasLegacyFinalRound(matches);
+  const relevantEvents = events.filter((event) => event.round <= rawCeiling);
+
+  return {
+    historyRows,
+    relevantEvents,
+    relevantMatches: matches,
+    useSharedFinalRound,
+  };
 }
 
 export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promise<Map<number, CalculatedWkPlayerPoints>> {
@@ -185,20 +271,15 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
     return new Map();
   }
 
-  const [historyRows, events, matches] = await Promise.all([
-    getWkPlayerPointHistory(effectiveRound),
-    getWkPlayerEvents(),
-    getWkMatches(),
-  ]);
-
-  const relevantEvents = events.filter((event) => event.round <= effectiveRound);
-  const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(historyRows);
-  const groupedEvents = groupEventsByRoundAndPlayer(relevantEvents);
-  const advancingTeamsByRound = buildAdvancingTeamsByRound({
+  const { historyRows, relevantEvents, relevantMatches, useSharedFinalRound } = await loadWkScoringInputs(effectiveRound);
+  const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(historyRows, useSharedFinalRound);
+  const groupedEvents = groupEventsByRoundAndPlayer(relevantEvents, useSharedFinalRound);
+  const bonusByRound = buildAdvancementBonusByRoundAndTeam({
     events: relevantEvents,
-    matches,
+    matches: relevantMatches,
     byPlayerRound,
     latestByPlayerId,
+    useSharedFinalRound,
   });
   const totals = new Map<number, CalculatedWkPlayerPoints>();
   const allPlayerIds = Array.from(latestByPlayerId.keys());
@@ -222,7 +303,7 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
       const roundAdvancementPoints = calculateWkPlayerRoundAdvancementPoints({
         round,
         teamName: metadata.team_name,
-        advancingTeamsByRound,
+        bonusByRound,
       });
       const previous = totals.get(fantasyplayerId);
       const previousTotal = previous?.totalPoints ?? 0;
@@ -259,41 +340,17 @@ export async function buildWkPlayerRoundPointsMap(roundNumber?: number): Promise
     return new Map();
   }
 
-  const [rows, events, matches] = await Promise.all([
-    getWkPlayerPointHistory(effectiveRound),
-    getWkPlayerEvents(effectiveRound),
-    getWkMatches(),
+  const [calculated, previousCalculated] = await Promise.all([
+    buildCalculatedWkPlayerPointsMap(effectiveRound),
+    effectiveRound > 1 ? buildCalculatedWkPlayerPointsMap(effectiveRound - 1) : Promise.resolve(new Map<number, CalculatedWkPlayerPoints>()),
   ]);
-  const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(rows);
-  const roundEvents = groupEventsByRoundAndPlayer(events).get(effectiveRound) ?? new Map<number, PlayerPointEvent[]>();
-  const advancingTeamsByRound = buildAdvancingTeamsByRound({
-    events,
-    matches,
-    byPlayerRound,
-    latestByPlayerId,
-  });
-  const allPlayerIds = Array.from(latestByPlayerId.keys());
-
   const result = new Map<number, number>();
-  for (const fantasyplayerId of allPlayerIds) {
-    const roundRow = byPlayerRound.get(`${fantasyplayerId}:${effectiveRound}`);
-    const metadata = roundRow ?? latestByPlayerId.get(fantasyplayerId);
-    if (!metadata) {
-      continue;
-    }
-    const pointEvents = roundEvents.get(fantasyplayerId) ?? [];
-    const basePoints = calculateWkPlayerRoundPointsFromEvents({
-      events: pointEvents,
-      position: metadata.position,
-      positionNl: metadata.position_nl,
-    });
-    const advancementPoints = calculateWkPlayerRoundAdvancementPoints({
-      round: effectiveRound,
-      teamName: metadata.team_name,
-      advancingTeamsByRound,
-    });
-    result.set(fantasyplayerId, basePoints + advancementPoints);
+
+  for (const [fantasyplayerId, summary] of calculated.entries()) {
+    const previousTotal = previousCalculated.get(fantasyplayerId)?.totalPoints ?? 0;
+    result.set(fantasyplayerId, summary.totalPoints - previousTotal);
   }
+
   return result;
 }
 
@@ -305,37 +362,13 @@ export async function buildWkPlayerRoundAdvancementPointsMap(roundNumber?: numbe
     return new Map();
   }
 
-  const [rows, events, matches] = await Promise.all([
-    getWkPlayerPointHistory(effectiveRound),
-    getWkPlayerEvents(effectiveRound),
-    getWkMatches(),
-  ]);
-  const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(rows);
-  const roundEvents = groupEventsByRoundAndPlayer(events).get(effectiveRound) ?? new Map<number, PlayerPointEvent[]>();
-  const advancingTeamsByRound = buildAdvancingTeamsByRound({
-    events,
-    matches,
-    byPlayerRound,
-    latestByPlayerId,
-  });
-  const allPlayerIds = Array.from(latestByPlayerId.keys());
-
+  const calculated = await buildCalculatedWkPlayerPointsMap(effectiveRound);
+  const previousCalculated = effectiveRound > 1 ? await buildCalculatedWkPlayerPointsMap(effectiveRound - 1) : new Map<number, CalculatedWkPlayerPoints>();
   const result = new Map<number, number>();
-  for (const fantasyplayerId of allPlayerIds) {
-    const roundRow = byPlayerRound.get(`${fantasyplayerId}:${effectiveRound}`);
-    const metadata = roundRow ?? latestByPlayerId.get(fantasyplayerId);
-    if (!metadata) {
-      continue;
-    }
-    const pointEvents = roundEvents.get(fantasyplayerId) ?? [];
-    result.set(
-      fantasyplayerId,
-      calculateWkPlayerRoundAdvancementPoints({
-        round: effectiveRound,
-        teamName: metadata.team_name,
-        advancingTeamsByRound,
-      }),
-    );
+
+  for (const [fantasyplayerId, summary] of calculated.entries()) {
+    const previousAdvancement = previousCalculated.get(fantasyplayerId)?.advancementPoints ?? 0;
+    result.set(fantasyplayerId, summary.advancementPoints - previousAdvancement);
   }
 
   return result;

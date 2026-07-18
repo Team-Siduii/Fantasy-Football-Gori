@@ -8,4 +8,11 @@ describe("world-cup-schedule", () => {
     expect(rounds.slice(0, 3)).toEqual([1, 2, 3]);
     expect(WORLD_CUP_2026_FIXTURES.length).toBeGreaterThanOrEqual(24);
   });
+
+  it("keeps finale and troostfinale together in round 8 with explicit stage labels", () => {
+    const finalRoundFixtures = WORLD_CUP_2026_FIXTURES.filter((fixture) => fixture.round === 8);
+
+    expect(finalRoundFixtures).toHaveLength(2);
+    expect(finalRoundFixtures.map((fixture) => fixture.stageLabel)).toEqual(["Troostfinale", "Finale"]);
+  });
 });

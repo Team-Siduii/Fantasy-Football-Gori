@@ -16,6 +16,8 @@ import {
   buildWkPlayerTotalPointsMapThroughRound,
   listCalculatedWkPlayerPoints,
 } from "./wk-player-scoring";
+import { getWkMatches } from "./wk-sync-store";
+import { applyWkPlayerAvailabilityAndPoints } from "./wk-availability";
 
 export type TeamViewPlayer = PlayerRecord & {
   punten: number;
@@ -65,14 +67,17 @@ async function loadPlayersForScope(scope: ManagerStateScope, roundNumber: number
     const wkCsvPath = path.join(process.cwd(), "data", "players-wk.csv");
     const csvContent = await readFile(wkCsvPath, "utf-8");
     const csvPlayers = parsePlayerCsv(csvContent).players;
-    const calculatedPlayers = await listCalculatedWkPlayerPoints(roundNumber ?? undefined);
-    const hasAvailabilitySnapshot = calculatedPlayers.length > 0;
-    const calculatedIds = new Set(calculatedPlayers.map((player) => String(player.fantasyplayerId)));
+    const [calculatedPlayers, matches] = await Promise.all([
+      listCalculatedWkPlayerPoints(roundNumber ?? undefined),
+      getWkMatches(),
+    ]);
 
-    return csvPlayers.map((player) => ({
-      ...player,
-      isActive: hasAvailabilitySnapshot ? calculatedIds.has(String(player.id)) : undefined,
-    }));
+    return applyWkPlayerAvailabilityAndPoints({
+      csvPlayers,
+      calculatedPlayers,
+      matches,
+      roundNumber,
+    });
   }
 
   const { bootstrapPlayersFromDefaultCsv } = await import("./player-bootstrap");
