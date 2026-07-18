@@ -9,7 +9,7 @@ import { hydrateSavedTeamState } from "./manager-team-hydration";
 import { type ManagerStateScope } from "./manager-state";
 import { readTeamViewSnapshotPersistent } from "./manager-team-state-source";
 import { loadPlayerPoints } from "./player-points-store";
-import { getManagerRoundScorePersistent, summarizeManagerTeamScoresPersistent } from "./team-score-state";
+import { getManagerRoundScorePersistent, summarizeManagerTeamScoresThroughRoundPersistent } from "./team-score-state";
 import {
   buildWkPlayerRoundAdvancementPointsMap,
   buildWkPlayerRoundPointsMap,
@@ -19,6 +19,7 @@ import {
 import { getWkMatches } from "./wk-sync-store";
 import { applyWkPlayerAvailabilityAndPoints } from "./wk-availability";
 import { applyWkTransferPriceOffsetMillions } from "./wk-price";
+import { getLatestCompletedWorldCupRound } from "./world-cup-schedule";
 
 export type TeamViewPlayer = PlayerRecord & {
   punten: number;
@@ -61,6 +62,16 @@ function toTeamViewPlayer(player: PlayerRecord & {
 
 function normalizeRoundNumber(roundNumber?: number | null): number | null {
   return Number.isInteger(roundNumber) && (roundNumber ?? 0) > 0 ? (roundNumber as number) : null;
+}
+
+function getEffectiveWkRound(roundNumber: number | null): number {
+  const latestCompletedRound = getLatestCompletedWorldCupRound();
+
+  if (roundNumber !== null) {
+    return roundNumber;
+  }
+
+  return latestCompletedRound > 0 ? latestCompletedRound : 1;
 }
 
 async function loadPlayersForScope(scope: ManagerStateScope, roundNumber: number | null): Promise<PlayerRecord[]> {
@@ -137,14 +148,16 @@ export async function buildManagerTeamViewPersistent(input: {
   roundNumber?: number | null;
 }): Promise<ManagerTeamViewModel> {
   const normalizedRound = normalizeRoundNumber(input.roundNumber);
+  const effectiveWkRound = input.scope === "wk" ? getEffectiveWkRound(normalizedRound) : null;
+  const effectiveRound = input.scope === "wk" ? effectiveWkRound : normalizedRound;
   const [allPlayers, state, pointMaps] = await Promise.all([
-    loadPlayersForScope(input.scope, normalizedRound),
+    loadPlayersForScope(input.scope, effectiveRound),
     readTeamViewSnapshotPersistent({
       scope: input.scope,
       managerEmail: input.managerEmail,
-      roundNumber: normalizedRound,
+      roundNumber: effectiveRound,
     }),
-    buildPointsMaps(input.scope, normalizedRound),
+    buildPointsMaps(input.scope, effectiveRound),
   ]);
 
   const enrichedPlayers: TeamViewPlayer[] = allPlayers.map((player) => {
@@ -176,13 +189,14 @@ export async function buildManagerTeamViewPersistent(input: {
   const hasPersistedPlayers = state.lineupIds.length > 0 || state.benchIds.length > 0;
 
   if (input.scope === "wk") {
+    const selectedWkRound = effectiveWkRound ?? 1;
     const [scoreSummary, selectedRoundScore] = await Promise.all([
-      summarizeManagerTeamScoresPersistent(input.scope, input.managerEmail),
-      normalizedRound ? getManagerRoundScorePersistent(input.scope, input.managerEmail, normalizedRound) : Promise.resolve(null),
+      summarizeManagerTeamScoresThroughRoundPersistent(input.scope, input.managerEmail, selectedWkRound),
+      getManagerRoundScorePersistent(input.scope, input.managerEmail, selectedWkRound),
     ]);
 
     return {
-      roundNumber: normalizedRound,
+      roundNumber: selectedWkRound,
       formation: state.formation,
       lineup: hydratedLineup,
       bench: hydratedBench,
@@ -192,11 +206,7 @@ export async function buildManagerTeamViewPersistent(input: {
       pendingSellId: state.pendingSellId,
       pendingBuyId: state.pendingBuyId ?? state.pickedTransferId,
       teamTotalPoints: scoreSummary.totalPoints,
-      teamCurrentRoundPoints:
-        selectedRoundScore?.totalPoints
-        ?? ((scoreSummary.latestRound ?? 0) > 0 && normalizedRound !== null && normalizedRound > (scoreSummary.latestRound ?? 0)
-          ? scoreSummary.currentRoundPoints
-          : 0),
+      teamCurrentRoundPoints: selectedRoundScore?.totalPoints ?? scoreSummary.currentRoundPoints,
       scoreSource: pointMaps.scoreSource,
       hasPersistedPlayers,
     };

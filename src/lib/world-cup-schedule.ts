@@ -109,6 +109,24 @@ export const WORLD_CUP_2026_FIXTURES: SeasonFixture[] = [
   { round: 8, dateLabel: "Zondag 19 juli 2026", kickoff: "21:00", kickoffAt: "2026-07-19T21:00:00+02:00", home: "Winnaar duel 101", away: "Winnaar duel 102", stageLabel: "Finale" },
 ];
 
+export function getLatestCompletedWorldCupRound(now: Date = new Date()): number {
+  const roundsWithFinishedMatches = new Set<number>();
+
+  for (const fixture of WORLD_CUP_2026_FIXTURES) {
+    const kickoff = new Date(fixture.kickoffAt);
+    const matchEnd = new Date(kickoff.getTime() + 2 * 60 * 60 * 1000);
+    if (matchEnd < now) {
+      roundsWithFinishedMatches.add(fixture.round);
+    }
+  }
+
+  if (roundsWithFinishedMatches.size === 0) {
+    return 0;
+  }
+
+  return Math.max(...roundsWithFinishedMatches);
+}
+
 /**
  * Bepaalt of een speelronde "actief" is (wedstrijden bezig of net afgelopen).
  * Een ronde is actief zodra de eerste wedstrijd is afgetrapt en blijft actief

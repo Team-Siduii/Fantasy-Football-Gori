@@ -6,7 +6,7 @@ import { ensureAuthStateFromDb, getAuthAccountByEmail, getProfileByEmail } from 
 import { getLeagueAdminConfigPersistent } from "./league-admin-config";
 import { readManagerStatePersistent, type ManagerStateScope } from "./manager-state";
 import { summarizeManagerTeamScoresPersistent, summarizeManagerTeamScoresThroughRoundPersistent } from "./team-score-state";
-import { WORLD_CUP_2026_FIXTURES } from "./world-cup-schedule";
+import { getLatestCompletedWorldCupRound } from "./world-cup-schedule";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "s.j.m.duindam@gmail.com": "A",
@@ -20,17 +20,7 @@ const SUBPOULE_BY_EMAIL: Record<string, string> = {
 const DEFAULT_BUDGET_CAP = 100;
 
 function getCurrentRoundWk(): number {
-  const now = new Date();
-  const roundsWithFinishedMatches = new Set<number>();
-  for (const fixture of WORLD_CUP_2026_FIXTURES) {
-    const kickoff = new Date(fixture.kickoffAt);
-    const matchEnd = new Date(kickoff.getTime() + 2 * 60 * 60 * 1000);
-    if (matchEnd < now) {
-      roundsWithFinishedMatches.add(fixture.round);
-    }
-  }
-  if (roundsWithFinishedMatches.size === 0) return 0;
-  return Math.max(...roundsWithFinishedMatches);
+  return getLatestCompletedWorldCupRound();
 }
 
 function normalizeRequestedRound(roundNumber: number | null | undefined) {

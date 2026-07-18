@@ -10,8 +10,9 @@ const readTeamViewSnapshotPersistent = vi.fn(async () => ({
   pendingBuyId: "buy-player-1",
   pickedTransferId: null,
 }));
-const summarizeManagerTeamScoresPersistent = vi.fn(async () => ({ totalPoints: 42, currentRoundPoints: 12, latestRound: 2 }));
+const summarizeManagerTeamScoresThroughRoundPersistent = vi.fn(async () => ({ totalPoints: 42, currentRoundPoints: 12, latestRound: 2 }));
 const getManagerRoundScorePersistent = vi.fn(async () => ({ totalPoints: 9 }));
+const getLatestCompletedWorldCupRound = vi.fn(() => 7);
 const buildWkPlayerRoundAdvancementPointsMap = vi.fn(async () => new Map([[1, 5], [2, 5]]));
 const buildWkPlayerRoundPointsMap = vi.fn(async () => new Map([[1, 5]]));
 const buildWkPlayerTotalPointsMapThroughRound = vi.fn(async () => new Map([[1, 42]]));
@@ -46,8 +47,12 @@ vi.mock("../../src/lib/manager-team-state-source", () => ({
 }));
 
 vi.mock("../../src/lib/team-score-state", () => ({
-  summarizeManagerTeamScoresPersistent,
+  summarizeManagerTeamScoresThroughRoundPersistent,
   getManagerRoundScorePersistent,
+}));
+
+vi.mock("../../src/lib/world-cup-schedule", () => ({
+  getLatestCompletedWorldCupRound,
 }));
 
 vi.mock("../../src/lib/wk-player-scoring", () => ({
@@ -92,6 +97,7 @@ describe("buildManagerTeamViewPersistent", () => {
     expect(buildWkPlayerTotalPointsMapThroughRound).toHaveBeenCalledWith(2);
     expect(buildWkPlayerRoundAdvancementPointsMap).toHaveBeenCalledWith(2);
     expect(listCalculatedWkPlayerPoints).toHaveBeenCalledWith(2);
+    expect(summarizeManagerTeamScoresThroughRoundPersistent).toHaveBeenCalledWith("wk", "s.j.m.duindam@gmail.com", 2);
     expect(getManagerRoundScorePersistent).toHaveBeenCalledWith("wk", "s.j.m.duindam@gmail.com", 2);
     expect(result.lineup[0]).toMatchObject({ id: "1", punten: 5, roundPoints: 5, totalPoints: 42, advancementPoints: 5, isActive: true });
     expect(result.bench[0]).toMatchObject({ id: "2", punten: 0, roundPoints: 0, totalPoints: 0, advancementPoints: 5, isActive: false });
@@ -102,7 +108,7 @@ describe("buildManagerTeamViewPersistent", () => {
   });
 
   it("falls back to the latest played WK round points when the selected next round has not started yet", async () => {
-    summarizeManagerTeamScoresPersistent.mockResolvedValueOnce({ totalPoints: 42, currentRoundPoints: 14, latestRound: 7 });
+    summarizeManagerTeamScoresThroughRoundPersistent.mockResolvedValueOnce({ totalPoints: 42, currentRoundPoints: 14, latestRound: 7 });
     getManagerRoundScorePersistent.mockResolvedValueOnce(null);
 
     const { buildManagerTeamViewPersistent } = await import("../../src/lib/manager-team-view");
@@ -116,5 +122,31 @@ describe("buildManagerTeamViewPersistent", () => {
     expect(getManagerRoundScorePersistent).toHaveBeenCalledWith("wk", "s.j.m.duindam@gmail.com", 8);
     expect(result.teamCurrentRoundPoints).toBe(14);
     expect(result.teamTotalPoints).toBe(42);
+  });
+
+  it("defaults WK team views to the latest completed round when no round is selected", async () => {
+    summarizeManagerTeamScoresThroughRoundPersistent.mockResolvedValueOnce({ totalPoints: 520, currentRoundPoints: 57, latestRound: 7 });
+    getManagerRoundScorePersistent.mockResolvedValueOnce({ totalPoints: 57 });
+
+    const { buildManagerTeamViewPersistent } = await import("../../src/lib/manager-team-view");
+
+    const result = await buildManagerTeamViewPersistent({
+      scope: "wk",
+      managerEmail: "ice.eckmund@gmail.com",
+    });
+
+    expect(getLatestCompletedWorldCupRound).toHaveBeenCalled();
+    expect(readTeamViewSnapshotPersistent).toHaveBeenCalledWith({
+      scope: "wk",
+      managerEmail: "ice.eckmund@gmail.com",
+      roundNumber: 7,
+    });
+    expect(buildWkPlayerRoundPointsMap).toHaveBeenCalledWith(7);
+    expect(buildWkPlayerTotalPointsMapThroughRound).toHaveBeenCalledWith(7);
+    expect(summarizeManagerTeamScoresThroughRoundPersistent).toHaveBeenCalledWith("wk", "ice.eckmund@gmail.com", 7);
+    expect(getManagerRoundScorePersistent).toHaveBeenCalledWith("wk", "ice.eckmund@gmail.com", 7);
+    expect(result.roundNumber).toBe(7);
+    expect(result.teamCurrentRoundPoints).toBe(57);
+    expect(result.teamTotalPoints).toBe(520);
   });
 });
