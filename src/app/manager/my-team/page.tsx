@@ -605,6 +605,8 @@ export default function ManagerMyTeamPage() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [teamTotalPoints, setTeamTotalPoints] = useState<number | null>(null);
+  const [teamCurrentRoundPoints, setTeamCurrentRoundPoints] = useState<number | null>(null);
 
   const [pendingSellId, setPendingSellId] = useState<string | null>(null);
   const [pendingBuyId, setPendingBuyId] = useState<string | null>(null);
@@ -703,6 +705,8 @@ export default function ManagerMyTeamPage() {
 
         setFormation(hydratedState.formation);
         setState(hydratedState.state);
+        setTeamTotalPoints(teamViewData?.teamTotalPoints ?? null);
+        setTeamCurrentRoundPoints(teamViewData?.teamCurrentRoundPoints ?? null);
         setPendingSellId(teamViewData?.pendingSellId ?? null);
         setPendingBuyId(teamViewData?.pendingBuyId ?? null);
         setQueuedSellIds([]);
@@ -860,6 +864,8 @@ export default function ManagerMyTeamPage() {
         suppressNextPersist.current = true;
         setFormation(hydratedState.formation);
         setState(hydratedState.state);
+        setTeamTotalPoints(teamViewData.teamTotalPoints ?? null);
+        setTeamCurrentRoundPoints(teamViewData.teamCurrentRoundPoints ?? null);
         setTransfersLocked(isRoundActive(selectedRound));
         clearPendingRoundHydration();
 
@@ -974,6 +980,26 @@ export default function ManagerMyTeamPage() {
     () => calculateRemainingBudget(squadPlayers, budgetCapMillions),
     [budgetCapMillions, squadPlayers],
   );
+
+  const displayTeamTotalPoints = useMemo(() => {
+    if (typeof teamTotalPoints === "number") {
+      return teamTotalPoints;
+    }
+
+    const lineupPts = state.lineup.reduce((sum, player) => sum + getPlayerTotalPoints(player), 0);
+    const benchPts = state.bench.reduce((sum, player) => sum + Math.ceil(getPlayerTotalPoints(player) / 2), 0);
+    return lineupPts + benchPts;
+  }, [state.bench, state.lineup, teamTotalPoints]);
+
+  const displayTeamRoundPoints = useMemo(() => {
+    if (typeof teamCurrentRoundPoints === "number") {
+      return teamCurrentRoundPoints;
+    }
+
+    const lineupPts = state.lineup.reduce((sum, player) => sum + getPlayerRoundPoints(player), 0);
+    const benchPts = state.bench.reduce((sum, player) => sum + Math.ceil(getPlayerRoundPoints(player) / 2), 0);
+    return lineupPts + benchPts;
+  }, [state.bench, state.lineup, teamCurrentRoundPoints]);
 
   const marketPlayers = useMemo(() => {
     const { lineupIds, benchIds } = toPersistedIds(state);
@@ -1199,6 +1225,8 @@ export default function ManagerMyTeamPage() {
         suppressNextPersist.current = true;
         setFormation(hydratedState.formation);
         setState(hydratedState.state);
+        setTeamTotalPoints(teamViewData.teamTotalPoints ?? null);
+        setTeamCurrentRoundPoints(teamViewData.teamCurrentRoundPoints ?? null);
       }
 
       if (persistedResolvedTransfers.length > 0) {
@@ -1522,16 +1550,16 @@ export default function ManagerMyTeamPage() {
         <section className="card col-8">
           <div className="team-topbar" aria-label="Team overzicht">
             <div className="team-topbar__metric team-topbar__metric--left">
-              <span>Resterende waarde</span>
-              <strong>€ {remainingBudget.toFixed(1)}M</strong>
+              <span>Totaal punten</span>
+              <strong>{displayTeamTotalPoints}</strong>
             </div>
             <div className="team-topbar__metric team-topbar__metric--center">
-              <span>Totaal punten</span>
-              <strong>{(() => {
-                const lineupPts = state.lineup.reduce((sum, p) => sum + getPlayerTotalPoints(p), 0);
-                const benchPts = state.bench.reduce((sum, p) => sum + Math.ceil(getPlayerTotalPoints(p) / 2), 0);
-                return lineupPts + benchPts;
-              })()}</strong>
+              <span>Ronde punten</span>
+              <strong>{displayTeamRoundPoints}</strong>
+            </div>
+            <div className="team-topbar__metric team-topbar__metric--right">
+              <span>Resterende waarde</span>
+              <strong>€ {remainingBudget.toFixed(1)}M</strong>
             </div>
             <label className="formation-select team-topbar__formation">
               <span>Formatie</span>
