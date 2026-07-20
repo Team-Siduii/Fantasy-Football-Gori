@@ -3157,7 +3157,18 @@ select {
 /* Mobile responsive */
 @media (max-width: 620px) {
   .league-row {
-    grid-template-columns: 2rem minmax(0, 1fr) auto auto;
+    grid-template-columns: 2rem minmax(0, 1fr) max-content max-content max-content;
+  }
+
+  .league-row--header .league-col {
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+  }
+
+  .league-col--action,
+  .league-col--round,
+  .league-col--points {
+    min-width: 0;
   }
 
   .league-col--round {
