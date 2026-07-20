@@ -453,9 +453,10 @@ describe("wk player scoring", () => {
     expect(roundAdvancementMap.get(302)).toBe(0);
     expect(roundAdvancementMap.get(303)).toBe(5);
     expect(roundPointsMap.get(301)).toBe(7);
-    expect(roundPointsMap.get(302)).toBe(2.5);
+    expect(roundPointsMap.get(302)).toBe(3);
     expect(roundPointsMap.get(303)).toBe(13);
     expect(calculated.get(301)).toMatchObject({ round: 8, roundPoints: 4, teamName: "Engeland" });
+    expect(calculated.get(302)).toMatchObject({ round: 8, roundPoints: 3, teamName: "Frankrijk" });
     expect(calculated.get(303)).toMatchObject({ round: 8, roundPoints: 8, teamName: "Argentinië" });
   });
 
@@ -527,7 +528,7 @@ describe("wk player scoring", () => {
     const roundPointsMap = await wkPlayerScoring.buildWkPlayerRoundPointsMap(8);
     const roundAdvancementMap = await wkPlayerScoring.buildWkPlayerRoundAdvancementPointsMap(8);
 
-    expect(roundPointsMap.get(401)).toBe(7.5);
+    expect(roundPointsMap.get(401)).toBe(8);
     expect(roundAdvancementMap.get(401)).toBe(3);
     expect(roundPointsMap.get(402)).toBe(8);
     expect(roundAdvancementMap.get(402)).toBe(5);

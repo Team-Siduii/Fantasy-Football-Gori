@@ -159,6 +159,23 @@ function scaleEventPoints(input: {
   return input.points;
 }
 
+function normalizeSharedFinalRoundPoints(input: {
+  round: number;
+  teamName: string | null | undefined;
+  roundPoints: number;
+  sharedFinalRound: SharedFinalRoundContext;
+}) {
+  if (
+    input.sharedFinalRound.useSharedFinalRound
+    && input.round === 8
+    && isTeamInSet(input.teamName, input.sharedFinalRound.thirdPlaceTeams)
+  ) {
+    return Math.ceil(input.roundPoints);
+  }
+
+  return input.roundPoints;
+}
+
 function buildMetadataMaps(rows: WkPlayerPointRow[], useSharedFinalRound: boolean) {
   const latestByPlayerId = new Map<number, WkPlayerPointRow>();
   const byPlayerRound = new Map<string, WkPlayerPointRow>();
@@ -386,10 +403,16 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
       }
 
       const pointEvents = playerEventsForRound.get(fantasyplayerId) ?? [];
-      const roundPoints = calculateWkPlayerRoundPointsFromEvents({
+      const rawRoundPoints = calculateWkPlayerRoundPointsFromEvents({
         events: pointEvents,
         position: metadata.position,
         positionNl: metadata.position_nl,
+      });
+      const roundPoints = normalizeSharedFinalRoundPoints({
+        round,
+        teamName: metadata.team_name,
+        roundPoints: rawRoundPoints,
+        sharedFinalRound,
       });
       const roundAdvancementPoints = calculateWkPlayerRoundAdvancementPoints({
         round,
