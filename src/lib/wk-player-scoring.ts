@@ -71,15 +71,92 @@ function hasLegacyFinalRound(matches: WkMatchRow[]) {
   return matches.some((match) => match.round >= 9);
 }
 
+type SharedFinalRoundContext = {
+  useSharedFinalRound: boolean;
+  thirdPlaceTeams: Set<string>;
+  finalTeams: Set<string>;
+};
+
+function buildSharedFinalRoundContext(matches: WkMatchRow[]): SharedFinalRoundContext {
+  const thirdPlaceTeams = new Set<string>();
+  const finalTeams = new Set<string>();
+
+  const addTeams = (target: Set<string>, match: WkMatchRow) => {
+    if (!isPlaceholderKnockoutLabel(match.home_team)) {
+      target.add(match.home_team);
+    }
+    if (!isPlaceholderKnockoutLabel(match.away_team)) {
+      target.add(match.away_team);
+    }
+  };
+
+  if (hasLegacyFinalRound(matches)) {
+    for (const match of matches) {
+      if (match.round === 8) {
+        addTeams(thirdPlaceTeams, match);
+      }
+      if (match.round === 9) {
+        addTeams(finalTeams, match);
+      }
+    }
+
+    return {
+      useSharedFinalRound: true,
+      thirdPlaceTeams,
+      finalTeams,
+    };
+  }
+
+  const roundEightMatches = matches
+    .filter((match) => match.round === 8)
+    .sort((a, b) => {
+      const kickoffA = a.kickoff_at ? new Date(a.kickoff_at).getTime() : Number.MAX_SAFE_INTEGER;
+      const kickoffB = b.kickoff_at ? new Date(b.kickoff_at).getTime() : Number.MAX_SAFE_INTEGER;
+      if (kickoffA !== kickoffB) {
+        return kickoffA - kickoffB;
+      }
+      return a.match_id - b.match_id;
+    });
+
+  if (roundEightMatches.length >= 2) {
+    addTeams(thirdPlaceTeams, roundEightMatches[0]);
+    addTeams(finalTeams, roundEightMatches[roundEightMatches.length - 1]);
+
+    return {
+      useSharedFinalRound: true,
+      thirdPlaceTeams,
+      finalTeams,
+    };
+  }
+
+  return {
+    useSharedFinalRound: false,
+    thirdPlaceTeams,
+    finalTeams,
+  };
+}
+
+function isTeamInSet(teamName: string | null | undefined, set: Set<string>) {
+  if (!teamName) {
+    return false;
+  }
+  return set.has(teamName);
+}
+
 function getLogicalRound(rawRound: number, useSharedFinalRound: boolean) {
   return useSharedFinalRound ? normalizeWkCompetitionRound(rawRound) : rawRound;
 }
 
-function scaleEventPoints(rawRound: number, points: number, useSharedFinalRound: boolean) {
-  if (useSharedFinalRound && rawRound === 8) {
-    return points / 2;
+function scaleEventPoints(input: {
+  rawRound: number;
+  points: number;
+  teamName: string | null | undefined;
+  sharedFinalRound: SharedFinalRoundContext;
+}) {
+  if (input.sharedFinalRound.useSharedFinalRound && input.rawRound === 8 && isTeamInSet(input.teamName, input.sharedFinalRound.thirdPlaceTeams)) {
+    return input.points / 2;
   }
-  return points;
+  return input.points;
 }
 
 function buildMetadataMaps(rows: WkPlayerPointRow[], useSharedFinalRound: boolean) {
@@ -103,15 +180,29 @@ function buildMetadataMaps(rows: WkPlayerPointRow[], useSharedFinalRound: boolea
   return { latestByPlayerId, byPlayerRound };
 }
 
-function groupEventsByRoundAndPlayer(events: WkPlayerEventRow[], useSharedFinalRound: boolean) {
+function groupEventsByRoundAndPlayer(
+  events: WkPlayerEventRow[],
+  sharedFinalRound: SharedFinalRoundContext,
+  byPlayerRound: Map<string, WkPlayerPointRow>,
+  latestByPlayerId: Map<number, WkPlayerPointRow>,
+) {
   const grouped = new Map<number, Map<number, PlayerPointEvent[]>>();
   for (const event of events) {
-    const logicalRound = getLogicalRound(event.round, useSharedFinalRound);
+    const logicalRound = getLogicalRound(event.round, sharedFinalRound.useSharedFinalRound);
     const byPlayer = grouped.get(logicalRound) ?? new Map<number, PlayerPointEvent[]>();
     const playerEvents = byPlayer.get(event.fantasyplayer_id) ?? [];
+    const teamName = event.team_name
+      ?? byPlayerRound.get(`${event.fantasyplayer_id}:${logicalRound}`)?.team_name
+      ?? latestByPlayerId.get(event.fantasyplayer_id)?.team_name
+      ?? null;
     playerEvents.push({
       eventCode: event.event_code,
-      points: scaleEventPoints(event.round, event.points, useSharedFinalRound),
+      points: scaleEventPoints({
+        rawRound: event.round,
+        points: event.points,
+        teamName,
+        sharedFinalRound,
+      }),
       minute: event.minute,
     });
     byPlayer.set(event.fantasyplayer_id, playerEvents);
@@ -155,7 +246,7 @@ function buildAdvancementBonusByRoundAndTeam(input: {
   matches: WkMatchRow[];
   byPlayerRound: Map<string, WkPlayerPointRow>;
   latestByPlayerId: Map<number, WkPlayerPointRow>;
-  useSharedFinalRound: boolean;
+  sharedFinalRound: SharedFinalRoundContext;
 }) {
   const bonusByRound = new Map<number, Map<string, number>>();
   const explicitAdvancementRounds = new Set<number>();
@@ -165,19 +256,19 @@ function buildAdvancementBonusByRoundAndTeam(input: {
       continue;
     }
 
-    const logicalRound = getLogicalRound(event.round, input.useSharedFinalRound);
+    const logicalRound = getLogicalRound(event.round, input.sharedFinalRound.useSharedFinalRound);
     explicitAdvancementRounds.add(logicalRound);
     const teamName = event.team_name
       ?? input.byPlayerRound.get(`${event.fantasyplayer_id}:${logicalRound}`)?.team_name
       ?? input.latestByPlayerId.get(event.fantasyplayer_id)?.team_name
       ?? null;
-    const bonus = input.useSharedFinalRound && event.round === 8
+    const bonus = input.sharedFinalRound.useSharedFinalRound && event.round === 8 && isTeamInSet(teamName, input.sharedFinalRound.thirdPlaceTeams)
       ? THIRD_PLACE_ADVANCEMENT_BONUS
       : ADVANCEMENT_BONUS;
     setRoundTeamBonus(bonusByRound, logicalRound, teamName, bonus);
   }
 
-  if (input.useSharedFinalRound) {
+  if (input.sharedFinalRound.useSharedFinalRound) {
     for (const match of input.matches) {
       if (match.round <= KNOCKOUT_START_ROUND) {
         continue;
@@ -200,10 +291,10 @@ function buildAdvancementBonusByRoundAndTeam(input: {
         if (!winner) {
           continue;
         }
-        if (match.round === 8) {
+        if (match.round === 8 && isTeamInSet(winner, input.sharedFinalRound.thirdPlaceTeams)) {
           setRoundTeamBonus(bonusByRound, 8, winner, THIRD_PLACE_ADVANCEMENT_BONUS);
         }
-        if (match.round === 9) {
+        if (match.round === 9 || (match.round === 8 && isTeamInSet(winner, input.sharedFinalRound.finalTeams))) {
           setRoundTeamBonus(bonusByRound, 8, winner, ADVANCEMENT_BONUS);
         }
       }
@@ -251,14 +342,14 @@ async function loadWkScoringInputs(effectiveRound: number) {
     getWkPlayerEvents(),
     getWkMatches(),
   ]);
-  const useSharedFinalRound = hasLegacyFinalRound(matches);
+  const sharedFinalRound = buildSharedFinalRoundContext(matches);
   const relevantEvents = events.filter((event) => event.round <= rawCeiling);
 
   return {
     historyRows,
     relevantEvents,
     relevantMatches: matches,
-    useSharedFinalRound,
+    sharedFinalRound,
   };
 }
 
@@ -271,15 +362,15 @@ export async function buildCalculatedWkPlayerPointsMap(maxRound?: number): Promi
     return new Map();
   }
 
-  const { historyRows, relevantEvents, relevantMatches, useSharedFinalRound } = await loadWkScoringInputs(effectiveRound);
-  const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(historyRows, useSharedFinalRound);
-  const groupedEvents = groupEventsByRoundAndPlayer(relevantEvents, useSharedFinalRound);
+  const { historyRows, relevantEvents, relevantMatches, sharedFinalRound } = await loadWkScoringInputs(effectiveRound);
+  const { latestByPlayerId, byPlayerRound } = buildMetadataMaps(historyRows, sharedFinalRound.useSharedFinalRound);
+  const groupedEvents = groupEventsByRoundAndPlayer(relevantEvents, sharedFinalRound, byPlayerRound, latestByPlayerId);
   const bonusByRound = buildAdvancementBonusByRoundAndTeam({
     events: relevantEvents,
     matches: relevantMatches,
     byPlayerRound,
     latestByPlayerId,
-    useSharedFinalRound,
+    sharedFinalRound,
   });
   const totals = new Map<number, CalculatedWkPlayerPoints>();
   const allPlayerIds = Array.from(latestByPlayerId.keys());

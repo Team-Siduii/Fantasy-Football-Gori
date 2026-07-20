@@ -458,4 +458,78 @@ describe("wk player scoring", () => {
     expect(calculated.get(301)).toMatchObject({ round: 8, roundPoints: 4, teamName: "Engeland" });
     expect(calculated.get(303)).toMatchObject({ round: 8, roundPoints: 8, teamName: "Argentinië" });
   });
+
+  it("treats the earliest live round-8 match as troostfinale when the provider no longer emits round 9", async () => {
+    getLatestSyncRound.mockResolvedValueOnce(8);
+    getWkPlayerPointHistory.mockResolvedValue([
+      {
+        fantasyplayer_id: 401,
+        round: 8,
+        name: "Bukayo Saka",
+        team_name: "Engeland",
+        team_code: "ENG",
+        position: "FWD",
+        position_nl: "Aanvaller",
+        value: 12000000,
+        has_played: true,
+        num_played: 8,
+      },
+      {
+        fantasyplayer_id: 402,
+        round: 8,
+        name: "Lamine Yamal",
+        team_name: "Spanje",
+        team_code: "ESP",
+        position: "FWD",
+        position_nl: "Aanvaller",
+        value: 12000000,
+        has_played: true,
+        num_played: 8,
+      },
+    ] as any);
+    getWkPlayerEvents.mockResolvedValue([
+      { fantasyplayer_id: 401, round: 8, event_code: "G", points: 6, minute: 37 },
+      { fantasyplayer_id: 401, round: 8, event_code: "MW", points: 3, minute: null },
+      { fantasyplayer_id: 402, round: 8, event_code: "MW", points: 3, minute: null },
+    ] as any);
+    getWkMatches.mockResolvedValue([
+      {
+        match_id: 103,
+        round: 8,
+        home_team: "Frankrijk",
+        away_team: "Engeland",
+        home_team_code: "FRA",
+        away_team_code: "ENG",
+        home_score: 4,
+        away_score: 6,
+        status: "X",
+        minute: null,
+        kickoff_at: "2026-07-18T23:00:00+02:00",
+        synced_at: "2026-07-18T22:00:00Z",
+      },
+      {
+        match_id: 104,
+        round: 8,
+        home_team: "Spanje",
+        away_team: "Argentinië",
+        home_team_code: "ESP",
+        away_team_code: "ARG",
+        home_score: 1,
+        away_score: 0,
+        status: "X",
+        minute: null,
+        kickoff_at: "2026-07-19T21:00:00+02:00",
+        synced_at: "2026-07-19T22:00:00Z",
+      },
+    ] as any);
+
+    const { wkPlayerScoring } = await loadModules();
+    const roundPointsMap = await wkPlayerScoring.buildWkPlayerRoundPointsMap(8);
+    const roundAdvancementMap = await wkPlayerScoring.buildWkPlayerRoundAdvancementPointsMap(8);
+
+    expect(roundPointsMap.get(401)).toBe(7.5);
+    expect(roundAdvancementMap.get(401)).toBe(3);
+    expect(roundPointsMap.get(402)).toBe(8);
+    expect(roundAdvancementMap.get(402)).toBe(5);
+  });
 });
