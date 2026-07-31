@@ -10,14 +10,20 @@ export type ManagerTradeBudgetValidation = {
   isValid: boolean;
 };
 
-export function buildDraftPickSequence(teamOrder: string[], totalPicks: number): string[] {
+export type DraftOrderType = "snake" | "linear";
+
+export function buildDraftPickSequence(
+  teamOrder: string[],
+  totalPicks: number,
+  orderType: DraftOrderType = "snake",
+): string[] {
   if (teamOrder.length === 0 || totalPicks <= 0) {
     return [];
   }
 
   const forward = [...teamOrder];
   const reverse = [...teamOrder].reverse();
-  const rounds = [forward, forward, reverse];
+  const rounds = orderType === "linear" ? [forward] : [forward, forward, reverse];
 
   const sequence: string[] = [];
   let roundIndex = 0;

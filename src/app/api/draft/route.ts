@@ -69,6 +69,7 @@ export async function POST(request: Request) {
     leagueId?: string;
     teamOrder?: string[];
     totalRounds?: number;
+    orderType?: "snake" | "linear";
     startedBy?: string;
     teamId?: string;
     playerId?: string;
@@ -96,6 +97,7 @@ export async function POST(request: Request) {
         leagueId: body.leagueId,
         teamOrder: body.teamOrder,
         totalRounds: body.totalRounds,
+        orderType: body.orderType,
         startedBy: body.startedBy,
         scope,
       });

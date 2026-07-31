@@ -83,12 +83,12 @@ Per rol belangrijkste rechten:
   - Toegestane formaties: 3-4-3, 3-5-2, 4-3-3, 4-4-2, 5-3-2
 
 ### 4.4 Draft flow
-- Draftvolgorde wordt door admin ingevoerd (op basis van eindstand vorig jaar)
-- Draftpatroon per blok van 3 rondes:
-  - Ronde 1: ingevoerde volgorde (bijv. 1-2-3-4-5)
-  - Ronde 2: ingevoerde volgorde (bijv. 1-2-3-4-5)
-  - Ronde 3: omgekeerde volgorde (bijv. 5-4-3-2-1)
-- Daarmee kiest de nummer laatst van vorig jaar in 2 van elke 3 rondes als eerste
+- Draftvolgorde wordt door admin ingevoerd (op basis van eindstand vorig jaar) en opgeslagen in de league-config als expliciete teamvolgorde van geaccepteerde deelnemers.
+- Draftpatroon is configureerbaar per league:
+  - `snake`: per blok van 3 rondes geldt ingevoerde volgorde, ingevoerde volgorde, daarna omgekeerde volgorde (bijv. 1-2-3-4-5 / 1-2-3-4-5 / 5-4-3-2-1)
+  - `lineair`: elke ronde gebruikt exact dezelfde ingevoerde volgorde (bijv. 1-2-3-4-5 / 1-2-3-4-5 / 1-2-3-4-5)
+- In de instellingen kan de admin geaccepteerde deelnemers omhoog/omlaag zetten om de teamvolgorde vast te leggen; geweigerde of nog niet geaccepteerde deelnemers vallen automatisch buiten de draftvolgorde.
+- In snake-mode kiest de nummer laatst van vorig jaar in 2 van elke 3 rondes als eerste; in lineaire mode blijft de ingestelde volgorde elke ronde gelijk.
 - Draft loopt tot elk team 15 spelers heeft
 - Roster-validatie wordt tijdens draft al afgedwongen: picks worden geblokkeerd als de teamwaarde boven de mode-specifieke transferbudget-cap komt, als de geselecteerde linie-aantallen niet meer binnen één toegestane formatie + vaste bankverdeling passen, of als een manager boven maximaal 2 spelers uit hetzelfde land komt.
 - Elke geldige draftpick wordt direct in My Team ingevuld; de app kiest automatisch de best passende toegestane formatie op basis van de reeds gekozen spelers en plaatst overige geldige spelers op de bank.
@@ -112,7 +112,7 @@ Per rol belangrijkste rechten:
 - WK-draftpagina (`/manager/world-cup/draft`) gebruikt dezelfde draftkamer voor de WK-spelerspool (`/api/players?mode=wk`) met `Land`, waarde, naam en positie als filters. WK-spelerkaarten tonen bij herkende landen een compacte vlagafbeelding linksboven, zodat landherkenning consistent is met de My Team kaartweergave.
 - Draft is bereikbaar via het globale openklapmenu en de mobiele ondernavigatie; in WK mode verwijst Draft naar `/manager/world-cup/draft`, in Eredivisie mode naar `/draft`.
 - De header gebruikt op laptop én mobiel één compacte `Menu`-knop; zonder actieve managersessie toont het menu uitsluitend `Log in`, en na login toont het menu `Mijn team`, `Draft`, `Competitie`, `Instellingen`, `Spelregels` en `CSV import` zodat de kernacties compact en consistent bereikbaar blijven.
-- Oefendraftbeheer zit ingeklapt in de draftkamer: start/reset draft met standaardvolgorde `Johan Swart, Thomas, Jack, Emiel Zomerdijk`, 15 rondes, en return-actie voor testcorrecties.
+- Oefendraftbeheer zit ingeklapt in de draftkamer: start/reset draft met de actuele teamvolgorde en draftmodus uit de league-config (`snake` of `lineair`), het ingestelde aantal rondes, en een return-actie voor testcorrecties.
 - Accountpagina (`/account`) bevat managernaam, teamnaam en wachtwoordbeheer; managernaam/teamnaam worden gebruikt voor herkenning in de draftkamer.
 
 ### 4.5 Transfers (kern van MVP)

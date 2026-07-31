@@ -31,6 +31,7 @@ describe("league admin config", () => {
 
     expect(wk.competition.name).toBe("WK 2026");
     expect(wk.draft.totalRounds).toBe(15);
+    expect(wk.draft.orderType).toBe("snake");
     expect(wk.participants).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ managerId: "johan-swart", label: "Johan Swart", status: "ACCEPTED" }),
@@ -39,14 +40,19 @@ describe("league admin config", () => {
     );
   });
 
-  it("bouwt draft setup alleen uit geaccepteerde deelnemers", () => {
+  it("bewaart draft order type en geforceerde teamvolgorde alleen voor geaccepteerde deelnemers", () => {
     const updated = updateLeagueAdminConfig(
       {
         competition: {
           ...getLeagueAdminConfig("wk").competition,
           name: "WK Familie Poule",
         },
-        draft: { totalRounds: 12, mode: "admin" },
+        draft: {
+          totalRounds: 12,
+          mode: "admin",
+          orderType: "linear",
+          teamOrder: ["jack-van-der-reep", "johan-swart", "thomas-bart", "emiel-zomerdijk"],
+        },
         participants: [
           { managerId: "johan-swart", label: "Johan Swart", email: "Johan201@hotmail.com", status: "ACCEPTED" },
           { managerId: "thomas-bart", label: "Thomas", email: "Thomasbart91@gmail.com", status: "REJECTED" },
@@ -59,6 +65,14 @@ describe("league admin config", () => {
 
     expect(updated.competition.name).toBe("WK Familie Poule");
     expect(updated.draft.totalRounds).toBe(12);
+    expect(updated.draft.orderType).toBe("linear");
+    expect(updated.draft.teamOrder).toEqual([
+      "johan-swart",
+      "emiel-zomerdijk",
+      "sim-duindam",
+      "ice-eckmund",
+      "admin",
+    ]);
     expect(updated.participants.slice(0, 4).map((participant) => participant.status)).toEqual(["ACCEPTED", "REJECTED", "PENDING", "ACCEPTED"]);
     expect(updated.participants.filter((participant) => participant.status === "ACCEPTED").map((participant) => participant.label)).toEqual(
       expect.arrayContaining(["Johan Swart", "Emiel Zomerdijk"]),
