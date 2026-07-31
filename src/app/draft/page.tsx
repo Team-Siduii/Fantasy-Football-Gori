@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { getDraftPlayerDisplayMeta } from "@/lib/draft-player-display";
+import { getClubBranding } from "@/lib/club-branding";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
 import { PlayerCard } from "@/components/player-card";
 import { getTransferBudgetCapMillions } from "@/domain/team-budget";
@@ -588,11 +589,15 @@ export default function DraftPage() {
                   <div key={ri} className="pitch-row" data-size={row.length}>
                     {row.map((player, ci) => {
                       if (player) {
+                        const branding = getClubBranding(player.club);
                         return (
                           <PlayerCard
                             key={player.id}
                             position={player.positie}
                             club={player.club}
+                            brandLabel={branding?.badgeCode}
+                            brandTitle={branding?.canonicalName}
+                            shirtClass={branding?.shirtClass}
                             name={player.naam}
                             pointsLabel={`€${player.prijs.toFixed(1)}M`}
                           />

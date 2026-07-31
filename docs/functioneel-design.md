@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-07-18
+Laatste update: 2026-07-31
 
 ## 1. Productvisie
 Doel van de app:
@@ -108,7 +108,7 @@ Per rol belangrijkste rechten:
 - In `Mijn competitie` staat `Bekijk` als compacte aparte actieknop in een eigen kolom direct achter de teamnaam. De teamnaamcel zelf blijft daardoor smal/leesbaar en de rankingkolommen blijven op mobiel en desktop stabiel uitgelijnd. Op mobiel blijft de leaderboard bovendien altijd één vaste 5-koloms rij (`#`, `Team`, `Actie`, `Ronde`, `Totaal`) zonder wrap van de totaalkolom of totaalscore naar een volgende regel.
 - `Mijn competitie` gebruikt een compact leaderboard-card design met samenvattingsheader (competitienaam, aantal teams, eigen positie) en een subtiele `Jij`-badge + sterkere row-highlight voor de ingelogde manager.
 - Draft-pick is turn-based en atomisch: alleen actieve team aan beurt mag picken; dezelfde speler kan niet 2x gepickt worden binnen de actieve mode.
-- Eredivisie-draftpagina (`/draft`) is een beschermde manager-draftkamer met live beurtindicator, picknummer/ronde, spelerkaarten, club/waarde/naam/positie-filters, bevestigingsbalk, eigen selectie, alle teamrosters en pickhistorie.
+- Eredivisie-draftpagina (`/draft`) is een beschermde manager-draftkamer met live beurtindicator, picknummer/ronde, spelerkaarten, club/waarde/naam/positie-filters, bevestigingsbalk, eigen selectie, alle teamrosters en pickhistorie. Eredivisie-kaarten tonen bovendien per herkende club een compacte clubbadge + shirticoon zodat alle 2026/2027 clubs visueel consistent herkenbaar zijn.
 - WK-draftpagina (`/manager/world-cup/draft`) gebruikt dezelfde draftkamer voor de WK-spelerspool (`/api/players?mode=wk`) met `Land`, waarde, naam en positie als filters. WK-spelerkaarten tonen bij herkende landen een compacte vlagafbeelding linksboven, zodat landherkenning consistent is met de My Team kaartweergave.
 - Draft is bereikbaar via het globale openklapmenu en de mobiele ondernavigatie; in WK mode verwijst Draft naar `/manager/world-cup/draft`, in Eredivisie mode naar `/draft`.
 - De header gebruikt op laptop én mobiel één compacte `Menu`-knop; zonder actieve managersessie toont het menu uitsluitend `Log in`, en na login toont het menu `Mijn team`, `Draft`, `Competitie`, `Instellingen`, `Spelregels` en `CSV import` zodat de kernacties compact en consistent bereikbaar blijven.
@@ -201,7 +201,7 @@ Per rol belangrijkste rechten:
 - Demo-team (testseed) wordt per actieve mode binnen budget opgebouwd (Eredivisie <= €32.0M, WK <= €100.0M) zodat testen direct valide start
 - Mobiele volgorde op Team-pagina: basiselftal eerst, daarna wisselspelers, daarna statistiektegels
 - Spelerkaart-onderregel toont de transferprijs van de speler (format `€ x.xxM`) in plaats van puntenlabel.
-- Spelerkaart-bovenregel toont links de landenvlag en rechts de landafkorting in hoofdletters (ISO-2) voor basiselftal en wisselspelers; open slots tonen bovenin geen tekst.
+- Spelerkaart-bovenregel toont in WK-mode links de landenvlag en rechts de landafkorting in hoofdletters (ISO-2); in Eredivisie-mode tonen spelerkaarten een compacte clubbadge met shirticoon voor alle ondersteunde clubs. Open slots tonen bovenin geen tekst.
 - Open slots tonen in de onderste regel geen prijslabel en in de naamregel geen placeholdertekst.
 - Naam- en waarderegel op spelerskaarten zijn gecentreerd uitgelijnd.
 - Alle spelerskaarten gebruiken vaste rijhoogtes zodat gevulde slots en open slots exact dezelfde kaartgrootte behouden.
@@ -337,6 +337,7 @@ FR-071: Deploy-config ondersteunt optionele gescheiden storage paths via `MANAGE
 FR-072: Instellingenpagina toont een debug-sectie met het actieve state-opslagpad voor Eredivisie mode en WK mode zodat runtime-config snel te verifiëren is.
 FR-073: In WK mode gebruikt de manager-UI overal de term `Land` waar Eredivisie mode `Club` toont (filters, zoeklabel en sorteerkolom) zonder gedragswijziging van filtering/sortering.
 FR-074: Players API ondersteunt mode-specifieke datasets: Eredivisie laadt `data/players.csv` (gevuld vanuit Coach van het Jaar seizoen 2026/2027 met `id/naam/club/positie/prijs/isActive`), WK mode laadt `data/players-wk.csv` via `GET /api/players?mode=wk`.
+FR-074a: Eredivisie-spelerkaarten in `Mijn team`, `Bekijk team` en de draft-preview gebruiken één gedeelde club-brandingmapping (badgecode + shirtkleur) zodat alle herkende 2026/2027 clubs consistent hetzelfde visuele clubsignaal tonen, inclusief aliassen zoals `Go Ahead Eagles` en `SC Heerenveen`.
 FR-075: WK demo-draft dataset is opgebouwd uit de meest recente nationale wedstrijdselecties waar beschikbaar, met fallback op landpagina-selecties, en gebruikt transferwaardeschaal met maximum €4.5M voor topspelers.
 FR-076: Transfermarkt is gepagineerd voor zowel Eredivisie als WK mode, met navigatieknoppen en paginastatus op basis van de actieve filter/sorteerset.
 FR-077: Instellingen voor league-config zijn mode-specifiek: Eredivisie en WK laden/schrijven elk naar een eigen configscope (`mode=eredivisie|wk`) met gescheiden opslagpad en onafhankelijke regels.
@@ -526,6 +527,7 @@ Waarom zo:
 - [ ] In WK mode zijn alle transfermarkt-termen mode-correct: `Land`, `Alle landen`, `Zoek speler/land` en kolomheader `Land`; in Eredivisie mode blijft dit `Club`
 - [ ] WK mode laadt een eigen spelersdataset via `GET /api/players?mode=wk` (`data/players-wk.csv`) en Eredivisie blijft `data/players.csv` gebruiken
 - [ ] Eredivisie `data/players.csv` bevat de volledige Coach van het Jaar 2026/2027 spelerspool (473 spelers, 18 clubs) inclusief `actief` status zodat dummy/demo spelers nergens meer als standaarddataset terugkomen
+- [ ] Eredivisie-spelerkaarten in `Mijn team`, `Bekijk team` en de draft-preview tonen voor alle ondersteunde clubs een consistente compacte clubbadge + shirticoon, ook wanneer brondata langere aliassen zoals `Go Ahead Eagles`, `SC Heerenveen` of `FC Utrecht` gebruikt
 - [ ] WK demo-draft spelers bevatten deelnemende landen en realistische waardes met bovengrens €4.5M voor topspelers
 - [ ] Transfermarkt is gepagineerd in zowel Eredivisie als WK mode (vorige/volgende + pagina-indicator boven én onder de tabel) en reset naar pagina 1 bij filter/sorteerwijzigingen
 - [ ] Algemene spelerspoule in transfermarkt toont een zichtbare kolom `Punten`; spelers zonder actuele WKCoach-waarde tonen daarin expliciet `0`
@@ -580,6 +582,7 @@ Waarom zo:
 - [x] WK draftpicks worden direct naar de gekoppelde manager-state van de WK Team-pagina gesynchroniseerd; terugzetten van een speler ruimt het teamoverzicht ook op. Een nieuwe/reset oefendraft leegt eerst bestaande draftrosters en gekoppelde teamoverzichten voor de betreffende mode.
 - [x] Admin kan per mode competitienaam, draft-rondes en deelnemersstatus beheren; de zichtbare oefendraftkaart gebruikt alleen geaccepteerde deelnemers als draftvolgorde.
 - [x] Mobiele retry-flow voor transfers blijft viewport-safe: queue-samenvatting gebruikt 2 kolommen, retry-banner blijft leesbaar en queue/undo-regels veroorzaken geen horizontale overflow.
+- [x] Eredivisie-clubbranding voor spelerkaarten gebruikt een gedeelde alias-veilige mapping zodat badgecodes/shirticonen voor alle ondersteunde clubs consistent blijven tussen draft-preview, `Mijn team` en `Bekijk team`.
 
 ## 13. Besluitenlog
 - 2026-04-16: Repo + Vercel + baseline workflow opgezet.
@@ -611,6 +614,7 @@ Waarom zo:
 - 2026-07-18: WK prijsnormalisatie vastgezet op importwaarde min €3.0M over alle transfer- en budget-readpaden (`/api/players?mode=wk`, `/api/wk/players`, `my-team/view-team`, rankings, draft en transfer-round context), zodat spelersprijzen, squad cost en resterende waarde overal dezelfde verlaagde WK-lijn gebruiken; daarnaast is de Team-programmabox in ronde 8 gepolijst met compacte gecentreerde badges voor `Finale`/`Troostfinale` zonder extra wedstrijdtekst.
 - 2026-07-18: WK `Mijn team` en `Bekijk team` kiezen zonder expliciete round-param standaard de laatst afgeronde WK-ronde als read-model basis. Daardoor blijven voor alle managers de ronde-7 punten zichtbaar zolang ronde 8 nog niet is begonnen, ook als er al een toekomstige ronde-8 snapshot bestaat.
 - 2026-07-18: WK `Mijn team` gebruikt in de bovenste metric-regel nu dezelfde server-read-model scorebron als ranking en `Bekijk team`: `Totaal punten` staat links als primaire topline, `Ronde punten` staat daarnaast expliciet zichtbaar, en alleen bij ontbrekende servertotalen valt de UI nog terug op de oude lokale basis+halve-bank berekening.
+- 2026-07-31: Eredivisie-spelerkaarten gepolijst met gedeelde club-brandingmapping (badgecode + shirticoon) voor `Mijn team`, `Bekijk team` en draft-preview, inclusief alias-normalisatie voor clubnamen zoals `Go Ahead Eagles`, `SC Heerenveen` en `FC Utrecht`.
 - 2026-07-18: WK draft/roster self-heal behandelt speelbare onderbezette squadrons (11 starters + 0-4 bankspelers) nu als legitieme historische state. Daardoor wordt een geldige 13-man ronde-snapshot niet meer automatisch terug opgeblazen naar een oude 15-man draftfallback, en mag team-roster waarheid een stale draft-My-Team overschrijven wanneer de zichtbare state nog exact op de oude draftselectie staat.
 - 2026-04-21: Transferlimiet-gedrag in Team-flow aangepast: in bonusrondes (3 transfers) mogen managers eerst meerdere spelers verkopen (tot 3 open placeholders) voordat kopen verplicht is; in 1-transferrondes blijft direct vervangen na 1 verkoop vereist.
 - 2026-06-11: Brandblus-fix op lege My Team na draft: manager-state self-heal gebruikt nu account/participant-profiel-aliasen én valt terug op persistente draft-picks als team-roster-state ontbreekt; lokale auth-state typo voor Jack gecorrigeerd van `.con` naar `.com`.

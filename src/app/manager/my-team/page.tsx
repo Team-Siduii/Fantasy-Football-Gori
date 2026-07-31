@@ -1603,6 +1603,9 @@ export default function ManagerMyTeamPage() {
                         draggable={!player.id.startsWith("open-")}
                         position={cardMeta.flag}
                         club={cardMeta.countryCode}
+                        brandLabel={cardMeta.brandLabel}
+                        brandTitle={cardMeta.brandTitle}
+                        shirtClass={cardMeta.shirtClass}
                         name={cardMeta.displayName}
                         pointsLabel={cardMeta.priceLabel}
                         advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 && selectedRound !== null && selectedRound >= 3 ? `⚡+${player.advancementPoints}` : null}
@@ -1653,6 +1656,9 @@ export default function ManagerMyTeamPage() {
                   draggable={!player.id.startsWith("open-")}
                   position={cardMeta.flag}
                   club={cardMeta.countryCode}
+                  brandLabel={cardMeta.brandLabel}
+                  brandTitle={cardMeta.brandTitle}
+                  shirtClass={cardMeta.shirtClass}
                   name={player.naam}
                   pointsLabel={cardMeta.priceLabel}
                   advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 && selectedRound !== null && selectedRound >= 3 ? `⚡+${player.advancementPoints}` : null}

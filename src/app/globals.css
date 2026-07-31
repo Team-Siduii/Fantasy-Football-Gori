@@ -1334,6 +1334,41 @@ select {
   margin-right: 0.15rem;
 }
 
+.player-brand-badge {
+  position: absolute;
+  top: 0.18rem;
+  left: 0.28rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  padding: 0.14rem 0.36rem 0.14rem 0.18rem;
+  border-radius: 999px;
+  background: rgba(7, 23, 56, 0.9);
+  color: #f5f8ff;
+  box-shadow: 0 4px 10px rgba(10, 20, 44, 0.22);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.player-brand-badge .team-shirt {
+  width: 0.78rem;
+  height: 0.72rem;
+  border-color: rgba(255, 255, 255, 0.36);
+}
+
+.player-brand-badge__label {
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.player-card--bench-row .player-brand-badge {
+  top: 0.15rem;
+  left: 0.18rem;
+  padding-right: 0.28rem;
+}
+
 .player-top {
   padding: 0.2rem 0.4rem;
   display: flex;
