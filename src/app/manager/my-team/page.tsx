@@ -306,6 +306,9 @@ function toPersistedIds(state: ZoneState<EnhancedPlayer>) {
 
 const CLUB_CODE: Record<string, string> = {
   Telstar: "TEL",
+  'ADO Den Haag': "ADO",
+  Cambuur: "CAM",
+  'Willem II': "WIL",
   Sparta: "SPA",
   'Go Ahead': "GAE",
   AZ: "AZ",
@@ -375,6 +378,9 @@ const CLUB_CODE: Record<string, string> = {
 
 const CLUB_SHIRT: Record<string, string> = {
   Telstar: "tel",
+  'ADO Den Haag': "ado",
+  Cambuur: "cam",
+  'Willem II': "wil",
   Sparta: "spa",
   'Go Ahead': "gae",
   AZ: "az",

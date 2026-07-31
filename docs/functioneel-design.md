@@ -336,7 +336,7 @@ FR-070: Manager-state persistence is competitiegescheiden: Eredivisie mode en WK
 FR-071: Deploy-config ondersteunt optionele gescheiden storage paths via `MANAGER_STATE_PATH` (Eredivisie) en `MANAGER_STATE_WK_PATH` (WK) voor veilige runtime-isolatie.
 FR-072: Instellingenpagina toont een debug-sectie met het actieve state-opslagpad voor Eredivisie mode en WK mode zodat runtime-config snel te verifiëren is.
 FR-073: In WK mode gebruikt de manager-UI overal de term `Land` waar Eredivisie mode `Club` toont (filters, zoeklabel en sorteerkolom) zonder gedragswijziging van filtering/sortering.
-FR-074: Players API ondersteunt mode-specifieke datasets: Eredivisie laadt `data/players.csv`, WK mode laadt `data/players-wk.csv` via `GET /api/players?mode=wk`.
+FR-074: Players API ondersteunt mode-specifieke datasets: Eredivisie laadt `data/players.csv` (gevuld vanuit Coach van het Jaar seizoen 2026/2027 met `id/naam/club/positie/prijs/isActive`), WK mode laadt `data/players-wk.csv` via `GET /api/players?mode=wk`.
 FR-075: WK demo-draft dataset is opgebouwd uit de meest recente nationale wedstrijdselecties waar beschikbaar, met fallback op landpagina-selecties, en gebruikt transferwaardeschaal met maximum €4.5M voor topspelers.
 FR-076: Transfermarkt is gepagineerd voor zowel Eredivisie als WK mode, met navigatieknoppen en paginastatus op basis van de actieve filter/sorteerset.
 FR-077: Instellingen voor league-config zijn mode-specifiek: Eredivisie en WK laden/schrijven elk naar een eigen configscope (`mode=eredivisie|wk`) met gescheiden opslagpad en onafhankelijke regels.
@@ -525,6 +525,7 @@ Waarom zo:
 - [ ] Instellingenpagina toont zichtbare debug-regels met actieve state-opslagpaden voor Eredivisie en WK
 - [ ] In WK mode zijn alle transfermarkt-termen mode-correct: `Land`, `Alle landen`, `Zoek speler/land` en kolomheader `Land`; in Eredivisie mode blijft dit `Club`
 - [ ] WK mode laadt een eigen spelersdataset via `GET /api/players?mode=wk` (`data/players-wk.csv`) en Eredivisie blijft `data/players.csv` gebruiken
+- [ ] Eredivisie `data/players.csv` bevat de volledige Coach van het Jaar 2026/2027 spelerspool (473 spelers, 18 clubs) inclusief `actief` status zodat dummy/demo spelers nergens meer als standaarddataset terugkomen
 - [ ] WK demo-draft spelers bevatten deelnemende landen en realistische waardes met bovengrens €4.5M voor topspelers
 - [ ] Transfermarkt is gepagineerd in zowel Eredivisie als WK mode (vorige/volgende + pagina-indicator boven én onder de tabel) en reset naar pagina 1 bij filter/sorteerwijzigingen
 - [ ] Algemene spelerspoule in transfermarkt toont een zichtbare kolom `Punten`; spelers zonder actuele WKCoach-waarde tonen daarin expliciet `0`
@@ -724,5 +725,6 @@ Waarom zo:
 - 2026-06-08: Draft guardrails compleet gemaakt: server-side picks blokkeren nu ook land-stacking boven 2 spelers per land en eisen dat de volledige gekozen linie-mix binnen één toegestane formatie + bank past; geldige picks syncen direct naar My Team met automatische formatiekeuze en lineup/bank-vulling.
 - 2026-06-11: Mbappé hardcoded demo-punten verwijderd; transfermarkt-spelerspoule toont nu een expliciete `Punten`-kolom en spelers zonder actuele WKCoach-sync blijven zichtbaar op `0` totdat echte punten binnenkomen.
 - 2026-07-08: WK read-API’s zijn gehard tegen tijdelijke database/scoring-store storingen; `/api/wk/players`, `/api/wk/matches`, `/api/wk/player-points` en `/api/players?mode=wk` geven nu een non-breaking fallback (`syncStatus` + lege/CSV-data) terug in plaats van de managerflow met HTTP 500 te breken.
+- 2026-07-31: Eredivisie standaardspelersdataset vervangen door de volledige Coach van het Jaar 2026/2027 spelerspool in `data/players.csv` (473 spelers, 18 clubs) inclusief `actief` status; importscript vastgelegd in `scripts/fetch-cvhj-eredivisie-players.py`.
 - 2026-06-12: My Team hydrateert opgeslagen WK-selecties nu met een compatibele formatie op basis van de echte positieverdeling van de 15 opgeslagen spelers; managers met een verouderde/ongeldige opgeslagen formatie zien daardoor niet langer open slots terwijl hun API-state wel 15 spelers bevat, en de UI self-healt de correcte formatie terug naar `manager-state`.
 - 2026-06-15: WK-puntenarchitectuur herbouwd naar database-only read models: `team-score-state` bewaart behaalde punten per manager/per ronde, rankings en teamweergaves lezen die persistente scorelaag, en WK-spelerpunten worden opnieuw afgeleid uit opgeslagen WKCoach `point_events` met een extra clean-sheet-correctie voor verdedigers.

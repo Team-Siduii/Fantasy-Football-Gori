@@ -540,6 +540,9 @@ a {
 
 .team-shirt--default { background: linear-gradient(90deg, #7a879d 0 50%, #c4ccd8 50% 100%); }
 .team-shirt--tel { background: linear-gradient(90deg, #f4f5f7 0 48%, #1a2f5c 48% 52%, #f4f5f7 52% 100%); }
+.team-shirt--ado { background: linear-gradient(90deg, #f0d25f 0 14%, #2f8b57 14% 86%, #f0d25f 86% 100%); }
+.team-shirt--cam { background: repeating-linear-gradient(90deg, #f6d648 0 25%, #11151c 25% 50%); }
+.team-shirt--wil { background: repeating-linear-gradient(90deg, #d12a33 0 25%, #1d4fa3 25% 50%); }
 .team-shirt--spa { background: repeating-linear-gradient(90deg, #ffffff 0 25%, #cd3832 25% 50%); }
 .team-shirt--gae { background: repeating-linear-gradient(90deg, #ffffff 0 25%, #c72f2f 25% 50%); }
 .team-shirt--az { background: linear-gradient(90deg, #0e1117 0 50%, #d8dde7 50% 100%); }

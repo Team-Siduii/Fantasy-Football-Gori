@@ -35,10 +35,10 @@ describe("parsePlayerCsv", () => {
 
   it("parses Coach van het Jaar header names and normalizes values", () => {
     const csv = [
-      "speler id,speler naam,positie,club,transferwaarde",
-      "1011,Mathijs Menu,Verdediger,AZ,1000000",
-      "383,Gonzalo Crettaz,Keeper,NEC,1750000",
-      "140,Koki Ogawa,Aanvaller,NEC,2250000",
+      "speler id,speler naam,positie,club,transferwaarde,actief",
+      "1011,Mathijs Menu,Verdediger,AZ,1000000,true",
+      "383,Gonzalo Crettaz,Keeper,NEC,1750000,false",
+      "140,Koki Ogawa,Aanvaller,NEC,2250000,true",
     ].join("\n");
 
     const result = parsePlayerCsv(csv);
@@ -50,8 +50,16 @@ describe("parsePlayerCsv", () => {
       club: "AZ",
       positie: "DEF",
       prijs: 1,
+      isActive: true,
     });
-    expect(result.players[1].positie).toBe("GK");
+    expect(result.players[1]).toEqual({
+      id: "383",
+      naam: "Gonzalo Crettaz",
+      club: "NEC",
+      positie: "GK",
+      prijs: 1.75,
+      isActive: false,
+    });
     expect(result.players[2].positie).toBe("FWD");
   });
 
