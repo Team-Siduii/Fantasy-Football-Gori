@@ -88,6 +88,7 @@ Per rol belangrijkste rechten:
   - `snake`: per blok van 3 rondes geldt ingevoerde volgorde, ingevoerde volgorde, daarna omgekeerde volgorde (bijv. 1-2-3-4-5 / 1-2-3-4-5 / 5-4-3-2-1)
   - `lineair`: elke ronde gebruikt exact dezelfde ingevoerde volgorde (bijv. 1-2-3-4-5 / 1-2-3-4-5 / 1-2-3-4-5)
 - In de instellingen kan de admin geaccepteerde deelnemers omhoog/omlaag zetten om de teamvolgorde vast te leggen; geweigerde of nog niet geaccepteerde deelnemers vallen automatisch buiten de draftvolgorde.
+- De instellingen tonen bij de draftmodus direct een preview van ronde 1 t/m 3, zodat de admin visueel ziet hoe `snake` of `lineair` uitpakt voor de actuele teamvolgorde.
 - In snake-mode kiest de nummer laatst van vorig jaar in 2 van elke 3 rondes als eerste; in lineaire mode blijft de ingestelde volgorde elke ronde gelijk.
 - Draft loopt tot elk team 15 spelers heeft
 - Roster-validatie wordt tijdens draft al afgedwongen: picks worden geblokkeerd als de teamwaarde boven de mode-specifieke transferbudget-cap komt, als de geselecteerde linie-aantallen niet meer binnen één toegestane formatie + vaste bankverdeling passen, of als een manager boven maximaal 2 spelers uit hetzelfde land komt.

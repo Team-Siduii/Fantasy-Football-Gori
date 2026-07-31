@@ -103,6 +103,19 @@ function syncDraftTeamOrder(teamOrder: string[], participants: LeagueParticipant
   return [...dedupedPreferred, ...remainingAccepted];
 }
 
+function buildDraftRoundPreview(teamOrder: string[], orderType: DraftOrderType): string[][] {
+  if (teamOrder.length === 0) return [];
+
+  const forward = [...teamOrder];
+  const reverse = [...teamOrder].reverse();
+
+  if (orderType === "linear") {
+    return [forward, forward, forward];
+  }
+
+  return [forward, forward, reverse];
+}
+
 function summarizeImpact(config: LeagueAdminConfig): string[] {
   const modeBudgetText = `Teamwaarde-cap staat op €${config.budget.teamValueCapMillions.toFixed(1)}M in deze mode.`;
   const scoringText =
@@ -136,6 +149,10 @@ export function LeagueConfigEditor() {
   }, [config, initialConfig]);
 
   const impactSummary = useMemo(() => (config ? summarizeImpact(config) : []), [config]);
+  const draftRoundPreview = useMemo(
+    () => (config ? buildDraftRoundPreview(syncDraftTeamOrder(config.draft.teamOrder, config.participants), config.draft.orderType) : []),
+    [config],
+  );
 
   useEffect(() => {
     async function run() {
@@ -391,15 +408,29 @@ export function LeagueConfigEditor() {
                       })
                     }
                   >
-                    <option value="snake">Snake</option>
-                    <option value="linear">Lineair</option>
+                    <option value="snake">Snake draft</option>
+                    <option value="linear">Lineaire draft</option>
                   </select>
                   <span className="field-hint">
                     {config.draft.orderType === "linear"
-                      ? "Elke ronde loopt exact in dezelfde volgorde door."
-                      : "Snake gebruikt heen-en-weer picks zodat de volgorde per cyclus omdraait."}
+                      ? "Lineaire draft: elke ronde loopt exact in dezelfde teamvolgorde door."
+                      : "Snake draft: ronde 1 en 2 volgen de ingestelde volgorde, ronde 3 draait om en daarna herhaalt de cyclus."}
                   </span>
                 </label>
+
+                {draftRoundPreview.length > 0 ? (
+                  <div className="field col-12">
+                    <span className="field-label">Draft preview</span>
+                    <div className="grid" style={{ marginTop: 8 }}>
+                      {draftRoundPreview.map((round, index) => (
+                        <article key={`draft-preview-round-${index + 1}`} className="card col-4 settings-subcard">
+                          <h4>Ronde {index + 1}</h4>
+                          <p className="muted-note">{round.map((managerId) => acceptedParticipants.find((participant) => participant.managerId === managerId)?.label ?? managerId).join(" → ")}</p>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
 
                 <label className="field col-12">
                   <RuleLabel text="Scoring profiel" helpKey="scoringProfile" />
