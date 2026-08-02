@@ -102,3 +102,57 @@ export function getCurrentOrNextRound(fixtures: SeasonFixture[], now: Date): num
 
   return sorted[sorted.length - 1]?.round ?? null;
 }
+
+const DEFAULT_MATCH_DURATION_MS = 2 * 60 * 60 * 1000;
+
+export function getLatestCompletedRound(
+  fixtures: SeasonFixture[],
+  now: Date,
+  matchDurationMs = DEFAULT_MATCH_DURATION_MS,
+): number | null {
+  if (fixtures.length === 0) {
+    return null;
+  }
+
+  const byRound = groupFixturesByRound(fixtures);
+  let latestCompletedRound: number | null = null;
+
+  for (const group of byRound) {
+    const roundFinished = group.fixtures.every((fixture) => {
+      const kickoffAt = new Date(fixture.kickoffAt).getTime();
+      return kickoffAt + matchDurationMs <= now.getTime();
+    });
+
+    if (roundFinished) {
+      latestCompletedRound = group.round;
+    }
+  }
+
+  return latestCompletedRound;
+}
+
+export function getDefaultVisibleRound(
+  fixtures: SeasonFixture[],
+  now: Date,
+  matchDurationMs = DEFAULT_MATCH_DURATION_MS,
+): number | null {
+  if (fixtures.length === 0) {
+    return null;
+  }
+
+  const byRound = groupFixturesByRound(fixtures);
+  const latestStartedRound = [...byRound]
+    .reverse()
+    .find((group) => group.fixtures.some((fixture) => new Date(fixture.kickoffAt).getTime() <= now.getTime()))?.round;
+
+  if (latestStartedRound != null) {
+    return latestStartedRound;
+  }
+
+  const latestCompletedRound = getLatestCompletedRound(fixtures, now, matchDurationMs);
+  if (latestCompletedRound != null) {
+    return latestCompletedRound;
+  }
+
+  return getCurrentOrNextRound(fixtures, now);
+}

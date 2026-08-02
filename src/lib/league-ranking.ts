@@ -6,7 +6,8 @@ import { ensureAuthStateFromDb, getAuthAccountByEmail, getProfileByEmail } from 
 import { getLeagueAdminConfigPersistent } from "./league-admin-config";
 import { readManagerStatePersistent, type ManagerStateScope } from "./manager-state";
 import { summarizeManagerTeamScoresPersistent, summarizeManagerTeamScoresThroughRoundPersistent } from "./team-score-state";
-import { getLatestCompletedWorldCupRound } from "./world-cup-schedule";
+import { getDefaultVisibleRound } from "./season-schedule";
+import { WORLD_CUP_2026_FIXTURES } from "./world-cup-schedule";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
   "s.j.m.duindam@gmail.com": "A",
@@ -18,10 +19,6 @@ const SUBPOULE_BY_EMAIL: Record<string, string> = {
 };
 
 const DEFAULT_BUDGET_CAP = 100;
-
-function getCurrentRoundWk(): number {
-  return getLatestCompletedWorldCupRound();
-}
 
 function normalizeRequestedRound(roundNumber: number | null | undefined) {
   if (!Number.isInteger(roundNumber) || (roundNumber ?? 0) <= 0) {
@@ -78,7 +75,7 @@ export async function buildLeagueRankingSnapshot(
 ): Promise<LeagueRankingSnapshot> {
   await ensureAuthStateFromDb();
 
-  const currentRound = scope === "wk" ? getCurrentRoundWk() : 0;
+  const currentRound = scope === "wk" ? (getDefaultVisibleRound(WORLD_CUP_2026_FIXTURES, new Date()) ?? 0) : 0;
   const normalizedRequestedRound = normalizeRequestedRound(roundNumber);
   const selectedRoundBase = normalizedRequestedRound ?? currentRound;
   const selectedRound = scope === "wk"

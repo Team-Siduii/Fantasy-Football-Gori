@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-07-31
+Laatste update: 2026-08-01
 
 ## 1. Productvisie
 Doel van de app:
@@ -167,6 +167,7 @@ Per rol belangrijkste rechten:
 - Speelrondekaart heeft browsen met links/rechts-knoppen: rechts toont de volgende ronde (programma), links toont de vorige ronde met uitslagen.
 - In WK `Mijn team` is de ronde-selector niet alleen visueel maar ook stateful: per gekozen speelronde worden de opgeslagen basiself, bankvolgorde en formatie exact uit de betreffende round-snapshot geladen (zonder lokale herinterpretatie naar een andere geldige formatie).
 - Als in WK geen expliciete speelronde is gekozen, tonen `Mijn team` en `Bekijk team` standaard altijd de **laatst afgeronde** ronde. Een al aangemaakte toekomstige round-snapshot (bijvoorbeeld ronde 8 vóór de aftrap) mag de zichtbare rondepunten dus nooit naar `0` terugzetten zolang die ronde nog niet is begonnen.
+- In WK `Mijn team` en `Mijn competitie` bepaalt de default round-selectie de zichtbare ronde via het schema: zolang een nieuwe ronde nog niet is afgetrapt, blijft de laatst afgeronde ronde standaard zichtbaar; pas na de eerste aftrap schuift de default-weergave door naar de nieuwe ronde.
 - In WK `Mijn team` worden spelerkaarten per gekozen speelronde opnieuw verrijkt met de puntbron van die ronde (`roundPoints`) terwijl het teamtotaal cumulatief (`totalPoints`) mag blijven; terugbladeren naar een vorige ronde moet dus de toen behaalde spelerpunten tonen.
 - WK advancement points zijn een aparte puntsoort naast match-events: de badge toont **per geselecteerde ronde** alleen de advancement van die ronde (bijv. `⚡+5`), terwijl het cumulatieve spelerstotaal deze advancement wel meeneemt over alle eerdere rondes heen.
 - WK advancement wordt bepaald op **team/land-progressie per ronde** en niet op individuele speelminuten. Als een land doorgaat, krijgt elke speler van dat land dezelfde advancement voor die ronde — ook bankspelers, keepers zonder minuten of niet-ingevallen selectiespelers.
@@ -352,6 +353,7 @@ FR-084: Elke draft `pick`/`return` synchroniseert direct naar persistente team-r
 - FR-085: `/api/manager/state` leest altijd de canonieke managersessie en toont de voor die ronde opgeslagen team-snapshot; eventuele backfills of repairs mogen latere ronde-states niet stilzwijgend via normale read-paths vanuit draft-rosters/picks reconstrueren. Expliciete repair/backfill-flows mogen een aantoonbaar corrupte partial state (bijv. 1 zichtbare speler) wel eenmalig overschrijven wanneer een complete 15-speler bron in team-roster/draft-artifacts beschikbaar is. Legacy email-keyed manager-state mag daarbij nog gelezen en gemigreerd worden, maar nieuwe writes landen altijd op de canonieke manageridentiteit.
 - FR-085a: In WK mode gebruiken `Mijn team`, `Competitie` en `Team bekijken` dezelfde ronde-gebonden manager-state snapshot als canonieke bron voor formatie, basiself en bank. De UI mag een opgeslagen formatie bij normale reads niet lokaal herinterpreteren naar een andere geldige formatie; alleen expliciete manageracties (zoals formatie wisselen of transfers opslaan) mogen de opgeslagen formatie wijzigen.
 - FR-085b: In WK mode gebruikt `Mijn competitie` dezelfde persistente team-score snapshots als `Mijn team`: vóór de start van een nieuwe ronde blijft standaard de laatst gespeelde ronde zichtbaar, en bij handmatige rondenavigatie toont de ranglijst per manager de ronde-score én de toenmalige cumulatieve totaalscore voor de geselecteerde ronde.
+- FR-085c: De default WK-round-selectie op `Mijn team` en `Mijn competitie` is schema-gedreven: een toekomstige ronde-snapshot mag de laatst afgeronde ronde pas overschrijven zodra de eerste wedstrijd van de nieuwe ronde echt is afgetrapt.
 FR-086: Draftfunctionaliteit is een aparte seizoensstart-modus op `/draft`; de reguliere Manager Team-pagina toont geen draft-overzicht of draft-rostercomponent.
 FR-087: Manager Team-pagina focust uitsluitend op eigen teambeheer (opstelling, bank, transfers en ronde-overzicht) en bevat geen cross-team draftcontext.
 FR-088: Flashfootball-adapter normaliseert wedstrijdincidenten naar het interne match/event schema, inclusief FT/HT-score, doelpunten, assists en kaarten met speler-id, minuut en teamcontext.
@@ -498,6 +500,7 @@ Waarom zo:
 - [ ] Basiselftal gebruikt exact de aangeleverde referentie-afbeelding als pitch-achtergrond (`/public/images/pitch-reference.jpg`), met ongewijzigde kaarten/interactie erbovenop
 - [ ] Links/rechts-knoppen browsen speelrondes: rechts toont volgende ronde-programma, links toont vorige ronde met uitslagen
 - [ ] In WK mode toont de speelrondekaart live-stand zodra `wk_matches` een tussenscore heeft en laat dezelfde kaart na afloop de definitieve uitslag staan.
+- [ ] Als een toekomstige WK-ronde al een snapshot heeft maar nog niet is afgetrapt, blijven `Mijn team` én `Mijn competitie` standaard de punten en totalen van de laatst afgeronde ronde tonen; na de eerste aftrap schuift die default-weergave automatisch door naar de nieuwe ronde.
 - [ ] Gespeelde wedstrijden vallen visueel op met grotere/dikgedrukte scoreweergave; live wedstrijden gebruiken accentkleur + subtiele animatie en tonen, zodra beschikbaar, de wedstrijdminuut zonder expliciet "live"-label.
 - [ ] In ronde 8 gebruikt het programma compacte gecentreerde fasebadges (`Finale`, `Troostfinale`) zonder extra wedstrijdtekst tussen haakjes, met een subtiele scheidingsregel tussen beide duels.
 - [ ] Manager-UI blijft mobiel bruikbaar (telefoon/tablet) met responsive header, opstellingskaarten, statistiektegels en bottom navigation
@@ -731,5 +734,6 @@ Waarom zo:
 - 2026-06-11: Mbappé hardcoded demo-punten verwijderd; transfermarkt-spelerspoule toont nu een expliciete `Punten`-kolom en spelers zonder actuele WKCoach-sync blijven zichtbaar op `0` totdat echte punten binnenkomen.
 - 2026-07-08: WK read-API’s zijn gehard tegen tijdelijke database/scoring-store storingen; `/api/wk/players`, `/api/wk/matches`, `/api/wk/player-points` en `/api/players?mode=wk` geven nu een non-breaking fallback (`syncStatus` + lege/CSV-data) terug in plaats van de managerflow met HTTP 500 te breken.
 - 2026-07-31: Eredivisie standaardspelersdataset vervangen door de volledige Coach van het Jaar 2026/2027 spelerspool in `data/players.csv` (473 spelers, 18 clubs) inclusief `actief` status; importscript vastgelegd in `scripts/fetch-cvhj-eredivisie-players.py`.
+- 2026-08-01: WK default round-selectie voor `Mijn team` en `Mijn competitie` is aangescherpt naar de laatst afgeronde ronde totdat de nieuwe ronde echt is afgetrapt. Een toekomstige ronde-snapshot (zoals ronde 8 vóór kickoff) mag de zichtbare rondepunten en totalen dus niet meer voortijdig op `0` zetten.
 - 2026-06-12: My Team hydrateert opgeslagen WK-selecties nu met een compatibele formatie op basis van de echte positieverdeling van de 15 opgeslagen spelers; managers met een verouderde/ongeldige opgeslagen formatie zien daardoor niet langer open slots terwijl hun API-state wel 15 spelers bevat, en de UI self-healt de correcte formatie terug naar `manager-state`.
 - 2026-06-15: WK-puntenarchitectuur herbouwd naar database-only read models: `team-score-state` bewaart behaalde punten per manager/per ronde, rankings en teamweergaves lezen die persistente scorelaag, en WK-spelerpunten worden opnieuw afgeleid uit opgeslagen WKCoach `point_events` met een extra clean-sheet-correctie voor verdedigers.

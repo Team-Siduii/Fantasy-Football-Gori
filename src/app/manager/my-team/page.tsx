@@ -14,7 +14,7 @@ import { getTransferLimitForRound } from "@/domain/rules";
 import { byPriceDesc, enrichPlayers, getPlayerRoundPoints, getPlayerTotalPoints, type EnhancedPlayer } from "@/lib/player-derived";
 import { getCountryFlagImageUrl, withCountryFlag } from "@/lib/country-flags";
 import { getPlayerCardMeta } from "@/lib/player-card-display";
-import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
+import { getCurrentOrNextRound, getDefaultVisibleRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
 import { createLatestRequestTracker } from "@/lib/latest-request";
 import { getWkMatchLiveMinuteLabel, mergeWorldCupFixturesWithSyncedMatches, hasVisibleFixtureScore, isLiveWkMatchStatus, type SyncedWkMatchLike } from "@/lib/wk-match-schedule";
 import { WORLD_CUP_2026_FIXTURES, isRoundActive } from "@/lib/world-cup-schedule";
@@ -585,7 +585,10 @@ export default function ManagerMyTeamPage() {
   const clubsLabel = isWkMode ? "landen" : "clubs";
   const searchLabel = isWkMode ? "Zoek speler/land" : "Zoek speler/club";
   const formationOptions = useMemo(() => getFormationOptions(), []);
-  const currentRound = useMemo(() => getCurrentOrNextRound(activeFixtures, new Date()), [activeFixtures]);
+  const currentRound = useMemo(
+    () => (isWkMode ? getDefaultVisibleRound(activeFixtures, new Date()) : getCurrentOrNextRound(activeFixtures, new Date())),
+    [activeFixtures, isWkMode],
+  );
   const roundNumbers = useMemo(
     () => Array.from(new Set(activeFixtures.map((fixture) => fixture.round))).sort((a, b) => a - b),
     [activeFixtures],
@@ -652,7 +655,7 @@ export default function ManagerMyTeamPage() {
 
       try {
         const initialRound =
-          getCurrentOrNextRound(scheduleFixtures, new Date()) ??
+          (isWkMode ? getDefaultVisibleRound(scheduleFixtures, new Date()) : getCurrentOrNextRound(scheduleFixtures, new Date())) ??
           [...new Set(scheduleFixtures.map((fixture) => fixture.round))].sort((a, b) => a - b)[0] ??
           1;
 
