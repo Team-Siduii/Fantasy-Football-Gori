@@ -86,8 +86,10 @@ vi.mock("@/lib/auth-store", () => ({
   ensureAuthStateFromDb,
 }));
 vi.mock("@/domain/transfer-round", async () => await import("../../src/domain/transfer-round"));
+const validateTransferSquad = vi.fn(() => ({ valid: true, errors: [] }));
+
 vi.mock("@/domain/transfer-validation", () => ({
-  validateTransferSquad: vi.fn(() => ({ valid: true, errors: [] })),
+  validateTransferSquad,
 }));
 vi.mock("@/lib/league-ranking", () => ({
   buildLeagueRankingSnapshot,
@@ -123,6 +125,16 @@ vi.mock("@/domain/player-csv", () => ({
       { id: "buy-1", naam: "Buy One", positie: "DEF", club: "ESP", prijs: 5, punten: 12, inactive: false },
     ],
   })),
+}));
+vi.mock("@/lib/player-bootstrap", () => ({
+  bootstrapPlayersFromDefaultCsv: vi.fn(async () => undefined),
+}));
+vi.mock("@/lib/player-store", () => ({
+  listPlayers: vi.fn(async () => [
+    { id: "sold-1", naam: "Sold One", positie: "DEF", club: "Ajax", prijs: 5, punten: 10 },
+    { id: "auto-1", naam: "Auto Sell", positie: "MID", club: "PSV", prijs: 4, punten: 9 },
+    { id: "buy-1", naam: "Buy One", positie: "DEF", club: "Feyenoord", prijs: 5, punten: 12 },
+  ]),
 }));
 vi.mock("fs/promises", () => ({
   readFile: vi.fn(async () => "id,naam\n1,test"),
@@ -228,5 +240,65 @@ describe("POST /api/manager/transfer-round", () => {
     expect(payload.blockedPlayerIds).not.toContain("sold-1");
     expect(payload.blockedPlayerIds).not.toContain("auto-1");
     expect(saveTransferRoundPersistent).toHaveBeenCalled();
+  });
+
+  it("passes eredivisie scope into transfer validation during buy submission", async () => {
+    readTransferRoundPersistent.mockResolvedValueOnce({
+      roundNumber: 2,
+      phase: "BUY",
+      conflicts: [],
+      updatedAt: "2026-06-18T10:00:00.000Z",
+      entries: [
+        {
+          managerId: "alpha",
+          email: "alpha@gori.local",
+          displayName: "Alpha",
+          teamName: "Alpha FC",
+          subpoule: "A",
+          rankingPosition: 1,
+          sellStatus: "SUBMITTED",
+          sellPlayerId: "sold-1",
+          buyStatus: "PENDING",
+          buyPlayerId: null,
+          resolvedTransfer: null,
+          updatedAt: null,
+        },
+        {
+          managerId: "beta",
+          email: "beta@gori.local",
+          displayName: "Beta",
+          teamName: "Beta FC",
+          subpoule: "A",
+          rankingPosition: 2,
+          sellStatus: "SKIPPED",
+          sellPlayerId: null,
+          buyStatus: "LOCKED",
+          buyPlayerId: null,
+          resolvedTransfer: null,
+          updatedAt: null,
+        },
+      ],
+    });
+
+    const { POST } = await import("../../src/app/api/manager/transfer-round/route");
+    const response = await POST(
+      new Request("http://localhost/api/manager/transfer-round?mode=eredivisie", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "submit-buy",
+          roundNumber: 2,
+          playerIds: ["buy-1"],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(validateTransferSquad).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scope: "eredivisie",
+        soldPlayerId: "sold-1",
+      }),
+    );
   });
 });

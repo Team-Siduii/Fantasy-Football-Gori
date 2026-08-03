@@ -13,12 +13,12 @@ function normalizePosition(position: string): Position | null {
   return normalized === "GK" || normalized === "DEF" || normalized === "MID" || normalized === "FWD" ? normalized : null;
 }
 
-function countPlayersByCountry(players: PlayerRecord[]) {
+function countPlayersByClub(players: PlayerRecord[]) {
   const counts = new Map<string, number>();
   for (const player of players) {
-    const country = player.club.trim().toLowerCase();
-    if (!country) continue;
-    counts.set(country, (counts.get(country) ?? 0) + 1);
+    const club = player.club.trim().toLowerCase();
+    if (!club) continue;
+    counts.set(club, (counts.get(club) ?? 0) + 1);
   }
   return counts;
 }
@@ -44,6 +44,7 @@ function hasViableFormationForCounts(actualCounts: BenchComposition, formationOp
 }
 
 export function validateTransferSquad(input: {
+  scope?: "eredivisie" | "wk";
   rosterPlayers: PlayerRecord[];
   incomingPlayer: PlayerRecord;
   soldPlayerId: string;
@@ -60,9 +61,19 @@ export function validateTransferSquad(input: {
     throw new Error(`Transfer geblokkeerd: team mag maximaal € ${input.budgetCap.toFixed(1)}M kosten.`);
   }
 
-  for (const count of countPlayersByCountry(candidatePlayers).values()) {
-    if (count > 2) {
-      throw new Error("maximaal 2 spelers per land toegestaan");
+  const scope = input.scope ?? "wk";
+
+  if (scope === "eredivisie") {
+    for (const count of countPlayersByClub(candidatePlayers).values()) {
+      if (count > 1) {
+        throw new Error("maximaal 1 speler per club toegestaan");
+      }
+    }
+  } else {
+    for (const count of countPlayersByClub(candidatePlayers).values()) {
+      if (count > 2) {
+        throw new Error("maximaal 2 spelers per land toegestaan");
+      }
     }
   }
 

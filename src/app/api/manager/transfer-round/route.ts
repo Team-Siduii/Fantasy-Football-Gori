@@ -360,6 +360,7 @@ export async function POST(request: Request) {
 
       try {
         validateTransferSquad({
+          scope,
           rosterPlayers,
           incomingPlayer,
           soldPlayerId,

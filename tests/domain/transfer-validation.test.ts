@@ -24,9 +24,10 @@ describe("transfer-validation", () => {
     ).toThrow("Transfer geblokkeerd");
   });
 
-  it("blocks transfers above max two players per country", () => {
+  it("blocks transfers above max two players per country in wk mode", () => {
     expect(() =>
       validateTransferSquad({
+        scope: "wk",
         rosterPlayers: [
           player({ id: "1", naam: "A", positie: "GK", club: "NL", prijs: 5 }),
           player({ id: "2", naam: "B", positie: "DEF", club: "NL", prijs: 5 }),
@@ -37,6 +38,22 @@ describe("transfer-validation", () => {
         budgetCap: 30,
       }),
     ).toThrow("maximaal 2 spelers per land toegestaan");
+  });
+
+  it("blocks eredivisie transfers above max one player per club", () => {
+    expect(() =>
+      validateTransferSquad({
+        scope: "eredivisie",
+        rosterPlayers: [
+          player({ id: "1", naam: "Ajax Keeper", positie: "GK", club: "Ajax", prijs: 5 }),
+          player({ id: "2", naam: "PSV Def", positie: "DEF", club: "PSV", prijs: 5 }),
+          player({ id: "3", naam: "AZ Mid", positie: "MID", club: "AZ", prijs: 5 }),
+        ],
+        incomingPlayer: player({ id: "4", naam: "Ajax Aanvaller", positie: "FWD", club: "Ajax", prijs: 5 }),
+        soldPlayerId: "3",
+        budgetCap: 30,
+      }),
+    ).toThrow("maximaal 1 speler per club toegestaan");
   });
 
   it("keeps enforcing a viable formation plus bench coverage during transfers", () => {

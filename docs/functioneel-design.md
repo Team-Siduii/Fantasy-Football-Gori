@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-08-01
+Laatste update: 2026-08-03
 
 ## 1. Productvisie
 Doel van de app:
@@ -135,6 +135,7 @@ Per rol belangrijkste rechten:
 - Teammutaties worden pas definitief toegepast zodra de transferfase voor die manager is gewonnen/opgelost
 - Verkochte spelers komen na fase 1 terug in de vrije pool voor de koopfase van die ronde
 - Basisregel blijft: binnen een league kan een speler maar in 1 team zitten
+- Transfervalidatie blijft mode-specifiek streng: in Eredivisie mag een manager na een transfer maximaal **1 speler per club** bezitten; in WK blijft de landenregel gelden (standaard maximaal **2 spelers per land**, met eventuele ronde-specifieke uitzonderingen elders in de ruleset).
 - Positiebehoud op wissels: spelerwissel tussen basis en bank is alleen toegestaan als de doel-slotpositie gelijk blijft (bijv. MID↔MID, DEF↔DEF)
 - Na draft kan manager vrij transfers doen uit de vrije pool binnen het transferwindow
 - Transferlimiet:
@@ -243,7 +244,7 @@ Per rol belangrijkste rechten:
   - eventuele verliezers kiezen alleen opnieuw voor hun nog onvervulde slots vóór de volgende ronde
 - Succescriteria:
   - elke manager ziet live op welke managers nog gewacht wordt
-  - budget, formatie en max 2 spelers per land blijven geldig
+  - budget, formatie en mode-specifieke selectiecaps blijven geldig (Eredivisie: max 1 speler per club; WK: max 2 spelers per land tenzij rondeconfig anders bepaalt)
   - per speler bestaat na afronding maximaal 1 winnaar binnen de league
 
 ## 6. Functionele requirements (FR)
@@ -259,6 +260,7 @@ FR-009: Roster-validatie dwingt tijdens draft geldige teamopbouw af: een manager
 FR-010: Basisopstelling bevat exact 1 keeper en een geldige veldformatie uit de toegestane set.
 FR-011: Transferlimiet is standaard 1 per ronde, met precies 3 vooraf ingestelde bonusrondes met limiet 3.
 FR-012: Team kan geen transfer bevestigen die budget overschrijdt.
+FR-012a: Transfervalidatie gebruikt mode-specifieke uniqueness-caps: in Eredivisie wordt een transfer geweigerd zodra de manager na de mutatie meer dan 1 speler van dezelfde club zou bezitten; in WK blijft de landenlimiet van de actieve ruleset leidend.
 FR-013: Players kunnen via admin mutaties krijgen gedurende seizoen zonder historieverlies.
 FR-014: Buitenland-transfer van roster speler activeert een toegestane vervangingsactie vanuit vrije pool.
 FR-015: Transfervenster opent direct na laatste wedstrijd van huidige ronde en sluit exact bij eerste wedstrijd van volgende ronde.
@@ -469,6 +471,7 @@ Waarom zo:
 - [ ] Ongeldige opstellingen (verkeerde aantallen/formatie) worden server-side afgekeurd
 - [ ] Transferlimieten per ronde + 3 bonusrondes worden correct afgedwongen
 - [ ] Budgetoverschrijdende transfers worden geblokkeerd
+- [ ] Eredivisie-transfers blokkeren server-side zodra een manager na de mutatie meer dan 1 speler van dezelfde club zou bezitten; WK-transfers blijven de actieve landenlimiet afdwingen
 - [ ] Transfervenster volgt automatisch: open na laatste wedstrijd ronde, dicht bij eerste wedstrijd volgende ronde
 - [ ] Buitenland-vervanging telt niet mee in transferlimiet en rekent budget normaal af
 - [ ] Bij gelijktijdige transferpogingen wint first-write-wins en blijft speler uniek toegewezen
@@ -619,6 +622,7 @@ Waarom zo:
 - 2026-07-18: WK `Mijn team` en `Bekijk team` kiezen zonder expliciete round-param standaard de laatst afgeronde WK-ronde als read-model basis. Daardoor blijven voor alle managers de ronde-7 punten zichtbaar zolang ronde 8 nog niet is begonnen, ook als er al een toekomstige ronde-8 snapshot bestaat.
 - 2026-07-18: WK `Mijn team` gebruikt in de bovenste metric-regel nu dezelfde server-read-model scorebron als ranking en `Bekijk team`: `Totaal punten` staat links als primaire topline, `Ronde punten` staat daarnaast expliciet zichtbaar, en alleen bij ontbrekende servertotalen valt de UI nog terug op de oude lokale basis+halve-bank berekening.
 - 2026-07-31: Eredivisie-spelerkaarten gepolijst met gedeelde club-brandingmapping (badgecode + shirticoon) voor `Mijn team`, `Bekijk team` en draft-preview, inclusief alias-normalisatie voor clubnamen zoals `Go Ahead Eagles`, `SC Heerenveen` en `FC Utrecht`.
+- 2026-08-03: Eredivisie transfer-validatie dwingt nu server-side de clubregel af: na een transfer mag een manager maximaal 1 speler per club bezitten, terwijl WK-transfers hun eigen landenlimiet blijven gebruiken.
 - 2026-07-18: WK draft/roster self-heal behandelt speelbare onderbezette squadrons (11 starters + 0-4 bankspelers) nu als legitieme historische state. Daardoor wordt een geldige 13-man ronde-snapshot niet meer automatisch terug opgeblazen naar een oude 15-man draftfallback, en mag team-roster waarheid een stale draft-My-Team overschrijven wanneer de zichtbare state nog exact op de oude draftselectie staat.
 - 2026-04-21: Transferlimiet-gedrag in Team-flow aangepast: in bonusrondes (3 transfers) mogen managers eerst meerdere spelers verkopen (tot 3 open placeholders) voordat kopen verplicht is; in 1-transferrondes blijft direct vervangen na 1 verkoop vereist.
 - 2026-06-11: Brandblus-fix op lege My Team na draft: manager-state self-heal gebruikt nu account/participant-profiel-aliasen én valt terug op persistente draft-picks als team-roster-state ontbreekt; lokale auth-state typo voor Jack gecorrigeerd van `.con` naar `.com`.
