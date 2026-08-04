@@ -11,7 +11,11 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const scope: ManagerStateScope = url.searchParams.get("mode") === "wk" ? "wk" : "eredivisie";
-  const snapshot = await buildLeagueRankingSnapshot(scope, email);
+  const roundNumberParam = url.searchParams.get("roundNumber");
+  const roundNumber = roundNumberParam && Number.isInteger(Number(roundNumberParam))
+    ? Number(roundNumberParam)
+    : null;
+  const snapshot = await buildLeagueRankingSnapshot(scope, email, roundNumber);
 
   return NextResponse.json(snapshot);
 }

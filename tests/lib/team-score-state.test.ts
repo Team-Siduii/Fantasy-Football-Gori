@@ -47,9 +47,23 @@ describe("team score state", () => {
 
     const storedRound1 = await teamScoreState.getManagerRoundScorePersistent("wk", "simon@gmail.com", 1);
     const summary = await teamScoreState.summarizeManagerTeamScoresPersistent("wk", "simon@gmail.com");
+    const summaryThroughRound1 = await teamScoreState.summarizeManagerTeamScoresThroughRoundPersistent("wk", "simon@gmail.com", 1);
+    const summaryThroughRound3 = await teamScoreState.summarizeManagerTeamScoresThroughRoundPersistent("wk", "simon@gmail.com", 3);
 
     expect(storedRound1?.totalPoints).toBe(10);
     expect(summary).toEqual({
+      totalPoints: 17,
+      currentRoundPoints: 7,
+      roundsPlayed: 2,
+      latestRound: 2,
+    });
+    expect(summaryThroughRound1).toEqual({
+      totalPoints: 10,
+      currentRoundPoints: 10,
+      roundsPlayed: 1,
+      latestRound: 1,
+    });
+    expect(summaryThroughRound3).toEqual({
       totalPoints: 17,
       currentRoundPoints: 7,
       roundsPlayed: 2,

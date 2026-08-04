@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, unlinkSync } from "fs";
 import { dirname } from "path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const testPath = "/tmp/ffg-manager-state-tests/manager-state.json";
 const wkTestPath = "/tmp/ffg-manager-state-tests/manager-state-wk.json";
@@ -31,6 +31,9 @@ afterEach(async () => {
   delete process.env.LEAGUE_ADMIN_CONFIG_PATH;
   delete process.env.LEAGUE_ADMIN_CONFIG_WK_PATH;
   delete process.env.VERCEL;
+  delete process.env.GORI_DATABASE_URL;
+  vi.doUnmock("../../src/lib/persistent-json-store");
+  vi.resetModules();
 });
 
 describe("manager-state persistence", () => {
@@ -204,6 +207,29 @@ describe("manager-state persistence", () => {
     expect(Object.keys(raw.managerStates ?? {})).not.toContain("thomasbart91@gmail.com");
     expect(mod.readManagerStateForRound(5, "eredivisie", "Thomasbart91@gmail.com").lineupIds).toEqual(["th-1", "th-2"]);
     expect(mod.readManagerStateForRound(5, "eredivisie", "thomas-bart").lineupIds).toEqual(["th-1", "th-2"]);
+  });
+
+  it("falls back gracefully when persistent manager-state reads fail", async () => {
+    mkdirSync(dirname(testPath), { recursive: true });
+    process.env.MANAGER_STATE_PATH = testPath;
+    process.env.GORI_DATABASE_URL = "postgres://gori:test@example.com/gori";
+
+    vi.doMock("../../src/lib/persistent-json-store", () => ({
+      isGoriDatabaseEnabled: () => true,
+      readPersistentJson: vi.fn(async () => {
+        throw new Error("manager-state read failed");
+      }),
+      writePersistentJson: vi.fn(async (_input, payload) => payload),
+    }));
+
+    const mod = await import("../../src/lib/manager-state");
+    mod.saveManagerState({ formation: "4-4-2", lineupIds: ["fallback-1"], benchIds: ["fallback-2"] });
+
+    await expect(mod.readManagerStatePersistent()).resolves.toMatchObject({
+      formation: "4-4-2",
+      lineupIds: ["fallback-1"],
+      benchIds: ["fallback-2"],
+    });
   });
 
   it("migrates a legacy email-keyed manager state record to managerId on save", async () => {

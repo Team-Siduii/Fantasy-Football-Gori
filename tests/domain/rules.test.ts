@@ -10,7 +10,7 @@ describe("buildDraftPickSequence", () => {
   it("builds the required A,A,reverse(A) draft cycle", () => {
     const teams = ["A", "B", "C"];
 
-    expect(buildDraftPickSequence(teams, 9)).toEqual([
+    expect(buildDraftPickSequence(teams, 9, "snake")).toEqual([
       "A",
       "B",
       "C",
@@ -20,6 +20,22 @@ describe("buildDraftPickSequence", () => {
       "C",
       "B",
       "A",
+    ]);
+  });
+
+  it("supports a linear draft cycle without reversing the order", () => {
+    const teams = ["A", "B", "C"];
+
+    expect(buildDraftPickSequence(teams, 9, "linear")).toEqual([
+      "A",
+      "B",
+      "C",
+      "A",
+      "B",
+      "C",
+      "A",
+      "B",
+      "C",
     ]);
   });
 });

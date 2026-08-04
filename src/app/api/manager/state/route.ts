@@ -7,6 +7,8 @@ import {
   type ManagerStateScope,
 } from "@/lib/manager-state";
 import { getAuthenticatedEmail, isAuthenticatedSession } from "@/lib/auth-session";
+import { ensureAuthStateFromDb } from "@/lib/auth-store";
+import { repairManagerTeamFromDraftArtifactsPersistent } from "@/lib/draft-manager-sync";
 import { isRoundActive } from "@/lib/world-cup-schedule";
 
 const NO_CACHE_HEADERS = {
@@ -26,8 +28,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
 
+  await ensureAuthStateFromDb();
+
   const managerKey = await getAuthenticatedEmail();
+  if (!managerKey) {
+    return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
+  }
   const scope = getScopeFromRequest(request);
+  if (scope === "wk") {
+    await repairManagerTeamFromDraftArtifactsPersistent({ managerEmail: managerKey, scope });
+  }
   console.log("[STATE-API]", managerKey, "scope:", scope);
   const roundNumberParam = new URL(request.url).searchParams.get("roundNumber");
   const roundNumber = roundNumberParam ? Number(roundNumberParam) : null;
@@ -47,6 +57,8 @@ export async function PUT(request: Request) {
   if (!(await isAuthenticatedSession())) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
+
+  await ensureAuthStateFromDb();
 
   const managerKey = await getAuthenticatedEmail();
 

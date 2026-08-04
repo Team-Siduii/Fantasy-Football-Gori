@@ -459,10 +459,17 @@ export function getPasswordResetLink(token: string): string {
 
 export async function ensureAuthStateFromDb(): Promise<void> {
   if (!isGoriDatabaseEnabled()) return;
-  const persisted = await readPersistentJson<PersistedAuthState>(
-    { store: "auth-state", scope: "global" },
-    authState,
-  );
+
+  let persisted: PersistedAuthState;
+  try {
+    persisted = await readPersistentJson<PersistedAuthState>(
+      { store: "auth-state", scope: "global" },
+      authState,
+    );
+  } catch {
+    return;
+  }
+
   // Merge in new accounts from presets that don't exist yet in DB
   // Also repair mustSetup accounts that still have an old random salt
   const existingIds = new Set(persisted.accounts.map((a) => a.id));
@@ -494,7 +501,13 @@ export async function ensureAuthStateFromDb(): Promise<void> {
     }
   }
   authState = persisted;
-  if (changed) await flushAuthStateToDb();
+  if (changed) {
+    try {
+      await flushAuthStateToDb();
+    } catch {
+      // Keep the in-memory/file-backed auth state usable even if the DB write path is unavailable.
+    }
+  }
 }
 
 export async function flushAuthStateToDb(): Promise<void> {

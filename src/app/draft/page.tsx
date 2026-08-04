@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { getDraftPlayerDisplayMeta } from "@/lib/draft-player-display";
+import { getClubBranding } from "@/lib/club-branding";
 import { buildFormationSlots, getFormationOptions } from "@/domain/formation";
 import { PlayerCard } from "@/components/player-card";
 import { getTransferBudgetCapMillions } from "@/domain/team-budget";
@@ -27,6 +28,7 @@ type DraftState = {
   leagueId: string;
   status: "IDLE" | "ACTIVE" | "COMPLETED";
   teamOrder: string[];
+  orderType?: "snake" | "linear";
   totalRounds: number;
   totalPicks: number;
   pickSequence: string[];
@@ -45,7 +47,7 @@ type LeagueParticipant = {
 
 type LeagueAdminConfig = {
   competition: { name: string };
-  draft: { totalRounds: number; mode?: "admin" | "manager" };
+  draft: { totalRounds: number; mode?: "admin" | "manager"; orderType?: "snake" | "linear"; teamOrder?: string[] };
   budget?: { teamValueCapMillions: number };
   participants: LeagueParticipant[];
 };
@@ -134,6 +136,7 @@ export default function DraftPage() {
 
   const [leagueId, setLeagueId] = useState(isWkMode ? "WK 2026" : "Eredivisie 2025/2026");
   const [teamOrderSlots, setTeamOrderSlots] = useState<string[]>([]);
+  const [draftOrderType, setDraftOrderType] = useState<"snake" | "linear">("snake");
   const [totalRounds, setTotalRounds] = useState(DEFAULT_ROUNDS);
   const [search, setSearch] = useState("");
   const [positionFilter, setPositionFilter] = useState<"ALL" | PlayerRecord["positie"]>("ALL");
@@ -181,14 +184,22 @@ export default function DraftPage() {
     const data = (await response.json()) as { config?: LeagueAdminConfig };
     if (!data.config) return;
 
-    const acceptedParticipants = data.config.participants
-      .filter((participant) => participant.status === "ACCEPTED");
+    const acceptedParticipants = data.config.participants.filter((participant) => participant.status === "ACCEPTED");
+    const configuredOrder = Array.isArray(data.config.draft.teamOrder)
+      ? data.config.draft.teamOrder.filter((managerId) => acceptedParticipants.some((participant) => participant.managerId === managerId))
+      : [];
+    const fallbackOrder = acceptedParticipants
+      .map((participant) => participant.managerId)
+      .filter((managerId) => !configuredOrder.includes(managerId));
 
     setLeagueConfig(data.config);
     setLeagueId(data.config.competition.name || (isWkMode ? "WK 2026" : "Eredivisie 2025/2026"));
     setTotalRounds(data.config.draft.totalRounds || DEFAULT_ROUNDS);
-    if (acceptedParticipants.length >= 2 && teamOrderSlots.length === 0) {
-      setTeamOrderSlots(acceptedParticipants.map((p) => p.managerId));
+    setDraftOrderType(data.config.draft.orderType === "linear" ? "linear" : "snake");
+    if (acceptedParticipants.length >= 2) {
+      setTeamOrderSlots([...configuredOrder, ...fallbackOrder]);
+    } else {
+      setTeamOrderSlots([]);
     }
   }, [isWkMode, modeParam]);
 
@@ -243,11 +254,6 @@ export default function DraftPage() {
     [acceptedParticipants],
   );
 
-  const teamOrderLabels = useMemo(
-    () => teamOrderSlots.map((id) => participantById.get(id)?.label ?? id).filter(Boolean),
-    [teamOrderSlots, participantById],
-  );
-
   const playerById = useMemo(() => new Map(players.map((player) => [player.id, player])), [players]);
   const pickedPlayerIds = useMemo(() => new Set((draft?.picks ?? []).map((pick) => pick.playerId)), [draft?.picks]);
   const availableClubs = useMemo(() => Array.from(new Set(players.map((player) => player.club))).sort(), [players]);
@@ -277,6 +283,10 @@ export default function DraftPage() {
   }, [draft, profile, acceptedParticipants]);
 
   const activeTeamId = draft?.currentTurnTeamId ?? "";
+  const getTeamLabel = useCallback(
+    (teamId: string) => participantById.get(teamId)?.label ?? teamId,
+    [participantById],
+  );
   const myRoster = myDraftTeamId ? (teamRosters[myDraftTeamId] ?? []) : [];
   const isMyTurn = Boolean(myDraftTeamId && draft?.currentTurnTeamId === myDraftTeamId);
   const pickNumber = (draft?.picks.length ?? 0) + 1;
@@ -323,8 +333,6 @@ export default function DraftPage() {
       setError("Geen van je pre-selecties is nog beschikbaar. Kies een nieuwe speler.");
     }
   }, [isMyTurn, prePickQueue, myDraftTeamId, playerById, pickedPlayerIds]);
-
-  const queueSet = useMemo(() => new Set(prePickQueue), [prePickQueue]);
 
   const formationSlots = useMemo(() => {
     const slots = buildFormationSlots(formation);
@@ -465,7 +473,7 @@ export default function DraftPage() {
             <p className="draft-eyebrow">{draft?.status === "ACTIVE" ? `Pick ${pickNumber} · Ronde ${currentRound}` : "Draft voorbereiding"}</p>
             <h2>
               {draft?.status === "ACTIVE"
-                ? `${activeTeamId} is aan de beurt`
+                ? `${getTeamLabel(activeTeamId)} is aan de beurt`
                 : draft?.status === "COMPLETED"
                   ? "Draft afgerond"
                   : "Nog geen actieve draft"}
@@ -516,7 +524,7 @@ export default function DraftPage() {
               {draft?.teamOrder.map((team, index) => (
                 <article key={team} className={`draft-order-chip ${team === activeTeamId ? "active" : ""} ${team === myDraftTeamId ? "mine" : ""}`}>
                   <span>{index + 1}</span>
-                  <strong>{team}</strong>
+                  <strong>{getTeamLabel(team)}</strong>
                 </article>
               ))}
             </div>
@@ -529,7 +537,7 @@ export default function DraftPage() {
           <div className="section-title-row">
             <div>
               <h2>Speler kiezen</h2>
-              <p>{activeTeamId ? `Deze pick gaat naar ${activeTeamId}.` : "Start eerst een draft."}</p>
+              <p>{activeTeamId ? `Deze pick gaat naar ${getTeamLabel(activeTeamId)}.` : "Start eerst een draft."}</p>
             </div>
             <div className="draft-filter-row compact">
               <select value={positionFilter} onChange={(event) => setPositionFilter(event.target.value as typeof positionFilter)} aria-label="Filter op positie">
@@ -588,11 +596,15 @@ export default function DraftPage() {
                   <div key={ri} className="pitch-row" data-size={row.length}>
                     {row.map((player, ci) => {
                       if (player) {
+                        const branding = getClubBranding(player.club);
                         return (
                           <PlayerCard
                             key={player.id}
                             position={player.positie}
                             club={player.club}
+                            brandLabel={branding?.badgeCode}
+                            brandTitle={branding?.canonicalName}
+                            shirtClass={branding?.shirtClass}
                             name={player.naam}
                             pointsLabel={`€${player.prijs.toFixed(1)}M`}
                           />
@@ -741,7 +753,7 @@ export default function DraftPage() {
               disabled={!canPickInMode}
               onClick={() => void postDraftAction({ action: "pick", teamId: activeTeamId, playerId: pickPlayerId }, "Pick opgeslagen")}
             >
-              Bevestig pick voor {activeTeamId || "team"}
+              Bevestig pick voor {activeTeamId ? getTeamLabel(activeTeamId) : "team"}
             </button>
           </div>
           {error ? <p className="error-text" style={{ marginTop: 8, textAlign: "center" }}>{error}</p> : null}
@@ -794,7 +806,7 @@ export default function DraftPage() {
               const remaining = Math.max(0, budgetCap - spent);
               return (
                 <article key={teamId} className={`draft-team-card ${teamId === activeTeamId ? "active" : ""}`}>
-                  <h3>{teamId}</h3>
+                  <h3>{getTeamLabel(teamId)}</h3>
                   <p>{roster.length} spelers{formation ? ` · ${formation}` : ""}</p>
                   <p className="draft-team-budget">
                     €{spent.toFixed(1)}M gebruikt · €{remaining.toFixed(1)}M over
@@ -890,6 +902,10 @@ export default function DraftPage() {
               </button>
             </div>
             <label>
+              Draft type
+              <input value={draftOrderType === "linear" ? "Lineair" : "Snake"} disabled />
+            </label>
+            <label>
               Rondes
               <input type="number" min={1} value={totalRounds} onChange={(event) => setTotalRounds(Number(event.target.value || 1))} disabled={busy} />
             </label>
@@ -898,7 +914,7 @@ export default function DraftPage() {
               disabled={busy || teamOrderSlots.filter(Boolean).length < 2 || totalRounds < 1}
               onClick={() =>
                 void postDraftAction(
-                  { action: "start", leagueId, teamOrder: teamOrderLabels, totalRounds, startedBy: profile?.email ?? "draft-ui" },
+                  { action: "start", leagueId, teamOrder: teamOrderSlots.filter(Boolean), totalRounds, orderType: draftOrderType, startedBy: profile?.email ?? "draft-ui" },
                   "Oefendraft gestart",
                 )
               }
@@ -913,7 +929,7 @@ export default function DraftPage() {
               <select value={returnTeamId} onChange={(event) => setReturnTeamId(event.target.value)} disabled={busy}>
                 <option value="">Kies team</option>
                 {(draft?.teamOrder ?? []).map((team) => (
-                  <option key={team} value={team}>{team}</option>
+                  <option key={team} value={team}>{getTeamLabel(team)}</option>
                 ))}
               </select>
             </label>
@@ -944,7 +960,7 @@ export default function DraftPage() {
             {pickedRows.map((pick) => (
               <li key={`${pick.pickNumber}-${pick.playerId}-${pick.teamId}`}>
                 <span>#{pick.pickNumber}</span>
-                <strong>{pick.teamId}</strong>
+                <strong>{getTeamLabel(pick.teamId)}</strong>
                 <em>{getPlayerLabel(pick.player)}</em>
               </li>
             ))}

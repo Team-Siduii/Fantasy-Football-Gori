@@ -179,9 +179,46 @@ export function summarizeManagerTeamScores(state: TeamScoreState, managerKey: st
   };
 }
 
+export function summarizeManagerTeamScoresThroughRound(
+  state: TeamScoreState,
+  managerKey: string,
+  roundNumber: number,
+): TeamScoreSummary {
+  const normalizedManagerKey = normalizeManagerKey(managerKey);
+  const rounds = Object.values(state.byManagerKey[normalizedManagerKey]?.rounds ?? {})
+    .filter((round) => round.roundNumber <= roundNumber)
+    .sort((a, b) => a.roundNumber - b.roundNumber);
+
+  if (rounds.length === 0) {
+    return { totalPoints: 0, currentRoundPoints: 0, roundsPlayed: 0, latestRound: null };
+  }
+
+  const totalPoints = rounds.reduce((sum, round) => sum + round.totalPoints, 0);
+  const latestRound = rounds[rounds.length - 1] ?? null;
+  const selectedRound = rounds.find((round) => round.roundNumber === roundNumber) ?? null;
+
+  return {
+    totalPoints,
+    currentRoundPoints:
+      selectedRound?.totalPoints
+      ?? (roundNumber > (latestRound?.roundNumber ?? 0) ? latestRound?.totalPoints ?? 0 : 0),
+    roundsPlayed: rounds.length,
+    latestRound: latestRound?.roundNumber ?? null,
+  };
+}
+
 export async function summarizeManagerTeamScoresPersistent(scope: TeamScoreScope, managerKey: string): Promise<TeamScoreSummary> {
   const state = await readTeamScoreStatePersistent(scope);
   return summarizeManagerTeamScores(state, managerKey);
+}
+
+export async function summarizeManagerTeamScoresThroughRoundPersistent(
+  scope: TeamScoreScope,
+  managerKey: string,
+  roundNumber: number,
+): Promise<TeamScoreSummary> {
+  const state = await readTeamScoreStatePersistent(scope);
+  return summarizeManagerTeamScoresThroughRound(state, managerKey, roundNumber);
 }
 
 export async function resetTeamScoreStatePersistent(scope: TeamScoreScope = "eredivisie") {

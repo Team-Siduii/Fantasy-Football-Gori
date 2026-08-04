@@ -1,8 +1,9 @@
 import type { PlayerRecord } from "./player";
 
 const REQUIRED_CANONICAL_HEADERS = ["id", "naam", "club", "positie", "prijs"] as const;
+type CanonicalHeader = (typeof REQUIRED_CANONICAL_HEADERS)[number] | "isactive";
 
-const HEADER_ALIASES: Record<string, (typeof REQUIRED_CANONICAL_HEADERS)[number]> = {
+const HEADER_ALIASES: Record<string, CanonicalHeader> = {
   id: "id",
   "speler id": "id",
   naam: "naam",
@@ -11,6 +12,9 @@ const HEADER_ALIASES: Record<string, (typeof REQUIRED_CANONICAL_HEADERS)[number]
   positie: "positie",
   prijs: "prijs",
   transferwaarde: "prijs",
+  actief: "isactive",
+  active: "isactive",
+  isactive: "isactive",
 };
 
 const POSITION_ALIASES: Record<string, string> = {
@@ -44,6 +48,20 @@ function normalizePosition(input: string): string {
   return POSITION_ALIASES[key] ?? input.trim().toUpperCase();
 }
 
+function normalizeIsActive(input: string): boolean | undefined {
+  const key = input.trim().toLowerCase();
+  if (!key) {
+    return undefined;
+  }
+  if (["true", "1", "ja", "yes", "y"].includes(key)) {
+    return true;
+  }
+  if (["false", "0", "nee", "no", "n"].includes(key)) {
+    return false;
+  }
+  return undefined;
+}
+
 export function parsePlayerCsv(csvContent: string): { players: PlayerRecord[] } {
   const lines = csvContent
     .split(/\r?\n/)
@@ -71,6 +89,7 @@ export function parsePlayerCsv(csvContent: string): { players: PlayerRecord[] } 
     const cols = line.split(delimiter).map((c) => c.trim());
 
     const prijsRaw = cols[columnIndex.prijs] ?? "";
+    const isActiveRaw = typeof columnIndex.isactive === "number" ? cols[columnIndex.isactive] ?? "" : "";
 
     let prijs: number;
     try {
@@ -79,12 +98,15 @@ export function parsePlayerCsv(csvContent: string): { players: PlayerRecord[] } 
       throw new Error(`Ongeldige prijs op regel ${rowIdx + 2}: ${prijsRaw}`);
     }
 
+    const isActive = normalizeIsActive(isActiveRaw);
+
     return {
       id: cols[columnIndex.id],
       naam: cols[columnIndex.naam],
       club: cols[columnIndex.club],
       positie: normalizePosition(cols[columnIndex.positie] ?? ""),
       prijs,
+      ...(typeof isActive === "boolean" ? { isActive } : {}),
     };
   });
 

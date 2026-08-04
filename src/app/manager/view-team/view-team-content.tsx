@@ -14,9 +14,11 @@ type ViewPlayer = {
   positie: string;
   club: string;
   prijs: number;
+  isActive?: boolean;
   punten: number;
   roundPoints?: number;
   totalPoints?: number;
+  advancementPoints?: number;
 };
 
 type ViewTeamResponse = {
@@ -160,17 +162,23 @@ export default function ViewTeamPageContent() {
                   {row.map((slot, colIndex) => {
                     const lineupIndex = rowStart + colIndex;
                     const player = slot.player;
-                    const cardMeta = player ? getPlayerCardMeta(player) : { flag: "", countryCode: "", priceLabel: "", displayName: "" };
+                    const cardMeta = player
+                      ? getPlayerCardMeta(player)
+                      : { flag: "", countryCode: "", brandLabel: "", brandTitle: "", shirtClass: "", priceLabel: "", displayName: "" };
 
                     return (
                       <PlayerCard
                         key={`lineup-${lineupIndex}-${player?.id ?? `empty-${colIndex}`}`}
                         position={cardMeta.flag}
                         club={cardMeta.countryCode}
+                        brandLabel={cardMeta.brandLabel}
+                        brandTitle={cardMeta.brandTitle}
+                        shirtClass={cardMeta.shirtClass}
                         name={player?.naam ?? "Leeg"}
                         pointsLabel={cardMeta.priceLabel}
+                        advancementBadge={player && (player.advancementPoints ?? 0) > 0 && data?.roundNumber != null && data.roundNumber >= 3 ? `⚡+${player.advancementPoints}` : null}
                         scoreBadge={player ? String(player.punten) : null}
-                        className={player ? undefined : "player-card--open"}
+                        className={player ? (player.isActive === false ? "player-card--inactive" : undefined) : "player-card--open"}
                       />
                     );
                   })}
@@ -193,10 +201,14 @@ export default function ViewTeamPageContent() {
                     key={`bench-${benchIndex}-${player.id}`}
                     position={cardMeta.flag}
                     club={cardMeta.countryCode}
+                    brandLabel={cardMeta.brandLabel}
+                    brandTitle={cardMeta.brandTitle}
+                    shirtClass={cardMeta.shirtClass}
                     name={player.naam}
                     pointsLabel={cardMeta.priceLabel}
+                    advancementBadge={(player.advancementPoints ?? 0) > 0 && data?.roundNumber != null && data.roundNumber >= 3 ? `⚡+${player.advancementPoints}` : null}
                     scoreBadge={String(player.punten)}
-                    className="player-card--bench-row"
+                    className={player.isActive === false ? "player-card--bench-row player-card--inactive" : "player-card--bench-row"}
                   />
                 );
               })

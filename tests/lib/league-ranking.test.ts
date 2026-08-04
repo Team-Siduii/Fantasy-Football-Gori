@@ -74,9 +74,60 @@ describe("league ranking snapshot", () => {
 
     const snapshot = await leagueRanking.buildLeagueRankingSnapshot("wk", "s.j.m.duindam@gmail.com");
 
-    expect(snapshot.allRanking.map((entry) => entry.email)).toContain("s.j.m.duindam@gmail.com");
-    expect(snapshot.ranking.map((entry) => entry.email)).toContain("s.j.m.duindam@gmail.com");
-    expect(snapshot.allRanking.map((entry) => entry.email)).not.toContain("admin@gori.local");
-    expect(snapshot.allRanking.find((entry) => entry.email === "s.j.m.duindam@gmail.com")?.totalPoints).toBe(11);
+    expect(snapshot.allRanking.map((entry: { email: string }) => entry.email)).toContain("s.j.m.duindam@gmail.com");
+    expect(snapshot.ranking.map((entry: { email: string }) => entry.email)).toContain("s.j.m.duindam@gmail.com");
+    expect(snapshot.allRanking.map((entry: { email: string }) => entry.email)).not.toContain("admin@gori.local");
+    expect(snapshot.allRanking.find((entry: { email: string; totalPoints: number }) => entry.email === "s.j.m.duindam@gmail.com")?.totalPoints).toBe(11);
+  }, 15000);
+
+  it("returns historical round totals and round points for a selected WK round", async () => {
+    mkdirSync(path.dirname(managerPath), { recursive: true });
+    process.env.MANAGER_STATE_PATH = managerPath;
+    process.env.MANAGER_STATE_WK_PATH = managerWkPath;
+    process.env.AUTH_STATE_PATH = authPath;
+    process.env.LEAGUE_ADMIN_CONFIG_PATH = leaguePath;
+    process.env.LEAGUE_ADMIN_CONFIG_WK_PATH = leagueWkPath;
+    process.env.TEAM_SCORE_STATE_WK_PATH = teamScoreWkPath;
+
+    const { auth, leagueRanking, teamScoreState } = await loadModules();
+    auth.resetAuthStateForTests();
+    teamScoreState.resetTeamScoreStateForTests("wk");
+
+    await teamScoreState.saveManagerRoundScoreSnapshotPersistent("wk", "emielzomerdijk@gmail.com", {
+      roundNumber: 6,
+      lineupIds: ["1"],
+      benchIds: ["2"],
+      lineupPoints: 6,
+      benchPoints: 1,
+      totalPoints: 7,
+      calculatedAt: "2026-07-12T12:00:00.000Z",
+      source: "wk-events-v1",
+    });
+    await teamScoreState.saveManagerRoundScoreSnapshotPersistent("wk", "emielzomerdijk@gmail.com", {
+      roundNumber: 7,
+      lineupIds: ["1"],
+      benchIds: ["2"],
+      lineupPoints: 10,
+      benchPoints: 2,
+      totalPoints: 12,
+      calculatedAt: "2026-07-15T12:00:00.000Z",
+      source: "wk-events-v1",
+    });
+
+    const round7Snapshot = await leagueRanking.buildLeagueRankingSnapshot("wk", "emielzomerdijk@gmail.com", 7);
+    const round8Snapshot = await leagueRanking.buildLeagueRankingSnapshot("wk", "emielzomerdijk@gmail.com", 8);
+    const emielRound7 = round7Snapshot.allRanking.find((entry: { email: string }) => entry.email === "emielzomerdijk@gmail.com");
+    const emielRound8 = round8Snapshot.allRanking.find((entry: { email: string }) => entry.email === "emielzomerdijk@gmail.com");
+
+    expect(round7Snapshot.selectedRound).toBe(7);
+    expect(emielRound7).toMatchObject({
+      currentRoundPoints: 12,
+      totalPoints: 19,
+    });
+    expect(round8Snapshot.selectedRound).toBe(8);
+    expect(emielRound8).toMatchObject({
+      currentRoundPoints: 12,
+      totalPoints: 19,
+    });
   }, 15000);
 });

@@ -1,5 +1,6 @@
 import { resolveGoriDatabaseUrl } from "./persistent-json-store";
 import { Pool } from "pg";
+import { normalizeWkCompetitionRound } from "./wk-rounds";
 
 // ── Database ────────────────────────────────────────────────────────
 
@@ -77,9 +78,21 @@ async function ensureSchema() {
   return p;
 }
 
+function getReadablePool(): Pool | null {
+  return getPool();
+}
+
 export async function isWkStoreAvailable(): Promise<boolean> {
-  const p = await ensureSchema();
+  const p = getReadablePool();
   return p !== null;
+}
+
+export function resetWkSyncStoreForTests() {
+  dbReady = false;
+  if (pool) {
+    void pool.end();
+    pool = null;
+  }
 }
 
 // ── Types ───────────────────────────────────────────────────────────
@@ -120,6 +133,7 @@ export type WkPlayerEventRow = {
   fantasyplayer_id: number;
   round: number;
   event_code: string;
+  team_name?: string | null;
   points: number;
   minute: number | null;
   synced_at: string;
@@ -284,7 +298,7 @@ export async function saveWkPlayerEvents(
 export async function getWkPlayerPoints(
   round?: number,
 ): Promise<WkPlayerPointRow[]> {
-  const p = await ensureSchema();
+  const p = getReadablePool();
   if (!p) return [];
 
   if (round) {
@@ -302,7 +316,7 @@ export async function getWkPlayerPoints(
 }
 
 export async function getWkPlayerPointHistory(maxRound?: number): Promise<WkPlayerPointRow[]> {
-  const p = await ensureSchema();
+  const p = getReadablePool();
   if (!p) return [];
 
   if (typeof maxRound === "number" && Number.isInteger(maxRound) && maxRound > 0) {
@@ -323,7 +337,7 @@ export async function getWkPlayerEvents(
   round?: number,
   fantasyplayerId?: number,
 ): Promise<WkPlayerEventRow[]> {
-  const p = await ensureSchema();
+  const p = getReadablePool();
   if (!p) return [];
 
   let query = "SELECT * FROM wk_player_events WHERE 1=1";
@@ -347,7 +361,7 @@ export async function getWkPlayerEvents(
 export async function getWkMatches(
   round?: number,
 ): Promise<WkMatchRow[]> {
-  const p = await ensureSchema();
+  const p = getReadablePool();
   if (!p) return [];
 
   if (round) {
@@ -365,13 +379,14 @@ export async function getWkMatches(
 }
 
 export async function getLatestSyncRound(): Promise<number | null> {
-  const p = await ensureSchema();
+  const p = getReadablePool();
   if (!p) return null;
 
   const r = await p.query<{ max_round: number }>(
     "SELECT MAX(round) as max_round FROM wk_player_points",
   );
-  return r.rows[0]?.max_round ?? null;
+  const maxRound = r.rows[0]?.max_round ?? null;
+  return typeof maxRound === "number" ? normalizeWkCompetitionRound(maxRound) : null;
 }
 
 // ── Puntentelling vertaalslag ──────────────────────────────────────

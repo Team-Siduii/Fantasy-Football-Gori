@@ -26,7 +26,18 @@ describe("transfer workflow", () => {
   it("shows market players excluding current squad", () => {
     const market = buildMarketPlayers(allPlayers, baseState.lineupIds, baseState.benchIds);
 
-    expect(market.map((player) => player.id)).toEqual(["4"]);
+    expect(
+      market.map((player) => ({
+        id: player.id,
+        owned: player.owned ?? false,
+      })),
+    ).toEqual([
+      { id: "1", owned: true },
+      { id: "2", owned: true },
+      { id: "3", owned: true },
+      { id: "4", owned: false },
+      { id: "5", owned: true },
+    ]);
   });
 
   it("requires a selected outgoing player before choosing incoming player", () => {

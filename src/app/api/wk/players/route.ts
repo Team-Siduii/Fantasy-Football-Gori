@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getLatestSyncRound } from "@/lib/wk-sync-store";
 import { listCalculatedWkPlayerPoints } from "@/lib/wk-player-scoring";
+import { applyWkTransferPriceOffsetUnits } from "../../../../lib/wk-price";
 
 const NO_CACHE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -14,7 +15,10 @@ export async function GET(request: Request) {
     const roundParam = url.searchParams.get("round");
     const roundSequence = roundParam ? Number(roundParam) : undefined;
     const latestSyncRound = await getLatestSyncRound();
-    const players = await listCalculatedWkPlayerPoints(roundSequence);
+    const players = (await listCalculatedWkPlayerPoints(roundSequence)).map((player) => ({
+      ...player,
+      value: applyWkTransferPriceOffsetUnits(player.value),
+    }));
 
     if (players.length === 0) {
       return NextResponse.json({
@@ -42,8 +46,18 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("[wk/players] Error:", error);
     return NextResponse.json(
-      { error: "Failed to read WK players from database", count: 0, players: [] },
-      { status: 500, headers: NO_CACHE_HEADERS },
+      {
+        error: "Failed to read WK players from database",
+        count: 0,
+        players: [],
+        teams: [],
+        positions: [],
+        source: "db-events",
+        syncStatus: "unavailable — database read failed",
+        lastSyncRound: await getLatestSyncRound().catch(() => null),
+        lastSyncedAt: null,
+      },
+      { headers: NO_CACHE_HEADERS },
     );
   }
 }

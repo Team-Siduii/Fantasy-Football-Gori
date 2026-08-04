@@ -10,10 +10,12 @@ import {
 import type { LeagueTableTieBreaker, KnockoutTiePolicy } from "../domain/competition-engine";
 import { createDefaultRoleAssignments, type LeagueRoleAssignments } from "../domain/roles-permissions";
 import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
+import { WK_TRANSFER_PRICE_OFFSET_MILLIONS } from "./wk-price";
 
 export type LeagueMode = "eredivisie" | "wk";
 
 export type DraftMode = "admin" | "manager";
+export type DraftOrderType = "snake" | "linear";
 
 export type LeagueParticipantStatus = "PENDING" | "ACCEPTED" | "REJECTED";
 
@@ -53,6 +55,8 @@ export type LeagueAdminConfig = {
   draft: {
     totalRounds: number;
     mode: DraftMode;
+    orderType: DraftOrderType;
+    teamOrder: string[];
   };
   participants: LeagueParticipant[];
   customRuleNotes: LeagueRuleNote[];
@@ -159,6 +163,27 @@ function normalizeParticipants(input: unknown, fallback: LeagueParticipant[]): L
   return deduped;
 }
 
+function normalizeDraftOrderType(value: unknown): DraftOrderType {
+  return value === "linear" ? "linear" : "snake";
+}
+
+function normalizeDraftTeamOrder(input: unknown, participants: LeagueParticipant[], fallback: string[]): string[] {
+  const acceptedManagerIds = new Set(
+    participants.filter((participant) => participant.status === "ACCEPTED").map((participant) => participant.managerId),
+  );
+
+  const preferred = Array.isArray(input)
+    ? input.filter((value): value is string => typeof value === "string").map((value) => value.trim()).filter(Boolean)
+    : fallback;
+
+  const dedupedPreferred = Array.from(new Set(preferred)).filter((managerId) => acceptedManagerIds.has(managerId));
+  const remainingAccepted = participants
+    .filter((participant) => participant.status === "ACCEPTED" && !dedupedPreferred.includes(participant.managerId))
+    .map((participant) => participant.managerId);
+
+  return [...dedupedPreferred, ...remainingAccepted];
+}
+
 function defaultConfig(mode: LeagueMode): LeagueAdminConfig {
   return {
     scoringProfile: getBackwardCompatibleDefaultProfile(),
@@ -173,7 +198,7 @@ function defaultConfig(mode: LeagueMode): LeagueAdminConfig {
     },
     budget: {
       teamValueCapMillions: defaultBudgetCapForMode(mode),
-      priceOffsetMillions: mode === "wk" ? 3 : 0,
+      priceOffsetMillions: mode === "wk" ? WK_TRANSFER_PRICE_OFFSET_MILLIONS : 0,
     },
     competition: {
       name: defaultCompetitionNameForMode(mode),
@@ -185,6 +210,8 @@ function defaultConfig(mode: LeagueMode): LeagueAdminConfig {
     draft: {
       totalRounds: 15,
       mode: "admin" as DraftMode,
+      orderType: "snake" as DraftOrderType,
+      teamOrder: defaultParticipants().map((participant) => participant.managerId),
     },
     participants: defaultParticipants(),
     customRuleNotes: [],
@@ -198,6 +225,7 @@ function normalize(input: Partial<LeagueAdminConfig>, mode: LeagueMode): LeagueA
   const waiverRound = input.waiver?.round ?? base.waiver.round;
   const tieBreaker: WaiverTieBreaker =
     waiverRound.tieBreaker === "EARLIEST_BID" ? "EARLIEST_BID" : "PRIORITY";
+  const participants = normalizeParticipants(input.participants, base.participants);
 
   return {
     scoringProfile:
@@ -217,9 +245,11 @@ function normalize(input: Partial<LeagueAdminConfig>, mode: LeagueMode): LeagueA
           ? input.budget.teamValueCapMillions
           : base.budget.teamValueCapMillions,
       priceOffsetMillions:
-        typeof input.budget?.priceOffsetMillions === "number" && Number.isFinite(input.budget.priceOffsetMillions)
-          ? input.budget.priceOffsetMillions
-          : base.budget.priceOffsetMillions,
+        mode === "wk"
+          ? WK_TRANSFER_PRICE_OFFSET_MILLIONS
+          : typeof input.budget?.priceOffsetMillions === "number" && Number.isFinite(input.budget.priceOffsetMillions)
+            ? input.budget.priceOffsetMillions
+            : base.budget.priceOffsetMillions,
     },
     competition: {
       name:
@@ -238,8 +268,10 @@ function normalize(input: Partial<LeagueAdminConfig>, mode: LeagueMode): LeagueA
           ? input.draft.totalRounds
           : base.draft.totalRounds,
       mode: input.draft?.mode === "manager" ? "manager" : base.draft.mode,
+      orderType: normalizeDraftOrderType(input.draft?.orderType),
+      teamOrder: normalizeDraftTeamOrder(input.draft?.teamOrder, participants, base.draft.teamOrder),
     },
-    participants: normalizeParticipants(input.participants, base.participants),
+    participants,
     customRuleNotes: Array.isArray(input.customRuleNotes)
       ? input.customRuleNotes
           .map((note, index) => ({

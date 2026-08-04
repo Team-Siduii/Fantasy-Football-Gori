@@ -222,15 +222,6 @@ function buildCanonicalManagerIdentities(scope: ManagerStateScope): CanonicalMan
     return created;
   };
 
-  for (const preset of AUTH_TEST_ACCOUNT_PRESETS.filter((candidate) => candidate.role === "manager")) {
-    const identity = ensure(preset.id);
-    addAlias(identity.aliases, preset.id);
-    addAlias(identity.aliases, preset.label);
-    addAlias(identity.aliases, preset.name);
-    addAlias(identity.aliases, preset.teamName);
-    addAlias(identity.aliases, preset.email);
-  }
-
   for (const account of listManagerAccounts()) {
     const identity = ensure(account.id);
     addAlias(identity.aliases, account.id);
@@ -245,6 +236,15 @@ function buildCanonicalManagerIdentities(scope: ManagerStateScope): CanonicalMan
     addAlias(identity.aliases, participant.managerId);
     addAlias(identity.aliases, participant.label);
     addAlias(identity.aliases, participant.email);
+  }
+
+  for (const preset of AUTH_TEST_ACCOUNT_PRESETS.filter((candidate) => candidate.role === "manager")) {
+    const identity = ensure(preset.id);
+    addAlias(identity.aliases, preset.id);
+    addAlias(identity.aliases, preset.label);
+    addAlias(identity.aliases, preset.name);
+    addAlias(identity.aliases, preset.teamName);
+    addAlias(identity.aliases, preset.email);
   }
 
   return Array.from(byCanonical.values());
@@ -270,6 +270,13 @@ function resolveCanonicalManagerKey(scope: ManagerStateScope, managerKey?: strin
   );
   if (directParticipant) {
     return normalizeAliasValue(directParticipant.managerId);
+  }
+
+  const participantByEmail = getLeagueAdminConfig(scope as LeagueMode).participants.find(
+    (participant) => normalizeAliasValue(participant.email) === normalized,
+  );
+  if (participantByEmail) {
+    return normalizeAliasValue(participantByEmail.managerId);
   }
 
   const directAuthEmail = getAuthAccountByEmail(normalized);
@@ -342,40 +349,51 @@ export function readManagerState(scope: ManagerStateScope = "eredivisie", manage
       managerStates?: unknown;
     };
 
-    const state: ManagerState = {
-      ...DEFAULT_STATE,
-      formation: typeof parsed.formation === "string" ? parsed.formation : DEFAULT_STATE.formation,
-      lineupIds: Array.isArray(parsed.lineupIds) ? parsed.lineupIds.filter((id): id is string => typeof id === "string") : [],
-      benchIds: Array.isArray(parsed.benchIds) ? parsed.benchIds.filter((id): id is string => typeof id === "string") : [],
-      pickedTransferId: typeof parsed.pickedTransferId === "string" ? parsed.pickedTransferId : null,
-      pendingSellId: typeof parsed.pendingSellId === "string" ? parsed.pendingSellId : null,
-      pendingBuyId:
-        typeof parsed.pendingBuyId === "string"
-          ? parsed.pendingBuyId
-          : typeof parsed.pickedTransferId === "string"
-            ? parsed.pickedTransferId
-            : null,
-      roundStates: normalizeRoundStates(parsed.roundStates),
-      managerStates: normalizeManagerStates(parsed.managerStates, scope),
-      roundLocks: normalizeRoundLocks(parsed.roundLocks),
-      adminActionLog: normalizeAdminActionLog(parsed.adminActionLog),
-    };
-
-    const personal = resolvePersonalState(state, scope, managerKey);
-
-    return {
-      ...state,
-      formation: personal.formation,
-      lineupIds: personal.lineupIds,
-      benchIds: personal.benchIds,
-      pickedTransferId: personal.pickedTransferId,
-      pendingSellId: personal.pendingSellId,
-      pendingBuyId: personal.pendingBuyId,
-      roundStates: personal.roundStates,
-    };
+    return normalizeManagerStatePayload(parsed, scope, managerKey);
   } catch {
     return { ...DEFAULT_STATE };
   }
+}
+
+function normalizeManagerStatePayload(
+  parsed: Partial<ManagerState> & {
+    roundStates?: unknown;
+    managerStates?: unknown;
+  },
+  scope: ManagerStateScope = "eredivisie",
+  managerKey?: string | null,
+): ManagerState {
+  const state: ManagerState = {
+    ...DEFAULT_STATE,
+    formation: typeof parsed.formation === "string" ? parsed.formation : DEFAULT_STATE.formation,
+    lineupIds: Array.isArray(parsed.lineupIds) ? parsed.lineupIds.filter((id): id is string => typeof id === "string") : [],
+    benchIds: Array.isArray(parsed.benchIds) ? parsed.benchIds.filter((id): id is string => typeof id === "string") : [],
+    pickedTransferId: typeof parsed.pickedTransferId === "string" ? parsed.pickedTransferId : null,
+    pendingSellId: typeof parsed.pendingSellId === "string" ? parsed.pendingSellId : null,
+    pendingBuyId:
+      typeof parsed.pendingBuyId === "string"
+        ? parsed.pendingBuyId
+        : typeof parsed.pickedTransferId === "string"
+          ? parsed.pickedTransferId
+          : null,
+    roundStates: normalizeRoundStates(parsed.roundStates),
+    managerStates: normalizeManagerStates(parsed.managerStates, scope),
+    roundLocks: normalizeRoundLocks(parsed.roundLocks),
+    adminActionLog: normalizeAdminActionLog(parsed.adminActionLog),
+  };
+
+  const personal = resolvePersonalState(state, scope, managerKey);
+
+  return {
+    ...state,
+    formation: personal.formation,
+    lineupIds: personal.lineupIds,
+    benchIds: personal.benchIds,
+    pickedTransferId: personal.pickedTransferId,
+    pendingSellId: personal.pendingSellId,
+    pendingBuyId: personal.pendingBuyId,
+    roundStates: personal.roundStates,
+  };
 }
 
 export function saveManagerState(
@@ -454,9 +472,23 @@ export async function readManagerStatePersistent(
     return fallback;
   }
 
-  const persisted = await readPersistentJson({ store: "manager-state", scope }, readManagerState(scope));
-  writeManagerStateFile(persisted, scope);
-  return readManagerState(scope, managerKey);
+  try {
+    const persisted = (await readPersistentJson(
+      { store: "manager-state", scope },
+      readManagerState(scope),
+    )) as Partial<ManagerState> & { roundStates?: unknown; managerStates?: unknown };
+
+    const normalizedCollection = normalizeManagerStatePayload(persisted, scope);
+    try {
+      writeManagerStateFile(normalizedCollection, scope);
+    } catch {
+      // Keep request-time reads fail-soft even if local file sync is temporarily unavailable.
+    }
+
+    return normalizeManagerStatePayload(persisted, scope, managerKey);
+  } catch {
+    return fallback;
+  }
 }
 
 export async function saveManagerStatePersistent(

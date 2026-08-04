@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { buildFormationSlots, getFormationOptions } from "../domain/formation";
 import type { PlayerRecord } from "../domain/player";
-import { buildDraftPickSequence } from "../domain/rules";
+import { buildDraftPickSequence, type DraftOrderType } from "../domain/rules";
 import { calculateSquadCost } from "../domain/team-budget";
 import { syncDraftRosterToManagerTeam, syncDraftRosterToManagerTeamPersistent } from "./draft-manager-sync";
 import {
@@ -38,6 +38,7 @@ export type DraftState = {
   leagueId: string;
   status: DraftStatus;
   teamOrder: string[];
+  orderType: DraftOrderType;
   totalRounds: number;
   totalPicks: number;
   pickSequence: string[];
@@ -50,6 +51,7 @@ const DEFAULT_DRAFT_STATE: DraftState = {
   leagueId: "default",
   status: "IDLE",
   teamOrder: [],
+  orderType: "snake",
   totalRounds: 0,
   totalPicks: 0,
   pickSequence: [],
@@ -90,6 +92,7 @@ function normalizeDraftState(parsed: Partial<DraftState>): DraftState {
     leagueId: typeof parsed.leagueId === "string" ? parsed.leagueId : "default",
     status: parsed.status === "ACTIVE" || parsed.status === "COMPLETED" ? parsed.status : "IDLE",
     teamOrder: Array.isArray(parsed.teamOrder) ? parsed.teamOrder.filter((s): s is string => typeof s === "string") : [],
+    orderType: parsed.orderType === "linear" ? "linear" : "snake",
     totalRounds: typeof parsed.totalRounds === "number" ? parsed.totalRounds : 0,
     totalPicks: typeof parsed.totalPicks === "number" ? parsed.totalPicks : 0,
     pickSequence: Array.isArray(parsed.pickSequence)
@@ -156,6 +159,7 @@ export function startDraft(input: {
   leagueId: string;
   teamOrder: string[];
   totalRounds: number;
+  orderType?: DraftOrderType;
   startedBy: string;
   startedAt?: string;
   scope?: DraftScope;
@@ -173,6 +177,7 @@ function buildStartedDraftState(input: {
   leagueId: string;
   teamOrder: string[];
   totalRounds: number;
+  orderType?: DraftOrderType;
   startedBy: string;
   startedAt?: string;
   scope?: DraftScope;
@@ -185,13 +190,15 @@ function buildStartedDraftState(input: {
   }
 
   const totalPicks = input.teamOrder.length * input.totalRounds;
-  const pickSequence = buildDraftPickSequence(input.teamOrder, totalPicks);
+  const orderType = input.orderType ?? "snake";
+  const pickSequence = buildDraftPickSequence(input.teamOrder, totalPicks, orderType);
   const at = input.startedAt ?? new Date().toISOString();
 
   return {
     leagueId: input.leagueId,
     status: "ACTIVE",
     teamOrder: [...input.teamOrder],
+    orderType,
     totalRounds: input.totalRounds,
     totalPicks,
     pickSequence,
@@ -214,6 +221,7 @@ export async function startDraftPersistent(input: {
   leagueId: string;
   teamOrder: string[];
   totalRounds: number;
+  orderType?: DraftOrderType;
   startedBy: string;
   startedAt?: string;
   scope?: DraftScope;

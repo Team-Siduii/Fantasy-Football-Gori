@@ -2,7 +2,7 @@
 
 Status: Draft v0.4
 Owner: Team-Siduii
-Laatste update: 2026-06-12
+Laatste update: 2026-08-03
 
 ## 1. Productvisie
 Doel van de app:
@@ -83,12 +83,13 @@ Per rol belangrijkste rechten:
   - Toegestane formaties: 3-4-3, 3-5-2, 4-3-3, 4-4-2, 5-3-2
 
 ### 4.4 Draft flow
-- Draftvolgorde wordt door admin ingevoerd (op basis van eindstand vorig jaar)
-- Draftpatroon per blok van 3 rondes:
-  - Ronde 1: ingevoerde volgorde (bijv. 1-2-3-4-5)
-  - Ronde 2: ingevoerde volgorde (bijv. 1-2-3-4-5)
-  - Ronde 3: omgekeerde volgorde (bijv. 5-4-3-2-1)
-- Daarmee kiest de nummer laatst van vorig jaar in 2 van elke 3 rondes als eerste
+- Draftvolgorde wordt door admin ingevoerd (op basis van eindstand vorig jaar) en opgeslagen in de league-config als expliciete teamvolgorde van geaccepteerde deelnemers.
+- Draftpatroon is configureerbaar per league:
+  - `snake`: per blok van 3 rondes geldt ingevoerde volgorde, ingevoerde volgorde, daarna omgekeerde volgorde (bijv. 1-2-3-4-5 / 1-2-3-4-5 / 5-4-3-2-1)
+  - `lineair`: elke ronde gebruikt exact dezelfde ingevoerde volgorde (bijv. 1-2-3-4-5 / 1-2-3-4-5 / 1-2-3-4-5)
+- In de instellingen kan de admin geaccepteerde deelnemers omhoog/omlaag zetten om de teamvolgorde vast te leggen; geweigerde of nog niet geaccepteerde deelnemers vallen automatisch buiten de draftvolgorde.
+- De instellingen tonen bij de draftmodus direct een preview van ronde 1 t/m 3, zodat de admin visueel ziet hoe `snake` of `lineair` uitpakt voor de actuele teamvolgorde.
+- In snake-mode kiest de nummer laatst van vorig jaar in 2 van elke 3 rondes als eerste; in lineaire mode blijft de ingestelde volgorde elke ronde gelijk.
 - Draft loopt tot elk team 15 spelers heeft
 - Roster-validatie wordt tijdens draft al afgedwongen: picks worden geblokkeerd als de teamwaarde boven de mode-specifieke transferbudget-cap komt, als de geselecteerde linie-aantallen niet meer binnen één toegestane formatie + vaste bankverdeling passen, of als een manager boven maximaal 2 spelers uit hetzelfde land komt.
 - Elke geldige draftpick wordt direct in My Team ingevuld; de app kiest automatisch de best passende toegestane formatie op basis van de reeds gekozen spelers en plaatst overige geldige spelers op de bank.
@@ -100,32 +101,41 @@ Per rol belangrijkste rechten:
 - Draft-engine exposeert API-acties `start`, `pick`, `return` en `current` via `/api/draft` met persistente draft-state; `mode=eredivisie|wk` houdt draft-state en team-rosters per competitie gescheiden.
 - Elke draft-pick synchroniseert direct naar het persoonlijke `manager-state` record onder de canonieke `managerId` van de gekoppelde manager; e-mail en profielvelden blijven alleen alias-/contactdata. Bij login/herladen leest `/api/manager/state` altijd de ingelogde managersessie en resolveert die eerst naar dezelfde canonieke `managerId`. Draft blijft daarmee de seizoensstartbron voor de initiële selectie, maar latere ronde-snapshots en transfers blijven zelfstandig in `manager-state` bestaan en worden niet meer bij reads of repairs terug overschreven vanuit draft-rosters/picks.
 - WK `manager-state` wordt bij readpaths voor `Mijn team` en `Bekijk team` server-side semantisch gevalideerd op formatie + positieverdeling van basiself en bank. Als een opgeslagen state inhoudelijk niet meer klopt met de canonieke draft-/roster-artifacts, wordt die eerst position-aware gerepareerd en daarna pas uitgeleverd. Daarmee blijven `Mijn team` en `Mijn competitie` op dezelfde selectie uitkomen en ontstaan geen onmogelijke shapes meer zoals een 4-3-3 met een extra middenvelder op de bank of een leeg team door een incompatibele formatie.
+- Voor WK readpaths blijft een speler ook zichtbaar in opgeslagen teamweergaves als hij in een latere ronde niet meer in de actuele availability/scoring-snapshot voorkomt; de speler krijgt dan `isActive=false`, wordt uitgegrijsd in `Mijn team` en `Bekijk team`, en is niet meer koopbaar op de transfermarkt. Zo blijft een uitgeschakeld land of niet-actieve speler expliciet herkenbaar in plaats van stil te verdwijnen.
+- In gedeelde WK-finaleweek telt de troostfinale mee in **dezelfde speelronde 8** als de finale. De availability/read-models behandelen daarom alle spelers van de vier actieve landen uit finale + troostfinale als speelbaar voor ronde 8; alleen spelers van andere landen blijven uitgegrijsd en niet koopbaar (uiteraard nog steeds uniek per manager/team).
+- WK readpaths mogen geen schema-migratie/DDL vereisen om live data te tonen. Reads op `wk-sync-store` en de persistente JSON-state gebruiken alleen bestaande tabellen; schema-aanmaak of -wijziging gebeurt uitsluitend op write/sync-paden. Zo blijven production reads werken wanneer de runtime-DB-gebruiker wel mag lezen/schrijven maar geen `CREATE/ALTER TABLE` rechten heeft.
 - Draft-teamkoppeling matcht niet alleen vaste presets, maar ook de actuele league-deelnemersconfiguratie (`managerId`, label, email) en runtime managerprofielen (naam/teamnaam/email). Ook de persistente draft-sync gebruikt die actuele participant-aliasen, zodat aangepaste teamnamen of labels na een herlaad- of deploymoment nog steeds aan de juiste manager-email gekoppeld blijven.
 - Competitie-ranglijsten worden opgebouwd vanuit geaccepteerde league-deelnemers in plaats van alleen vaste manager-presets. Daardoor blijft ook een league-coördinator/admin-account met geaccepteerde deelnemerstatus zichtbaar in `Mijn competitie`, zolang die manager aan een echte subpoule/manageridentiteit gekoppeld is; een puur technisch admin-account zonder managerrol of subpoule blijft buiten de ranglijst.
+- In `Mijn competitie` staat `Bekijk` als compacte aparte actieknop in een eigen kolom direct achter de teamnaam. De teamnaamcel zelf blijft daardoor smal/leesbaar en de rankingkolommen blijven op mobiel en desktop stabiel uitgelijnd. Op mobiel blijft de leaderboard bovendien altijd één vaste 5-koloms rij (`#`, `Team`, `Actie`, `Ronde`, `Totaal`) zonder wrap van de totaalkolom of totaalscore naar een volgende regel.
+- `Mijn competitie` gebruikt een compact leaderboard-card design met samenvattingsheader (competitienaam, aantal teams, eigen positie) en een subtiele `Jij`-badge + sterkere row-highlight voor de ingelogde manager.
 - Draft-pick is turn-based en atomisch: alleen actieve team aan beurt mag picken; dezelfde speler kan niet 2x gepickt worden binnen de actieve mode.
-- Eredivisie-draftpagina (`/draft`) is een beschermde manager-draftkamer met live beurtindicator, picknummer/ronde, spelerkaarten, club/waarde/naam/positie-filters, bevestigingsbalk, eigen selectie, alle teamrosters en pickhistorie.
+- Eredivisie-draftpagina (`/draft`) is een beschermde manager-draftkamer met live beurtindicator, picknummer/ronde, spelerkaarten, club/waarde/naam/positie-filters, bevestigingsbalk, eigen selectie, alle teamrosters en pickhistorie. Eredivisie-kaarten tonen bovendien per herkende club een compacte clubbadge + shirticoon zodat alle 2026/2027 clubs visueel consistent herkenbaar zijn.
 - WK-draftpagina (`/manager/world-cup/draft`) gebruikt dezelfde draftkamer voor de WK-spelerspool (`/api/players?mode=wk`) met `Land`, waarde, naam en positie als filters. WK-spelerkaarten tonen bij herkende landen een compacte vlagafbeelding linksboven, zodat landherkenning consistent is met de My Team kaartweergave.
 - Draft is bereikbaar via het globale openklapmenu en de mobiele ondernavigatie; in WK mode verwijst Draft naar `/manager/world-cup/draft`, in Eredivisie mode naar `/draft`.
 - De header gebruikt op laptop én mobiel één compacte `Menu`-knop; zonder actieve managersessie toont het menu uitsluitend `Log in`, en na login toont het menu `Mijn team`, `Draft`, `Competitie`, `Instellingen`, `Spelregels` en `CSV import` zodat de kernacties compact en consistent bereikbaar blijven.
-- Oefendraftbeheer zit ingeklapt in de draftkamer: start/reset draft met standaardvolgorde `Johan Swart, Thomas, Jack, Emiel Zomerdijk`, 15 rondes, en return-actie voor testcorrecties.
+- Oefendraftbeheer zit ingeklapt in de draftkamer: start/reset draft met de actuele teamvolgorde en draftmodus uit de league-config (`snake` of `lineair`), het ingestelde aantal rondes, en een return-actie voor testcorrecties.
 - Accountpagina (`/account`) bevat managernaam, teamnaam en wachtwoordbeheer; managernaam/teamnaam worden gebruikt voor herkenning in de draftkamer.
 
 ### 4.5 Transfers (kern van MVP)
 - Er is een vrije pool met beschikbare spelers
 - Transfers voor poulewedstrijden verlopen in 4 fases per ronde:
-  - Fase 1: elke manager kiest exact 1 speler om te verkopen of kiest expliciet voor `niemand verkopen`
-  - Fase 2: alleen managers die verkocht hebben kiezen 1 vervanger uit de vrije pool
-  - Fase 3: wanneer alle koopkeuzes binnen zijn controleert de app op dubbele claims op dezelfde speler
-  - Fase 4: unieke claims en winnende dubbele claims worden uitgevoerd; verliezende managers moeten vóór de volgende ronde opnieuw een speler kiezen
+  - Fase 1: elke manager stelt eerst een *verkooprij* samen en bevestigt die daarna in één keer. Daarin zit maximaal 1 reguliere verkoop plus optionele extra verplichte verkopen van spelers die voor de volgende ronde `isActive=false` zijn geworden. Tot het bevestigingsmoment kan de manager individuele sell-items weer undo-en.
+  - Fase 2: alleen managers met bevestigde verkopen krijgen evenveel koopslots als het aantal verkochte plekken (reguliere verkoop + verplichte extra sells zonder vervanger tellen elk als apart slot)
+  - Fase 3: managers bouwen ook hun *kooprij* eerst op en bevestigen daarna hun volledige set koopkeuzes voor die fase; wanneer alle koopkeuzes binnen zijn controleert de app op dubbele claims op dezelfde speler
+  - Fase 4: unieke claims en winnende dubbele claims worden uitgevoerd; verliezende managers moeten alleen voor de nog onvervulde slots opnieuw kiezen, terwijl al gewonnen aankopen van dezelfde manager behouden blijven
 - De manager-UI toont per ronde altijd:
   - huidige transferfase
   - welke managers nog op actie wachten
   - welke managers klaar zijn / geen transfer doen
   - of de ingelogde manager opnieuw moet kiezen wegens verloren conflict
+  - een compacte queue-samenvatting met aantallen voor verkooprij, bevestigde verkopen, gewonnen aankopen en nog open koopslots
+  - een aparte statusbox vlak bij `Wachten op` met alle vastgezette verkopen van de ingelogde manager, zodat bevestigde sells ook na fase 1 en tijdens retry-fases zichtbaar blijven naast de transferlijst
+  - in retry-fase een expliciete banner dat alleen de nog open koopslots opnieuw gekozen hoeven te worden en dat gewonnen aankopen blijven staan
 - Simultane transfer op dezelfde vrije speler gebruikt geen first-write-wins meer; prioriteit gaat naar de manager met de lagere positie op de ranglijst
 - Teammutaties worden pas definitief toegepast zodra de transferfase voor die manager is gewonnen/opgelost
 - Verkochte spelers komen na fase 1 terug in de vrije pool voor de koopfase van die ronde
 - Basisregel blijft: binnen een league kan een speler maar in 1 team zitten
+- Transfervalidatie blijft mode-specifiek streng: in Eredivisie mag een manager na een transfer maximaal **1 speler per club** bezitten; in WK blijft de landenregel gelden (standaard maximaal **2 spelers per land**, met eventuele ronde-specifieke uitzonderingen elders in de ruleset).
 - Positiebehoud op wissels: spelerwissel tussen basis en bank is alleen toegestaan als de doel-slotpositie gelijk blijft (bijv. MID↔MID, DEF↔DEF)
 - Na draft kan manager vrij transfers doen uit de vrije pool binnen het transferwindow
 - Transferlimiet:
@@ -157,22 +167,35 @@ Per rol belangrijkste rechten:
 - In de Team-paginaheader (regel direct onder titel "Team") wordt de standaardtekst vervangen door een compacte speelrondekaart met ronde-nummer, start-countdown en een wedstrijdraster met 1-op-1 shirt-icoontjes per club, plus datum+tijd per duel.
 - Speelrondekaart heeft browsen met links/rechts-knoppen: rechts toont de volgende ronde (programma), links toont de vorige ronde met uitslagen.
 - In WK `Mijn team` is de ronde-selector niet alleen visueel maar ook stateful: per gekozen speelronde worden de opgeslagen basiself, bankvolgorde en formatie exact uit de betreffende round-snapshot geladen (zonder lokale herinterpretatie naar een andere geldige formatie).
+- Als in WK geen expliciete speelronde is gekozen, tonen `Mijn team` en `Bekijk team` standaard altijd de **laatst afgeronde** ronde. Een al aangemaakte toekomstige round-snapshot (bijvoorbeeld ronde 8 vóór de aftrap) mag de zichtbare rondepunten dus nooit naar `0` terugzetten zolang die ronde nog niet is begonnen.
+- In WK `Mijn team` en `Mijn competitie` bepaalt de default round-selectie de zichtbare ronde via het schema: zolang een nieuwe ronde nog niet is afgetrapt, blijft de laatst afgeronde ronde standaard zichtbaar; pas na de eerste aftrap schuift de default-weergave door naar de nieuwe ronde.
 - In WK `Mijn team` worden spelerkaarten per gekozen speelronde opnieuw verrijkt met de puntbron van die ronde (`roundPoints`) terwijl het teamtotaal cumulatief (`totalPoints`) mag blijven; terugbladeren naar een vorige ronde moet dus de toen behaalde spelerpunten tonen.
+- WK advancement points zijn een aparte puntsoort naast match-events: de badge toont **per geselecteerde ronde** alleen de advancement van die ronde (bijv. `⚡+5`), terwijl het cumulatieve spelerstotaal deze advancement wel meeneemt over alle eerdere rondes heen.
+- WK advancement wordt bepaald op **team/land-progressie per ronde** en niet op individuele speelminuten. Als een land doorgaat, krijgt elke speler van dat land dezelfde advancement voor die ronde — ook bankspelers, keepers zonder minuten of niet-ingevallen selectiespelers.
+- Als opgeslagen `MW`-eventrows geen `team_name` bevatten, moet de scorer het land read-time kunnen herleiden via de player-history metadata van dezelfde speler/ronde zodat bestaande syncdata geen advancement-punten verliest.
+- Als een knockoutronde al is beslist maar `MW`-eventrows voor die ronde (nog) ontbreken, moet de scorer advancement alsnog kunnen afleiden uit de deelnemers van de **volgende** gesynchroniseerde knockoutronde. Zodra er voor die huidige ronde wél expliciete `MW`-eventrows bestaan, zijn die leidend en mag de fallback uit de volgende ronde geen extra afvallers meer ten onrechte een advancement-badge geven. Daardoor blijven advancement-badges en speler-rondepunten zichtbaar in `Mijn team` en `Bekijk team` zodra de volgende ronde bekend is.
+- In de gedeelde WK-speelronde 8 geldt een speciale eindefaseregel: de **troostfinale** en de **finale** zitten in één gezamenlijk programmarondeblok, maar alle troostfinale-punten tellen slechts voor **50%** mee. Dat halve-effect geldt voor alle eventpunten in die wedstrijd én voor de advancement/winnaarsbonus van het winnende troostfinaleland (dus afgerond `⚡+3` in plaats van `⚡+5`). Ook als de externe provider de finale niet meer als aparte ronde 9 maar óók als ronde 8 terugstuurt, moet de scorer de **vroegste** ronde-8-wedstrijd blijven behandelen als troostfinale en de latere als finale. Omdat in de UI geen halve spelerpunten mogen bestaan, wordt het gehalveerde speler-`roundPoints` resultaat daarna altijd **naar boven afgerond** voordat het in badges, kaarten en cumulatieve `totalPoints` terechtkomt.
 - Bij snel of herhaald bladeren tussen WK-speelrondes mag geen oudere async response de nieuwste selectie overschrijven: de pagina toont altijd de punten, opstelling en match-info van de **laatst gekozen** ronde en negeert stale in-flight responses van een eerder aangeklikte ronde.
 - Een pure WK-rondenavigatie mag **nooit** direct een `manager-state` writeback triggeren. Persist naar `/api/manager/state` mag alleen volgen op een echte teammutatie (formatie/opstelling/pending transfer state) en niet op alleen het wisselen van `selectedRound`, zodat de snapshot van een historische ronde niet per ongeluk overschreven wordt met de opstelling van een andere ronde.
 - `Mijn team` leest de renderklare teamsnapshot server-side uit een gedeeld read-model endpoint. De pagina hydrateert dus niet langer zelf lineup/bank opnieuw vanuit losse `players` + `manager-state` responses, maar rendert een server-side geprojecteerde TeamViewModel zodat `Mijn team` en `Bekijk team` dezelfde snapshotlogica delen.
-- In WK mode verrijkt de Team-speelrondekaart het statische schema per geselecteerde ronde met gesynchroniseerde `wk_matches` data, zodat live standen tijdens lopende wedstrijden en definitieve uitslagen na afloop direct zichtbaar zijn in hetzelfde programma-overzicht. Gespeelde wedstrijden krijgen een duidelijkere score-hiërarchie (dikgedrukt/groter), terwijl live wedstrijden geen tekstlabel tonen maar via accentkleur, subtiele puls/knippering en wedstrijdminuut visueel opvallen. Naamvarianten tussen schema en bronfeed (zoals `Bosnië-Herzegovina` vs `Bosnië en Herzegovina`, of `Saoedi-Arabië` vs `Saudi-Arabië`) worden als hetzelfde land gematcht zodat uitslagen niet wegvallen door schrijfwijzeverschillen.
+- In WK mode verrijkt de Team-speelrondekaart het statische schema per geselecteerde ronde met gesynchroniseerde `wk_matches` data, zodat live standen tijdens lopende wedstrijden en definitieve uitslagen na afloop direct zichtbaar zijn in hetzelfde programma-overzicht. Gespeelde wedstrijden krijgen een duidelijkere score-hiërarchie (dikgedrukt/groter), terwijl live wedstrijden geen tekstlabel tonen maar via accentkleur, subtiele puls/knippering en wedstrijdminuut visueel opvallen. Naamvarianten zoals `Bosnië-Herzegovina` ↔ `Bosnië en Herzegovina` en `Saoedi-Arabië` ↔ `Saudi-Arabië` worden bij deze verrijking als dezelfde landen behandeld, zodat scores niet verdwijnen door schrijfverschillen tussen statisch schema en gesynchroniseerde brondata. Voor knockout-rondes met placeholders zoals `Winnaar duel 89` geldt bovendien: zodra `wk_matches` voor die ronde volledig aanwezig is, vervangt de read-merge die placeholders round-by-round door de echte landen en uitslagen uit de syncbron. Voor ronde 8 toont het schema finale + troostfinale in één gezamenlijk blok, met compacte gecentreerde fasebadges boven elke wedstrijd (`Finale` / `Troostfinale`) en een subtiele scheidingsregel ertussen.
 - Transfermarkt-filters in MVP: positie, club en maximale transferwaarde (slider)
 - In mobiele weergave stacken transfermarkt-filters onder elkaar met full-width velden (geen samengedrukte Positie/Club/Zoek-layout)
 - Mobile transfermarkt-filters gebruiken extra label-contrast en spacing voor leesbaarheid en touch-bruikbaarheid
-- Verkoop-selector respecteert transferlimiet van de actieve ronde: in normale rondes max 1 open verkoop, in bonusrondes (3 transfers) tot 3 open verkopen vóórdat kopen verplicht wordt
-- UI toont bij open verkopen een duidelijke teller/hint (bijv. 1/3, 2/3) en blokkeert nieuwe verkoop pas bij bereikt limiet
-- Transfer policy-engine berekent per ronde deterministisch: transferlimiet, open-sell ruimte en koop-toestemming op basis van bonusrondeconfig + voltooide transfers
+- De Team/transfermarkt-UI werkt met expliciete queue + confirm + undo interacties: sell-selectie voegt spelers toe aan een bevestigbare verkooprij, buy-selectie voegt spelers toe aan een bevestigbare kooprij, beide rijen blijven lokaal wijzigbaar tot de manager op bevestigen drukt, en elke queue-regel heeft een eigen undo-knop zodat één specifieke keuze verwijderd kan worden zonder de rest van de rij te resetten
+- De sell-selector moet zich na elke add/undo hard resetten naar de placeholder-optie (ook op mobiele/native select-controls) zodat de eerstvolgende verkoopkeuze altijd weer als nieuwe interactie wordt opgepakt en niet stil wegvalt na een undo.
+- In mobiele retry-flow blijft deze queue-UX volledig bruikbaar: de queue-samenvatting schakelt naar een compacte 2-koloms kaartgrid, retry-banner en queue-regels blijven binnen de viewport, en undo-acties veroorzaken geen horizontale overflow in `Mijn team`.
+- Verkoop-selector respecteert transferlimiet van de actieve ronde voor reguliere verkopen, maar laat daarnaast extra verplichte inactive sells in dezelfde bevestiging toe zonder dat de manager de queue hoeft te herstarten
+- Transfer policy-engine berekent per ronde deterministisch hoeveel koopslots nog openstaan op basis van `sellPlayerId + autoSellPlayerIds - resolvedTransfers`, zodat retry-rondes alleen de nog niet gewonnen plekken opnieuw openen
 - WK transfer-round availability gebruikt bij blokkades eerst de zichtbare `manager-state` van de manager als bron van waarheid; alleen wanneer een manager nog geen teamstate heeft, valt de backend terug op een alias-aware merge van raw `team-roster` sleutels (bijv. `emielzomerdijk` + `Emiel Zomerdijk`). Daardoor blokkeren orphan alias-rosters handmatige of herstelde WK-transfers niet meer onterecht.
+- Ook in de gedeelde WK-ronde 8 blijft de transfer-validatie identiek streng: een aankoop is alleen toegestaan als de volledige 15-koppige selectie na die transfer nog steeds binnen minstens één toegestane basisformatie plus de vaste bankverdeling past (altijd minimaal 1 keeper, 1 verdediger, 1 middenvelder en 1 aanvaller op de bank).
 - Zodra een volgende speelronde actief is, self-healt de backend oudere transferrondes met onafgemaakte `PENDING`/`SUBMITTED` states naar een afgesloten historische toestand, zodat oude rondes geen hangende pending-managers of schijnbaar mislukte transfers blijven tonen.
 - WK manager-state en transfer-round writes moeten manager-identiteiten canoniek resolven op basis van de actieve league participants/runtime auth-accounts; een email-match met een participant wint altijd van test/preset ids. Daardoor kunnen transfer-updates niet meer per ongeluk onder een legacy of preset sleutel landen terwijl read-paden later onder de live `managerId` lezen.
 - Manager/state- en transfer-round-routes hydrateren vóór read/write altijd eerst de persisted auth-state, zodat Vercel instances niet terugvallen op stale preset-identiteiten bij canonical key resolution.
-- Voor uitzonderlijke WK-correcties moet een admin een handmatige teamrepair kunnen uitvoeren die in één transactie dezelfde waarheid doorzet naar `manager-state`, de actieve ronde-snapshot, `team-roster-state` en de betreffende `transfer-round` entry. Zo blijft een gecorrigeerde selectie duurzaam consistent en klapt een oude foutieve transfer-resolutie later niet opnieuw terug.
+- Persistente `manager-state` readpaths moeten fail-soft zijn: als de onderliggende DB-read of lokale `/tmp` sync tijdelijk faalt, vallen `/manager`, `/api/manager/state` en afgeleide preferred-route reads terug op de laatst leesbare snapshot in plaats van een generieke 500. Gewone reads mogen dus geen verplichte writeback of harde storage-availability vereisen om een manager na login zijn teampagina te laten openen.
+- Persistente Gori write-paths voor account/profile/password-wijzigingen mogen niet standaard request-time schema-DDL vereisen. Normale writes moeten eerst direct upserten naar de bestaande store; alleen wanneer de backing table echt ontbreekt mag een eenmalige bootstrap-retry volgen. Zo blijven `/account`, profiel-updates en wachtwoordwijzigingen werken op prod wanneer de DB-user wel data mag lezen/schrijven maar geen `CREATE TABLE/INDEX` op elke cold start hoort te doen.
+- Persistente Gori write-paths casten storage-identiteit (`state_key`, `store_name`, `scope`, `manager_key`) expliciet naar `text` in de Postgres upsert. Daardoor blijven `manager-state`, `auth-state` en transfergerelateerde writes werken op production poolers/runtimes die ongetypeerde prepared-statement parameters anders afwijzen met `could not determine data type of parameter $2`.
+- Voor uitzonderlijke WK-correcties moet een admin een handmatige teamrepair kunnen uitvoeren die in één transactie dezelfde waarheid doorzet naar `manager-state`, de actieve ronde-snapshot, `team-roster-state` en de betreffende `transfer-round` entry. Daarbij moet de repair het rosterrecord op basis van de echte manageridentiteit/alias-resolutie selecteren; een correctie voor manager A mag nooit stilzwijgend het `team-roster-state` record van een andere manager (zoals een vaste `Thomas` key) overschrijven. Zo blijft een gecorrigeerde selectie duurzaam consistent en klapt een oude foutieve transfer-resolutie later niet opnieuw terug.
 - Bankverdeling is vast: altijd 4 bankslots met 1x GK, 1x DEF, 1x MID en 1x FWD
 - Basiselftal-weergave op het veld toont per slot de echte speler op die index (geen naamherhaling binnen een linie); elke speler-id mag maar 1x tegelijk in teamstate voorkomen
 - Pitch in basiselftal gebruikt exact de aangeleverde referentie-afbeelding als achtergrondasset (`/public/images/pitch-reference.jpg`) met sterke zoom-in (`background-size: 200% auto`) zodat het veld close-up in beeld staat
@@ -181,7 +204,7 @@ Per rol belangrijkste rechten:
 - Demo-team (testseed) wordt per actieve mode binnen budget opgebouwd (Eredivisie <= €32.0M, WK <= €100.0M) zodat testen direct valide start
 - Mobiele volgorde op Team-pagina: basiselftal eerst, daarna wisselspelers, daarna statistiektegels
 - Spelerkaart-onderregel toont de transferprijs van de speler (format `€ x.xxM`) in plaats van puntenlabel.
-- Spelerkaart-bovenregel toont links de landenvlag en rechts de landafkorting in hoofdletters (ISO-2) voor basiselftal en wisselspelers; open slots tonen bovenin geen tekst.
+- Spelerkaart-bovenregel toont in WK-mode links de landenvlag en rechts de landafkorting in hoofdletters (ISO-2); in Eredivisie-mode tonen spelerkaarten een compacte clubbadge met shirticoon voor alle ondersteunde clubs. Open slots tonen bovenin geen tekst.
 - Open slots tonen in de onderste regel geen prijslabel en in de naamregel geen placeholdertekst.
 - Naam- en waarderegel op spelerskaarten zijn gecentreerd uitgelijnd.
 - Alle spelerskaarten gebruiken vaste rijhoogtes zodat gevulde slots en open slots exact dezelfde kaartgrootte behouden.
@@ -214,14 +237,14 @@ Per rol belangrijkste rechten:
 3) Speler doet transfer vanuit vrije pool in poulefase
 - Trigger: transferwindow van ronde staat open
 - Steps:
-  - manager kiest speler om te verkopen of kiest `niemand verkopen`
+  - manager bouwt een verkooprij op, kan items undo-en en bevestigt daarna of kiest `niemand verkopen`
   - app wacht tot alle managers fase 1 hebben afgerond
-  - managers met verkoop kiezen een vervanger
+  - managers met bevestigde verkopen bouwen een kooprij op en bevestigen die in één keer
   - app lost dubbele claims op met ranglijstprioriteit
-  - eventuele verliezers kiezen opnieuw vóór de volgende ronde
+  - eventuele verliezers kiezen alleen opnieuw voor hun nog onvervulde slots vóór de volgende ronde
 - Succescriteria:
   - elke manager ziet live op welke managers nog gewacht wordt
-  - budget, formatie en max 2 spelers per land blijven geldig
+  - budget, formatie en mode-specifieke selectiecaps blijven geldig (Eredivisie: max 1 speler per club; WK: max 2 spelers per land tenzij rondeconfig anders bepaalt)
   - per speler bestaat na afronding maximaal 1 winnaar binnen de league
 
 ## 6. Functionele requirements (FR)
@@ -237,6 +260,7 @@ FR-009: Roster-validatie dwingt tijdens draft geldige teamopbouw af: een manager
 FR-010: Basisopstelling bevat exact 1 keeper en een geldige veldformatie uit de toegestane set.
 FR-011: Transferlimiet is standaard 1 per ronde, met precies 3 vooraf ingestelde bonusrondes met limiet 3.
 FR-012: Team kan geen transfer bevestigen die budget overschrijdt.
+FR-012a: Transfervalidatie gebruikt mode-specifieke uniqueness-caps: in Eredivisie wordt een transfer geweigerd zodra de manager na de mutatie meer dan 1 speler van dezelfde club zou bezitten; in WK blijft de landenlimiet van de actieve ruleset leidend.
 FR-013: Players kunnen via admin mutaties krijgen gedurende seizoen zonder historieverlies.
 FR-014: Buitenland-transfer van roster speler activeert een toegestane vervangingsactie vanuit vrije pool.
 FR-015: Transfervenster opent direct na laatste wedstrijd van huidige ronde en sluit exact bij eerste wedstrijd van volgende ronde.
@@ -281,7 +305,12 @@ FR-045a: De manager-header gebruikt op laptop én mobiel één openklapmenu (`Me
 FR-046: In mobiele Team-weergave staan de secties in deze volgorde: basiselftal, wisselspelers, daarna statistiektegels.
 FR-047: Transfermarkt ondersteunt kolomsortering op spelernaam, positie (GK, DEF, MID, FWD), club en transferwaarde, met omschakelbare oplopend/aflopend sorteerrichting.
 FR-047a: De algemene spelerspoule in transfermarkt toont per speler een zichtbare kolom `Punten`; als er nog geen actuele WKCoach-waarde beschikbaar is, toont de UI expliciet `0` in plaats van een hardcoded demo-score.
+FR-047b: WK read-API’s blijven bruikbaar wanneer de database/scoring-store tijdelijk niet leesbaar is: `/api/players?mode=wk`, `/api/wk/players`, `/api/wk/matches` en `/api/wk/player-points` leveren dan een lege of CSV-gebaseerde fallback met `syncStatus` in plaats van een generieke HTTP 500.
+FR-047c: WK database-readpaden mogen niet impliciet falen door schema-bootstrap op request-tijd; leesverkeer gebruikt alleen `SELECT` op bestaande tabellen/stores, terwijl `CREATE/ALTER` exclusief op sync/writepaden plaatsvindt.
+FR-047d: Auth-readpaden blijven login- en sessiecheck-functionaliteit behouden als de persistente auth-store tijdelijk niet leesbaar of niet beschrijfbaar is; `ensureAuthStateFromDb()` valt dan terug op de bestaande file-/in-memory auth-state in plaats van een generieke HTTP 500 te veroorzaken.
+FR-047e: In WK mode gebruiken alle transfer-readpaden dezelfde vaste prijsnormalisatie van importwaarde min €3.0M; `/api/players?mode=wk`, `/api/wk/players` en de instellingenweergave mogen daarin niet divergeren.
 FR-048: Transfermarkt-filters blijven op mobiel volledig bruikbaar: Positie/Club/Zoek stacken verticaal en elk veld gebruikt full-width.
+FR-048a: In mobiele retry-fases van de transferflow blijft de queue-UX zonder horizontale scroll bruikbaar: de queue-samenvatting toont 2 compacte kolommen, retry-banner blijft leesbaar binnen de viewport, queue-regels met undo-knop blijven volledig zichtbaar op telefoonschermbreedte en de aparte box met vastgezette verkopen blijft dicht bij de statusinformatie leesbaar.
 FR-049: Verkoop-selector staat open totdat de transferlimiet van de actieve ronde is bereikt; in rondes met limiet 1 is na 1 open placeholder een koopactie vereist, in bonusrondes met limiet 3 mogen eerst tot 3 verkopen worden gedaan.
 FR-050: League RuleProfile v2 is versieerbaar en valideert schema-gedreven op transferregels (default/bonusrondes), budget-cap, round-lock gedrag en benchcompositie.
 FR-051: Transfer policy-engine bepaalt per ronde deterministisch of SELL en BUY zijn toegestaan op basis van RuleProfile, aantal voltooide transfers en aantal open verkopen.
@@ -311,7 +340,8 @@ FR-070: Manager-state persistence is competitiegescheiden: Eredivisie mode en WK
 FR-071: Deploy-config ondersteunt optionele gescheiden storage paths via `MANAGER_STATE_PATH` (Eredivisie) en `MANAGER_STATE_WK_PATH` (WK) voor veilige runtime-isolatie.
 FR-072: Instellingenpagina toont een debug-sectie met het actieve state-opslagpad voor Eredivisie mode en WK mode zodat runtime-config snel te verifiëren is.
 FR-073: In WK mode gebruikt de manager-UI overal de term `Land` waar Eredivisie mode `Club` toont (filters, zoeklabel en sorteerkolom) zonder gedragswijziging van filtering/sortering.
-FR-074: Players API ondersteunt mode-specifieke datasets: Eredivisie laadt `data/players.csv`, WK mode laadt `data/players-wk.csv` via `GET /api/players?mode=wk`.
+FR-074: Players API ondersteunt mode-specifieke datasets: Eredivisie laadt `data/players.csv` (gevuld vanuit Coach van het Jaar seizoen 2026/2027 met `id/naam/club/positie/prijs/isActive`), WK mode laadt `data/players-wk.csv` via `GET /api/players?mode=wk`.
+FR-074a: Eredivisie-spelerkaarten in `Mijn team`, `Bekijk team` en de draft-preview gebruiken één gedeelde club-brandingmapping (badgecode + shirtkleur) zodat alle herkende 2026/2027 clubs consistent hetzelfde visuele clubsignaal tonen, inclusief aliassen zoals `Go Ahead Eagles` en `SC Heerenveen`.
 FR-075: WK demo-draft dataset is opgebouwd uit de meest recente nationale wedstrijdselecties waar beschikbaar, met fallback op landpagina-selecties, en gebruikt transferwaardeschaal met maximum €4.5M voor topspelers.
 FR-076: Transfermarkt is gepagineerd voor zowel Eredivisie als WK mode, met navigatieknoppen en paginastatus op basis van de actieve filter/sorteerset.
 FR-077: Instellingen voor league-config zijn mode-specifiek: Eredivisie en WK laden/schrijven elk naar een eigen configscope (`mode=eredivisie|wk`) met gescheiden opslagpad en onafhankelijke regels.
@@ -324,6 +354,8 @@ FR-083: Draft API forceert turn-order en speler-exclusiviteit: `pick` buiten beu
 FR-084: Elke draft `pick`/`return` synchroniseert direct naar persistente team-roster-state per team én naar het persoonlijke My Team record onder de canonieke `managerId` van de manager die via league-config/profiel/aliasen aan het draftteam gekoppeld is. Draft blijft de bron voor de initiële seizoensselectie; na de draft worden ronde-snapshots en transfers zelfstandig in `manager-state` vastgelegd en niet meer terug overschreven vanuit draft-state.
 - FR-085: `/api/manager/state` leest altijd de canonieke managersessie en toont de voor die ronde opgeslagen team-snapshot; eventuele backfills of repairs mogen latere ronde-states niet stilzwijgend via normale read-paths vanuit draft-rosters/picks reconstrueren. Expliciete repair/backfill-flows mogen een aantoonbaar corrupte partial state (bijv. 1 zichtbare speler) wel eenmalig overschrijven wanneer een complete 15-speler bron in team-roster/draft-artifacts beschikbaar is. Legacy email-keyed manager-state mag daarbij nog gelezen en gemigreerd worden, maar nieuwe writes landen altijd op de canonieke manageridentiteit.
 - FR-085a: In WK mode gebruiken `Mijn team`, `Competitie` en `Team bekijken` dezelfde ronde-gebonden manager-state snapshot als canonieke bron voor formatie, basiself en bank. De UI mag een opgeslagen formatie bij normale reads niet lokaal herinterpreteren naar een andere geldige formatie; alleen expliciete manageracties (zoals formatie wisselen of transfers opslaan) mogen de opgeslagen formatie wijzigen.
+- FR-085b: In WK mode gebruikt `Mijn competitie` dezelfde persistente team-score snapshots als `Mijn team`: vóór de start van een nieuwe ronde blijft standaard de laatst gespeelde ronde zichtbaar, en bij handmatige rondenavigatie toont de ranglijst per manager de ronde-score én de toenmalige cumulatieve totaalscore voor de geselecteerde ronde.
+- FR-085c: De default WK-round-selectie op `Mijn team` en `Mijn competitie` is schema-gedreven: een toekomstige ronde-snapshot mag de laatst afgeronde ronde pas overschrijven zodra de eerste wedstrijd van de nieuwe ronde echt is afgetrapt.
 FR-086: Draftfunctionaliteit is een aparte seizoensstart-modus op `/draft`; de reguliere Manager Team-pagina toont geen draft-overzicht of draft-rostercomponent.
 FR-087: Manager Team-pagina focust uitsluitend op eigen teambeheer (opstelling, bank, transfers en ronde-overzicht) en bevat geen cross-team draftcontext.
 FR-088: Flashfootball-adapter normaliseert wedstrijdincidenten naar het interne match/event schema, inclusief FT/HT-score, doelpunten, assists en kaarten met speler-id, minuut en teamcontext.
@@ -338,10 +370,13 @@ FR-096: Oefendraftbeheer is zichtbaar als vaste kaart in de draftkamer met link 
 FR-097: Runtime-state voor Gori Fantasy ondersteunt database-backed opslag via `GORI_DATABASE_URL` (fallback `DATABASE_URL`/`POSTGRES_URL`) met app-namespace `gori_fantasy`; draft-state, team-rosters, manager-state, team-score-state en league-admin-config blijven gescheiden per store en competitie-mode (`eredivisie|wk`), terwijl manager-state intern canoniek per `managerId` wordt opgeslagen met alias-compatibiliteit voor legacy e-mailrecords, zodat RxAruba/andere apps en Gori-modes geen state mengen.
 FR-098: Instellingen bevat een admin health-check voor manager/account integrity per mode; de checker signaleert ontbrekende auth-accounts, participant↔auth email drift en legacy email-keyed manager-state records, en kan via een repair/backfill actie manager-state opnieuw canoniek onder `managerId` wegschrijven.
 FR-099: `Mijn competitie`/league-ranking gebruikt geaccepteerde league-deelnemers als bron in plaats van alleen vaste manager-presets; geaccepteerde deelnemers met een echte manageridentiteit of subpoule-koppeling blijven daardoor zichtbaar, ook wanneer hun auth-account rol `admin` heeft voor coördinatietaken. Puur technische admin-accounts zonder managerrol en zonder subpoule-koppeling blijven buiten de ranglijst.
+FR-099a: De `Bekijk`-actie in `Mijn competitie` rendert als compacte knop in een eigen kolom direct achter de teamnaam, zodat teamnaam/managertekst en de cijferkolommen los van elkaar uitgelijnd blijven.
+FR-099b: `Mijn competitie` toont boven de ranglijst een compacte samenvattingsheader met competitienaam, aantal teams en — wanneer bekend — de eigen positie van de ingelogde manager; de eigen managerregel krijgt daarnaast een zichtbare `Jij`-badge voor snellere scanbaarheid.
 FR-100: WK-spelerpunten voor UI, rankings en teamweergaves komen uitsluitend uit de persistente applicatie-datalaag (`team-score-state` + berekende player read-models) en niet rechtstreeks uit live WKCoach totalen.
 FR-101: WK-punten worden per speler per ronde opnieuw berekend vanuit persistente WKCoach `point_events`; eigen regels, waaronder extra clean-sheet-correctie voor verdedigers, overschrijven daarbij de ruwe bronpunten.
 FR-102: Behaalde teampunten worden per manager en per ronde als aparte snapshots opgeslagen met gebruikte lineup/bank op dat moment, zodat eerdere rondes niet veranderen wanneer het team later door transfers of opstellingswissels verandert.
 FR-103: Zodra een volgende speelronde actief is, worden oudere transferrondes met onafgeronde pending/submit-states server-side genormaliseerd naar een afgesloten historische toestand; afgeronde transfers blijven zichtbaar, maar oude rondes tonen geen hangende pending-managers meer.
+FR-104: De admin-route voor handmatige WK-teamreparaties resolveert het doelrecord in `team-roster-state` via de canonieke manageridentiteit/aliasen van de gekozen manager; een repair voor manager A mag dus nooit het rosterrecord van een andere manager overschrijven enkel omdat die key hardcoded of toevallig aanwezig is.
 
 ## 7. Niet-functionele requirements (NFR)
 Performance:
@@ -436,6 +471,7 @@ Waarom zo:
 - [ ] Ongeldige opstellingen (verkeerde aantallen/formatie) worden server-side afgekeurd
 - [ ] Transferlimieten per ronde + 3 bonusrondes worden correct afgedwongen
 - [ ] Budgetoverschrijdende transfers worden geblokkeerd
+- [ ] Eredivisie-transfers blokkeren server-side zodra een manager na de mutatie meer dan 1 speler van dezelfde club zou bezitten; WK-transfers blijven de actieve landenlimiet afdwingen
 - [ ] Transfervenster volgt automatisch: open na laatste wedstrijd ronde, dicht bij eerste wedstrijd volgende ronde
 - [ ] Buitenland-vervanging telt niet mee in transferlimiet en rekent budget normaal af
 - [ ] Bij gelijktijdige transferpogingen wint first-write-wins en blijft speler uniek toegewezen
@@ -467,12 +503,15 @@ Waarom zo:
 - [ ] Basiselftal gebruikt exact de aangeleverde referentie-afbeelding als pitch-achtergrond (`/public/images/pitch-reference.jpg`), met ongewijzigde kaarten/interactie erbovenop
 - [ ] Links/rechts-knoppen browsen speelrondes: rechts toont volgende ronde-programma, links toont vorige ronde met uitslagen
 - [ ] In WK mode toont de speelrondekaart live-stand zodra `wk_matches` een tussenscore heeft en laat dezelfde kaart na afloop de definitieve uitslag staan.
+- [ ] Als een toekomstige WK-ronde al een snapshot heeft maar nog niet is afgetrapt, blijven `Mijn team` én `Mijn competitie` standaard de punten en totalen van de laatst afgeronde ronde tonen; na de eerste aftrap schuift die default-weergave automatisch door naar de nieuwe ronde.
 - [ ] Gespeelde wedstrijden vallen visueel op met grotere/dikgedrukte scoreweergave; live wedstrijden gebruiken accentkleur + subtiele animatie en tonen, zodra beschikbaar, de wedstrijdminuut zonder expliciet "live"-label.
+- [ ] In ronde 8 gebruikt het programma compacte gecentreerde fasebadges (`Finale`, `Troostfinale`) zonder extra wedstrijdtekst tussen haakjes, met een subtiele scheidingsregel tussen beide duels.
 - [ ] Manager-UI blijft mobiel bruikbaar (telefoon/tablet) met responsive header, opstellingskaarten, statistiektegels en bottom navigation
 - [ ] Headeracties staan op laptop en mobiel in één openklapmenu (`Menu`); logged-out toont alleen `Log in`, logged-in toont Draft/Naam aanpassen/Instellingen/Spelregels/CSV import/Log out, zonder horizontale overflow
 - [ ] In mobiele Team-weergave staat de volgorde als: basiselftal → wisselspelers → statistiektegels
 - [ ] Transfermarkt-kolommen zijn klikbaar sorteerbaar op speler, positie (GK/DEF/MID/FWD), club en transferwaarde
 - [ ] Transfermarkt-filters op mobiel zijn full-width en verticaal gestapeld (Positie/Club/Zoek zonder overlap of ingedrukte velden)
+- [ ] In mobiele retry-flow blijft de transfer-queue zonder horizontale scroll bruikbaar: samenvatting toont 2 compacte kolommen, retry-banner blijft binnen viewport leesbaar en queue-regels inclusief undo-knoppen blijven volledig zichtbaar.
 - [ ] Verkoop-selector volgt ronde-limiet voor open placeholders: limiet 1-rondes blokkeren na 1 open verkoop, bonusrondes blokkeren pas na 3 open verkopen; UI toont duidelijke teller/hint
 - [ ] Waiver/Blind bid mode werkt met gesloten biedingen tot reveal; winner-resolutie per speler volgt configureerbare tie-breaker (priority of earliest bid)
 - [ ] Admin kan waiver-ronde cancelen en heropenen met audittrail (actor, reason, timestamp)
@@ -494,6 +533,8 @@ Waarom zo:
 - [ ] Instellingenpagina toont zichtbare debug-regels met actieve state-opslagpaden voor Eredivisie en WK
 - [ ] In WK mode zijn alle transfermarkt-termen mode-correct: `Land`, `Alle landen`, `Zoek speler/land` en kolomheader `Land`; in Eredivisie mode blijft dit `Club`
 - [ ] WK mode laadt een eigen spelersdataset via `GET /api/players?mode=wk` (`data/players-wk.csv`) en Eredivisie blijft `data/players.csv` gebruiken
+- [ ] Eredivisie `data/players.csv` bevat de volledige Coach van het Jaar 2026/2027 spelerspool (473 spelers, 18 clubs) inclusief `actief` status zodat dummy/demo spelers nergens meer als standaarddataset terugkomen
+- [ ] Eredivisie-spelerkaarten in `Mijn team`, `Bekijk team` en de draft-preview tonen voor alle ondersteunde clubs een consistente compacte clubbadge + shirticoon, ook wanneer brondata langere aliassen zoals `Go Ahead Eagles`, `SC Heerenveen` of `FC Utrecht` gebruikt
 - [ ] WK demo-draft spelers bevatten deelnemende landen en realistische waardes met bovengrens €4.5M voor topspelers
 - [ ] Transfermarkt is gepagineerd in zowel Eredivisie als WK mode (vorige/volgende + pagina-indicator boven én onder de tabel) en reset naar pagina 1 bij filter/sorteerwijzigingen
 - [ ] Algemene spelerspoule in transfermarkt toont een zichtbare kolom `Punten`; spelers zonder actuele WKCoach-waarde tonen daarin expliciet `0`
@@ -504,6 +545,9 @@ Waarom zo:
 - [ ] WK Draft is bereikbaar via `/manager/world-cup/draft`, gebruikt de WK spelerspool, bewaart picks/rosters los van Eredivisie en biedt filters op Land, maximale waarde, naam en positie.
 - [ ] Gori runtime-state gebruikt database-backed opslag wanneer `GORI_DATABASE_URL` beschikbaar is, met file fallback voor lokale/testmodus; state-keys bevatten app namespace + store + mode + manager, zodat Eredivisie/WK, managers en andere apps strikt gescheiden blijven.
 - [ ] `Mijn competitie` toont alle geaccepteerde managers uit de actieve league, inclusief een geaccepteerde coördinator/admin-manager zoals Simon, maar sluit een puur technisch admin-account zonder managerrol/subpoule uit.
+- [ ] In `Mijn competitie` staat `Bekijk` als compacte knop in een aparte kolom direct rechts van de teamnaam, zonder dat de puntenkolommen verspringen.
+- [ ] `Mijn competitie` toont een samenvattingsheader met competitienaam, aantal teams en eigen positie; de eigen managerregel is daarnaast extra herkenbaar via een `Jij`-badge en subtiele highlight.
+- [ ] Een handmatige WK-teamrepair werkt manager-specifiek door in `manager-state`, roundsnapshot, `team-roster-state` en `transfer-round` zonder het rosterrecord van een andere manager te overschrijven via een hardcoded of verkeerde teamkey.
 
 ## 12. Open vragen
 - [x] Limiet bevestigd: standaard 1 transfer per team per speelronde, met 3 bonusrondes van 3 transfers
@@ -544,6 +588,8 @@ Waarom zo:
 - [x] Manager-state gebruikt op Vercel standaard `/tmp/manager-state*.json` wanneer geen expliciete env-paden zijn gezet, zodat serverless writes niet naar de read-only projectbundel gaan.
 - [x] WK draftpicks worden direct naar de gekoppelde manager-state van de WK Team-pagina gesynchroniseerd; terugzetten van een speler ruimt het teamoverzicht ook op. Een nieuwe/reset oefendraft leegt eerst bestaande draftrosters en gekoppelde teamoverzichten voor de betreffende mode.
 - [x] Admin kan per mode competitienaam, draft-rondes en deelnemersstatus beheren; de zichtbare oefendraftkaart gebruikt alleen geaccepteerde deelnemers als draftvolgorde.
+- [x] Mobiele retry-flow voor transfers blijft viewport-safe: queue-samenvatting gebruikt 2 kolommen, retry-banner blijft leesbaar en queue/undo-regels veroorzaken geen horizontale overflow.
+- [x] Eredivisie-clubbranding voor spelerkaarten gebruikt een gedeelde alias-veilige mapping zodat badgecodes/shirticonen voor alle ondersteunde clubs consistent blijven tussen draft-preview, `Mijn team` en `Bekijk team`.
 
 ## 13. Besluitenlog
 - 2026-04-16: Repo + Vercel + baseline workflow opgezet.
@@ -571,10 +617,18 @@ Waarom zo:
 - 2026-04-20: Transfermarkt-mobile formulierfix: Positie/Club/Zoek-velden nu full-width en verticaal gestapeld; kolombreedtes (col-2/col-3) expliciet gedefinieerd en op mobiel naar 12 kolommen gezet om overlap/compressie te voorkomen.
 - 2026-04-20: Mobile transfermarkt UI gepolijst met betere label-contrast, extra vertical spacing en grotere input-typografie voor leesbaarheid.
 - 2026-04-20: Verkoop-flow UX verduidelijkt: sell-dropdown reset na keuze, wordt disabled tijdens open transfer en toont expliciete hint (voorkomt indruk dat selectie “niets doet” op mobiel).
+- 2026-07-15: Mobiele retry-transferflow extra afgedekt met e2e-scenario; queue-samenvatting, retry-banner en undo-regels moeten op telefoonschermbreedte binnen de viewport bruikbaar blijven zonder horizontale overflow.
+- 2026-07-18: WK prijsnormalisatie vastgezet op importwaarde min €3.0M over alle transfer- en budget-readpaden (`/api/players?mode=wk`, `/api/wk/players`, `my-team/view-team`, rankings, draft en transfer-round context), zodat spelersprijzen, squad cost en resterende waarde overal dezelfde verlaagde WK-lijn gebruiken; daarnaast is de Team-programmabox in ronde 8 gepolijst met compacte gecentreerde badges voor `Finale`/`Troostfinale` zonder extra wedstrijdtekst.
+- 2026-07-18: WK `Mijn team` en `Bekijk team` kiezen zonder expliciete round-param standaard de laatst afgeronde WK-ronde als read-model basis. Daardoor blijven voor alle managers de ronde-7 punten zichtbaar zolang ronde 8 nog niet is begonnen, ook als er al een toekomstige ronde-8 snapshot bestaat.
+- 2026-07-18: WK `Mijn team` gebruikt in de bovenste metric-regel nu dezelfde server-read-model scorebron als ranking en `Bekijk team`: `Totaal punten` staat links als primaire topline, `Ronde punten` staat daarnaast expliciet zichtbaar, en alleen bij ontbrekende servertotalen valt de UI nog terug op de oude lokale basis+halve-bank berekening.
+- 2026-07-31: Eredivisie-spelerkaarten gepolijst met gedeelde club-brandingmapping (badgecode + shirticoon) voor `Mijn team`, `Bekijk team` en draft-preview, inclusief alias-normalisatie voor clubnamen zoals `Go Ahead Eagles`, `SC Heerenveen` en `FC Utrecht`.
+- 2026-08-03: Eredivisie transfer-validatie dwingt nu server-side de clubregel af: na een transfer mag een manager maximaal 1 speler per club bezitten, terwijl WK-transfers hun eigen landenlimiet blijven gebruiken.
+- 2026-07-18: WK draft/roster self-heal behandelt speelbare onderbezette squadrons (11 starters + 0-4 bankspelers) nu als legitieme historische state. Daardoor wordt een geldige 13-man ronde-snapshot niet meer automatisch terug opgeblazen naar een oude 15-man draftfallback, en mag team-roster waarheid een stale draft-My-Team overschrijven wanneer de zichtbare state nog exact op de oude draftselectie staat.
 - 2026-04-21: Transferlimiet-gedrag in Team-flow aangepast: in bonusrondes (3 transfers) mogen managers eerst meerdere spelers verkopen (tot 3 open placeholders) voordat kopen verplicht is; in 1-transferrondes blijft direct vervangen na 1 verkoop vereist.
 - 2026-06-11: Brandblus-fix op lege My Team na draft: manager-state self-heal gebruikt nu account/participant-profiel-aliasen én valt terug op persistente draft-picks als team-roster-state ontbreekt; lokale auth-state typo voor Jack gecorrigeerd van `.con` naar `.com`.
 - 2026-06-11: Structurele manager-state migratie doorgevoerd: My Team-state wordt nu canoniek per `managerId` opgeslagen, legacy email-keyed records blijven leesbaar en migreren automatisch bij de eerstvolgende write/save.
 - 2026-06-15: `Mijn competitie` rankingbron gerepareerd: geaccepteerde league-deelnemers tellen nu mee als ranglijstbron, zodat Simon als geaccepteerde coördinator/admin-manager zichtbaar blijft in de WK-competitie terwijl het pure technische `admin@gori.local` account buiten de ranglijst blijft.
+- 2026-07-18: `Mijn competitie` UI gepolijst met leaderboard-card styling, compacte `Bekijk`-actieknop in eigen kolom, samenvattingsheader en extra herkenning van de eigen managerregel via `Jij`-badge + sterkere highlight.
 - 2026-06-15: `view-team` herstelt lege WK-teams nu opnieuw defensief vanuit draft-roster voordat manager-state wordt gelezen, zodat managers zoals Simon/Johan hun gedrafte team blijven zien wanneer persistente manager-state tijdelijk leeg of stale is.
 - 2026-06-15: Expliciete WK manager-state repair aangescherpt: een zichtbare corrupte partial state (zoals Simons 1-speler state) mag nu veilig eenmalig worden overschreven vanuit een complete 15-speler team-roster/draft-bron, zonder draft opnieuw als permanente live read-bron te maken.
 - 2026-04-24: Sprint 1 fundament toegevoegd: RuleSet v1-validatie (versieerbare regels), transfer policy-engine (deterministische SELL/BUY-beslissing per ronde) en admin ronde lock/unlock met audittrail + API-endpoint.
@@ -598,6 +652,12 @@ Waarom zo:
 - 2026-06-19: Team-hydration voor `Mijn team` is verplaatst naar een gedeelde server-side TeamViewModel-projectie (`my-team-view`/`view-team`). Daardoor delen eigen team en bekeken teams exact dezelfde snapshotmapping en verdwijnen client-side verschillen tussen opgeslagen state en gerenderde opstelling.
 - 2026-06-19: WK ronde-navigatie in `Mijn team` gebruikt nu latest-only request guards voor spelers, matchdata en teamsnapshot-hydration. Daardoor kan terugnavigeren naar een nieuwere ronde niet meer per ongeluk de punten van een oudere, later teruggekomen response laten staan.
 - 2026-06-19: De teamsnapshot voor `Mijn team` wordt bij rondewissel direct toegepast zodra `/api/manager/my-team-view` klaar is; transferronde-metadata laadt daarna pas door. Een tragere of falende transfer-round response mag de zichtbare spelerpunten van de gekozen ronde dus niet meer blokkeren.
+- 2026-07-08: WK datalaag-readpaths ontkoppeld van schema-bootstrap: `wk-sync-store` en de persistente JSON-store voeren geen `CREATE/ALTER` meer uit tijdens gewone reads, zodat live WK-reads niet meer stuklopen op runtime-rollen zonder DDL-rechten terwijl sync/write-paden schema-beheer blijven doen.
+- 2026-07-08: Auth-readpaths zijn fail-soft gemaakt: als de persistente auth-store tijdelijk niet leesbaar of beschrijfbaar is, blijft login/sessievalidatie terugvallen op de bestaande file-/in-memory auth-state in plaats van een generieke login-500 te geven.
+- 2026-07-09: Persistente JSON-upserts casten nu `state_key`, `store_name`, `scope` en `manager_key` expliciet naar `text`, zodat production writes naar `manager-state`/`auth-state` niet meer kunnen falen op Postgres/Neon poolers met `could not determine data type of parameter $2`.
+- 2026-07-11: Handmatige WK-teamrepair hardening: de admin repair-route resolveert `team-roster-state` nu via de echte manageridentiteit/aliasen in plaats van een vaste `Thomas`-key, zodat een live repair alleen het bedoelde managerroster bijwerkt.
+- 2026-07-18: Draft→My Team auto-formatie kiest nu de best passende basisformatie op basis van de al gedrafte spelers zelf (maximale geldige basiself) in plaats van toekomstige lege bankslots mee te wegen; daardoor blijft een actuele 3-5-2 tijdens draft direct zichtbaar als 3-5-2 en verdwijnt geen extra middenvelder onterecht naar de bank.
+- 2026-07-18: WK eindfase geharmoniseerd naar een gedeelde ronde 8 voor finale + troostfinale. Het schema toont beide wedstrijden nu in één gezamenlijk blok met expliciete labels, availability houdt alle spelers uit de vier actieve landen speelbaar, transfervalidatie blijft dezelfde formatie+bankregels afdwingen, en alle troostfinale-punten (inclusief win-/advancementbonus) tellen voor 50% mee waarbij de troostfinale-winnaar afgerond `⚡+3` krijgt.
 - 2026-05-04: Pitch-achtergrond vanaf nul opnieuw opgebouwd door de laatst aangeleverde referentie-afbeelding direct als asset te gebruiken (`/public/images/pitch-reference.jpg`), zodat veldvisual exact overeenkomt met het voorbeeld; overlays/dieptelijnen verwijderd.
 - 2026-05-04: Pitch-referentiebeeld ingesteld op 200% zoom en visueel aangescherpt via subtiele contrast/saturatie/brightness-filtering op de achtergrondlaag, met ongewijzigde kaart-interactie.
 - 2026-05-04: WK-mode terminologie aangepast: overal in transfermarkt `Club` vervangen door `Land` (incl. `Alle landen`, `Zoek speler/land` en sorteerkolomheader).
@@ -676,5 +736,8 @@ Waarom zo:
 - 2026-06-08: Definitieve actieve WKCoach spelerslijst opnieuw ingeladen in `data/players-wk.csv`: 1.244 selecteerbare spelers uit 48 landen; 10 door WKCoach als niet-actief gemarkeerde spelers zijn bewust uitgesloten van de fantasy pool.
 - 2026-06-08: Draft guardrails compleet gemaakt: server-side picks blokkeren nu ook land-stacking boven 2 spelers per land en eisen dat de volledige gekozen linie-mix binnen één toegestane formatie + bank past; geldige picks syncen direct naar My Team met automatische formatiekeuze en lineup/bank-vulling.
 - 2026-06-11: Mbappé hardcoded demo-punten verwijderd; transfermarkt-spelerspoule toont nu een expliciete `Punten`-kolom en spelers zonder actuele WKCoach-sync blijven zichtbaar op `0` totdat echte punten binnenkomen.
+- 2026-07-08: WK read-API’s zijn gehard tegen tijdelijke database/scoring-store storingen; `/api/wk/players`, `/api/wk/matches`, `/api/wk/player-points` en `/api/players?mode=wk` geven nu een non-breaking fallback (`syncStatus` + lege/CSV-data) terug in plaats van de managerflow met HTTP 500 te breken.
+- 2026-07-31: Eredivisie standaardspelersdataset vervangen door de volledige Coach van het Jaar 2026/2027 spelerspool in `data/players.csv` (473 spelers, 18 clubs) inclusief `actief` status; importscript vastgelegd in `scripts/fetch-cvhj-eredivisie-players.py`.
+- 2026-08-01: WK default round-selectie voor `Mijn team` en `Mijn competitie` is aangescherpt naar de laatst afgeronde ronde totdat de nieuwe ronde echt is afgetrapt. Een toekomstige ronde-snapshot (zoals ronde 8 vóór kickoff) mag de zichtbare rondepunten en totalen dus niet meer voortijdig op `0` zetten.
 - 2026-06-12: My Team hydrateert opgeslagen WK-selecties nu met een compatibele formatie op basis van de echte positieverdeling van de 15 opgeslagen spelers; managers met een verouderde/ongeldige opgeslagen formatie zien daardoor niet langer open slots terwijl hun API-state wel 15 spelers bevat, en de UI self-healt de correcte formatie terug naar `manager-state`.
 - 2026-06-15: WK-puntenarchitectuur herbouwd naar database-only read models: `team-score-state` bewaart behaalde punten per manager/per ronde, rankings en teamweergaves lezen die persistente scorelaag, en WK-spelerpunten worden opnieuw afgeleid uit opgeslagen WKCoach `point_events` met een extra clean-sheet-correctie voor verdedigers.

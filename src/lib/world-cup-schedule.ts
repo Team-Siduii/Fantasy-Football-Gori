@@ -1,7 +1,7 @@
 import type { SeasonFixture } from "@/lib/season-schedule";
 
 // Bron: KPN WK 2026 speelschema (https://www.kpn.com/entertainment/sport/wk-voetbal/speelschema)
-// Ronde-mapping: 1=Speelronde1, 2=Speelronde2, 3=Speelronde3, 4=Zestiende finales, 5=Achtste finales, 6=Kwartfinales, 7=Halve finales, 8=Troostfinale, 9=Finale
+// Ronde-mapping: 1=Speelronde1, 2=Speelronde2, 3=Speelronde3, 4=Zestiende finales, 5=Achtste finales, 6=Kwartfinales, 7=Halve finales, 8=Finale + troostfinale
 export const WORLD_CUP_2026_FIXTURES: SeasonFixture[] = [
   { round: 1, dateLabel: "Donderdag 11 juni 2026", kickoff: "21:00", kickoffAt: "2026-06-11T21:00:00+02:00", home: "Mexico", away: "Zuid-Afrika" },
   { round: 1, dateLabel: "Vrijdag 12 juni 2026", kickoff: "04:00", kickoffAt: "2026-06-12T04:00:00+02:00", home: "Zuid-Korea", away: "Tsjechië" },
@@ -105,9 +105,27 @@ export const WORLD_CUP_2026_FIXTURES: SeasonFixture[] = [
   { round: 6, dateLabel: "Zondag 12 juli 2026", kickoff: "03:00", kickoffAt: "2026-07-12T03:00:00+02:00", home: "Winnaar duel 95", away: "Winnaar duel 96" },
   { round: 7, dateLabel: "Dinsdag 14 juli 2026", kickoff: "21:00", kickoffAt: "2026-07-14T21:00:00+02:00", home: "Winnaar duel 97", away: "Winnaar duel 98" },
   { round: 7, dateLabel: "Woensdag 15 juli 2026", kickoff: "21:00", kickoffAt: "2026-07-15T21:00:00+02:00", home: "Winnaar duel 99", away: "Winnaar duel 100" },
-  { round: 8, dateLabel: "Zaterdag 18 juli 2026", kickoff: "23:00", kickoffAt: "2026-07-18T23:00:00+02:00", home: "Verliezer duel 101", away: "Verliezer duel 102" },
-  { round: 9, dateLabel: "Zondag 19 juli 2026", kickoff: "21:00", kickoffAt: "2026-07-19T21:00:00+02:00", home: "Winnaar duel 101", away: "Winnaar duel 102" },
+  { round: 8, dateLabel: "Zaterdag 18 juli 2026", kickoff: "23:00", kickoffAt: "2026-07-18T23:00:00+02:00", home: "Verliezer duel 101", away: "Verliezer duel 102", stageLabel: "Troostfinale" },
+  { round: 8, dateLabel: "Zondag 19 juli 2026", kickoff: "21:00", kickoffAt: "2026-07-19T21:00:00+02:00", home: "Winnaar duel 101", away: "Winnaar duel 102", stageLabel: "Finale" },
 ];
+
+export function getLatestCompletedWorldCupRound(now: Date = new Date()): number {
+  const roundsWithFinishedMatches = new Set<number>();
+
+  for (const fixture of WORLD_CUP_2026_FIXTURES) {
+    const kickoff = new Date(fixture.kickoffAt);
+    const matchEnd = new Date(kickoff.getTime() + 2 * 60 * 60 * 1000);
+    if (matchEnd < now) {
+      roundsWithFinishedMatches.add(fixture.round);
+    }
+  }
+
+  if (roundsWithFinishedMatches.size === 0) {
+    return 0;
+  }
+
+  return Math.max(...roundsWithFinishedMatches);
+}
 
 /**
  * Bepaalt of een speelronde "actief" is (wedstrijden bezig of net afgelopen).

@@ -111,4 +111,63 @@ describe("wk-match-schedule", () => {
     expect(merged[0]).toMatchObject({ homeScore: 1, awayScore: 1, status: "X" });
     expect(merged[1]).toMatchObject({ homeScore: 1, awayScore: 1, status: "X" });
   });
+
+  it("replaces knockout placeholders with synced real-country matches when the round data is authoritative", () => {
+    const placeholderFixtures: SeasonFixture[] = [
+      {
+        round: 6,
+        home: "Winnaar duel 89",
+        away: "Winnaar duel 90",
+        kickoff: "22:00",
+        kickoffAt: "2026-07-09T22:00:00+02:00",
+        dateLabel: "Donderdag 9 juli 2026",
+      },
+      {
+        round: 6,
+        home: "Winnaar duel 93",
+        away: "Winnaar duel 94",
+        kickoff: "21:00",
+        kickoffAt: "2026-07-10T21:00:00+02:00",
+        dateLabel: "Vrijdag 10 juli 2026",
+      },
+    ];
+
+    const syncedMatches: SyncedWkMatchLike[] = [
+      {
+        round: 6,
+        home_team: "Frankrijk",
+        away_team: "Marokko",
+        home_score: 2,
+        away_score: 0,
+        status: "X",
+        kickoff_at: "2026-07-09T22:00:00+02:00",
+      },
+      {
+        round: 6,
+        home_team: "Spanje",
+        away_team: "België",
+        home_score: 2,
+        away_score: 1,
+        status: "X",
+        kickoff_at: "2026-07-10T21:00:00+02:00",
+      },
+    ];
+
+    const merged = mergeWorldCupFixturesWithSyncedMatches(placeholderFixtures, syncedMatches);
+
+    expect(merged[0]).toMatchObject({
+      home: "Frankrijk",
+      away: "Marokko",
+      homeScore: 2,
+      awayScore: 0,
+      status: "X",
+    });
+    expect(merged[1]).toMatchObject({
+      home: "Spanje",
+      away: "België",
+      homeScore: 2,
+      awayScore: 1,
+      status: "X",
+    });
+  });
 });

@@ -5,8 +5,8 @@ import { AUTH_TEST_ACCOUNT_PRESETS } from "./auth-test-accounts";
 import { ensureAuthStateFromDb, getAuthAccountByEmail, getProfileByEmail } from "./auth-store";
 import { getLeagueAdminConfigPersistent } from "./league-admin-config";
 import { readManagerStatePersistent, type ManagerStateScope } from "./manager-state";
-import { summarizeManagerTeamScoresPersistent } from "./team-score-state";
-import { loadPlayerPoints } from "./player-points-store";
+import { summarizeManagerTeamScoresPersistent, summarizeManagerTeamScoresThroughRoundPersistent } from "./team-score-state";
+import { getDefaultVisibleRound } from "./season-schedule";
 import { WORLD_CUP_2026_FIXTURES } from "./world-cup-schedule";
 
 const SUBPOULE_BY_EMAIL: Record<string, string> = {
@@ -20,18 +20,11 @@ const SUBPOULE_BY_EMAIL: Record<string, string> = {
 
 const DEFAULT_BUDGET_CAP = 100;
 
-function getCurrentRoundWk(): number {
-  const now = new Date();
-  const roundsWithFinishedMatches = new Set<number>();
-  for (const fixture of WORLD_CUP_2026_FIXTURES) {
-    const kickoff = new Date(fixture.kickoffAt);
-    const matchEnd = new Date(kickoff.getTime() + 2 * 60 * 60 * 1000);
-    if (matchEnd < now) {
-      roundsWithFinishedMatches.add(fixture.round);
-    }
+function normalizeRequestedRound(roundNumber: number | null | undefined) {
+  if (!Number.isInteger(roundNumber) || (roundNumber ?? 0) <= 0) {
+    return null;
   }
-  if (roundsWithFinishedMatches.size === 0) return 0;
-  return Math.max(...roundsWithFinishedMatches);
+  return roundNumber as number;
 }
 
 async function loadPlayers(scope: ManagerStateScope) {
@@ -66,27 +59,30 @@ export type RankingEntry = {
 export type LeagueRankingSnapshot = {
   mode: ManagerStateScope;
   currentRound: number;
+  selectedRound: number;
   userSubpoule: string;
+  userEmail: string;
+  leagueName: string;
   ranking: RankingEntry[];
   allSubpoules: Record<string, RankingEntry[]>;
   allRanking: RankingEntry[];
 };
 
-export async function buildLeagueRankingSnapshot(scope: ManagerStateScope, requesterEmail?: string | null): Promise<LeagueRankingSnapshot> {
+export async function buildLeagueRankingSnapshot(
+  scope: ManagerStateScope,
+  requesterEmail?: string | null,
+  roundNumber?: number | null,
+): Promise<LeagueRankingSnapshot> {
   await ensureAuthStateFromDb();
 
-  const currentRound = scope === "wk" ? getCurrentRoundWk() : 0;
+  const currentRound = scope === "wk" ? (getDefaultVisibleRound(WORLD_CUP_2026_FIXTURES, new Date()) ?? 0) : 0;
+  const normalizedRequestedRound = normalizeRequestedRound(roundNumber);
+  const selectedRoundBase = normalizedRequestedRound ?? currentRound;
+  const selectedRound = scope === "wk"
+    ? (selectedRoundBase > 0 ? selectedRoundBase : 1)
+    : 0;
   const allPlayers = await loadPlayers(scope);
   const playerById = new Map(allPlayers.map((p) => [p.id, p]));
-  const eredivisiePointsSnapshot = scope === "wk" ? null : await loadPlayerPoints(scope);
-  const eredivisiePointsById = new Map<string, number>();
-  if (eredivisiePointsSnapshot) {
-    for (const playerPoint of eredivisiePointsSnapshot.players) {
-      if (playerPoint.fantasyplayerId) {
-        eredivisiePointsById.set(String(playerPoint.fantasyplayerId), playerPoint.totalPoints);
-      }
-    }
-  }
   const leagueConfig = await getLeagueAdminConfigPersistent(scope);
   const budgetCap = leagueConfig.budget.teamValueCapMillions ?? DEFAULT_BUDGET_CAP;
   const acceptedParticipantEmails = new Set(
@@ -124,11 +120,12 @@ export async function buildLeagueRankingSnapshot(scope: ManagerStateScope, reque
     }
 
     const scoreSummary = scope === "wk"
+      ? await summarizeManagerTeamScoresThroughRoundPersistent(scope, managerEmail, selectedRound)
+      : await summarizeManagerTeamScoresPersistent(scope, managerEmail);
+
+    const fallbackSummary = scope === "wk" && selectedRound > 0 && scoreSummary.latestRound !== null && selectedRound > scoreSummary.latestRound
       ? await summarizeManagerTeamScoresPersistent(scope, managerEmail)
-      : {
-          totalPoints: squadIds.reduce((sum, playerId) => sum + (eredivisiePointsById.get(playerId) ?? 0), 0),
-          currentRoundPoints: squadIds.reduce((sum, playerId) => sum + (eredivisiePointsById.get(playerId) ?? 0), 0),
-        };
+      : scoreSummary;
 
     rankingSeed.push({
       managerId: managerEmail.split("@")[0],
@@ -136,8 +133,8 @@ export async function buildLeagueRankingSnapshot(scope: ManagerStateScope, reque
       teamName,
       email: managerEmail,
       subpoule: SUBPOULE_BY_EMAIL[managerEmail] ?? "A",
-      totalPoints: Math.round((scoreSummary.totalPoints ?? 0) * 10) / 10,
-      currentRoundPoints: Math.round((scoreSummary.currentRoundPoints ?? 0) * 10) / 10,
+      totalPoints: Math.round((fallbackSummary.totalPoints ?? 0) * 10) / 10,
+      currentRoundPoints: Math.round((fallbackSummary.currentRoundPoints ?? 0) * 10) / 10,
       budgetRemaining: Math.round(Math.max(0, budgetCap - squadCost) * 10) / 10,
     });
   }
@@ -168,7 +165,10 @@ export async function buildLeagueRankingSnapshot(scope: ManagerStateScope, reque
   return {
     mode: scope,
     currentRound,
+    selectedRound,
     userSubpoule,
+    userEmail: normalizedRequester,
+    leagueName: leagueConfig.competition.name,
     ranking,
     allSubpoules: Object.fromEntries(bySubpoule),
     allRanking,

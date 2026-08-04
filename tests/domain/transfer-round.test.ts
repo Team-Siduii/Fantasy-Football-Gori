@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   allRequiredBuyChoicesSubmitted,
   createTransferRoundState,
+  finalizeExpiredTransferRound,
+  getRemainingBuyCapacity,
   resolveSubmittedBuys,
   skipSellChoice,
   submitBuyChoice,
   submitSellChoice,
+  submitSellChoices,
 } from "../../src/domain/transfer-round";
 
 const participants = [
@@ -47,6 +50,52 @@ describe("transfer-round", () => {
     expect(state.entries.find((entry) => entry.managerId === "beta")?.buyStatus).toBe("LOCKED");
   });
 
+  it("supports queued finalize sells with one regular sell plus extra auto-sells", () => {
+    let state = createTransferRoundState(7, participants);
+
+    state = submitSellChoices(state, "alpha", {
+      sellPlayerId: "sold-1",
+      autoSellPlayerIds: ["auto-1", "auto-2"],
+    });
+
+    const alpha = state.entries.find((entry) => entry.managerId === "alpha");
+
+    expect(alpha).toMatchObject({
+      sellStatus: "SUBMITTED",
+      sellPlayerId: "sold-1",
+      autoSellPlayerIds: ["auto-1", "auto-2"],
+      buyStatus: "PENDING",
+      buyPlayerIds: [],
+      resolvedTransfers: [],
+    });
+    expect(getRemainingBuyCapacity(alpha!)).toBe(3);
+  });
+
+  it("resolves multiple buy slots after queued sell finalize", () => {
+    let state = createTransferRoundState(7, participants);
+    state = submitSellChoices(state, "alpha", {
+      sellPlayerId: "sold-1",
+      autoSellPlayerIds: ["auto-1"],
+    });
+    state = skipSellChoice(state, "beta");
+    state = skipSellChoice(state, "gamma");
+
+    expect(state.phase).toBe("BUY");
+
+    state = submitBuyChoice(state, "alpha", ["buy-1", "buy-2"]);
+    expect(allRequiredBuyChoicesSubmitted(state)).toBe(true);
+
+    state = resolveSubmittedBuys(state);
+    const alpha = state.entries.find((entry) => entry.managerId === "alpha");
+
+    expect(alpha?.buyStatus).toBe("COMPLETED");
+    expect(alpha?.resolvedTransfers).toEqual([
+      { soldPlayerId: "sold-1", boughtPlayerId: "buy-1" },
+      { soldPlayerId: "auto-1", boughtPlayerId: "buy-2" },
+    ]);
+    expect(state.phase).toBe("COMPLETED");
+  });
+
   it("marks lower-ranked manager as winner on duplicate buy choice", () => {
     let state = createTransferRoundState(1, participants);
     state = submitSellChoice(state, "alpha", "sold-1");
@@ -86,5 +135,24 @@ describe("transfer-round", () => {
       soldPlayerId: "sold-1",
       boughtPlayerId: "target-2",
     });
+  });
+
+  it("finalizes expired rounds by locking unfinished historical entries", () => {
+    let state = createTransferRoundState(1, participants);
+    state = submitSellChoice(state, "alpha", "sold-1");
+    state = skipSellChoice(state, "beta");
+
+    const finalized = finalizeExpiredTransferRound(state, "2026-06-19T10:00:00.000Z");
+
+    expect(finalized.phase).toBe("COMPLETED");
+    expect(finalized.entries.find((entry) => entry.managerId === "gamma")?.sellStatus).toBe("SKIPPED");
+    expect(finalized.entries.find((entry) => entry.managerId === "alpha")).toMatchObject({
+      sellStatus: "SUBMITTED",
+      sellPlayerId: "sold-1",
+      buyStatus: "LOCKED",
+      buyPlayerId: null,
+      resolvedTransfer: null,
+    });
+    expect(finalized.entries.find((entry) => entry.managerId === "beta")?.buyStatus).toBe("LOCKED");
   });
 });

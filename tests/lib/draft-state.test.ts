@@ -35,6 +35,24 @@ describe("draft-state persistence", () => {
     expect(afterOnePick.currentTurnTeamId).toBe("B");
   }, 15000);
 
+  it("starts a linear draft without reversing the configured order in later rounds", async () => {
+    const mod = await import("../../src/lib/draft-state");
+    const rosterMod = await import("../../src/lib/team-roster-state");
+    mod.resetDraftStateForTests();
+    rosterMod.resetTeamRosterStateForTests();
+
+    const started = mod.startDraft({
+      leagueId: "league-1",
+      teamOrder: ["A", "B", "C"],
+      totalRounds: 3,
+      orderType: "linear",
+      startedBy: "admin-1",
+      startedAt: "2026-05-24T08:00:00.000Z",
+    });
+
+    expect(started.pickSequence).toEqual(["A", "B", "C", "A", "B", "C", "A", "B", "C"]);
+  });
+
   it("blocks same player from being picked twice", async () => {
     const mod = await import("../../src/lib/draft-state");
     const rosterMod = await import("../../src/lib/team-roster-state");
@@ -50,7 +68,7 @@ describe("draft-state persistence", () => {
     });
 
     mod.registerPick({ teamId: "A", playerId: "p-1" });
-    expect(() => mod.registerPick({ teamId: "B", playerId: "p-1" })).toThrow(/already picked/i);
+    expect(() => mod.registerPick({ teamId: "B", playerId: "p-1" })).toThrow(/al in een ander team/i);
   });
 
   it("supports returning a player to pool and resets pick slot", async () => {

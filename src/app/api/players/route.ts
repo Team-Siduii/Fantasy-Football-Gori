@@ -4,8 +4,10 @@ import path from "path";
 import { parsePlayerCsv } from "@/domain/player-csv";
 import { bootstrapPlayersFromDefaultCsv } from "@/lib/player-bootstrap";
 import { listPlayers } from "@/lib/player-store";
-import { getLeagueAdminConfigPersistent } from "@/lib/league-admin-config";
 import { listCalculatedWkPlayerPoints } from "@/lib/wk-player-scoring";
+import { getWkMatches } from "@/lib/wk-sync-store";
+import { applyWkPlayerAvailabilityAndPoints } from "../../../lib/wk-availability";
+import { applyWkTransferPriceOffsetMillions } from "../../../lib/wk-price";
 
 const NO_CACHE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -31,40 +33,32 @@ export async function GET(request: Request) {
       return NextResponse.json({ count: 0, players: [] }, { headers: NO_CACHE_HEADERS });
     }
 
-    const calculatedPlayers = await listCalculatedWkPlayerPoints(roundSequence);
-
-    let priceOffset = 0;
+    let calculatedPlayers: Awaited<ReturnType<typeof listCalculatedWkPlayerPoints>> = [];
+    let wkMatches: Awaited<ReturnType<typeof getWkMatches>> = [];
+    let syncStatus: string | undefined;
     try {
-      const leagueConfig = await getLeagueAdminConfigPersistent("wk");
-      priceOffset = leagueConfig.budget.priceOffsetMillions ?? 0;
+      [calculatedPlayers, wkMatches] = await Promise.all([
+        listCalculatedWkPlayerPoints(roundSequence),
+        getWkMatches(),
+      ]);
     } catch {
-      // default 0
+      syncStatus = "unavailable — WK scoring storage read failed";
     }
 
-    const calculatedById = new Map<number, (typeof calculatedPlayers)[number]>();
-    for (const player of calculatedPlayers) {
-      calculatedById.set(player.fantasyplayerId, player);
-    }
-
-    const playersWithPoints = csvPlayers.map((csv) => {
-      const playerId = parseInt(csv.id, 10);
-      const calculated = calculatedById.get(playerId);
-      const adjustedPrice = Math.max(0, csv.prijs - priceOffset);
-
-      return {
+    const playersWithPoints = applyWkPlayerAvailabilityAndPoints({
+      csvPlayers: csvPlayers.map((csv) => ({
         ...csv,
-        prijs: adjustedPrice,
-        punten: calculated?.totalPoints ?? 0,
-        totalPoints: calculated?.totalPoints ?? 0,
-        roundPoints: calculated?.roundPoints ?? 0,
-        pointEvents: calculated?.pointEvents ?? [],
-        scoreSource: calculated?.source ?? "wk-events-v1",
-      };
+        prijs: applyWkTransferPriceOffsetMillions(csv.prijs),
+      })),
+      calculatedPlayers,
+      matches: wkMatches,
+      roundNumber: roundSequence,
     });
 
     return NextResponse.json({
       count: playersWithPoints.length,
       players: playersWithPoints,
+      syncStatus,
     }, { headers: NO_CACHE_HEADERS });
   }
 

@@ -20,9 +20,11 @@ type LeagueParticipant = {
   status: LeagueParticipantStatus;
 };
 
+type DraftOrderType = "snake" | "linear";
+
 type LeagueAdminConfig = {
   competition: { name: string; cupTiePolicy: "PENALTIES" | "HIGHER_SEED"; formats: string[] };
-  draft: { totalRounds: number; mode: "admin" | "manager" };
+  draft: { totalRounds: number; mode: "admin" | "manager"; orderType: DraftOrderType; teamOrder: string[] };
   scoringProfile: { id: string; type: "CLASSIC" | "CUSTOM"; label: string };
   waiver: { enabled: boolean; round: { tieBreaker: "PRIORITY" | "EARLIEST_BID" } };
   budget: { teamValueCapMillions: number; priceOffsetMillions: number };
@@ -67,7 +69,12 @@ function cloneConfig(input: LeagueAdminConfig): LeagueAdminConfig {
     waiver: { enabled: input.waiver.enabled, round: { ...input.waiver.round } },
     budget: { teamValueCapMillions: input.budget.teamValueCapMillions, priceOffsetMillions: input.budget.priceOffsetMillions },
     competition: { name: input.competition.name ?? "", cupTiePolicy: input.competition.cupTiePolicy, formats: [...input.competition.formats] },
-    draft: { totalRounds: input.draft?.totalRounds ?? 15, mode: input.draft?.mode ?? "admin" },
+    draft: {
+      totalRounds: input.draft?.totalRounds ?? 15,
+      mode: input.draft?.mode ?? "admin",
+      orderType: input.draft?.orderType ?? "snake",
+      teamOrder: [...(input.draft?.teamOrder ?? [])],
+    },
     roles: {
       ownerId: input.roles.ownerId,
       commissionerIds: [...input.roles.commissionerIds],
@@ -86,6 +93,27 @@ function cloneConfig(input: LeagueAdminConfig): LeagueAdminConfig {
       impact: note.impact ?? "",
     })),
   };
+}
+
+function syncDraftTeamOrder(teamOrder: string[], participants: LeagueParticipant[]) {
+  const acceptedIds = participants.filter((participant) => participant.status === "ACCEPTED").map((participant) => participant.managerId);
+  const acceptedSet = new Set(acceptedIds);
+  const dedupedPreferred = Array.from(new Set(teamOrder.filter((managerId) => acceptedSet.has(managerId))));
+  const remainingAccepted = acceptedIds.filter((managerId) => !dedupedPreferred.includes(managerId));
+  return [...dedupedPreferred, ...remainingAccepted];
+}
+
+function buildDraftRoundPreview(teamOrder: string[], orderType: DraftOrderType): string[][] {
+  if (teamOrder.length === 0) return [];
+
+  const forward = [...teamOrder];
+  const reverse = [...teamOrder].reverse();
+
+  if (orderType === "linear") {
+    return [forward, forward, forward];
+  }
+
+  return [forward, forward, reverse];
 }
 
 function summarizeImpact(config: LeagueAdminConfig): string[] {
@@ -121,6 +149,10 @@ export function LeagueConfigEditor() {
   }, [config, initialConfig]);
 
   const impactSummary = useMemo(() => (config ? summarizeImpact(config) : []), [config]);
+  const draftRoundPreview = useMemo(
+    () => (config ? buildDraftRoundPreview(syncDraftTeamOrder(config.draft.teamOrder, config.participants), config.draft.orderType) : []),
+    [config],
+  );
 
   useEffect(() => {
     async function run() {
@@ -238,15 +270,40 @@ export function LeagueConfigEditor() {
 
   function updateParticipantStatus(managerId: string, status: LeagueParticipantStatus) {
     if (!config) return;
+    const nextParticipants = config.participants.map((participant) =>
+      participant.managerId === managerId ? { ...participant, status } : participant,
+    );
     setConfig({
       ...config,
-      participants: config.participants.map((participant) =>
-        participant.managerId === managerId ? { ...participant, status } : participant,
-      ),
+      participants: nextParticipants,
+      draft: {
+        ...config.draft,
+        teamOrder: syncDraftTeamOrder(config.draft.teamOrder, nextParticipants),
+      },
+    });
+  }
+
+  function moveDraftTeamOrder(managerId: string, direction: -1 | 1) {
+    if (!config) return;
+    const currentOrder = syncDraftTeamOrder(config.draft.teamOrder, config.participants);
+    const index = currentOrder.indexOf(managerId);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= currentOrder.length) {
+      return;
+    }
+    const nextOrder = [...currentOrder];
+    [nextOrder[index], nextOrder[nextIndex]] = [nextOrder[nextIndex], nextOrder[index]];
+    setConfig({
+      ...config,
+      draft: {
+        ...config.draft,
+        teamOrder: nextOrder,
+      },
     });
   }
 
   const acceptedParticipants = config?.participants.filter((participant) => participant.status === "ACCEPTED") ?? [];
+  const configuredDraftTeamOrder = config ? syncDraftTeamOrder(config.draft.teamOrder, config.participants) : [];
 
   return (
     <section className="card col-12">
@@ -341,6 +398,41 @@ export function LeagueConfigEditor() {
                 </label>
 
                 <label className="field col-12">
+                  <span className="field-label">Draft volgorde</span>
+                  <select
+                    value={config.draft.orderType}
+                    onChange={(event) =>
+                      setConfig({
+                        ...config,
+                        draft: { ...config.draft, orderType: event.target.value as DraftOrderType },
+                      })
+                    }
+                  >
+                    <option value="snake">Snake draft</option>
+                    <option value="linear">Lineaire draft</option>
+                  </select>
+                  <span className="field-hint">
+                    {config.draft.orderType === "linear"
+                      ? "Lineaire draft: elke ronde loopt exact in dezelfde teamvolgorde door."
+                      : "Snake draft: ronde 1 en 2 volgen de ingestelde volgorde, ronde 3 draait om en daarna herhaalt de cyclus."}
+                  </span>
+                </label>
+
+                {draftRoundPreview.length > 0 ? (
+                  <div className="field col-12">
+                    <span className="field-label">Draft preview</span>
+                    <div className="grid" style={{ marginTop: 8 }}>
+                      {draftRoundPreview.map((round, index) => (
+                        <article key={`draft-preview-round-${index + 1}`} className="card col-4 settings-subcard">
+                          <h4>Ronde {index + 1}</h4>
+                          <p className="muted-note">{round.map((managerId) => acceptedParticipants.find((participant) => participant.managerId === managerId)?.label ?? managerId).join(" → ")}</p>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <label className="field col-12">
                   <RuleLabel text="Scoring profiel" helpKey="scoringProfile" />
                   <select
                     value={config.scoringProfile.type}
@@ -396,6 +488,7 @@ export function LeagueConfigEditor() {
                     type="number"
                     step={0.5}
                     value={config.budget.priceOffsetMillions}
+                    disabled={mode === "wk"}
                     onChange={(event) => {
                       const parsed = Number(event.target.value);
                       setConfig({
@@ -407,6 +500,9 @@ export function LeagueConfigEditor() {
                       });
                     }}
                   />
+                  {mode === "wk" ? (
+                    <small className="muted-note">WK gebruikt overal vast importwaarde min €3.0M, dus deze waarde staat bewust op slot.</small>
+                  ) : null}
                 </label>
 
                 <label className="field col-12">
@@ -523,6 +619,48 @@ export function LeagueConfigEditor() {
                   </article>
                 ))}
               </div>
+            </section>
+
+            <section className="card col-12 settings-subcard">
+              <div className="settings-editor-head">
+                <div>
+                  <h3>Draft teamvolgorde</h3>
+                  <p className="muted-note">Deze volgorde voedt direct de draft. Alleen geaccepteerde deelnemers kunnen hier staan.</p>
+                </div>
+              </div>
+              {configuredDraftTeamOrder.length === 0 ? (
+                <p className="muted-note">Accepteer eerst minimaal 2 deelnemers om de draftvolgorde te bepalen.</p>
+              ) : (
+                <div className="grid" style={{ marginTop: 8 }}>
+                  {configuredDraftTeamOrder.map((managerId, index) => {
+                    const participant = acceptedParticipants.find((candidate) => candidate.managerId === managerId);
+                    if (!participant) return null;
+                    return (
+                      <article key={managerId} className="card col-6 settings-subcard">
+                        <div className="section-title-row" style={{ alignItems: "center" }}>
+                          <div>
+                            <h4>{index + 1}. {participant.label}</h4>
+                            <p className="muted-note">{participant.email || participant.managerId}</p>
+                          </div>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button type="button" className="ghost-button" onClick={() => moveDraftTeamOrder(managerId, -1)} disabled={index === 0}>
+                              ↑
+                            </button>
+                            <button
+                              type="button"
+                              className="ghost-button"
+                              onClick={() => moveDraftTeamOrder(managerId, 1)}
+                              disabled={index === configuredDraftTeamOrder.length - 1}
+                            >
+                              ↓
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
             </section>
 
             <section className="card col-12 settings-subcard">

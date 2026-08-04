@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PlayerCard } from "@/components/player-card";
@@ -14,7 +14,7 @@ import { getTransferLimitForRound } from "@/domain/rules";
 import { byPriceDesc, enrichPlayers, getPlayerRoundPoints, getPlayerTotalPoints, type EnhancedPlayer } from "@/lib/player-derived";
 import { getCountryFlagImageUrl, withCountryFlag } from "@/lib/country-flags";
 import { getPlayerCardMeta } from "@/lib/player-card-display";
-import { getCurrentOrNextRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
+import { getCurrentOrNextRound, getDefaultVisibleRound, REMAINING_FIXTURES_2025_2026, type SeasonFixture } from "@/lib/season-schedule";
 import { createLatestRequestTracker } from "@/lib/latest-request";
 import { getWkMatchLiveMinuteLabel, mergeWorldCupFixturesWithSyncedMatches, hasVisibleFixtureScore, isLiveWkMatchStatus, type SyncedWkMatchLike } from "@/lib/wk-match-schedule";
 import { WORLD_CUP_2026_FIXTURES, isRoundActive } from "@/lib/world-cup-schedule";
@@ -74,8 +74,11 @@ type TransferRoundEntryStatus = {
   rankingPosition: number;
   sellStatus: "PENDING" | "SKIPPED" | "SUBMITTED";
   sellPlayerId: string | null;
+  autoSellPlayerIds?: string[];
   buyStatus: "LOCKED" | "PENDING" | "SUBMITTED" | "COMPLETED" | "RETRY_REQUIRED";
+  buyPlayerIds?: string[];
   buyPlayerId: string | null;
+  resolvedTransfers?: Array<{ soldPlayerId: string; boughtPlayerId: string }>;
   resolvedTransfer: { soldPlayerId: string; boughtPlayerId: string } | null;
 };
 
@@ -139,6 +142,25 @@ function TransferPlayerName({ player }: { player: EnhancedPlayer }) {
       <span>{player.naam}</span>
     </span>
   );
+}
+
+function getTransferSellIds(entry: TransferRoundEntryStatus | null) {
+  if (!entry) {
+    return [] as string[];
+  }
+  return [entry.sellPlayerId, ...(entry.autoSellPlayerIds ?? [])].filter(
+    (playerId): playerId is string => typeof playerId === "string" && playerId.length > 0,
+  );
+}
+
+function getResolvedTransferList(entry: TransferRoundEntryStatus | null) {
+  if (!entry) {
+    return [] as Array<{ soldPlayerId: string; boughtPlayerId: string }>;
+  }
+  if (entry.resolvedTransfers && entry.resolvedTransfers.length > 0) {
+    return entry.resolvedTransfers;
+  }
+  return entry.resolvedTransfer ? [entry.resolvedTransfer] : [];
 }
 
 function countOpenSlots(state: ZoneState<EnhancedPlayer>) {
@@ -284,6 +306,9 @@ function toPersistedIds(state: ZoneState<EnhancedPlayer>) {
 
 const CLUB_CODE: Record<string, string> = {
   Telstar: "TEL",
+  'ADO Den Haag': "ADO",
+  Cambuur: "CAM",
+  'Willem II': "WIL",
   Sparta: "SPA",
   'Go Ahead': "GAE",
   AZ: "AZ",
@@ -353,6 +378,9 @@ const CLUB_CODE: Record<string, string> = {
 
 const CLUB_SHIRT: Record<string, string> = {
   Telstar: "tel",
+  'ADO Den Haag': "ado",
+  Cambuur: "cam",
+  'Willem II': "wil",
   Sparta: "spa",
   'Go Ahead': "gae",
   AZ: "az",
@@ -557,7 +585,10 @@ export default function ManagerMyTeamPage() {
   const clubsLabel = isWkMode ? "landen" : "clubs";
   const searchLabel = isWkMode ? "Zoek speler/land" : "Zoek speler/club";
   const formationOptions = useMemo(() => getFormationOptions(), []);
-  const currentRound = useMemo(() => getCurrentOrNextRound(activeFixtures, new Date()), [activeFixtures]);
+  const currentRound = useMemo(
+    () => (isWkMode ? getDefaultVisibleRound(activeFixtures, new Date()) : getCurrentOrNextRound(activeFixtures, new Date())),
+    [activeFixtures, isWkMode],
+  );
   const roundNumbers = useMemo(
     () => Array.from(new Set(activeFixtures.map((fixture) => fixture.round))).sort((a, b) => a - b),
     [activeFixtures],
@@ -583,9 +614,13 @@ export default function ManagerMyTeamPage() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [teamTotalPoints, setTeamTotalPoints] = useState<number | null>(null);
+  const [teamCurrentRoundPoints, setTeamCurrentRoundPoints] = useState<number | null>(null);
 
   const [pendingSellId, setPendingSellId] = useState<string | null>(null);
   const [pendingBuyId, setPendingBuyId] = useState<string | null>(null);
+  const [queuedSellIds, setQueuedSellIds] = useState<string[]>([]);
+  const [queuedBuyIds, setQueuedBuyIds] = useState<string[]>([]);
   const [transferMessage, setTransferMessage] = useState("");
   const [allTeamPlayerIds, setAllTeamPlayerIds] = useState<Set<string>>(new Set());
   const [transfersLocked, setTransfersLocked] = useState(false);
@@ -620,7 +655,7 @@ export default function ManagerMyTeamPage() {
 
       try {
         const initialRound =
-          getCurrentOrNextRound(scheduleFixtures, new Date()) ??
+          (isWkMode ? getDefaultVisibleRound(scheduleFixtures, new Date()) : getCurrentOrNextRound(scheduleFixtures, new Date())) ??
           [...new Set(scheduleFixtures.map((fixture) => fixture.round))].sort((a, b) => a - b)[0] ??
           1;
 
@@ -679,8 +714,12 @@ export default function ManagerMyTeamPage() {
 
         setFormation(hydratedState.formation);
         setState(hydratedState.state);
+        setTeamTotalPoints(teamViewData?.teamTotalPoints ?? null);
+        setTeamCurrentRoundPoints(teamViewData?.teamCurrentRoundPoints ?? null);
         setPendingSellId(teamViewData?.pendingSellId ?? null);
         setPendingBuyId(teamViewData?.pendingBuyId ?? null);
+        setQueuedSellIds([]);
+        setQueuedBuyIds([]);
 
         const maxAvailable = Math.max(0, ...nextPlayers.map((player) => player.prijs));
         setMaxPrice(maxAvailable);
@@ -834,6 +873,8 @@ export default function ManagerMyTeamPage() {
         suppressNextPersist.current = true;
         setFormation(hydratedState.formation);
         setState(hydratedState.state);
+        setTeamTotalPoints(teamViewData.teamTotalPoints ?? null);
+        setTeamCurrentRoundPoints(teamViewData.teamCurrentRoundPoints ?? null);
         setTransfersLocked(isRoundActive(selectedRound));
         clearPendingRoundHydration();
 
@@ -851,8 +892,15 @@ export default function ManagerMyTeamPage() {
           setCurrentTransferEntry(transferData.currentEntry);
           setPendingTransferManagers(transferData.pendingManagers);
           setBlockedTransferPlayerIds(transferData.blockedPlayerIds ?? []);
-          setPendingSellId(transferData.currentEntry?.sellPlayerId ?? null);
+          const persistedSellIds = getTransferSellIds(transferData.currentEntry);
+          const persistedResolvedTransfers = getResolvedTransferList(transferData.currentEntry);
+          setPendingSellId(persistedSellIds[0] ?? null);
           setPendingBuyId(transferData.currentEntry?.buyPlayerId ?? null);
+          setQueuedSellIds([]);
+          setQueuedBuyIds([]);
+          if (persistedResolvedTransfers.length > 0) {
+            setTransferMessage("Jouw transfer(s) zijn verwerkt voor deze ronde.");
+          }
         } else {
           setTransferRound(null);
           setCurrentTransferEntry(null);
@@ -860,6 +908,8 @@ export default function ManagerMyTeamPage() {
           setBlockedTransferPlayerIds([]);
           setPendingSellId(teamViewData.pendingSellId ?? null);
           setPendingBuyId(teamViewData.pendingBuyId ?? null);
+          setQueuedSellIds([]);
+          setQueuedBuyIds([]);
         }
       } catch {
         clearPendingRoundHydration();
@@ -939,6 +989,26 @@ export default function ManagerMyTeamPage() {
     () => calculateRemainingBudget(squadPlayers, budgetCapMillions),
     [budgetCapMillions, squadPlayers],
   );
+
+  const displayTeamTotalPoints = useMemo(() => {
+    if (typeof teamTotalPoints === "number") {
+      return teamTotalPoints;
+    }
+
+    const lineupPts = state.lineup.reduce((sum, player) => sum + getPlayerTotalPoints(player), 0);
+    const benchPts = state.bench.reduce((sum, player) => sum + Math.ceil(getPlayerTotalPoints(player) / 2), 0);
+    return lineupPts + benchPts;
+  }, [state.bench, state.lineup, teamTotalPoints]);
+
+  const displayTeamRoundPoints = useMemo(() => {
+    if (typeof teamCurrentRoundPoints === "number") {
+      return teamCurrentRoundPoints;
+    }
+
+    const lineupPts = state.lineup.reduce((sum, player) => sum + getPlayerRoundPoints(player), 0);
+    const benchPts = state.bench.reduce((sum, player) => sum + Math.ceil(getPlayerRoundPoints(player) / 2), 0);
+    return lineupPts + benchPts;
+  }, [state.bench, state.lineup, teamCurrentRoundPoints]);
 
   const marketPlayers = useMemo(() => {
     const { lineupIds, benchIds } = toPersistedIds(state);
@@ -1077,16 +1147,38 @@ export default function ManagerMyTeamPage() {
   const isPastRound = selectedRound !== null && currentRound !== null && selectedRound < currentRound;
   const currentTransferLimit = currentRound ? getTransferLimitForRound(currentRound, [...BONUS_ROUNDS]) : 1;
   const transferPhase = transferRound?.phase ?? "SELL";
+  const persistedSellIds = getTransferSellIds(currentTransferEntry);
+  const persistedResolvedTransfers = getResolvedTransferList(currentTransferEntry);
+  const resolvedBuyIds = persistedResolvedTransfers.map((transfer) => transfer.boughtPlayerId);
+  const queuedRegularSellCount = queuedSellIds.filter((playerId) => !squadPlayers.some((player) => player.id === playerId && player.isActive === false)).length;
   const ownTransferCanSell = currentTransferEntry?.sellStatus === "PENDING";
   const ownTransferCanBuy =
     (transferPhase === "BUY" || transferPhase === "AWAITING_RETRY") &&
     (currentTransferEntry?.buyStatus === "PENDING" || currentTransferEntry?.buyStatus === "RETRY_REQUIRED");
+  const remainingBuyCapacity = Math.max(0, persistedSellIds.length - persistedResolvedTransfers.length);
   const pendingTransferLabel =
     pendingTransferManagers.length > 0
       ? pendingTransferManagers.map((entry) => entry.teamName || entry.displayName).join(", ")
       : "niemand";
+  const queuedSellPlayers = queuedSellIds
+    .map((playerId) => squadPlayers.find((player) => player.id === playerId) ?? null)
+    .filter((player): player is EnhancedPlayer => player !== null);
+  const persistedSellPlayers = persistedSellIds
+    .map(
+      (playerId) =>
+        squadPlayers.find((player) => player.id === playerId) ??
+        marketPlayers.find((player) => player.id === playerId) ??
+        null,
+    )
+    .filter((player): player is EnhancedPlayer => player !== null);
+  const queuedBuyPlayers = queuedBuyIds
+    .map((playerId) => marketPlayers.find((player) => player.id === playerId) ?? null)
+    .filter((player): player is EnhancedPlayer => player !== null);
 
-  async function syncTransferRound(action: "submit-sell" | "skip-sell" | "submit-buy", playerId?: string) {
+  async function syncTransferRound(
+    action: "submit-sell" | "skip-sell" | "submit-buy",
+    playerIds?: string[],
+  ) {
     if (!selectedRound) {
       setTransferMessage("Geen actieve ronde geselecteerd.");
       return false;
@@ -1097,7 +1189,12 @@ export default function ManagerMyTeamPage() {
       const response = await fetch(`/api/manager/transfer-round?mode=${isWkMode ? "wk" : "eredivisie"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, roundNumber: selectedRound, playerId }),
+        body: JSON.stringify({
+          action,
+          roundNumber: selectedRound,
+          playerId: playerIds?.[0],
+          playerIds,
+        }),
       });
       const payload = (await response.json()) as TransferRoundResponse & { error?: string };
       if (!response.ok) {
@@ -1105,12 +1202,16 @@ export default function ManagerMyTeamPage() {
         return false;
       }
 
+      const persistedSellIds = getTransferSellIds(payload.currentEntry);
+      const persistedResolvedTransfers = getResolvedTransferList(payload.currentEntry);
       setTransferRound(payload.state);
       setCurrentTransferEntry(payload.currentEntry);
       setPendingTransferManagers(payload.pendingManagers);
       setBlockedTransferPlayerIds(payload.blockedPlayerIds ?? []);
-      setPendingSellId(payload.currentEntry?.sellPlayerId ?? null);
+      setPendingSellId(persistedSellIds[0] ?? null);
       setPendingBuyId(payload.currentEntry?.buyPlayerId ?? null);
+      setQueuedSellIds([]);
+      setQueuedBuyIds([]);
 
       const teamViewResponse = await fetch(
         `/api/manager/my-team-view?mode=${isWkMode ? "wk" : "eredivisie"}&roundNumber=${selectedRound}`,
@@ -1133,6 +1234,12 @@ export default function ManagerMyTeamPage() {
         suppressNextPersist.current = true;
         setFormation(hydratedState.formation);
         setState(hydratedState.state);
+        setTeamTotalPoints(teamViewData.teamTotalPoints ?? null);
+        setTeamCurrentRoundPoints(teamViewData.teamCurrentRoundPoints ?? null);
+      }
+
+      if (persistedResolvedTransfers.length > 0) {
+        setTransferMessage("Transfer(s) verwerkt — netjes, bro.");
       }
 
       return true;
@@ -1192,7 +1299,7 @@ export default function ManagerMyTeamPage() {
         <div className="round-fixtures-grid">
           {fixtureColumns.map((column, columnIndex) => (
             <ul key={`fixture-column-${columnIndex}`} className="round-fixture-column">
-              {column.map((fixture) => {
+              {column.map((fixture, fixtureIndex) => {
                 const fixtureHasVisibleScore = hasVisibleFixtureScore(fixture);
                 const showFixtureScore = isWkMode ? fixtureHasVisibleScore : isPastRound;
                 const fixtureIsLive = fixtureHasVisibleScore && isLiveWkMatchStatus(fixture.status);
@@ -1205,40 +1312,46 @@ export default function ManagerMyTeamPage() {
                 ]
                   .filter(Boolean)
                   .join(" ");
+                const stageLabel = isWkMode && selectedRound === 8 && fixture.stageLabel ? fixture.stageLabel : null;
 
                 return (
-                <li key={`${fixture.kickoffAt}-${fixture.home}-${fixture.away}`} className="round-fixture-row">
-                  <span className="fixture-team fixture-team--home">
-                    <span className="fixture-team-code">{toClubCode(fixture.home)}</span>
-                    <span className={`team-shirt team-shirt--${toShirtClass(fixture.home)}`} aria-hidden="true" />
-                  </span>
-                  <span className={fixtureTimeClassName}>
-                    {showFixtureScore ? (
-                      <>
-                        <strong className="fixture-score">
-                          {fixture.homeScore ?? "-"} - {fixture.awayScore ?? "-"}
-                        </strong>
-                        {fixtureIsLive && liveMinuteLabel ? (
-                          <small className="fixture-live-minute" aria-label={`Wedstrijd bezig: ${liveMinuteLabel}`}>
-                            {liveMinuteLabel}
-                          </small>
-                        ) : null}
-                        {isWkMode ? <small>{getFixturePouleLabel(fixture, wkGroupLookup) ?? "Knock-out"}</small> : null}
-                      </>
-                    ) : (
-                      <>
-                        {toDutchDayAbbreviation(fixture.kickoffAt)} {fixture.kickoff}
-                        <small>{toShortDate(fixture.kickoffAt)}</small>
-                        {isWkMode ? <small>{getFixturePouleLabel(fixture, wkGroupLookup) ?? "Knock-out"}</small> : null}
-                      </>
-                    )}
-                  </span>
-                  <span className="fixture-team fixture-team--away">
-                    <span className="fixture-team-code">{toClubCode(fixture.away)}</span>
-                    <span className={`team-shirt team-shirt--${toShirtClass(fixture.away)}`} aria-hidden="true" />
-                  </span>
-                </li>
-              )})}
+                  <Fragment key={`${fixture.kickoffAt}-${fixture.home}-${fixture.away}`}>
+                    {stageLabel && fixtureIndex > 0 ? <li className="round-fixture-divider" aria-hidden="true" /> : null}
+                    {stageLabel ? <li className="round-fixture-stage-label">{stageLabel}</li> : null}
+                    <li className="round-fixture-row">
+                      <span className="fixture-team fixture-team--home">
+                        <span className="fixture-team-code">{toClubCode(fixture.home)}</span>
+                        <span className={`team-shirt team-shirt--${toShirtClass(fixture.home)}`} aria-hidden="true" />
+                      </span>
+                      <span className={fixtureTimeClassName}>
+                        {showFixtureScore ? (
+                          <>
+                            <strong className="fixture-score">
+                              {fixture.homeScore ?? "-"} - {fixture.awayScore ?? "-"}
+                            </strong>
+                            {fixtureIsLive && liveMinuteLabel ? (
+                              <small className="fixture-live-minute" aria-label={`Wedstrijd bezig: ${liveMinuteLabel}`}>
+                                {liveMinuteLabel}
+                              </small>
+                            ) : null}
+                            {isWkMode ? <small>{getFixturePouleLabel(fixture, wkGroupLookup) ?? "Knock-out"}</small> : null}
+                          </>
+                        ) : (
+                          <>
+                            {toDutchDayAbbreviation(fixture.kickoffAt)} {fixture.kickoff}
+                            <small>{toShortDate(fixture.kickoffAt)}</small>
+                            {isWkMode ? <small>{getFixturePouleLabel(fixture, wkGroupLookup) ?? "Knock-out"}</small> : null}
+                          </>
+                        )}
+                      </span>
+                      <span className="fixture-team fixture-team--away">
+                        <span className="fixture-team-code">{toClubCode(fixture.away)}</span>
+                        <span className={`team-shirt team-shirt--${toShirtClass(fixture.away)}`} aria-hidden="true" />
+                      </span>
+                    </li>
+                  </Fragment>
+                );
+              })}
             </ul>
           ))}
         </div>
@@ -1373,10 +1486,34 @@ export default function ManagerMyTeamPage() {
       return;
     }
 
-    void syncTransferRound("submit-sell", playerId).then((ok) => {
-      if (ok) {
-        setTransferMessage("Verkoopkeuze opgeslagen. We wachten tot alle managers fase 1 hebben afgerond.");
+    const selectedPlayer = squadPlayers.find((player) => player.id === playerId);
+    const isForcedSell = selectedPlayer?.isActive === false;
+
+    setQueuedSellIds((current) => {
+      if (current.includes(playerId)) {
+        setTransferMessage("Speler verwijderd uit je verkooprij.");
+        return current.filter((id) => id !== playerId);
       }
+
+      const regularCount = current.filter((id) => !squadPlayers.some((player) => player.id === id && player.isActive === false)).length;
+      if (!isForcedSell && regularCount >= 1) {
+        setTransferMessage("Je kunt maximaal één reguliere verkoop kiezen. Verwijder eerst je huidige keuze.");
+        return current;
+      }
+
+      setTransferMessage(isForcedSell ? "Inactieve speler toegevoegd als verplichte verkoop." : "Speler toegevoegd aan je verkooprij.");
+      return [...current, playerId];
+    });
+    setSellSelection("");
+  }
+
+  function removeQueuedBuy(playerId: string) {
+    setQueuedBuyIds((current) => {
+      if (!current.includes(playerId)) {
+        return current;
+      }
+      setTransferMessage("Speler verwijderd uit je kooprij.");
+      return current.filter((id) => id !== playerId);
     });
   }
 
@@ -1386,23 +1523,33 @@ export default function ManagerMyTeamPage() {
       return;
     }
 
+    if (player.isActive === false) {
+      setTransferMessage("Deze speler is niet meer actief in de volgende ronde en kan niet gekocht worden.");
+      return;
+    }
+
     const alreadyInSquad = squadPlayers.some((squadPlayer) => squadPlayer.id === player.id);
     if (alreadyInSquad) {
       setTransferMessage("Deze speler zit al in je team.");
       return;
     }
 
-    void syncTransferRound("submit-buy", player.id).then((ok) => {
-      if (!ok) {
-        return;
-      }
+    if (resolvedBuyIds.includes(player.id)) {
+      setTransferMessage("Deze speler heb je al binnen voor deze ronde.");
+      return;
+    }
 
-      if (transferPhase === "AWAITING_RETRY") {
-        setTransferMessage("Nieuwe koopkeuze opgeslagen. Zodra alle verliezende managers opnieuw gekozen hebben, wordt opnieuw beslist.");
-        return;
+    setQueuedBuyIds((current) => {
+      if (current.includes(player.id)) {
+        setTransferMessage("Speler verwijderd uit je kooprij.");
+        return current.filter((id) => id !== player.id);
       }
-
-      setTransferMessage("Koopkeuze opgeslagen. Zodra iedereen klaar is, wordt de transferfase automatisch afgehandeld.");
+      if (current.length >= remainingBuyCapacity) {
+        setTransferMessage(`Je kunt nu maximaal ${remainingBuyCapacity} speler${remainingBuyCapacity === 1 ? "" : "s"} kopen.`);
+        return current;
+      }
+      setTransferMessage("Speler toegevoegd aan je kooprij.");
+      return [...current, player.id];
     });
   }
 
@@ -1412,16 +1559,16 @@ export default function ManagerMyTeamPage() {
         <section className="card col-8">
           <div className="team-topbar" aria-label="Team overzicht">
             <div className="team-topbar__metric team-topbar__metric--left">
-              <span>Resterende waarde</span>
-              <strong>€ {remainingBudget.toFixed(1)}M</strong>
+              <span>Totaal punten</span>
+              <strong>{displayTeamTotalPoints}</strong>
             </div>
             <div className="team-topbar__metric team-topbar__metric--center">
-              <span>Totaal punten</span>
-              <strong>{(() => {
-                const lineupPts = state.lineup.reduce((sum, p) => sum + getPlayerTotalPoints(p), 0);
-                const benchPts = state.bench.reduce((sum, p) => sum + Math.ceil(getPlayerTotalPoints(p) / 2), 0);
-                return lineupPts + benchPts;
-              })()}</strong>
+              <span>Ronde punten</span>
+              <strong>{displayTeamRoundPoints}</strong>
+            </div>
+            <div className="team-topbar__metric team-topbar__metric--right">
+              <span>Resterende waarde</span>
+              <strong>€ {remainingBudget.toFixed(1)}M</strong>
             </div>
             <label className="formation-select team-topbar__formation">
               <span>Formatie</span>
@@ -1459,12 +1606,17 @@ export default function ManagerMyTeamPage() {
                         draggable={!player.id.startsWith("open-")}
                         position={cardMeta.flag}
                         club={cardMeta.countryCode}
+                        brandLabel={cardMeta.brandLabel}
+                        brandTitle={cardMeta.brandTitle}
+                        shirtClass={cardMeta.shirtClass}
                         name={cardMeta.displayName}
                         pointsLabel={cardMeta.priceLabel}
+                        advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 && selectedRound !== null && selectedRound >= 3 ? `⚡+${player.advancementPoints}` : null}
                         scoreBadge={!player.id.startsWith("open-") ? String(getPlayerRoundPoints(player)) : null}
                         className={[
                           pendingSellId === player.id ? "player-card--sell" : "",
                           pendingSwap?.playerId === player.id ? "player-card--swap-selected" : "",
+                          player.isActive === false ? "player-card--inactive" : "",
                           player.id.startsWith("open-") ? "player-card--open" : "",
                         ]
                           .filter(Boolean)
@@ -1507,13 +1659,18 @@ export default function ManagerMyTeamPage() {
                   draggable={!player.id.startsWith("open-")}
                   position={cardMeta.flag}
                   club={cardMeta.countryCode}
+                  brandLabel={cardMeta.brandLabel}
+                  brandTitle={cardMeta.brandTitle}
+                  shirtClass={cardMeta.shirtClass}
                   name={player.naam}
                   pointsLabel={cardMeta.priceLabel}
+                  advancementBadge={!player.id.startsWith("open-") && (player.advancementPoints ?? 0) > 0 && selectedRound !== null && selectedRound >= 3 ? `⚡+${player.advancementPoints}` : null}
                   scoreBadge={!player.id.startsWith("open-") ? String(Math.ceil(getPlayerRoundPoints(player) / 2)) : null}
                   className={[
                     "player-card--bench-row",
                     pendingSellId === player.id ? "player-card--sell" : "",
                     pendingSwap?.playerId === player.id ? "player-card--swap-selected" : "",
+                    player.isActive === false ? "player-card--inactive" : "",
                     player.id.startsWith("open-") ? "player-card--open" : "",
                   ]
                     .filter(Boolean)
@@ -1550,29 +1707,65 @@ export default function ManagerMyTeamPage() {
           ) : null}
           <div className="transfer-status-wrap" style={{ marginBottom: 16 }}>
             <p className="muted-note">
-              Fase: <strong>{transferPhase === "SELL" ? "1 · verkopen/skippen" : transferPhase === "BUY" ? "2 · kopen" : transferPhase === "AWAITING_RETRY" ? "4 · verliezers kiezen opnieuw" : "4 · afgerond"}</strong>
+              Fase: <strong>{transferPhase === "SELL" ? "1 · verkopen/skippen" : transferPhase === "BUY" ? "2 · kopen" : transferPhase === "AWAITING_RETRY" ? "3 · verliezers kiezen opnieuw" : "4 · afgerond"}</strong>
             </p>
             <p className="muted-note">
               Wachten op: <strong>{pendingTransferLabel}</strong>
             </p>
-            {currentTransferEntry?.buyStatus === "RETRY_REQUIRED" ? (
-              <p className="error-text">Je hebt een conflict verloren op ranglijstprioriteit en moet vóór de volgende ronde opnieuw een speler kiezen.</p>
+            <div className="transfer-queue-summary" data-testid="transfer-queue-summary">
+              <article>
+                <span>Verkooprij</span>
+                <strong>{queuedSellIds.length}</strong>
+              </article>
+              <article>
+                <span>Bevestigde verkopen</span>
+                <strong>{persistedSellIds.length}</strong>
+              </article>
+              <article>
+                <span>Gewonnen aankopen</span>
+                <strong>{persistedResolvedTransfers.length}</strong>
+              </article>
+              <article>
+                <span>Open koopslots</span>
+                <strong>{remainingBuyCapacity}</strong>
+              </article>
+            </div>
+            {persistedSellPlayers.length > 0 ? (
+              <div className="transfer-finalized-sells" data-testid="transfer-finalized-sells">
+                <span className="transfer-finalized-sells-label">Vastgezette verkopen</span>
+                <ul className="transfer-queue-list transfer-finalized-sells-list">
+                  {persistedSellPlayers.map((player, index) => (
+                    <li key={`persisted-sell-${player.id}`}>
+                      <span className="transfer-queue-index">#{index + 1}</span>
+                      <div className="transfer-queue-copy">
+                        <strong>{withCountryFlag(player.club, player.naam)}</strong>
+                        <span>{player.positie} · {player.isActive === false ? "verplicht" : "regulier"}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : null}
-            {currentTransferEntry?.resolvedTransfer ? (
-              <p className="success-text">Jouw transfer is verwerkt voor deze ronde.</p>
+            {transferPhase === "AWAITING_RETRY" && ownTransferCanBuy && remainingBuyCapacity > 0 ? (
+              <div className="alert alert-warning transfer-retry-banner" data-testid="retry-open-slot-banner">
+                🔁 <strong>Alleen je open koopslot{remainingBuyCapacity === 1 ? "" : "ten"} opnieuw kiezen.</strong> Gewonnen aankopen blijven staan; je hoeft dus niet je hele kooprij opnieuw op te bouwen.
+              </div>
+            ) : null}
+            {persistedResolvedTransfers.length > 0 ? (
+              <p className="success-text">Jouw transfer(s) zijn verwerkt voor deze ronde.</p>
             ) : null}
           </div>
 
           <div className="grid transfer-controls">
             <label className="col-4">
-              1) Verkoop speler
+              1) Verkoop speler(s)
               <select
+                key={`sell-select-${queuedSellIds.join(",") || "empty"}`}
                 value={sellSelection}
                 onChange={(event) => {
                   const playerId = event.target.value;
                   setSellSelection(playerId);
                   handleSellSelection(playerId);
-                  setSellSelection("");
                 }}
                 data-testid="sell-player-select"
                 disabled={!ownTransferCanSell || transferBusy || transfersLocked}
@@ -1580,27 +1773,78 @@ export default function ManagerMyTeamPage() {
                 <option value="">Kies speler om te verkopen</option>
                 {squadPlayers.map((player) => (
                   <option key={player.id} value={player.id}>
-                    {withCountryFlag(player.club, player.naam)} ({player.positie}) - {player.club}
+                    {withCountryFlag(player.club, player.naam)} ({player.positie}) - {player.club}{player.isActive === false ? " • verplicht" : ""}
                   </option>
                 ))}
               </select>
+              {queuedSellPlayers.length > 0 ? (
+                <ul className="transfer-queue-list" data-testid="sell-queue-list">
+                  {queuedSellPlayers.map((player, index) => (
+                    <li key={`queued-sell-${player.id}`}>
+                      <span className="transfer-queue-index">#{index + 1}</span>
+                      <div className="transfer-queue-copy">
+                        <strong>{withCountryFlag(player.club, player.naam)}</strong>
+                        <span>{player.positie} · {player.isActive === false ? "verplicht" : "regulier"}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="transfer-queue-remove"
+                        onClick={() => handleSellSelection(player.id)}
+                        data-testid={`sell-queue-remove-${player.id}`}
+                      >
+                        Undo
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
               {ownTransferCanSell ? (
                 <>
-                  <small className="transfer-hint">Je mag 1 speler verkopen of expliciet kiezen voor geen transfer.</small>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void syncTransferRound("skip-sell").then((ok) => {
-                        if (ok) {
-                          setTransferMessage("Je hebt gekozen om niemand te verkopen deze ronde.");
+                  <small className="transfer-hint">Kies maximaal 1 normale verkoop. Inactieve spelers kun je extra meesturen en later nog undo-en voor je bevestigt.</small>
+                  <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (queuedSellIds.length === 0) {
+                          setTransferMessage("Voeg eerst minstens één speler toe aan je verkooprij.");
+                          return;
                         }
-                      });
-                    }}
-                    disabled={transferBusy}
-                    style={{ marginTop: 8 }}
-                  >
-                    Niemand verkopen
-                  </button>
+                        void syncTransferRound("submit-sell", queuedSellIds).then((ok) => {
+                          if (ok) {
+                            setSellSelection("");
+                            setTransferMessage("Verkooprij bevestigd. We wachten tot alle managers fase 1 hebben afgerond.");
+                          }
+                        });
+                      }}
+                      disabled={transferBusy || queuedSellIds.length === 0 || queuedRegularSellCount > 1}
+                    >
+                      Verkooprij bevestigen
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQueuedSellIds([]);
+                        setSellSelection("");
+                        setTransferMessage("Verkooprij leeggemaakt.");
+                      }}
+                      disabled={transferBusy || queuedSellIds.length === 0}
+                    >
+                      Undo verkooprij
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void syncTransferRound("skip-sell").then((ok) => {
+                          if (ok) {
+                            setTransferMessage("Je hebt gekozen om niemand te verkopen deze ronde.");
+                          }
+                        });
+                      }}
+                      disabled={transferBusy || queuedSellIds.length > 0}
+                    >
+                      Niemand verkopen
+                    </button>
+                  </div>
                 </>
               ) : !currentTransferEntry ? (
                 <small className="transfer-hint">
@@ -1610,7 +1854,7 @@ export default function ManagerMyTeamPage() {
                 <small className="transfer-hint">
                   Je hebt deze ronde gekozen om niemand te verkopen.
                 </small>
-              ) : currentTransferEntry.sellPlayerId ? (
+              ) : persistedSellIds.length > 0 ? (
                 <small className="transfer-hint">Verkoopkeuze staat vast voor deze ronde.</small>
               ) : null}
             </label>
@@ -1673,6 +1917,62 @@ export default function ManagerMyTeamPage() {
                 Resultaten: {filteredMarket.length} • Pagina {currentMarketPage}/{marketTotalPages}
               </p>
               <p className="muted-note">Transferlimiet deze ronde: {currentTransferLimit}</p>
+              {ownTransferCanBuy ? (
+                <p className="muted-note">Koopslots open: {remainingBuyCapacity} • In kooprij: {queuedBuyIds.length}</p>
+              ) : null}
+              {queuedBuyPlayers.length > 0 ? (
+                <ul className="transfer-queue-list" data-testid="buy-queue-list">
+                  {queuedBuyPlayers.map((player, index) => (
+                    <li key={`queued-buy-${player.id}`}>
+                      <span className="transfer-queue-index">#{index + 1}</span>
+                      <div className="transfer-queue-copy">
+                        <strong>{withCountryFlag(player.club, player.naam)}</strong>
+                        <span>{player.positie} · € {player.prijs.toFixed(2)}M</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="transfer-queue-remove"
+                        onClick={() => removeQueuedBuy(player.id)}
+                        data-testid={`buy-queue-remove-${player.id}`}
+                      >
+                        Undo
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {queuedBuyIds.length > 0 ? (
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void syncTransferRound("submit-buy", queuedBuyIds).then((ok) => {
+                        if (!ok) {
+                          return;
+                        }
+                        if (transferPhase === "AWAITING_RETRY") {
+                          setTransferMessage("Nieuwe kooprij opgeslagen. Zodra alle verliezende managers opnieuw gekozen hebben, wordt opnieuw beslist.");
+                          return;
+                        }
+                        setTransferMessage("Kooprij opgeslagen. Zodra iedereen klaar is, wordt de transferfase automatisch afgehandeld.");
+                      });
+                    }}
+                    disabled={transferBusy || queuedBuyIds.length === 0}
+                  >
+                    Kooprij bevestigen
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQueuedBuyIds([]);
+                      setTransferMessage("Kooprij leeggemaakt.");
+                    }}
+                    disabled={transferBusy || queuedBuyIds.length === 0}
+                  >
+                    Undo kooprij
+                  </button>
+                </div>
+              ) : null}
               {transferMessage ? <p className="success-text">{transferMessage}</p> : null}
             </div>
           </div>
@@ -1758,21 +2058,40 @@ export default function ManagerMyTeamPage() {
               </thead>
               <tbody>
                 {pagedMarket.map((item, index) => (
-                  <tr key={item.id} data-testid={`transfer-row-${index}`}>
+                  <tr
+                    key={item.id}
+                    data-testid={`transfer-row-${index}`}
+                    className={item.isActive === false ? "transfer-row--inactive" : undefined}
+                  >
                     <td><TransferPlayerName player={item} /></td>
                     <td>{item.positie}</td>
                     <td>{item.club}</td>
                     <td>{item.punten}</td>
                     <td>€ {item.prijs.toFixed(2)}M</td>
-                    <td style={{ textAlign: "center" }}>{item.owned ? "❌" : "✅"}</td>
+                    <td style={{ textAlign: "center" }}>
+                      {item.owned ? "❌" : item.isActive === false ? "⛔" : "✅"}
+                    </td>
                     <td>
                       <button
                         type="button"
                         onClick={() => handlePickIncoming(item)}
-                        disabled={!ownTransferCanBuy || transferBusy || transfersLocked || item.owned}
-                        data-testid={`transfer-pick-${index}`}
+                        disabled={
+                          !ownTransferCanBuy ||
+                          transferBusy ||
+                          transfersLocked ||
+                          item.owned ||
+                          item.isActive === false ||
+                          resolvedBuyIds.includes(item.id)
+                        }
+                        data-testid={`transfer-pick-${item.id}`}
                       >
-                        {pendingBuyId === item.id ? "Geselecteerd" : "Koop"}
+                        {item.isActive === false
+                          ? "Uitgeschakeld"
+                          : resolvedBuyIds.includes(item.id)
+                            ? "Gekocht"
+                            : queuedBuyIds.includes(item.id)
+                              ? "In kooprij"
+                              : "Voeg toe"}
                       </button>
                     </td>
                   </tr>

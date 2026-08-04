@@ -46,26 +46,48 @@ function normalizeRoundState(raw: Partial<TransferRoundState>, roundNumber: numb
           .filter((conflict) => conflict.playerId && conflict.winnerManagerId)
       : [],
     updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : new Date().toISOString(),
-    entries: raw.entries.map((entry) => ({
-      managerId: typeof entry?.managerId === "string" ? entry.managerId : "",
-      email: typeof entry?.email === "string" ? entry.email : "",
-      displayName: typeof entry?.displayName === "string" ? entry.displayName : "Manager",
-      teamName: typeof entry?.teamName === "string" ? entry.teamName : "Team",
-      subpoule: typeof entry?.subpoule === "string" ? entry.subpoule : "A",
-      rankingPosition: typeof entry?.rankingPosition === "number" && entry.rankingPosition > 0 ? entry.rankingPosition : 999,
-      sellStatus: entry?.sellStatus === "SKIPPED" || entry?.sellStatus === "SUBMITTED" ? entry.sellStatus : "PENDING",
-      sellPlayerId: typeof entry?.sellPlayerId === "string" ? entry.sellPlayerId : null,
-      buyStatus:
-        entry?.buyStatus === "PENDING" || entry?.buyStatus === "SUBMITTED" || entry?.buyStatus === "COMPLETED" || entry?.buyStatus === "RETRY_REQUIRED"
-          ? entry.buyStatus
-          : "LOCKED",
-      buyPlayerId: typeof entry?.buyPlayerId === "string" ? entry.buyPlayerId : null,
-      resolvedTransfer:
-        entry?.resolvedTransfer && typeof entry.resolvedTransfer.soldPlayerId === "string" && typeof entry.resolvedTransfer.boughtPlayerId === "string"
-          ? { soldPlayerId: entry.resolvedTransfer.soldPlayerId, boughtPlayerId: entry.resolvedTransfer.boughtPlayerId }
-          : null,
-      updatedAt: typeof entry?.updatedAt === "string" ? entry.updatedAt : null,
-    })),
+    entries: raw.entries.map((entry) => {
+      const autoSellPlayerIds = Array.isArray(entry?.autoSellPlayerIds)
+        ? entry.autoSellPlayerIds.filter((value): value is string => typeof value === "string")
+        : [];
+      const buyPlayerIds = Array.isArray(entry?.buyPlayerIds)
+        ? entry.buyPlayerIds.filter((value): value is string => typeof value === "string")
+        : typeof entry?.buyPlayerId === "string"
+          ? [entry.buyPlayerId]
+          : [];
+      const resolvedTransfers = Array.isArray(entry?.resolvedTransfers)
+        ? entry.resolvedTransfers
+            .map((transfer) =>
+              transfer && typeof transfer.soldPlayerId === "string" && typeof transfer.boughtPlayerId === "string"
+                ? { soldPlayerId: transfer.soldPlayerId, boughtPlayerId: transfer.boughtPlayerId }
+                : null,
+            )
+            .filter((transfer): transfer is { soldPlayerId: string; boughtPlayerId: string } => Boolean(transfer))
+        : entry?.resolvedTransfer && typeof entry.resolvedTransfer.soldPlayerId === "string" && typeof entry.resolvedTransfer.boughtPlayerId === "string"
+          ? [{ soldPlayerId: entry.resolvedTransfer.soldPlayerId, boughtPlayerId: entry.resolvedTransfer.boughtPlayerId }]
+          : [];
+
+      return {
+        managerId: typeof entry?.managerId === "string" ? entry.managerId : "",
+        email: typeof entry?.email === "string" ? entry.email : "",
+        displayName: typeof entry?.displayName === "string" ? entry.displayName : "Manager",
+        teamName: typeof entry?.teamName === "string" ? entry.teamName : "Team",
+        subpoule: typeof entry?.subpoule === "string" ? entry.subpoule : "A",
+        rankingPosition: typeof entry?.rankingPosition === "number" && entry.rankingPosition > 0 ? entry.rankingPosition : 999,
+        sellStatus: entry?.sellStatus === "SKIPPED" || entry?.sellStatus === "SUBMITTED" ? entry.sellStatus : "PENDING",
+        sellPlayerId: typeof entry?.sellPlayerId === "string" ? entry.sellPlayerId : null,
+        autoSellPlayerIds,
+        buyStatus:
+          entry?.buyStatus === "PENDING" || entry?.buyStatus === "SUBMITTED" || entry?.buyStatus === "COMPLETED" || entry?.buyStatus === "RETRY_REQUIRED"
+            ? entry.buyStatus
+            : "LOCKED",
+        buyPlayerIds,
+        buyPlayerId: buyPlayerIds[0] ?? null,
+        resolvedTransfers,
+        resolvedTransfer: resolvedTransfers[0] ?? null,
+        updatedAt: typeof entry?.updatedAt === "string" ? entry.updatedAt : null,
+      };
+    }),
   };
 }
 
